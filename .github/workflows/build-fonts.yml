@@ -1,0 +1,63 @@
+name: Fonts Generation
+on: 
+  push:
+  workflow_dispatch:
+
+jobs:
+  Generate-Fonts:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Check out repository code
+        uses: actions/checkout@v4
+      - name: Setup Python environment
+        uses: actions/setup-python@v5
+        with:
+            python-version: '3.12'
+            architecture: 'x64'
+            cache: 'pip'
+            cache-dependency-path: ./requirements.txt
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r ./requirements.txt
+      - name: Generate Fonts ChironSung + NotoSerif + Canto (LSHK)
+        run: |
+          set -o xtrace
+          python generator.py input_fonts/ChironSungHK-R.ttf input_fonts/NotoSerif-Regular.ttf mappings/canto-lshk.csv ChironSungHK-Noto-lshk
+      - name: Generate Fonts ChironSung + NotoSerif + Canto (Yale)
+        run: |
+          set -o xtrace
+          python generator.py input_fonts/ChironSungHK-R.ttf input_fonts/NotoSerif-Regular.ttf mappings/canto-yale.csv ChironSungHK-Noto-yale
+      - name: Generate Fonts ChironSung + NotoSerif + Chinese (Cangje)
+        run: |
+          set -o xtrace
+          python generator.py input_fonts/ChironSungHK-R.ttf input_fonts/ChironSungHK-R.ttf mappings/cangjie.csv ChironSungHK-Noto-cangjie
+      - name: Generate Fonts ChironSung-It + NotoSerif + Canto (LSHK)
+        run: |
+          set -o xtrace
+          python generator.py input_fonts/ChironSungHK-R-It.ttf input_fonts/NotoSerif-Regular.ttf mappings/canto-lshk.csv ChironSungHK-Noto-lshk-It
+      - name: Generate Fonts ChironSung-It + NotoSerif + Canto (Yale)
+        run: |
+          set -o xtrace
+          python generator.py input_fonts/ChironSungHK-R-It.ttf input_fonts/NotoSerif-Regular.ttf mappings/canto-yale.csv ChironSungHK-Noto-yale-It
+      - name: Generate Fonts ChironSung-It + NotoSerif + Chinese (Cangjie)
+        run: |
+          set -o xtrace
+          python generator.py input_fonts/ChironSungHK-R-It.ttf input_fonts/ChironSungHK-R-It.ttf mappings/cangjie.csv ChironSungHK-Noto-cangjie-It
+
+      - name: create deployment folder
+        run: mkdir -p fonts
+      - name: cp files into deployment folder
+        run: |
+          cp \
+          *.ttf \
+          *.woff \
+          fonts/
+      - name: Update fonts
+        uses: JamesIves/github-pages-deploy-action@v4
+        with:
+            folder: fonts
+            commit-message: Update resources
+            branch: gh-pages
+            clean: false
