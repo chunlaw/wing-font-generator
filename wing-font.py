@@ -7,6 +7,7 @@ import sys
 import argparse
 from fontTools import subset
 from functools import reduce
+from utils import get_glyph_name_by_char
 import operator
 
 def main(
@@ -35,12 +36,17 @@ def main(
     buildLiga(output_font, char_mapping)
 
     if optimize:
+        # keep number and glyph to be used
+        glyphs_to_be_kept = [get_glyph_name_by_char(base_font, str(i)) for i in range(0, 10)]
+        for value in char_mapping.values():
+            for glyph_name, idx in value.values():
+                glyphs_to_be_kept.append(glyph_name)
+        
         # Make subset to reduce file size
         subsetter = subset.Subsetter()
-        subsetter.populate(
-            glyphs=reduce(operator.concat, [[glyph_name for glyph_name, idx in value.values()] for value in char_mapping.values()])
-        )
+        subsetter.populate(glyphs=list(set(glyphs_to_be_kept)))
         subsetter.subset(output_font)
+
 
     # Save the new font
     output_font.save(str(output_prefix)+".ttf")

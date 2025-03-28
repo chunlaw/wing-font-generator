@@ -1,6 +1,6 @@
 from fontTools.ttLib.tables import otTables
 from fontTools.otlLib import builder
-from utils import get_glyph_name_by_char, buildChainSubRuleSet, buildCoverage, chunk
+from utils import get_glyph_name_by_char, buildChainSubRuleSet, buildCoverage, chunk, buildDefaultLangSys
 
 def buildChainSub(output_font, word_mapping, char_mapping):
     # 1. Preparation: setup all single substitution table
@@ -153,6 +153,8 @@ def insert_chain_context_subst_into_gsub(output_font, all_chain_sets):
         featureRecord.Feature.LookupListIndex = [len(gsub.LookupList.Lookup)]
         featureRecord.Feature.LookupCount = 1
         for scriptRecord in gsub.ScriptList.ScriptRecord:
+            if scriptRecord.Script.DefaultLangSys is None:
+                scriptRecord.Script.DefaultLangSys = buildDefaultLangSys()
             scriptRecord.Script.DefaultLangSys.FeatureIndex.append(len(gsub.FeatureList.FeatureRecord))
             scriptRecord.Script.DefaultLangSys.FeatureCount += 1
         gsub.FeatureList.FeatureRecord.append(featureRecord)

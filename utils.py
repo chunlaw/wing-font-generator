@@ -11,6 +11,14 @@ def buildChainSubRuleSet() -> otTables.ChainSubRuleSet:
     self.ChainSubRule = []
     return self
 
+def buildDefaultLangSys() -> otTables.DefaultLangSys:
+    self = otTables.DefaultLangSys()
+    self.LookupOrder = None
+    self.ReqFeatureIndex = 0xFFFF
+    self.FeatureCount = 0
+    self.FeatureIndex = []
+    return self    
+
 def get_glyph_name_by_char(font, char):
     cmap = font.getBestCmap()
     # Get the glyph name for the base character

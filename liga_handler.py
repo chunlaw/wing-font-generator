@@ -1,6 +1,6 @@
 from fontTools.ttLib.tables import otTables
 from fontTools.otlLib import builder
-from utils import get_glyph_name_by_char, chunk
+from utils import get_glyph_name_by_char, chunk, buildDefaultLangSys
 
 chunk_size = 5000
 
@@ -33,6 +33,8 @@ def buildLiga(output_font, char_mapping):
             featureRecord.Feature.LookupListIndex = [len(gsub.LookupList.Lookup)]
             featureRecord.Feature.LookupCount = 1
             for scriptRecord in gsub.ScriptList.ScriptRecord:
+                if scriptRecord.Script.DefaultLangSys is None:
+                    scriptRecord.Script.DefaultLangSys = buildDefaultLangSys()
                 scriptRecord.Script.DefaultLangSys.FeatureIndex.append(len(gsub.FeatureList.FeatureRecord))
                 scriptRecord.Script.DefaultLangSys.FeatureCount += 1
             gsub.FeatureList.FeatureRecord.append(featureRecord)
@@ -41,7 +43,7 @@ def buildLiga(output_font, char_mapping):
             for idx in ligaFeatureIndexes:
                 gsub.FeatureList.FeatureRecord[idx].Feature.LookupListIndex.append(len(gsub.LookupList.Lookup))
                 gsub.FeatureList.FeatureRecord[idx].Feature.LookupCount += 1 
-        
+
         # insert the lookup into the font
         gsub.LookupList.Lookup.append(ligaBuilder.build())
         gsub.LookupList.LookupCount += 1
