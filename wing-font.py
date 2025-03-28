@@ -5,6 +5,9 @@ from liga_handler import buildLiga
 from build_glyph import generate_glyphs
 import sys
 import argparse
+from fontTools import subset
+from functools import reduce
+import operator
 
 def main(
     base_font_file, 
@@ -13,7 +16,8 @@ def main(
     mapping, 
     base_scale=0.75,
     anno_scale=0.15,
-    anno_y_offset=0.8
+    anno_y_offset=0.8,
+    optimize=False
 ):
     # Load the fonts and mapping
     base_font = TTFont(base_font_file)
@@ -29,6 +33,14 @@ def main(
     
     # Replace glyph by new glyph using liga
     buildLiga(output_font, char_mapping)
+
+    if optimize:
+        # Make subset to reduce file size
+        subsetter = subset.Subsetter()
+        subsetter.populate(
+            glyphs=reduce(operator.concat, [[glyph_name for glyph_name, idx in value.values()] for value in char_mapping.values()])
+        )
+        subsetter.subset(output_font)
 
     # Save the new font
     output_font.save(str(output_prefix)+".ttf")
@@ -51,6 +63,7 @@ if __name__ == "__main__":
     parser.add_argument('-y', '--anno-y-offset', help="Y offset in (percentage) for annotation string")
     parser.add_argument('-bs', '--base-scale', type=float, default=0.75, help="The scaling factor for the base font")
     parser.add_argument('-as', '--anno-scale', type=float, default=0.15, help="The scaling factor for the base font")
+    parser.add_argument('-opt', '--optimize', action="store_true", help="Optimizing size by subsetting annotated glyph only")
     try:
         options = parser.parse_args()
     except:
@@ -63,5 +76,6 @@ if __name__ == "__main__":
         mapping = options.mapping, 
         base_scale=0.75,
         anno_scale=0.15,
-        anno_y_offset=0.8
+        anno_y_offset=0.8,
+        optimize=options.optimize
     )
