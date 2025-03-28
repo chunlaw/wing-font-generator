@@ -1,5 +1,4 @@
 import csv
-from functools import reduce
 
 def load_mapping(font, csv_file):
     cmap = font.getBestCmap()
