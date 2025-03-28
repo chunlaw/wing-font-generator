@@ -27,11 +27,11 @@ jobs:
       - name: Generate Fonts ChironSung + NotoSerif + Canto (LSHK)
         run: |
           set -o xtrace
-          python wing-font.py -i input_fonts/ChironSungHK-R.ttf -a input_fonts/NotoSerif-Regular.ttf -m mappings/canto-lshk.csv -o ChironSungHK-Noto-lshk
+          python wing-font.py -i input_fonts/ChironSungHK-R.ttf -a input_fonts/NotoSerif-Regular.ttf -m mappings/canto-lshk.csv -o ChironSungHK-Noto-lshk -as=0.14
       - name: Generate Fonts ChironSung + NotoSerif + Canto (Yale)
         run: |
           set -o xtrace
-          python wing-font.py -i input_fonts/ChironSungHK-R.ttf -a input_fonts/NotoSerif-Regular.ttf -m mappings/canto-yale.csv -o ChironSungHK-Noto-yale
+          python wing-font.py -i input_fonts/ChironSungHK-R.ttf -a input_fonts/NotoSerif-Regular.ttf -m mappings/canto-yale.csv -o ChironSungHK-Noto-yale -as=0.14
       - name: Generate Fonts ChironSung + NotoSerif + Chinese (Cangje)
         run: |
           set -o xtrace
@@ -39,11 +39,11 @@ jobs:
       - name: Generate Fonts ChironSung-It + NotoSerif + Canto (LSHK)
         run: |
           set -o xtrace
-          python wing-font.py -i input_fonts/ChironSungHK-R-It.ttf -a input_fonts/NotoSerif-Regular.ttf -m mappings/canto-lshk.csv -o ChironSungHK-Noto-lshk-It
+          python wing-font.py -i input_fonts/ChironSungHK-R-It.ttf -a input_fonts/NotoSerif-Regular.ttf -m mappings/canto-lshk.csv -o ChironSungHK-Noto-lshk-It -as=0.14
       - name: Generate Fonts ChironSung-It + NotoSerif + Canto (Yale)
         run: |
           set -o xtrace
-          python wing-font.py -i input_fonts/ChironSungHK-R-It.ttf -a input_fonts/NotoSerif-Regular.ttf -m mappings/canto-yale.csv -o ChironSungHK-Noto-yale-It
+          python wing-font.py -i input_fonts/ChironSungHK-R-It.ttf -a input_fonts/NotoSerif-Regular.ttf -m mappings/canto-yale.csv -o ChironSungHK-Noto-yale-It -as=0.14
       - name: Generate Fonts ChironSung-It + NotoSerif + Chinese (Cangjie)
         run: |
           set -o xtrace
