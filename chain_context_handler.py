@@ -42,14 +42,9 @@ def buildChainSub(output_font, word_mapping, char_mapping):
     
     # need to sort by the reverseGlyphMap for browser to use properly
     reverseMap = output_font.getReverseGlyphMap()
-    # print(len(chains))
     chainSets = list(sorted(chainSets.items(), key=lambda item: reverseMap[item[0]]))
-    # print("\n".join(["\n".join([chain["_debug"] for chain in chainSet])  for char, chainSet in chainSets]))
-    # print("\n".join([chain['_debug'] for chain in chainSets[0:10]]))
-    # print("\n".join([chain['_debug'] for chain in chainSets[-10:]]))
     for i in range(1, 10):
         if len(singleSubBuilders[i].mapping) > 0:
-            print(len(singleSubBuilders[i].mapping))
             gsub.LookupList.Lookup.append(singleSubBuilders[i].build())
             gsub.LookupList.LookupCount += 1
     insert_chain_context_subst_into_gsub(output_font, chainSets)

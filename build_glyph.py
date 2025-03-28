@@ -1,19 +1,11 @@
-from fontTools.ttLib import TTFont
 from fontTools.pens.ttGlyphPen import TTGlyphPen
 from fontTools.pens.transformPen import TransformPen
-from fontTools.ttLib.tables import otTables
-from fontTools.otlLib import builder
-from fontTools.ttLib.tables import otTables as ot
-from mappings.parser import load_mapping
-from chain_context_handler import buildChainSub
-from liga_handler import buildLiga
 from utils import get_glyph_name_by_char
-import sys
 
 GLYPH_PREFIX = "wingfont"
 
 # assume base_font and output_font are from the same source
-def generate_glyphs(base_font, anno_font, output_font, mapping):
+def generate_glyphs(base_font, anno_font, output_font, mapping, anno_scale = 0.15, base_scale = 0.75, anno_y_offset=0.8):
     output_glyph_name_used = {}
     """Create a new TTF file with combined glyphs."""
     base_glyph_set = base_font.getGlyphSet()
@@ -22,9 +14,7 @@ def generate_glyphs(base_font, anno_font, output_font, mapping):
 
     # Get font metrics
     units_per_em = base_font['head'].unitsPerEm
-    y_offset = round(units_per_em * 0.8)
-    anno_scale = 0.12
-    base_scale = 0.75
+    y_offset = round(units_per_em * anno_y_offset)
 
     # resize each glyph for supporting anno_str
     cnt = 0
@@ -68,47 +58,15 @@ def generate_glyphs(base_font, anno_font, output_font, mapping):
             if 'hmtx' in output_font:
                 output_font['hmtx'][new_glyph_name] = (
                     base_font['hmtx'][glyph_name][0],
-                    base_font['hmtx'][glyph_name][1] + base_font['hmtx'][glyph_name][0] * ( 1 - base_scale ) / 2
+                    max(
+                        0,
+                        min( 
+                            ( base_font['hmtx'][glyph_name][0] * base_scale - anno_len ) / 2,
+                            base_font['hmtx'][glyph_name][1] * base_scale
+                        ) + ( 1 - base_scale ) * base_font['hmtx'][glyph_name][0] / 2
+                    )
                 )
             
             output_font['glyf'][new_glyph_name] = pen.glyph()
             output_glyph_name_used[new_glyph_name] = True
             mapping[base_char][anno_str] = (new_glyph_name, i)
-    
-
-def main():
-    # Input files (replace with your actual file paths)
-    base_font_file = sys.argv[1]
-    anno_font_file = sys.argv[2]
-    csv_file = sys.argv[3]
-    output_prefix = sys.argv[4]
-
-    # Load the fonts and mapping
-    base_font = TTFont(base_font_file)
-    anno_font = TTFont(anno_font_file)
-    output_font = TTFont(base_font_file)
-    word_mapping, char_mapping = load_mapping(base_font, csv_file)
-
-    # Combine the glyphs and save the new font
-    generate_glyphs(base_font, anno_font, output_font, char_mapping)
-
-    # Build Chain Contextual Substitution
-    buildChainSub(output_font, word_mapping, char_mapping)
-    
-    # Replace glyph by new glyph using liga
-    buildLiga(output_font, char_mapping)
-
-    # Save the new font
-    output_font.save(str(output_prefix)+".ttf")
-    print(f"New font saved as {output_prefix}.ttf")
-    output_font.flavor = 'woff'
-    output_font.save(str(output_prefix+".woff"))
-    print(f"New font saved as {output_prefix}.woff")
-    
-    # Close the font objects
-    base_font.close()
-    anno_font.close()
-    output_font.close()
-
-if __name__ == "__main__":
-    main()
