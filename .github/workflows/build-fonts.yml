@@ -32,22 +32,22 @@ jobs:
         run: |
           set -o xtrace
           python wing-font.py -opt -i input_fonts/ChironSungHK-R.ttf -a input_fonts/NotoSerif-Regular.ttf -m mappings/canto-yale.csv -o ChironSungHK-Noto-yale -as=0.14
-      - name: Generate Fonts ChironSung + NotoSerif + Chinese (Cangje)
+      - name: Generate Fonts ChironSung + Chinese (Cangje)
         run: |
           set -o xtrace
-          python wing-font.py -opt -i input_fonts/ChironSungHK-R.ttf -a input_fonts/ChironSungHK-R.ttf -m mappings/cangjie.csv -o ChironSungHK-Noto-cangjie -as 0.25
+          python wing-font.py -i input_fonts/ChironSungHK-R.ttf -a input_fonts/ChironSungHK-R.ttf -m mappings/cangjie.csv -o ChironSungHK-cangjie -as 0.25
       - name: Generate Fonts ChironSung-It + NotoSerif + Canto (LSHK)
         run: |
           set -o xtrace
           python wing-font.py -opt -i input_fonts/ChironSungHK-R-It.ttf -a input_fonts/NotoSerif-Regular.ttf -m mappings/canto-lshk.csv -o ChironSungHK-Noto-lshk-It -as=0.14
-      - name: Generate Fonts ChironSung-It + NotoSerif + Canto (Yale)
+      - name: Generate Fonts ChironSung-It + Canto (Yale)
         run: |
           set -o xtrace
           python wing-font.py -opt -i input_fonts/ChironSungHK-R-It.ttf -a input_fonts/NotoSerif-Regular.ttf -m mappings/canto-yale.csv -o ChironSungHK-Noto-yale-It -as=0.14
       - name: Generate Fonts ChironSung-It + NotoSerif + Chinese (Cangjie)
         run: |
           set -o xtrace
-          python wing-font.py -opt -i input_fonts/ChironSungHK-R-It.ttf -a input_fonts/ChironSungHK-R-It.ttf -m mappings/cangjie.csv -o ChironSungHK-Noto-cangjie-It -as 0.25
+          python wing-font.py -i input_fonts/ChironSungHK-R-It.ttf -a input_fonts/ChironSungHK-R-It.ttf -m mappings/cangjie.csv -o ChironSungHK-cangjie-It -as 0.25
 
       - name: create deployment folder
         run: mkdir -p fonts

@@ -4,12 +4,7 @@ A Python program that can generate font annotation, e.g., Cangjie (倉頡), Cant
 
 ## Example
 ```
-python generator.py input_fonts/ChironSungHK-R.ttf input_fonts/NotoSerif-Regular.ttf mappings/canto-lshk.csv ChironSungHK-Noto-lshk
-```
-
-## Execution
-```
-python generator.py <base_font.ttf> <anno_font.ttf> <mapping.csv> <output path prefix>
+python wing-font.py -opt -i input_fonts/ChironSungHK-R.ttf -a input_fonts/NotoSerif-Regular.ttf -m mappings/canto-lshk.csv -o ChironSungHK-Noto-lshk -as 0.14
 ```
 
 ## Contact
