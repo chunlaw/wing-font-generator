@@ -15,8 +15,6 @@ def buildLiga(output_font, char_mapping):
         for anno_strs_dict in anno_strs_dict_chunk:
             for glyph_name, idx in anno_strs_dict.values():
                 for _glyph_name, _idx in anno_strs_dict.values():
-                    if glyph_name == _glyph_name:
-                        continue
                     # hindered by the cross-script handling in opentype parser, ligature cannot mix Chinese character with a series of latin characters
                     # use number instead...
                     ligaBuilder.ligatures[(

@@ -35,6 +35,7 @@ def main(
     # Replace glyph by new glyph using liga
     buildLiga(output_font, char_mapping)
 
+    # if size optimization is required
     if optimize:
         # keep number and glyph to be used
         glyphs_to_be_kept = [get_glyph_name_by_char(base_font, str(i)) for i in range(0, 10)]
@@ -46,7 +47,6 @@ def main(
         subsetter = subset.Subsetter()
         subsetter.populate(glyphs=list(set(glyphs_to_be_kept)))
         subsetter.subset(output_font)
-
 
     # Save the new font
     output_font.save(str(output_prefix)+".ttf")
