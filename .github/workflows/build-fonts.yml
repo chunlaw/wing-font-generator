@@ -25,6 +25,7 @@ jobs:
           python -m pip install --upgrade pip
           pip install -r ./requirements.txt
       - name: Generate Fonts
+        run: |
           set -o xtrace
           python wing-font.py -opt -i input_fonts/ChironSungHK-R.ttf -a input_fonts/NotoSerif-Regular.ttf -m mappings/canto-lshk.csv -o ChironSungHK-Noto-lshk -as 0.13
           python wing-font.py -opt -i input_fonts/ChironSungHK-R.ttf -a input_fonts/NotoSerif-Regular.ttf -m mappings/canto-yale.csv -o ChironSungHK-Noto-yale -as 0.13
