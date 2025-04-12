@@ -58,13 +58,13 @@ def generate_glyphs(base_font, anno_font, output_font, mapping, anno_scale = 0.1
             if 'hmtx' in output_font:
                 output_font['hmtx'][new_glyph_name] = (
                     base_font['hmtx'][glyph_name][0],
-                    max(
+                    round(max(
                         0,
                         min( 
                             ( base_font['hmtx'][glyph_name][0] * base_scale - anno_len ) / 2,
                             base_font['hmtx'][glyph_name][1] * base_scale
                         ) + ( 1 - base_scale ) * base_font['hmtx'][glyph_name][0] / 2
-                    )
+                    ))
                 )
             
             output_font['glyf'][new_glyph_name] = pen.glyph()
