@@ -66,7 +66,7 @@ if __name__ == "__main__":
     parser.add_argument('-a', '--anno-font_file', help="Annotation font in .ttf fomrat", required=True)
     parser.add_argument('-o', '--output-prefix', help="Output prefix for .ttf and .woff file", required=True)
     parser.add_argument('-m', '--mapping', help="CSV file for the mapping between base font and annotation font", required=True)
-    parser.add_argument('-y', '--anno-y-offset', help="Y offset in (percentage) for annotation string")
+    parser.add_argument('-y', '--anno-y-offset', type=float, default=0.8, help="Y offset in (percentage) for annotation string")
     parser.add_argument('-bs', '--base-scale', type=float, default=0.75, help="The scaling factor for the base font")
     parser.add_argument('-as', '--anno-scale', type=float, default=0.15, help="The scaling factor for the base font")
     parser.add_argument('-opt', '--optimize', action="store_true", help="Optimizing size by subsetting annotated glyph only")
@@ -80,8 +80,8 @@ if __name__ == "__main__":
         anno_font_file = options.anno_font_file, 
         output_prefix = options.output_prefix, 
         mapping = options.mapping, 
-        base_scale=0.75,
-        anno_scale=0.15,
-        anno_y_offset=0.8,
+        base_scale=options.base_scale,
+        anno_scale=options.anno_scale,
+        anno_y_offset=options.anno_y_offset,
         optimize=options.optimize
     )
