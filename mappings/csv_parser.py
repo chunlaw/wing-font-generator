@@ -28,8 +28,23 @@ def load_mapping(font, csv_file):
                                 print("Potential missed annotation in typing for '"+base_char+"' ("+anno_str+")")
     
     # char_mapping: {"一": {"jat1": None | (glyph_name, idx)}} <-- idx is used to ligature the anno_str
-    char_mapping = {char: {k: None for k, v in sorted(cnts.items(), key=lambda v: v[1], reverse=True)} for char, cnts in char_cnt.items()}
-    return (word_mapping, char_mapping)
+    # 關鍵修改在這裡：將排序後的拼音變體從 1 開始賦予索引。
+    char_mapping = {
+        char: {
+            k: None for k, v in sorted(cnts.items(), key=lambda v: v[1], reverse=True)
+        } 
+        for char, cnts in char_cnt.items()
+    }
+
+    # 確保所有帶註釋的字形變體索引 (idx) 都從 1 開始
+    final_char_mapping = {}
+    for char, anno_map in char_mapping.items():
+        final_char_mapping[char] = {}
+        # i 從 1 開始計數
+        for i, anno_str in enumerate(anno_map.keys(), 1): 
+            final_char_mapping[char][anno_str] = (None, i) # 這裡 i 永遠 > 0
+            
+    return (word_mapping, final_char_mapping) # 返回新的 char_mapping
 
 if __name__ == "__main__":
   print("main")
