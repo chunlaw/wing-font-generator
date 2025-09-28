@@ -19,7 +19,7 @@ def generate_glyphs(base_font, anno_font, output_font, mapping, anno_scale = 0.1
     # resize each glyph for supporting anno_str
     cnt = 0
     for base_char, anno_strs_dict in mapping.items():
-        for i, anno_str in enumerate(anno_strs_dict.keys()):
+        for i, anno_str in enumerate(anno_strs_dict.keys(), 1): # <--- 將這裡的計數從 0 改成 1
             glyph_name = get_glyph_name_by_char(base_font, base_char)
             pen = TTGlyphPen(output_glyph_set)
             # Draw the base glyph at the bottom (original position)
@@ -50,7 +50,7 @@ def generate_glyphs(base_font, anno_font, output_font, mapping, anno_scale = 0.1
                     print(f"Glyph '{anno_glyph_name}' not found in anno font")
 
             # add to output_font
-            new_glyph_name = glyph_name if glyph_name not in output_glyph_name_used else GLYPH_PREFIX+str(cnt).zfill(6) 
+            new_glyph_name = glyph_name if glyph_name not in output_glyph_name_used else GLYPH_PREFIX+str(cnt).zfill(6)
             cnt += 1
 
             if 'vmtx' in output_font.keys():
@@ -69,4 +69,5 @@ def generate_glyphs(base_font, anno_font, output_font, mapping, anno_scale = 0.1
             
             output_font['glyf'][new_glyph_name] = pen.glyph()
             output_glyph_name_used[new_glyph_name] = True
-            mapping[base_char][anno_str] = (new_glyph_name, i)
+            # 確保 mapping 中的 variant 索引 i 是正確的
+            mapping[base_char][anno_str] = (new_glyph_name, i) # <--- i > 0
