@@ -24,13 +24,13 @@ def load_mapping(font, csv_file):
                     continue
                 
                 if len(base_chars) == len(anno_strs):
-                    if len(base_chars) > 1 and len(base_chars) <= 4:  # 只保留長度 <= 4 的詞組
+                    if len(base_chars) > 1 and len(base_chars) <= 8:  # 只保留長度 <= 8 的詞組 根據實際情況調整
                         MIN_WEIGHT = 1  # 可調整權重閾值
                         if weight >= MIN_WEIGHT:
                         # 詞組處理：儲存詞組、拼音列表和權重
                             raw_word_entries.append((base_chars, anno_strs, weight))
                     
-                    # 單字和詞頻處理
+                    # 單字和字頻處理
                     for base_char, anno_str in zip(base_chars, anno_strs):
                         if anno_str != '':
                             char_cnt[base_char][anno_str] += weight 
