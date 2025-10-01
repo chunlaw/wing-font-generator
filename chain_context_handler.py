@@ -157,7 +157,7 @@ def insert_chain_context_subst_into_gsub_logic(output_font, rule_groups_to_write
             continue
             
         # 遍歷 ChainSets 的塊 (每塊最多 50 個字形) 根據實際情況調整 
-        for chainSets_chunk in chunk(all_chain_sets, 5):
+        for chainSets_chunk in chunk(all_chain_sets, 1):
             # 1. 創建新的 Subtable。
             chainSubStLookup.SubTable.append(otTables.ChainContextSubst())
             chainSubStLookup.SubTableCount += 1
