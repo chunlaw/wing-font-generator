@@ -5,6 +5,9 @@ from utils import get_glyph_name_by_char, buildChainSubRuleSet, buildCoverage, c
 # 設定變體上限為 256 (0-255) 根據實際情況調整
 MAX_VARIANT_LOOKUPS = 30
 
+# 遍歷 ChainSets 的塊 (每塊最多 10-1000 個字形) 根據實際情況調整 
+MAX_chainSets_chunk = 10
+
 # --- 請將這整個函數複製並替換掉你文件中的舊版本 ---
 def buildChainSub(output_font, word_mapping, char_mapping):
     gsub = output_font["GSUB"].table
@@ -157,7 +160,7 @@ def insert_chain_context_subst_into_gsub_logic(output_font, rule_groups_to_write
             continue
             
         # 遍歷 ChainSets 的塊 (每塊最多 50 個字形) 根據實際情況調整 
-        for chainSets_chunk in chunk(all_chain_sets, 1):
+        for chainSets_chunk in chunk(all_chain_sets, MAX_chainSets_chunk):
             # 1. 創建新的 Subtable。
             chainSubStLookup.SubTable.append(otTables.ChainContextSubst())
             chainSubStLookup.SubTableCount += 1
