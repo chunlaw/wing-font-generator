@@ -2,7 +2,7 @@ from fontTools.ttLib.tables import otTables
 from fontTools.otlLib import builder
 from utils import get_glyph_name_by_char, buildChainSubRuleSet, buildCoverage, chunk, buildDefaultLangSys
 
-# 設定變體上限為 256 (0-255)
+# 設定變體上限為 256 (0-255) 根據實際情況調整
 MAX_VARIANT_LOOKUPS = 30
 
 # --- 請將這整個函數複製並替換掉你文件中的舊版本 ---
@@ -156,8 +156,8 @@ def insert_chain_context_subst_into_gsub_logic(output_font, rule_groups_to_write
         if not all_chain_sets:
             continue
             
-        # 遍歷 ChainSets 的塊 (每塊最多 50 個字形)
-        for chainSets_chunk in chunk(all_chain_sets, 10):
+        # 遍歷 ChainSets 的塊 (每塊最多 50 個字形) 根據實際情況調整 
+        for chainSets_chunk in chunk(all_chain_sets, 5):
             # 1. 創建新的 Subtable。
             chainSubStLookup.SubTable.append(otTables.ChainContextSubst())
             chainSubStLookup.SubTableCount += 1
