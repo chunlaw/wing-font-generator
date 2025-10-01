@@ -24,7 +24,7 @@ def load_mapping(font, csv_file):
                     continue
                 
                 if len(base_chars) == len(anno_strs):
-                    if len(base_chars) > 1 and len(base_chars) <= 5:  # 只保留長度 <= 5 的詞組
+                    if len(base_chars) > 1 and len(base_chars) <= 4:  # 只保留長度 <= 4 的詞組
                         MIN_WEIGHT = 1  # 可調整權重閾值
                         if weight >= MIN_WEIGHT:
                         # 詞組處理：儲存詞組、拼音列表和權重
