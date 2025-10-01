@@ -3,6 +3,9 @@
 import csv
 from collections import defaultdict 
 
+# 只保留長度 <= 7 的詞組 根據實際情況調整
+MAX_base_chars = 7 
+
 def load_mapping(font, csv_file):
     cmap = font.getBestCmap()
     word_mapping = {}
@@ -24,7 +27,7 @@ def load_mapping(font, csv_file):
                     continue
                 
                 if len(base_chars) == len(anno_strs):
-                    if len(base_chars) > 1 and len(base_chars) <= 8:  # 只保留長度 <= 8 的詞組 根據實際情況調整
+                    if len(base_chars) > 1 and len(base_chars) <= MAX_base_chars:  # 只保留長度 <= 7 的詞組 根據實際情況調整
                         MIN_WEIGHT = 1  # 可調整權重閾值
                         if weight >= MIN_WEIGHT:
                         # 詞組處理：儲存詞組、拼音列表和權重
