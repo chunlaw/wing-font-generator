@@ -23,15 +23,20 @@ def load_mapping(font, csv_file):
                 weight = int(row[2]) if len(row) > 2 and row[2].isdigit() else 1 
 
                 if True in [ord(char) not in cmap for char in base_chars]:
-                    # print(f"Skip {base_chars} as there is char not found in the font")
+                    print(f"Skip {base_chars} as there is char not found in the font")
                     continue
                 
                 if len(base_chars) == len(anno_strs):
-                    if len(base_chars) > 1 and len(base_chars) <= MAX_base_chars:  # 只保留長度 <= 7 的詞組 根據實際情況調整
-                        MIN_WEIGHT = 1  # 可調整權重閾值
-                        if weight >= MIN_WEIGHT:
-                        # 詞組處理：儲存詞組、拼音列表和權重
-                            raw_word_entries.append((base_chars, anno_strs, weight))
+                    if len(base_chars) == len(anno_strs):
+                        if len(base_chars) > 1:
+                            if len(base_chars) <= MAX_base_chars: # 只保留長度 <= MAX_base_chars 的詞組
+                                MIN_WEIGHT = 1  # 可調整權重閾值
+                                if weight >= MIN_WEIGHT:
+                                    # 詞組處理：儲存詞組、拼音列表和權重
+                                    raw_word_entries.append((base_chars, anno_strs, weight))
+                            else:
+                                # 新增的列印信息：大於 MAX_base_chars 的詞組跳過
+                                print(f"跳過詞組: '{base_chars}'，因其長度 {len(base_chars)} 大於最大限制 MAX_base_chars ({MAX_base_chars})。")
                     
                     # 單字和字頻處理
                     for base_char, anno_str in zip(base_chars, anno_strs):
@@ -39,7 +44,8 @@ def load_mapping(font, csv_file):
                             char_cnt[base_char][anno_str] += weight 
                             
                             # 由於我們不再限制變體數量，這個檢查可以保持原樣或移除
-                            if len(char_cnt[base_char]) > 20: 
+                            if len(char_cnt[base_char]) > 10: 
+                                # print("Potential missed annotation in typing for '"+base_char+"' ("+anno_str+")")
                                 pass 
     
     # --- 排序邏輯實現 ---
