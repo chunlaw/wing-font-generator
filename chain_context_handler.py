@@ -3,7 +3,7 @@ from fontTools.otlLib import builder
 from utils import get_glyph_name_by_char, buildChainSubRuleSet, buildCoverage, chunk, buildDefaultLangSys
 
 # 設定變體上限為 256 (0-255) 根據實際情況調整
-MAX_VARIANT_LOOKUPS = 30
+MAX_VARIANT_LOOKUPS = 9
 
 # 遍歷 ChainSets 的塊 (每塊最多 10-1000 個字形) 根據實際情況調整 
 MAX_chainSets_chunk = 10
