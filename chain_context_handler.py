@@ -18,6 +18,12 @@ def buildChainSub(output_font, word_mapping, char_mapping):
         singleSubBuilders.append(builder.SingleSubstBuilder(output_font, None))
 
     # 初始化一個字典，按詞組長度儲存規則集
+    # 預先整理 char_mapping 以便快速查找字元的所有變體註音
+    char_all_annos = {}
+    for char, anno_map in char_mapping.items():
+        # anno_map 的結構: {'註音A': (glyph_name, variant_index), '註音B': ...}
+        char_all_annos[char] = list(anno_map.keys())
+        
     chainSets_by_length = {}
     
     def word_sort_key_for_chain_sub(item):
@@ -54,7 +60,13 @@ def buildChainSub(output_font, word_mapping, char_mapping):
                 continue
                 
             if variant >= MAX_VARIANT_LOOKUPS:
-                print(f"Warning: Variant index {variant} for char '{char}' is too high (> {MAX_VARIANT_LOOKUPS - 1}), skipping.")
+                # --- [MODIFIED] 增加列印所有註音的邏輯 ---
+                all_annos = char_all_annos.get(char, [])
+                print(f"--- ⚠️ Skip Variant Rule ---")
+                print(f"Char: '{char}', Current Variant Index: {variant} (Too high, Max is {MAX_VARIANT_LOOKUPS - 1})")
+                print(f"Word context: '{word}' ('{" ".join(anno_strs)}')")
+                print(f"ALL ANNOTATIONS for '{char}' ({len(all_annos)} total): {' '.join(all_annos)}")
+                # --------------------------------------------
                 lookup_builders.append(None)
                 continue
             
