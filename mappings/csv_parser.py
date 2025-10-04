@@ -36,7 +36,7 @@ def load_mapping(font, csv_file):
                                     raw_word_entries.append((base_chars, anno_strs, weight))
                             else:
                                 # 新增的列印信息：大於 MAX_base_chars 的詞組跳過
-                                print(f"跳過詞組: '{base_chars}'，因其長度 {len(base_chars)} 大於最大限制 MAX_base_chars ({MAX_base_chars})。")
+                                print(f"Skip, {len(base_chars)} is too long (>{MAX_base_chars})， word'{base_chars}'。")
                     
                     # 單字和字頻處理
                     for base_char, anno_str in zip(base_chars, anno_strs):
