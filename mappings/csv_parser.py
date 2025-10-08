@@ -1,10 +1,12 @@
-# csv_parser.py: load_mapping 函數的最終版本 (無限制)
+# csv_parser.py: load_mapping 函數的最終更正版
 
 import csv
 from collections import defaultdict 
 
 # 只保留長度 <= 7 的詞組 根據實際情況調整
 MAX_base_chars = 7 
+# 每個單字的最大註音變體數量限制
+MAX_CHAR_VARIANTS = 10
 
 def load_mapping(font, csv_file):
     cmap = font.getBestCmap()
@@ -27,44 +29,53 @@ def load_mapping(font, csv_file):
                     continue
                 
                 if len(base_chars) == len(anno_strs):
-                    if len(base_chars) == len(anno_strs):
-                        if len(base_chars) > 1:
-                            if len(base_chars) <= MAX_base_chars: # 只保留長度 <= MAX_base_chars 的詞組
-                                MIN_WEIGHT = 1  # 可調整權重閾值
-                                if weight >= MIN_WEIGHT:
-                                    # 詞組處理：儲存詞組、拼音列表和權重
-                                    raw_word_entries.append((base_chars, anno_strs, weight))
-                            else:
-                                # 新增的列印信息：大於 MAX_base_chars 的詞組跳過
-                                print(f"Skip, {len(base_chars)} is too long (>{MAX_base_chars})， word'{base_chars}'。")
-                    
+                    if len(base_chars) > 1:
+                        if len(base_chars) <= MAX_base_chars: # 只保留長度 <= MAX_base_chars 的詞組
+                            MIN_WEIGHT = 1  # 可調整權重閾值
+                            if weight >= MIN_WEIGHT:
+                                # 詞組處理：儲存詞組、拼音列表和權重
+                                raw_word_entries.append((base_chars, anno_strs, weight))
+                        else:
+                            # 新增的列印信息：大於 MAX_base_chars 的詞組跳過
+                            print(f"Skip, {len(base_chars)} is too long (>{MAX_base_chars})， word'{base_chars}'。")
+                
                     # 單字和字頻處理
                     for base_char, anno_str in zip(base_chars, anno_strs):
                         if anno_str != '':
-                            char_cnt[base_char][anno_str] += weight 
+                            # --- 核心修改 (更正後邏輯) ---
+                            # 此處不再限制數量，收集所有註音及其權重
+                            char_cnt[base_char][anno_str] += weight
                             
-                            # 由於我們不再限制變體數量，這個檢查可以保持原樣或移除
-                            if len(char_cnt[base_char]) > 10: 
-                                # print("Potential missed annotation in typing for '"+base_char+"' ("+anno_str+")")
-                                pass 
-    
-    # --- 排序邏輯實現 ---
-    
-# ... 在 load_mapping 函數中 ...
+    # --- 排序與截斷邏輯實現 ---
     char_mapping_raw = {}
     for char, cnts in char_cnt.items():
-        # --- 舊的排序邏輯 (請替換掉這一行) ---
-        # sorted_cnts = sorted(cnts.items(), key=lambda item: (-item[1], item[0]))
-        
-        # --- 新的兩步排序邏輯 (使用這兩行) ---
         # 1. 次要排序：按拼音 (item[0]) 降序
         sorted_by_pinyin = sorted(cnts.items(), key=lambda item: item[0], reverse=True)
         # 2. 主要排序：按權重 (item[1]) 降序 (穩定排序)
         sorted_cnts = sorted(sorted_by_pinyin, key=lambda item: item[1], reverse=True)
         
-        char_mapping_raw[char] = {k: None for k, v in sorted_cnts}
-# ...
+        # --- 核心修改 (更正後邏輯) ---
+        # 在排序後，如果變體數量超過限制，則進行截斷並打印信息
+        if len(sorted_cnts) > MAX_CHAR_VARIANTS:
+            kept_variants = sorted_cnts[:MAX_CHAR_VARIANTS]
+            discarded_variants = sorted_cnts[MAX_CHAR_VARIANTS:]
+            
+            # 格式化打印信息以便追蹤
+            kept_str = [f"{item[0]} (weight:{item[1]})" for item in kept_variants]
+            discarded_str = [f"{item[0]} (weight:{item[1]})" for item in discarded_variants]
+            
+            # print(f"Warning: 字元 '{char}' 共有 {len(sorted_cnts)} 個註音變體，超過 {MAX_CHAR_VARIANTS} 的上限。")
+            # print(f"  將保留權重最高的 {len(kept_variants)} 個: {', '.join(kept_str)}")
+            # print(f"  將捨棄其餘 {len(discarded_variants)} 個: {', '.join(discarded_str)}")
+            print(f" Skip, {len(discarded_variants)} annos of '{char}': {', '.join(discarded_str)}, too high {len(sorted_cnts)}>{MAX_CHAR_VARIANTS}, Keep {len(kept_variants)} : {', '.join(kept_str)}")
+            # print(f"Skip, '{char}', Variant (Too high {variant}>{MAX_VARIANT_LOOKUPS - 1}), ({len(all_annos)} total): {' '.join(all_annos)}, '{word}' ('{" ".join(anno_strs)}')")
+            
+            # 使用截斷後的列表繼續
+            sorted_cnts = kept_variants
+        # --- 修改結束 ---
         
+        char_mapping_raw[char] = {k: None for k, v in sorted_cnts}
+
     # 2. 整理 word_mapping (詞組上下文排序)
     def word_sort_key(item):
         word, anno_strs, weight = item
