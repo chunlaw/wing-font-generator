@@ -26,20 +26,19 @@ def buildChainSub(output_font, word_mapping, char_mapping):
         
     chainSets_by_length = {}
     
-    def word_sort_key_for_chain_sub(item):
-        word, anno_strs = item
-        return (-len(word), " ".join(anno_strs))
-
-    # 預排序 word_mapping 的項目
-    sorted_words = sorted(word_mapping.items(), key=word_sort_key_for_chain_sub)
+    # --- [核心修改] ---
+    # 不再需要內部排序函數，因為 word_mapping 已經在 load_mapping 中被正確排序。
+    # 我們直接使用 word_mapping 的順序來構建規則。
+    # 這確保了 GSUB 規則的順序與 word_mapping 的排序標準完全一致。
+    
+    # 將字典項目轉為列表，以保持順序
+    sorted_words = list(word_mapping.items())
     
     # 遍歷排序後的詞組映射
     for word, anno_strs in sorted_words:
         if len(word) <= 1:
             continue
             
-        # [MODIFIED] 移除了 needs_chain_sub 邏輯，現在為所有詞組創建規則
-        
         lookup_builders = []
         
         for i, char in enumerate(word):
@@ -49,29 +48,18 @@ def buildChainSub(output_font, word_mapping, char_mapping):
                 continue
             
             # 假設 char_mapping 的結構是 ('glyph_name', variant_index)
-            # 如果不是，請根據實際情況調整下面這行
             target_glyph_name, variant = char_mapping[char][anno_str]
             
-            # [MODIFIED] 核心修改：不再檢查 variant != 0
             original_glyph_name = get_glyph_name_by_char(output_font, char)
             
             if not isinstance(original_glyph_name, str) or original_glyph_name not in output_font.getGlyphOrder():
                 lookup_builders.append(None)
                 continue
                 
-            # if variant >= MAX_VARIANT_LOOKUPS:
-                # --- [MODIFIED] 增加列印所有註音的邏輯 ---
-                # all_annos = char_all_annos.get(char, [])
-                # print(f"Skip, '{char}', Variant (Too high {variant}>{MAX_VARIANT_LOOKUPS - 1}), ({len(all_annos)} total): {' '.join(all_annos)}, '{word}' ('{" ".join(anno_strs)}')")
-                # lookup_builders.append(None)
-                # continue
-            
-            # [MODIFIED & UNINDENTED] 即使 variant 是 0，也填充替換信息
-            # target_glyph_name 是替換字形名稱，之前您的代碼中是 '_'
+            # 即使 variant 是 0，也填充替換信息
             singleSubBuilders[variant].mapping[original_glyph_name] = target_glyph_name
             lookup_builders.append(variant)
             
-        # [UNINDENTED] 這部分代碼塊現在對所有詞組執行
         initial_glyph = get_glyph_name_by_char(output_font, word[0])
         if initial_glyph is None or not isinstance(initial_glyph, str):
             continue
@@ -101,7 +89,7 @@ def buildChainSub(output_font, word_mapping, char_mapping):
     
     current_lookup_index = len(gsub.LookupList.Lookup)
     
-    # [MODIFIED] 循環從 0 開始，以包含 variant 0 (默認發音) 的 lookup
+    # 循環從 0 開始，以包含 variant 0 (默認發音) 的 lookup
     for i in range(0, MAX_VARIANT_LOOKUPS):
         if len(singleSubBuilders[i].mapping) > 0:
             lookup = singleSubBuilders[i].build()
@@ -127,6 +115,8 @@ def buildChainSub(output_font, word_mapping, char_mapping):
                         new_lookup_indices.append(None)
                 chain['lookupIndex'] = new_lookup_indices
             
+            # [註] 此處的排序是為了優化 OpenType 表的內部結構，
+            # 而不是為了決定詞組的應用優先級。優先級已由 sorted_words 的全局順序決定。
             chainSet.sort(key=lambda chain: (-len(chain['input']), chain['_debug']))
 
 
@@ -150,7 +140,7 @@ def buildChainSub(output_font, word_mapping, char_mapping):
     
     print("Done ChainContextSubst")
 
-# --- 輔助函數 (與最終確認的版本一致) ---
+# --- 輔助函數 ---
 
 def insert_chain_context_subst_into_gsub_logic(output_font, rule_groups_to_write, chain_lookup_index):
     gsub = output_font["GSUB"].table
