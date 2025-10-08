@@ -3,7 +3,7 @@ from fontTools.otlLib import builder
 from utils import get_glyph_name_by_char, buildChainSubRuleSet, buildCoverage, chunk, buildDefaultLangSys
 
 # 設定變體上限為 256 (0-255) 根據實際情況調整
-MAX_VARIANT_LOOKUPS = 9
+MAX_VARIANT_LOOKUPS = 10
 
 # 遍歷 ChainSets 的塊 (每塊最多 10-1000 個字形) 根據實際情況調整 
 MAX_chainSets_chunk = 10
@@ -59,16 +59,12 @@ def buildChainSub(output_font, word_mapping, char_mapping):
                 lookup_builders.append(None)
                 continue
                 
-            if variant >= MAX_VARIANT_LOOKUPS:
+            # if variant >= MAX_VARIANT_LOOKUPS:
                 # --- [MODIFIED] 增加列印所有註音的邏輯 ---
-                all_annos = char_all_annos.get(char, [])
-                print(f"--- ⚠️ Skip Variant Rule ---")
-                print(f"Char: '{char}', Current Variant Index: {variant} (Too high, Max is {MAX_VARIANT_LOOKUPS - 1})")
-                print(f"Word context: '{word}' ('{" ".join(anno_strs)}')")
-                print(f"ALL ANNOTATIONS for '{char}' ({len(all_annos)} total): {' '.join(all_annos)}")
-                # --------------------------------------------
-                lookup_builders.append(None)
-                continue
+                # all_annos = char_all_annos.get(char, [])
+                # print(f"Skip, '{char}', Variant (Too high {variant}>{MAX_VARIANT_LOOKUPS - 1}), ({len(all_annos)} total): {' '.join(all_annos)}, '{word}' ('{" ".join(anno_strs)}')")
+                # lookup_builders.append(None)
+                # continue
             
             # [MODIFIED & UNINDENTED] 即使 variant 是 0，也填充替換信息
             # target_glyph_name 是替換字形名稱，之前您的代碼中是 '_'
