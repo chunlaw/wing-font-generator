@@ -1,12 +1,25 @@
 # csv_parser.py: load_mapping 函數的最終更正版
 
 import csv
-from collections import defaultdict 
+from collections import defaultdict
+import re
 
 # 只保留長度 <= 7 的詞組 根據實際情況調整
-MAX_base_chars = 7 
+MAX_base_chars = 7
 # 每個單字的最大註音變體數量限制
 MAX_CHAR_VARIANTS = 10
+
+# --- 輔助函數：從註音字串中提取聲調 ---
+def get_tone(anno_str):
+    """
+    從註音字串末尾提取數字聲調。
+    例如 'bo1' -> 1, 'a6' -> 6。
+    如果沒有聲調，則視為輕聲，返回 5。
+    """
+    match = re.search(r'(\d)$', anno_str)
+    if match:
+        return int(match.group(1))
+    return 5 # 輕聲或無聲調，給予預設值以便排序
 
 def load_mapping(font, csv_file):
     cmap = font.getBestCmap()
@@ -42,47 +55,51 @@ def load_mapping(font, csv_file):
                     # 單字和字頻處理
                     for base_char, anno_str in zip(base_chars, anno_strs):
                         if anno_str != '':
-                            # --- 核心修改 (更正後邏輯) ---
-                            # 此處不再限制數量，收集所有註音及其權重
                             char_cnt[base_char][anno_str] += weight
                             
-    # --- 排序與截斷邏輯實現 ---
+    # --- char_mapping 的排序與截斷邏輯 ---
     char_mapping_raw = {}
     for char, cnts in char_cnt.items():
-        # 1. 次要排序：按拼音 (item[0]) 降序
-        sorted_by_pinyin = sorted(cnts.items(), key=lambda item: item[0], reverse=True)
-        # 2. 主要排序：按權重 (item[1]) 降序 (穩定排序)
-        sorted_cnts = sorted(sorted_by_pinyin, key=lambda item: item[1], reverse=True)
+        # 排序標準: 權重降序 -> 聲調降序 -> 註音降序
+        sorted_cnts = sorted(
+            cnts.items(),
+            key=lambda item: (item[1], get_tone(item[0]), item[0]),
+            reverse=True
+        )
         
-        # --- 核心修改 (更正後邏輯) ---
         # 在排序後，如果變體數量超過限制，則進行截斷並打印信息
         if len(sorted_cnts) > MAX_CHAR_VARIANTS:
             kept_variants = sorted_cnts[:MAX_CHAR_VARIANTS]
             discarded_variants = sorted_cnts[MAX_CHAR_VARIANTS:]
             
-            # 格式化打印信息以便追蹤
             kept_str = [f"{item[0]} (weight:{item[1]})" for item in kept_variants]
             discarded_str = [f"{item[0]} (weight:{item[1]})" for item in discarded_variants]
             
-            # print(f"Warning: 字元 '{char}' 共有 {len(sorted_cnts)} 個註音變體，超過 {MAX_CHAR_VARIANTS} 的上限。")
-            # print(f"  將保留權重最高的 {len(kept_variants)} 個: {', '.join(kept_str)}")
-            # print(f"  將捨棄其餘 {len(discarded_variants)} 個: {', '.join(discarded_str)}")
-            print(f" Skip, {len(discarded_variants)} annos of '{char}': {', '.join(discarded_str)}, too high {len(sorted_cnts)}>{MAX_CHAR_VARIANTS}, Keep {len(kept_variants)} : {', '.join(kept_str)}")
-            # print(f"Skip, '{char}', Variant (Too high {variant}>{MAX_VARIANT_LOOKUPS - 1}), ({len(all_annos)} total): {' '.join(all_annos)}, '{word}' ('{" ".join(anno_strs)}')")
+            print(f"Skip, {len(discarded_variants)} annos of '{char}': {', '.join(discarded_str)}, too high {len(sorted_cnts)}>{MAX_CHAR_VARIANTS}, Keep {len(kept_variants)} : {', '.join(kept_str)}")
             
-            # 使用截斷後的列表繼續
             sorted_cnts = kept_variants
-        # --- 修改結束 ---
         
         char_mapping_raw[char] = {k: None for k, v in sorted_cnts}
 
-    # 2. 整理 word_mapping (詞組上下文排序)
-    def word_sort_key(item):
-        word, anno_strs, weight = item
-        return (-len(word), -weight, " ".join(anno_strs))
-        
-    sorted_word_entries = sorted(raw_word_entries, key=word_sort_key)
+    # --- [核心修正] word_mapping 的排序邏輯 ---
+    # 由於排序標準包含升序和降序，我們使用穩定排序（stable sort）分步進行
+    # 排序順序與優先級相反：從最低優先級的標準開始排
+    # 最終排序標準: 詞組長度降序 -> 權重降序 -> 聲調升序 -> 註音降序
+
+    # 步驟 1. 按第四標準「註音降序」排序
+    temp_sorted = sorted(raw_word_entries, key=lambda item: " ".join(item[1]), reverse=True)
     
+    # 步驟 2. 按第三標準「聲調升序」排序 (穩定排序)
+    temp_sorted = sorted(temp_sorted, key=lambda item: tuple(get_tone(s) for s in item[1]))
+    
+    # 步驟 3. 按第二標準「權重降序」排序 (穩定排序)
+    temp_sorted = sorted(temp_sorted, key=lambda item: item[2], reverse=True)
+    
+    # 步驟 4. 按第一標準「詞組長度降序」排序 (穩定排序)，得到最終結果
+    sorted_word_entries = sorted(temp_sorted, key=lambda item: len(item[0]), reverse=True)
+    
+    # 由於 Python 3.7+ 的字典會保持插入順序，
+    # 這裡生成的 word_mapping_final 將會是已經排序好的。
     word_mapping_final = {}
     for word, anno_strs, _ in sorted_word_entries:
         if word not in word_mapping_final:
