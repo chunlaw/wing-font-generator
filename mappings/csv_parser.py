@@ -73,9 +73,39 @@ def load_mapping(font, csv_file):
             discarded_variants = sorted_cnts[MAX_CHAR_VARIANTS:]
             
             kept_str = [f"{item[0]} (weight:{item[1]})" for item in kept_variants]
-            discarded_str = [f"{item[0]} (weight:{item[1]})" for item in discarded_variants]
+            # discarded_str = [f"{item[0]} (weight:{item[1]})" for item in discarded_variants] # 舊的行
             
-            print(f"Skip, {len(discarded_variants)} annos of '{char}': {', '.join(discarded_str)}, too high {len(sorted_cnts)}>{MAX_CHAR_VARIANTS}, Keep {len(kept_variants)} : {', '.join(kept_str)}")
+            # --- [新增代碼] ---
+            # 為了找出是哪些詞組使用了這些被丟棄的發音
+            discarded_annos_set = {item[0] for item in discarded_variants} # 取得所有被丟棄的發音 (e.g., {'di2', 'di4'})
+            problematic_entries = defaultdict(set) # key: 被丟棄的發音, value: set(包含該發音的詞組)
+            
+            # 遍歷所有原始詞條來查找來源
+            for word, annos, _ in raw_word_entries:
+                for i, c in enumerate(word):
+                    if c == char and annos[i] in discarded_annos_set:
+                        # 這個詞 (word) 的第 i 個字 (c) 是當前處理的字 (char)
+                        # 且其發音 (annos[i]) 是被丟棄的發音之一
+                        problematic_entries[annos[i]].add(word)
+
+            # 構建更詳細的 discarded_str
+            discarded_str_detailed = []
+            for anno, weight in discarded_variants:
+                entry_str = f"{anno} (weight:{weight})"
+                if anno in problematic_entries:
+                    # 為了避免訊息太長，只顯示幾個例子，最多3個
+                    example_words = list(problematic_entries[anno])[:3]
+                    examples_str = ", ".join([f"'{w}'" for w in example_words])
+                    if len(problematic_entries[anno]) > 3:
+                        examples_str += ", ..." # 如果來源詞組太多，用 ... 省略
+                    entry_str += f" [found in: {examples_str}]"
+                discarded_str_detailed.append(entry_str)
+            # --- [新增代碼結束] ---
+            
+            
+            # --- [修改後的 print] ---
+            # 使用新構建的 discarded_str_detailed 替換舊的 discarded_str
+            print(f"Skip, {len(discarded_variants)} annos of '{char}': {', '.join(discarded_str_detailed)}, too high {len(sorted_cnts)}>{MAX_CHAR_VARIANTS}, Keep {len(kept_variants)} : {', '.join(kept_str)}")
             
             sorted_cnts = kept_variants
         
