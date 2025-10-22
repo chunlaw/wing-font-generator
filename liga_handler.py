@@ -21,15 +21,9 @@ def buildLiga(output_font, char_mapping: Dict[str, Dict[str, Tuple[str, int]]]):
     if not number_glyph_names:
         print("Warning: Cannot find glyphs for numbers 0-9 in the font. Skipping number-based liga rules.")
 
-    # [新規則] 1b. 獲取 '丅' 字元的字形名稱
-    hen_char = '丅'
-    hen_glyph_name = get_glyph_name_by_char(output_font, hen_char)
-    if not hen_glyph_name:
-        print("Warning: Cannot find glyph for '丅' in the font. Skipping '丅'-based liga rules.")
-
-    # 如果兩種規則的觸發字元都不存在，則直接返回
-    if not number_glyph_names and not hen_glyph_name:
-        print("Error: No trigger glyphs (0-9 or '丅') found. Skipping buildLiga.")
+    # 如果沒有數字字形則直接返回（已刪除 '字+多個丅' 的規則）
+    if not number_glyph_names:
+        print("Error: No trigger glyphs (0-9) found. Skipping buildLiga.")
         return
 
     # 2. 遍歷數據塊，為每個塊建立一個 Lookup Subtable
@@ -70,29 +64,6 @@ def buildLiga(output_font, char_mapping: Dict[str, Dict[str, Tuple[str, int]]]):
                         # 如果找到了目標字形，則建立連字規則
                         if target_glyph:
                             ligaBuilder.ligatures[(base_glyph, num_glyph_name)] = target_glyph
-
-                # --- [規則二] 建立 '字+丅...' 的連字規則 ---
-                if hen_glyph_name:
-                    # 內層迴圈：為每個基礎字形創建 1-10 個 '丅' 的連字規則
-                    for num_hens in range(1, 11): # 代表 1 到 10 個 '丅'
-                        target_glyph_for_hen = None
-                        # '丅' 的數量 (num_hens) 映射到數字索引
-                        # 1個丅 -> 數字0, 2個丅 -> 數字1, ..., 10個丅 -> 數字9
-                        target_index = num_hens - 1
-
-                        if target_index == 0:
-                            # 規則: (任何變體, '丅') -> 預設字形
-                            target_glyph_for_hen = default_glyph_name
-                        else:
-                            # 規則: (任何變體, N 個 '丅') -> 索引為 N-1 的變體
-                            target_glyph_for_hen = index_to_glyph_map.get(target_index)
-
-                        # 如果找到了目標字形，則建立連字規則
-                        if target_glyph_for_hen:
-                            # 建立輸入序列，例如 (base_glyph, '丅', '丅')
-                            input_sequence_components = [base_glyph]
-                            input_sequence_components.extend([hen_glyph_name] * num_hens)
-                            ligaBuilder.ligatures[tuple(input_sequence_components)] = target_glyph_for_hen
 
 
         # --- 後續的 GSUB 表寫入邏輯 (與之前版本相同) ---
