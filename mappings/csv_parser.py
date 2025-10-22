@@ -1,4 +1,4 @@
-# csv_parser.py: load_mapping 函數的最終更正版
+# csv_parser.py: load_mapping 函數的最終更正版 (支援來源追蹤)
 
 import csv
 from collections import defaultdict
@@ -25,7 +25,13 @@ def load_mapping(font, csv_file):
     cmap = font.getBestCmap()
     word_mapping = {}
     char_cnt = defaultdict(lambda: defaultdict(int))
+    
+    # raw_word_entries 用於生成最終的 "詞組" 映射 (word_mapping)
     raw_word_entries = []
+    
+    # --- [新增] ---
+    # all_csv_entries 用於追蹤所有條目(單字+詞組)，以便在丟棄註音時報告來源
+    all_csv_entries = []
     
     with open(csv_file, 'r', encoding='utf-8') as f:
         reader = csv.reader(f)
@@ -42,11 +48,16 @@ def load_mapping(font, csv_file):
                     continue
                 
                 if len(base_chars) == len(anno_strs):
+                    
+                    # --- [修改] ---
+                    # 需求 1：收集所有 CSV 條目 (單字和詞組) 以便後續追蹤來源
+                    all_csv_entries.append((base_chars, anno_strs, weight))
+                    
                     if len(base_chars) > 1:
                         if len(base_chars) <= MAX_base_chars: # 只保留長度 <= MAX_base_chars 的詞組
                             MIN_WEIGHT = 1  # 可調整權重閾值
                             if weight >= MIN_WEIGHT:
-                                # 詞組處理：儲存詞組、拼音列表和權重
+                                # 詞組處理：儲存詞組、拼音列表和權重 (這部分保持不變，用於生成 word_mapping)
                                 raw_word_entries.append((base_chars, anno_strs, weight))
                         else:
                             # 新增的列印信息：大於 MAX_base_chars 的詞組跳過
@@ -73,15 +84,14 @@ def load_mapping(font, csv_file):
             discarded_variants = sorted_cnts[MAX_CHAR_VARIANTS:]
             
             kept_str = [f"{item[0]} (weight:{item[1]})" for item in kept_variants]
-            # discarded_str = [f"{item[0]} (weight:{item[1]})" for item in discarded_variants] # 舊的行
             
-            # --- [新增代碼] ---
-            # 為了找出是哪些詞組使用了這些被丟棄的發音
+            # --- [修改] ---
+            # 為了找出是哪些詞組 (或單字) 使用了這些被丟棄的發音
             discarded_annos_set = {item[0] for item in discarded_variants} # 取得所有被丟棄的發音 (e.g., {'di2', 'di4'})
-            problematic_entries = defaultdict(set) # key: 被丟棄的發音, value: set(包含該發音的詞組)
+            problematic_entries = defaultdict(set) # key: 被丟棄的發音, value: set(包含該發音的詞組或單字)
             
-            # 遍歷所有原始詞條來查找來源
-            for word, annos, _ in raw_word_entries:
+            # 需求 2：遍歷所有 CSV 條目 (all_csv_entries) 來查找來源，而不是只查詞組 (raw_word_entries)
+            for word, annos, _ in all_csv_entries: # <--- [核心修改]
                 for i, c in enumerate(word):
                     if c == char and annos[i] in discarded_annos_set:
                         # 這個詞 (word) 的第 i 個字 (c) 是當前處理的字 (char)
@@ -100,7 +110,7 @@ def load_mapping(font, csv_file):
                         examples_str += ", ..." # 如果來源詞組太多，用 ... 省略
                     entry_str += f" [found in: {examples_str}]"
                 discarded_str_detailed.append(entry_str)
-            # --- [新增代碼結束] ---
+            # --- [修改結束] ---
             
             
             # --- [修改後的 print] ---
@@ -112,10 +122,8 @@ def load_mapping(font, csv_file):
         char_mapping_raw[char] = {k: None for k, v in sorted_cnts}
 
     # --- [核心修正] word_mapping 的排序邏輯 ---
-    # 由於排序標準包含升序和降序，我們使用穩定排序（stable sort）分步進行
-    # 排序順序與優先級相反：從最低優先級的標準開始排
-    # 最終排序標準: 詞組長度降序 -> 權重降序 -> 聲調升序 -> 註音降序
-
+    # (這部分不需要修改，它仍然正確地使用 raw_word_entries 來生成 "詞組" 映射)
+    
     # 步驟 1. 按第四標準「註音降序」排序
     temp_sorted = sorted(raw_word_entries, key=lambda item: " ".join(item[1]), reverse=True)
     
