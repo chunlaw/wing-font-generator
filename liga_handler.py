@@ -19,11 +19,28 @@ def buildLiga(output_font, char_mapping: Dict[str, Dict[str, Tuple[str, int]]]):
             number_glyph_names[i] = glyph_name
             
     if not number_glyph_names:
-        print("Warning: Cannot find glyphs for numbers 0-9 in the font. Skipping number-based liga rules.")
+        print("Warning: Cannot find glyphs for numbers 0-9 in the font. Number-based liga rules will be skipped if absent.")
 
-    # 如果沒有數字字形則直接返回（已刪除 '字+多個丅' 的規則）
-    if not number_glyph_names:
-        print("Error: No trigger glyphs (0-9) found. Skipping buildLiga.")
+    # 1b. 獲取 '丅' 字元的字形名稱（單個丅作為 trigger）
+    hen_char = '丅'
+    hen_glyph_name = get_glyph_name_by_char(output_font, hen_char)
+    if not hen_glyph_name:
+        print("Warning: Cannot find glyph for '丅' in the font. '丅'+chinese-numeral fallback rules will be skipped if absent.")
+
+    # 1c. 獲取中文數字字元的字形名稱映射 (零 一 二 三 四 五 六 七 八 九)
+    chinese_numerals = ['零','一','二','三','四','五','六','七','八','九']
+    chinese_numeral_glyphs: Dict[int, str] = {}
+    for idx, ch in enumerate(chinese_numerals):
+        glyph = get_glyph_name_by_char(output_font, ch)
+        if glyph:
+            chinese_numeral_glyphs[idx] = glyph
+
+    if not chinese_numeral_glyphs:
+        print("Warning: Cannot find any Chinese numeral glyphs (零-九) in the font. '丅'+chinese-numeral fallback rules will be skipped if absent.")
+
+    # 如果既沒有阿拉伯數字，也沒有丅+中文數字可用，則提前返回
+    if not number_glyph_names and (not hen_glyph_name or not chinese_numeral_glyphs):
+        print("Error: No trigger glyphs found for either direct numbers or '丅'+chinese numerals. Skipping buildLiga.")
         return
 
     # 2. 遍歷數據塊，為每個塊建立一個 Lookup Subtable
@@ -64,6 +81,22 @@ def buildLiga(output_font, char_mapping: Dict[str, Dict[str, Tuple[str, int]]]):
                         # 如果找到了目標字形，則建立連字規則
                         if target_glyph:
                             ligaBuilder.ligatures[(base_glyph, num_glyph_name)] = target_glyph
+
+                # --- [新增備用規則] 建立 '字+丅+中文數字' 的連字規則 ---
+                # 只使用單個丅作為 trigger，然後一個中文數字作為索引
+                if hen_glyph_name and chinese_numeral_glyphs:
+                    for num_index, numeral_glyph_name in chinese_numeral_glyphs.items():
+                        target_glyph_for_chinese_num = None
+                        if num_index == 0:
+                            # 規則: (任何變體, '丅', '零') -> 預設字形
+                            target_glyph_for_chinese_num = default_glyph_name
+                        else:
+                            # 規則: (任何變體, '丅', 中文數字) -> 對應索引的變體
+                            target_glyph_for_chinese_num = index_to_glyph_map.get(num_index)
+
+                        if target_glyph_for_chinese_num:
+                            input_seq = (base_glyph, hen_glyph_name, numeral_glyph_name)
+                            ligaBuilder.ligatures[input_seq] = target_glyph_for_chinese_num
 
 
         # --- 後續的 GSUB 表寫入邏輯 (與之前版本相同) ---
