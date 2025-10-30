@@ -26,27 +26,40 @@ jobs:
           pip install -r ./requirements.txt
       - name: Generate Fonts
         run: |
+          mkdir -p outputs
           set -o xtrace
-          python wing-font.py -opt -f ChironSungHK-Noto-lshk -i input_fonts/ChironSungHK-R.ttf -a input_fonts/NotoSerif-Regular.ttf -m mappings/canto-lshk.csv -o ChironSungHK-Noto-lshk -as 0.13
-          python wing-font.py -opt -f ChironSungHK-Noto-yale -i input_fonts/ChironSungHK-R.ttf -a input_fonts/NotoSerif-Regular.ttf -m mappings/canto-yale.csv -o ChironSungHK-Noto-yale -as 0.13
-          python wing-font.py -opt -f ChironSungHK-Noto-chishima -i input_fonts/ChironSungHK-R.ttf -a input_fonts/NotoSerif-Regular.ttf -m mappings/canto-chishima.csv -o ChironSungHK-Noto-chishima -as 0.13
-          python wing-font.py -opt -f ChironSungHK-Noto-guangdong -i input_fonts/ChironSungHK-R.ttf -a input_fonts/NotoSerif-Regular.ttf -m mappings/canto-guangdong.csv -o ChironSungHK-Noto-guangdong -as 0.13
-          python wing-font.py -opt -f ChironSungHK-Noto-lau -i input_fonts/ChironSungHK-R.ttf -a input_fonts/NotoSerif-Regular.ttf -m mappings/canto-lau.csv -o ChironSungHK-Noto-lau -as 0.13
-          python wing-font.py -f ChironSungHK-cangjie -i input_fonts/ChironSungHK-R.ttf -a input_fonts/ChironSungHK-R.ttf -m mappings/cangjie.csv -o ChironSungHK-cangjie -as 0.25
-          python wing-font.py -opt -f ChironSungHK-Noto-lshk-It -i input_fonts/ChironSungHK-R-It.ttf -a input_fonts/NotoSerif-Regular.ttf -m mappings/canto-lshk.csv -o ChironSungHK-Noto-lshk-It -as 0.13
-          python wing-font.py -opt -f ChironSungHK-Noto-yale-It -i input_fonts/ChironSungHK-R-It.ttf -a input_fonts/NotoSerif-Regular.ttf -m mappings/canto-yale.csv -o ChironSungHK-Noto-yale-It -as 0.13
-          python wing-font.py -opt -f ChironSungHK-Noto-chishima-It -i input_fonts/ChironSungHK-R-It.ttf -a input_fonts/NotoSerif-Regular.ttf -m mappings/canto-chishima.csv -o ChironSungHK-Noto-chishima-It -as 0.13
-          python wing-font.py -opt -f ChironSungHK-Noto-guangdong-It -i input_fonts/ChironSungHK-R-It.ttf -a input_fonts/NotoSerif-Regular.ttf -m mappings/canto-guangdong.csv -o ChironSungHK-Noto-guangdong-It -as 0.13
-          python wing-font.py -opt -f ChironSungHK-Noto-lau-It -i input_fonts/ChironSungHK-R-It.ttf -a input_fonts/NotoSerif-Regular.ttf -m mappings/canto-lau.csv -o ChironSungHK-Noto-lau-It -as 0.13
-          python wing-font.py -f ChironSungHK-cangjie-It -i input_fonts/ChironSungHK-R-It.ttf -a input_fonts/ChironSungHK-R-It.ttf -m mappings/cangjie.csv -o ChironSungHK-cangjie-It -as 0.25
+          python wing-font.py -v -y 0.3 -opt -f ChironSungHK-Noto-lshk -i input_fonts/ChironSungHK-R.ttf -a input_fonts/NotoSerif-Regular.ttf -m mappings/canto-lshk.csv -o outputs/ChironSungHK-Noto-lshk.invert -as 0.13
+          python wing-font.py -v -y 0.3 -opt -f ChironSungHK-Noto-yale -i input_fonts/ChironSungHK-R.ttf -a input_fonts/NotoSerif-Regular.ttf -m mappings/canto-yale.csv -o outputs/ChironSungHK-Noto-yale.invert -as 0.13
+          python wing-font.py -v -y 0.3 -opt -f ChironSungHK-Noto-chishima -i input_fonts/ChironSungHK-R.ttf -a input_fonts/NotoSerif-Regular.ttf -m mappings/canto-chishima.csv -o outputs/ChironSungHK-Noto-chishima.invert -as 0.13
+          python wing-font.py -v -y 0.3 -opt -f ChironSungHK-Noto-guangdong -i input_fonts/ChironSungHK-R.ttf -a input_fonts/NotoSerif-Regular.ttf -m mappings/canto-guangdong.csv -o outputs/ChironSungHK-Noto-guangdong.invert -as 0.13
+          python wing-font.py -v -y 0.3 -opt -f ChironSungHK-Noto-lau -i input_fonts/ChironSungHK-R.ttf -a input_fonts/NotoSerif-Regular.ttf -m mappings/canto-lau.csv -o outputs/ChironSungHK-Noto-lau.invert -as 0.13
+          python wing-font.py -v -y 0.3 -f ChironSungHK-cangjie -i input_fonts/ChironSungHK-R.ttf -a input_fonts/ChironSungHK-R.ttf -m mappings/cangjie.csv -o outputs/ChironSungHK-cangjie.invert -as 0.25
+          python wing-font.py -v -y 0.3 -opt -f ChironSungHK-Noto-lshk-It -i input_fonts/ChironSungHK-R-It.ttf -a input_fonts/NotoSerif-Regular.ttf -m mappings/canto-lshk.csv -o outputs/ChironSungHK-Noto-lshk-It.invert -as 0.13
+          python wing-font.py -v -y 0.3 -opt -f ChironSungHK-Noto-yale-It -i input_fonts/ChironSungHK-R-It.ttf -a input_fonts/NotoSerif-Regular.ttf -m mappings/canto-yale.csv -o outputs/ChironSungHK-Noto-yale-It.invert -as 0.13
+          python wing-font.py -v -y 0.3 -opt -f ChironSungHK-Noto-chishima-It -i input_fonts/ChironSungHK-R-It.ttf -a input_fonts/NotoSerif-Regular.ttf -m mappings/canto-chishima.csv -o outputs/ChironSungHK-Noto-chishima-It.invert -as 0.13
+          python wing-font.py -v -y 0.3 -opt -f ChironSungHK-Noto-guangdong-It -i input_fonts/ChironSungHK-R-It.ttf -a input_fonts/NotoSerif-Regular.ttf -m mappings/canto-guangdong.csv -o outputs/ChironSungHK-Noto-guangdong-It.invert -as 0.13
+          python wing-font.py -v -y 0.3 -opt -f ChironSungHK-Noto-lau-It -i input_fonts/ChironSungHK-R-It.ttf -a input_fonts/NotoSerif-Regular.ttf -m mappings/canto-lau.csv -o outputs/ChironSungHK-Noto-lau-It.invert -as 0.13
+          python wing-font.py -v -y 0.3 -f ChironSungHK-cangjie-It -i input_fonts/ChironSungHK-R-It.ttf -a input_fonts/ChironSungHK-R-It.ttf -m mappings/cangjie.csv -o outputs/ChironSungHK-cangjie-It.invert -as 0.25
+          python wing-font.py -opt -f ChironSungHK-Noto-lshk -i input_fonts/ChironSungHK-R.ttf -a input_fonts/NotoSerif-Regular.ttf -m mappings/canto-lshk.csv -o outputs/ChironSungHK-Noto-lshk -as 0.13
+          python wing-font.py -opt -f ChironSungHK-Noto-yale -i input_fonts/ChironSungHK-R.ttf -a input_fonts/NotoSerif-Regular.ttf -m mappings/canto-yale.csv -o outputs/ChironSungHK-Noto-yale -as 0.13
+          python wing-font.py -opt -f ChironSungHK-Noto-chishima -i input_fonts/ChironSungHK-R.ttf -a input_fonts/NotoSerif-Regular.ttf -m mappings/canto-chishima.csv -o outputs/ChironSungHK-Noto-chishima -as 0.13
+          python wing-font.py -opt -f ChironSungHK-Noto-guangdong -i input_fonts/ChironSungHK-R.ttf -a input_fonts/NotoSerif-Regular.ttf -m mappings/canto-guangdong.csv -o outputs/ChironSungHK-Noto-guangdong -as 0.13
+          python wing-font.py -opt -f ChironSungHK-Noto-lau -i input_fonts/ChironSungHK-R.ttf -a input_fonts/NotoSerif-Regular.ttf -m mappings/canto-lau.csv -o outputs/ChironSungHK-Noto-lau -as 0.13
+          python wing-font.py -f ChironSungHK-cangjie -i input_fonts/ChironSungHK-R.ttf -a input_fonts/ChironSungHK-R.ttf -m mappings/cangjie.csv -o outputs/ChironSungHK-cangjie -as 0.25
+          python wing-font.py -opt -f ChironSungHK-Noto-lshk-It -i input_fonts/ChironSungHK-R-It.ttf -a input_fonts/NotoSerif-Regular.ttf -m mappings/canto-lshk.csv -o outputs/ChironSungHK-Noto-lshk-It -as 0.13
+          python wing-font.py -opt -f ChironSungHK-Noto-yale-It -i input_fonts/ChironSungHK-R-It.ttf -a input_fonts/NotoSerif-Regular.ttf -m mappings/canto-yale.csv -o outputs/ChironSungHK-Noto-yale-It -as 0.13
+          python wing-font.py -opt -f ChironSungHK-Noto-chishima-It -i input_fonts/ChironSungHK-R-It.ttf -a input_fonts/NotoSerif-Regular.ttf -m mappings/canto-chishima.csv -o outputs/ChironSungHK-Noto-chishima-It -as 0.13
+          python wing-font.py -opt -f ChironSungHK-Noto-guangdong-It -i input_fonts/ChironSungHK-R-It.ttf -a input_fonts/NotoSerif-Regular.ttf -m mappings/canto-guangdong.csv -o outputs/ChironSungHK-Noto-guangdong-It -as 0.13
+          python wing-font.py -opt -f ChironSungHK-Noto-lau-It -i input_fonts/ChironSungHK-R-It.ttf -a input_fonts/NotoSerif-Regular.ttf -m mappings/canto-lau.csv -o outputs/ChironSungHK-Noto-lau-It -as 0.13
+          python wing-font.py -f ChironSungHK-cangjie-It -i input_fonts/ChironSungHK-R-It.ttf -a input_fonts/ChironSungHK-R-It.ttf -m mappings/cangjie.csv -o outputs/ChironSungHK-cangjie-It -as 0.25
 
       - name: create deployment folder
         run: mkdir -p fonts
       - name: cp files into deployment folder
         run: |
           cp \
-          *.ttf \
-          *.woff \
+          outputs/*.ttf \
+          outputs/*.woff \
           CNAME \
           fonts/
       - name: Upload fonts
