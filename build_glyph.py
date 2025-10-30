@@ -5,7 +5,7 @@ from utils import get_glyph_name_by_char
 
 GLYPH_PREFIX = "wingfont"
 
-def generate_glyphs(base_font, anno_font, output_font, mapping, anno_scale=0.15, base_scale=0.75, anno_y_offset=0.8):
+def generate_glyphs(base_font, anno_font, output_font, mapping, anno_scale=0.15, base_scale=0.75, upper_y_offset_ratio=0.8, invert=False):
     output_glyph_name_used = {}
     
     base_glyph_set = base_font.getGlyphSet()
@@ -16,10 +16,14 @@ def generate_glyphs(base_font, anno_font, output_font, mapping, anno_scale=0.15,
     base_glyph_order = base_font.getGlyphOrder()
     
     units_per_em = base_font['head'].unitsPerEm
-    y_offset = round(units_per_em * anno_y_offset)
+    if not invert:
+        base_y_offset = 0
+        anno_y_offset = round(units_per_em * upper_y_offset_ratio)
+    else:
+        base_y_offset = round(units_per_em * upper_y_offset_ratio)
+        anno_y_offset = 0
 
     # --- 第一部分：處理有註音的字形 ---
-    processed_chars = set(mapping.keys())
     processed_glyph_names = set() # 新增：記錄被第一部分處理過的字形名稱
     cnt = 0
     for base_char, anno_strs_dict in mapping.items():
@@ -37,7 +41,6 @@ def generate_glyphs(base_font, anno_font, output_font, mapping, anno_scale=0.15,
         base_advance_width = base_font['hmtx'][glyph_name][0]
             
         for i, anno_str in enumerate(anno_strs_dict.keys()):
-            # ... (這部分剩餘代碼與之前版本相同，為節省篇幅省略)
             if i == 0:
                 new_glyph_name = glyph_name
             else:
@@ -48,7 +51,7 @@ def generate_glyphs(base_font, anno_font, output_font, mapping, anno_scale=0.15,
                 cnt += 1
             
             pen = TTGlyphPen(output_glyph_set)
-            base_glyph_set[glyph_name].draw(TransformPen(pen, (base_scale, 0, 0, base_scale, 0, 0)))
+            base_glyph_set[glyph_name].draw(TransformPen(pen, (base_scale, 0, 0, base_scale, 0, base_y_offset)))
             anno_len = 0
             for char in anno_str:
                 anno_glyph_name = get_glyph_name_by_char(anno_font, char)
@@ -60,7 +63,7 @@ def generate_glyphs(base_font, anno_font, output_font, mapping, anno_scale=0.15,
             for char in anno_str:
                 anno_glyph_name = get_glyph_name_by_char(anno_font, char)
                 if isinstance(anno_glyph_name, str) and anno_glyph_name in anno_glyph_set:
-                    transform = (anno_scale, 0, 0, anno_scale, x_position, y_offset)
+                    transform = (anno_scale, 0, 0, anno_scale, x_position, anno_y_offset)
                     tpen = TransformPen(pen, transform)
                     anno_glyph_set[anno_glyph_name].draw(tpen)
                     
