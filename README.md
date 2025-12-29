@@ -7,6 +7,9 @@ A Python program that can generate font annotation, e.g., Cangjie (倉頡), Cant
 python wing-font.py -opt -i input_fonts/ChironSungHK-R.ttf -a input_fonts/NotoSerif-Regular.ttf -m mappings/canto-lshk.csv -o ChironSungHK-Noto-lshk -as 0.14
 ```
 
+## Know the differences between Jyutping and Yale
+[lingtsi_linguistics](https://www.instagram.com/p/DS0_iMdD-9G/)
+
 ## Contact
 Find me on [IG](https://instagram/wingfont) or [Telegram](https://t.me/wingfont)
 
