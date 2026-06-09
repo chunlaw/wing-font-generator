@@ -1,243 +1,196 @@
-from fontTools.ttLib.tables import otTables
-from fontTools.otlLib import builder
-from utils import get_glyph_name_by_char, buildChainSubRuleSet, buildCoverage, chunk, buildDefaultLangSys
+"""
+chain_context_handler — build the `calt` Chain Contextual Substitution
+that selects the correct variant glyph for each character based on the
+surrounding word.
 
-# 設定變體上限為 256 (0-255) 根據實際情況調整
+Implementation note
+-------------------
+
+The previous version of this file built the GSUB Type 6 (Format 1)
+subtable by hand: instantiating ``otTables.ChainContextSubst``,
+``ChainSubRuleSet``, ``ChainSubRule``, ``SubstLookupRecord``, walking
+``ScriptList`` to register the feature, and chunking rules across
+subtables (``MAX_chainSets_chunk``) to avoid OpenType offset overflow.
+
+That whole apparatus is now replaced by
+``fontTools.otlLib.builder.ChainContextSubstBuilder``, which:
+
+  * Auto-selects the most compact subtable format (1, 2 or 3).
+  * Handles subtable overflow itself via subtable breaks — no manual
+    chunking needed.
+  * Lays out ``SubstLookupRecord`` entries from a flat ``rules`` list of
+    ``ChainContextualRule`` namedtuples.
+
+We still keep ownership of:
+
+  * Building the per-variant ``SingleSubstBuilder`` lookups (one per
+    variant index, 0..MAX_VARIANT_LOOKUPS-1).
+  * Appending the built ``Lookup`` objects onto the existing
+    ``gsub.LookupList`` — feaLib would clobber the source font's 82
+    other lookups, so we deliberately use the lower-level builders and
+    splice in additively instead.
+  * Setting ``lookup_index`` on each SingleSubstBuilder *before* the
+    chain builder's ``build()`` runs; the chain builder reads that
+    attribute to write ``SubstLookupRecord.LookupListIndex`` correctly.
+"""
+
+from fontTools.otlLib.builder import (
+    ChainContextSubstBuilder,
+    ChainContextualRule,
+    SingleSubstBuilder,
+)
+from utils import get_glyph_name_by_char, register_feature_lookup
+
+# Upper bound on the number of distinct annotations any single character
+# can have. Matches the limit enforced by csv_parser.MAX_CHAR_VARIANTS.
+# Variant index 0 is the "default" reading; 1..N-1 are alternates.
 MAX_VARIANT_LOOKUPS = 10
 
-# 遍歷 ChainSets 的塊 (每塊最多 10-1000 個字形) 根據實際情況調整 
-MAX_chainSets_chunk = 10
+# Maximum number of rules per chain-context subtable before we force a
+# subtable break. OpenType subtable offsets are uint16, so any single
+# subtable that compiles to more than ~64KB will overflow. fontTools'
+# ChainContextSubstBuilder *should* recover from such overflows, but a
+# bug in `OTTableWriter.getOverflowErrorRecord` raises AttributeError
+# instead of OTLOffsetOverflowError when the builder is measuring sizes
+# in isolation via `getCompiledSize_` (the OTTableWriter created there
+# has no LookupList ancestor with `repeatIndex` set). Pre-emptively
+# splitting prevents us from ever entering that broken code path.
+#
+# 50 is conservative — a single rule is on the order of 10-20 bytes, so
+# 50 rules per subtable stays comfortably under 1KB and leaves headroom
+# for unusually long-context words. Higher numbers work in normal cases
+# but get punished hard if a single subtable trips the size threshold.
+RULES_PER_SUBTABLE = 50
 
-# --- 請將這整個函數複製並替換掉你文件中的舊版本 ---
+
 def buildChainSub(output_font, word_mapping, char_mapping):
-    gsub = output_font["GSUB"].table
-    
-    # 1. 準備 Lookup Builders (Type 1)
-    singleSubBuilders = []
-    for i in range(0, MAX_VARIANT_LOOKUPS):
-        singleSubBuilders.append(builder.SingleSubstBuilder(output_font, None))
+    """
+    Add a `calt` Chain Contextual Substitution that, when the user types
+    a known multi-character word, swaps each character glyph for the
+    correct variant.
 
-    # 初始化一個字典，按詞組長度儲存規則集
-    # 預先整理 char_mapping 以便快速查找字元的所有變體註音
-    char_all_annos = {}
-    for char, anno_map in char_mapping.items():
-        # anno_map 的結構: {'註音A': (glyph_name, variant_index), '註音B': ...}
-        char_all_annos[char] = list(anno_map.keys())
-        
-    chainSets_by_length = {}
-    
-    # --- [核心修改] ---
-    # 不再需要內部排序函數，因為 word_mapping 已經在 load_mapping 中被正確排序。
-    # 我們直接使用 word_mapping 的順序來構建規則。
-    # 這確保了 GSUB 規則的順序與 word_mapping 的排序標準完全一致。
-    
-    # 將字典項目轉為列表，以保持順序
-    sorted_words = list(word_mapping.items())
-    
-    # 遍歷排序後的詞組映射
-    for word, anno_strs in sorted_words:
+    Args:
+        output_font: TTFont being mutated.
+        word_mapping: Ordered dict of ``word -> [annotation_per_char]``.
+            Order determines rule priority (earlier rules win in calt).
+        char_mapping: ``char -> {annotation_str: (glyph_name, variant_index)}``.
+    """
+    gsub = output_font["GSUB"].table
+    glyph_order = output_font.getGlyphOrder()
+
+    # One SingleSubst lookup per variant slot. We build them lazily into
+    # the same N-element array regardless of whether they end up populated
+    # so the index math below stays trivial.
+    single_sub_builders = [
+        SingleSubstBuilder(output_font, None) for _ in range(MAX_VARIANT_LOOKUPS)
+    ]
+
+    chain_builder = ChainContextSubstBuilder(output_font, None)
+
+    # Counts only the *real* rules appended (subtable breaks don't count
+    # toward the per-subtable budget).
+    rules_in_current_subtable = 0
+
+    # add_subtable_break() appends a sentinel ChainContextualRule to
+    # self.rules. ChainContextSubstBuilder's `rules` is a list (not a
+    # dict), so collisions aren't an issue — each call appends a fresh
+    # sentinel — but we still pass a counter so subtable breaks in stack
+    # traces are easy to identify by source order.
+    subtable_break_counter = 0
+
+    # Iterate words in their incoming order. csv_parser already sorted
+    # them (longer/higher-weighted entries first), so we preserve that
+    # priority when emitting rules.
+    for word, anno_strs in word_mapping.items():
         if len(word) <= 1:
+            # calt is for *multi*-glyph context. Single characters are
+            # handled by the liga (digit-triggered) path.
             continue
-            
-        lookup_builders = []
-        
+
+        input_glyphs = []
+        per_position_variant = []
+        is_buildable = True
+
         for i, char in enumerate(word):
+            glyph_name = get_glyph_name_by_char(output_font, char)
+            if not isinstance(glyph_name, str) or glyph_name not in glyph_order:
+                # Word references a character not in the font — skip the
+                # whole rule rather than emitting a partial chain.
+                is_buildable = False
+                break
+            input_glyphs.append(glyph_name)
+
             anno_str = anno_strs[i]
             if char not in char_mapping or anno_str not in char_mapping[char]:
-                lookup_builders.append(None)
+                # Position is matched but has no substitution — encode as
+                # a "passthrough" slot (None in the lookups list).
+                per_position_variant.append(None)
                 continue
-            
-            # 假設 char_mapping 的結構是 ('glyph_name', variant_index)
+
             target_glyph_name, variant = char_mapping[char][anno_str]
-            
-            original_glyph_name = get_glyph_name_by_char(output_font, char)
-            
-            if not isinstance(original_glyph_name, str) or original_glyph_name not in output_font.getGlyphOrder():
-                lookup_builders.append(None)
-                continue
-                
-            # 即使 variant 是 0，也填充替換信息
-            singleSubBuilders[variant].mapping[original_glyph_name] = target_glyph_name
-            lookup_builders.append(variant)
-            
-        initial_glyph = get_glyph_name_by_char(output_font, word[0])
-        if initial_glyph is None or not isinstance(initial_glyph, str):
-            continue
-        
-        if len(word) not in chainSets_by_length:
-            chainSets_by_length[len(word)] = {}
+            single_sub_builders[variant].mapping[glyph_name] = target_glyph_name
+            per_position_variant.append(variant)
 
-        current_chainSets = chainSets_by_length[len(word)]
-
-        if initial_glyph not in current_chainSets:
-            current_chainSets[initial_glyph] = []
-        
-        input_glyphs = [get_glyph_name_by_char(output_font, char) for char in word[1:]]
-        input_glyphs = [g for g in input_glyphs if isinstance(g, str)]
-        
-        if len(input_glyphs) != len(word) - 1:
+        if not is_buildable:
             continue
 
-        current_chainSets[initial_glyph].append({
-            "_debug": word + " " + " ".join(anno_strs),
-            "input": input_glyphs,
-            "variantIndex": lookup_builders
-        })
-            
-    # 建立 Type 1 Lookups 的實際 GSUB 索引映射
-    single_sub_lookup_indices = {}
-    
-    current_lookup_index = len(gsub.LookupList.Lookup)
-    
-    # 循環從 0 開始，以包含 variant 0 (默認發音) 的 lookup
-    for i in range(0, MAX_VARIANT_LOOKUPS):
-        if len(singleSubBuilders[i].mapping) > 0:
-            lookup = singleSubBuilders[i].build()
-            lookup.LookupFlag = 1
-            
-            gsub.LookupList.Lookup.append(lookup)
-            single_sub_lookup_indices[i] = current_lookup_index
-            current_lookup_index += 1
+        # Convert variant indices to the (list of LookupBuilder | None)
+        # shape that ChainContextSubstBuilder expects per position.
+        rule_lookups = [
+            [single_sub_builders[v]] if v is not None else None
+            for v in per_position_variant
+        ]
+        chain_builder.rules.append(
+            ChainContextualRule(
+                prefix=[],
+                glyphs=[[g] for g in input_glyphs],
+                suffix=[],
+                lookups=rule_lookups,
+            )
+        )
+        rules_in_current_subtable += 1
 
+        # Force a subtable boundary every RULES_PER_SUBTABLE rules so we
+        # never let any single subtable approach the 64KB OpenType offset
+        # limit. The builder honours these breaks when it composes the
+        # final lookup (see ChainContextualBuilder.rulesets()).
+        if rules_in_current_subtable >= RULES_PER_SUBTABLE:
+            chain_builder.add_subtable_break(subtable_break_counter)
+            subtable_break_counter += 1
+            rules_in_current_subtable = 0
+
+    # --- Append the SingleSubst lookups to the live GSUB table -----------
+    #
+    # Order is critical: the chain context lookup we're about to build
+    # encodes references to these lookups by index (LookupListIndex), and
+    # those references are resolved from each builder's `.lookup_index`
+    # attribute. So we have to append → assign `.lookup_index` → build the
+    # chain in that order.
+    next_index = len(gsub.LookupList.Lookup)
+    for builder in single_sub_builders:
+        if not builder.mapping:
+            continue
+        lookup = builder.build()
+        # IgnoreBaseGlyphs (flag bit 1): historically set on the original
+        # implementation; preserved for output-compatibility. In practice
+        # most CJK shapers ignore the bit because the glyphs aren't marks
+        # anyway, but it doesn't hurt to keep it.
+        lookup.LookupFlag = 1
+        builder.lookup_index = next_index
+        gsub.LookupList.Lookup.append(lookup)
+        next_index += 1
+
+    # --- Build and register the chain context lookup ---------------------
+    if not chain_builder.rules:
+        # No multi-character words were buildable; nothing to register.
+        gsub.LookupList.LookupCount = len(gsub.LookupList.Lookup)
+        return
+
+    chain_lookup = chain_builder.build()
+    chain_index = len(gsub.LookupList.Lookup)
+    gsub.LookupList.Lookup.append(chain_lookup)
     gsub.LookupList.LookupCount = len(gsub.LookupList.Lookup)
-    
-    # 調整 Chain Contextual 規則中的索引
-    rule_groups_to_write = []
-    
-    for length, chainSets in chainSets_by_length.items():
-        for initial_glyph, chainSet in chainSets.items():
-            for chain in chainSet:
-                new_lookup_indices = []
-                for variant_index in chain['variantIndex']:
-                    if variant_index is not None and variant_index in single_sub_lookup_indices:
-                        new_lookup_indices.append(single_sub_lookup_indices[variant_index])
-                    else:
-                        new_lookup_indices.append(None)
-                chain['lookupIndex'] = new_lookup_indices
-            
-            # [註] 此處的排序是為了優化 OpenType 表的內部結構，
-            # 而不是為了決定詞組的應用優先級。優先級已由 sorted_words 的全局順序決定。
-            chainSet.sort(key=lambda chain: (-len(chain['input']), chain['_debug']))
 
+    register_feature_lookup(gsub, "calt", chain_index)
 
-    reverseMap = output_font.getReverseGlyphMap()
-    
-    sorted_lengths = sorted(chainSets_by_length.keys(), reverse=True)
-    
-    for length in sorted_lengths:
-        chainSets = chainSets_by_length[length]
-        sorted_chainSets = list(sorted(chainSets.items(), key=lambda item: reverseMap.get(item[0], 0)))
-        rule_groups_to_write.append(sorted_chainSets)
-    
-    # 插入 Chain Contextual Lookup (Type 6)
-    chain_lookup_index = len(gsub.LookupList.Lookup)
-    
-    insert_chain_context_subst_into_gsub_logic(output_font, rule_groups_to_write, chain_lookup_index)
-
-    # 更新 Features
-    calt_lookups = [chain_lookup_index]
-    _update_or_create_feature(gsub, 'calt', calt_lookups)
-    
     print("Done ChainContextSubst")
-
-# --- 輔助函數 ---
-
-def insert_chain_context_subst_into_gsub_logic(output_font, rule_groups_to_write, chain_lookup_index):
-    gsub = output_font["GSUB"].table
-    chainSubStLookup = otTables.Lookup()
-    chainSubStLookup.LookupType = 6
-    chainSubStLookup.LookupFlag = 0
-    chainSubStLookup.SubTable = []
-    chainSubStLookup.SubTableCount = 0
-    
-    subtable_index = 0
-    
-    # 遍歷按長度降序排列的規則組
-    for all_chain_sets in rule_groups_to_write:
-        if not all_chain_sets:
-            continue
-            
-        # 遍歷 ChainSets 的塊 (每塊最多 50 個字形) 根據實際情況調整 
-        for chainSets_chunk in chunk(all_chain_sets, MAX_chainSets_chunk):
-            # 1. 創建新的 Subtable。
-            chainSubStLookup.SubTable.append(otTables.ChainContextSubst())
-            chainSubStLookup.SubTableCount += 1
-            subtable = chainSubStLookup.SubTable[subtable_index]
-            subtable_index += 1 
-
-            subtable.Format = 1
-            subtable.Coverage = buildCoverage(glyphs=[item[0] for item in chainSets_chunk])
-            subtable.ChainSubRuleSet = []
-            subtable.ChainSubRuleSetCount = 0
-            
-            # 2. 遍歷每個起始字形及其規則集
-            for initial_glyph, chainSet in chainSets_chunk:
-                chainSubRuleSet = buildChainSubRuleSet()
-                
-                # 3. 遍歷規則並寫入
-                for chain in chainSet:
-                    chainSubRule = otTables.ChainSubRule()
-                    chainSubRule.Backtrack = []
-                    chainSubRule.BacktrackGlyphCount = 0
-                    chainSubRule.Input = chain['input']
-                    chainSubRule.InputGlyphCount = len(chain["input"])
-                    chainSubRule.LookAhead = []
-                    chainSubRule.LookAheadGlyphCount = 0
-                    chainSubRule.SubstLookupRecord = []
-                    chainSubRule.SubstCount = 0
-                    
-                    # 遍歷需要替換的 Lookup 索引
-                    for word_index, lookupIndex in enumerate(chain['lookupIndex']):
-                        if lookupIndex is not None:
-                            substLookupRecord = otTables.SubstLookupRecord()
-                            substLookupRecord.SequenceIndex = word_index
-                            substLookupRecord.LookupListIndex = lookupIndex # 這是 Type 1 Lookup 的 GSUB 索引
-                            chainSubRule.SubstLookupRecord.append(substLookupRecord)
-                            chainSubRule.SubstCount += 1
-                            
-                    chainSubRuleSet.ChainSubRule.append(chainSubRule)
-                    
-                # 4. 將規則集添加到 Subtable
-                chainSubRuleSet.ChainSubRuleCount = len(chainSubRuleSet.ChainSubRule)
-                subtable.ChainSubRuleSet.append(chainSubRuleSet)
-                subtable.ChainSubRuleSetCount += 1
-
-    gsub.LookupList.Lookup.append(chainSubStLookup)
-    gsub.LookupList.LookupCount += 1
-
-def _update_or_create_feature(gsub, feature_tag, lookup_indices):
-    featureIndexes = [i for i, featureRecord in enumerate(gsub.FeatureList.FeatureRecord) if featureRecord.FeatureTag == feature_tag]
-    
-    if len(featureIndexes) == 0:
-        # 創建新 Feature
-        featureRecord = otTables.FeatureRecord()
-        featureRecord.Feature = otTables.Feature()
-        featureRecord.FeatureTag = feature_tag
-        featureRecord.Feature.LookupListIndex = lookup_indices 
-        featureRecord.Feature.LookupCount = len(lookup_indices)
-        
-        # 註冊 Feature 到 ScriptList/LangSys
-        feature_index = len(gsub.FeatureList.FeatureRecord)
-        for scriptRecord in gsub.ScriptList.ScriptRecord:
-            langSysList = [scriptRecord.Script.DefaultLangSys]
-            if scriptRecord.Script.LangSysRecord:
-                langSysList.extend([l.LangSys for l in scriptRecord.Script.LangSysRecord])
-                
-            for langSys in langSysList:
-                if langSys is None:
-                    continue 
-                    
-                if feature_index not in langSys.FeatureIndex:
-                    langSys.FeatureIndex.append(feature_index)
-                    langSys.FeatureCount += 1
-
-        gsub.FeatureList.FeatureRecord.append(featureRecord)
-        gsub.FeatureList.FeatureCount += 1
-        
-    else:
-        # 更新現有 Feature
-        for idx in featureIndexes:
-            current_lookups = gsub.FeatureList.FeatureRecord[idx].Feature.LookupListIndex
-            new_lookups = lookup_indices + [idx for idx in current_lookups if idx not in lookup_indices]
-            gsub.FeatureList.FeatureRecord[idx].Feature.LookupListIndex = new_lookups
-            gsub.FeatureList.FeatureRecord[idx].Feature.LookupCount = len(new_lookups)

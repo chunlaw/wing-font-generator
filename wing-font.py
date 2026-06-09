@@ -81,11 +81,17 @@ def main(
                 glyphs_to_be_kept.append(glyph_name)
         
         # --- 新增開始 (步驟 2: 擴展列表) ---
-        
+
         # 1. 定義要額外保留的字符集 (ASCII 標點和字母)
         # 您也可以手動添加其他需要的字符，例如全形標點 '，。！？'
         # chars_to_keep_additionally = string.punctuation + string.ascii_letters
         chars_to_keep_additionally = string.punctuation + string.ascii_letters + '，。！？《》「」『』｛｝〖〗【】［］、……——＠＃￥％＆＊+-/“”：；‘’／'
+
+        # liga_handler 的「丅 + 中文數字」備用觸發機制需要這些字符保留下來，
+        # 否則 subsetter 會把它們從 cmap 移除，連帶丟掉相關的 3-component
+        # ligature 規則。Without these, the `字丅一` IME-friendly fallback
+        # silently stops working in subset output.
+        chars_to_keep_additionally += '丅零一二三四五六七八九'
 
         # 2. 遍歷這些字符，將它們的 glyph name 加入列表
         print(f"Keeping additional {len(chars_to_keep_additionally)} punctuation and letter glyphs...")
@@ -93,7 +99,7 @@ def main(
             glyph_name = get_glyph_name_by_char(base_font, char)
             if glyph_name:  # 確保字形存在於字體中
                 glyphs_to_be_kept.append(glyph_name)
-        
+
         # --- 新增結束 ---
 
         # Make subset to reduce file size

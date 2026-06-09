@@ -1,0 +1,435 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>Wing Font — pipeline test viewer</title>
+<style>
+  /* The font under test. The file is produced by generate_test_font.py
+     and lives next to this HTML at output/test.woff. */
+  @font-face {
+    font-family: "WingFontTest";
+    src: url("output/test.woff") format("woff");
+    font-display: block;
+  }
+
+  :root {
+    color-scheme: light dark;
+    --fg: #1a1a1a;
+    --muted: #5a5a5a;
+    --pass: #2a8c3a;
+    --fail: #b8323a;
+    --bg-card: #fafafa;
+    --border: #d9d9d9;
+    --accent: #2563eb;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --fg: #e8e8e8;
+      --muted: #9a9a9a;
+      --pass: #6ed080;
+      --fail: #f08088;
+      --bg-card: #1e1e1e;
+      --border: #3a3a3a;
+      --accent: #6090f8;
+    }
+  }
+
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    color: var(--fg);
+    max-width: 980px;
+    margin: 0 auto;
+    padding: 24px 20px 60px;
+    line-height: 1.5;
+  }
+  h1 { font-size: 1.6rem; margin: 0 0 4px; }
+  .subtitle { color: var(--muted); margin: 0 0 24px; font-size: 0.95rem; }
+
+  .status {
+    padding: 10px 14px;
+    border-radius: 8px;
+    border: 1px solid var(--border);
+    background: var(--bg-card);
+    margin-bottom: 24px;
+    font-size: 0.9rem;
+  }
+  .status.ok    { border-color: var(--pass); }
+  .status.fail  { border-color: var(--fail); }
+  .status code { font-size: 0.85rem; }
+
+  .report-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+    gap: 8px;
+    margin-top: 10px;
+  }
+  .report-grid .cell {
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    padding: 6px 10px;
+    border-radius: 6px;
+    font-size: 0.85rem;
+  }
+  .report-grid .cell strong { display: block; color: var(--muted); font-weight: 500; font-size: 0.75rem; }
+
+  section.test {
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 18px 20px;
+    margin: 16px 0;
+    background: var(--bg-card);
+  }
+  section.test h2 { margin: 0 0 4px; font-size: 1.1rem; }
+  section.test .what { color: var(--muted); font-size: 0.9rem; margin: 0 0 14px; }
+
+  .row {
+    display: grid;
+    grid-template-columns: 110px 1fr 1fr;
+    gap: 16px;
+    align-items: center;
+    margin: 8px 0;
+    padding: 8px 0;
+    border-top: 1px dashed var(--border);
+  }
+  .row:first-of-type { border-top: 0; padding-top: 0; }
+  .row .label {
+    font-size: 0.8rem;
+    color: var(--muted);
+    font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  }
+  .row .baseline,
+  .row .styled {
+    font-size: 32px;
+    line-height: 1.4;
+    padding: 4px 8px;
+    border-radius: 4px;
+    background: rgba(127,127,127,0.06);
+    overflow-wrap: anywhere;
+  }
+  /* The baseline column renders with the system font — no GSUB rules
+     applied. The styled column uses our generated font. Any visible
+     difference between them proves the GSUB rules fired. */
+  .row .baseline { font-family: serif; }
+  .row .styled   { font-family: "WingFontTest", serif; }
+  .row .expect {
+    grid-column: 2 / -1;
+    font-size: 0.8rem;
+    color: var(--muted);
+    margin-top: -4px;
+    margin-bottom: 4px;
+    padding-left: 8px;
+  }
+
+  .free-input {
+    width: 100%;
+    box-sizing: border-box;
+    padding: 12px 14px;
+    font-size: 1.1rem;
+    border-radius: 6px;
+    border: 1px solid var(--border);
+    background: var(--bg-card);
+    color: var(--fg);
+    font-family: inherit;
+    margin-bottom: 12px;
+  }
+  .free-output {
+    font-family: "WingFontTest", serif;
+    font-size: 56px;
+    line-height: 1.5;
+    padding: 14px 18px;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    min-height: 100px;
+    background: rgba(127,127,127,0.04);
+    word-break: break-word;
+  }
+  .free-output:empty::before {
+    content: "Type above to preview…";
+    color: var(--muted);
+    font-size: 1rem;
+    font-family: inherit;
+  }
+
+  a, a:visited { color: var(--accent); }
+  code, kbd {
+    font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+    background: rgba(127,127,127,0.12);
+    padding: 1px 5px;
+    border-radius: 3px;
+    font-size: 0.85em;
+  }
+</style>
+</head>
+<body>
+
+<h1>Wing Font — pipeline test viewer</h1>
+<p class="subtitle">
+  Visual sanity check for the refactored <code>chain_context_handler.py</code> +
+  <code>liga_handler.py</code>. Each row compares the same characters rendered
+  with the system font (left) vs. the generated test font (right). When the
+  pipeline is working, the right column shows romanization stacked above the
+  Hanzi.
+</p>
+
+<div id="status" class="status">Checking font load…</div>
+
+<section class="test">
+  <h2>1. Default reading — single characters</h2>
+  <p class="what">
+    Every character in the mapping has a default annotation. These should
+    just show their primary reading above each glyph. No context, no triggers.
+  </p>
+  <div class="row">
+    <div class="label">你好</div>
+    <div class="baseline">你好</div>
+    <div class="styled">你好</div>
+    <div class="expect">expect: nei5 above 你, hou2 above 好</div>
+  </div>
+  <div class="row">
+    <div class="label">中國</div>
+    <div class="baseline">中國</div>
+    <div class="styled">中國</div>
+    <div class="expect">expect: zung1, gwok3</div>
+  </div>
+  <div class="row">
+    <div class="label">朋友</div>
+    <div class="baseline">朋友</div>
+    <div class="styled">朋友</div>
+    <div class="expect">expect: pang4, jau5</div>
+  </div>
+</section>
+
+<section class="test">
+  <h2>2. Word context — <code>calt</code> Chain Contextual Substitution</h2>
+  <p class="what">
+    Some characters change reading depending on the word they appear in.
+    The polyphonic char <strong>行</strong> is <em>hang4</em> by default but
+    becomes <em>hong4</em> inside 銀行 / 行家. Likewise 畫 is <em>waa6</em>
+    by default but the first 畫 in 畫畫 should switch to <em>waak6</em>.
+  </p>
+  <div class="row">
+    <div class="label">行 (alone)</div>
+    <div class="baseline">行</div>
+    <div class="styled">行</div>
+    <div class="expect">expect: hang4 (default reading, no calt fires)</div>
+  </div>
+  <div class="row">
+    <div class="label">銀行</div>
+    <div class="baseline">銀行</div>
+    <div class="styled">銀行</div>
+    <div class="expect">expect: ngan4, hong4 — calt switches 行 to hong4</div>
+  </div>
+  <div class="row">
+    <div class="label">行家</div>
+    <div class="baseline">行家</div>
+    <div class="styled">行家</div>
+    <div class="expect">expect: hong4, gaa1 — calt switches 行 to hong4</div>
+  </div>
+  <div class="row">
+    <div class="label">行人</div>
+    <div class="baseline">行人</div>
+    <div class="styled">行人</div>
+    <div class="expect">expect: hang4, jan4 — calt confirms default for this word</div>
+  </div>
+  <div class="row">
+    <div class="label">畫畫</div>
+    <div class="baseline">畫畫</div>
+    <div class="styled">畫畫</div>
+    <div class="expect">expect: waak6, waa2 — first 畫 changes, second 畫 keeps default-ish</div>
+  </div>
+</section>
+
+<section class="test">
+  <h2>3. Digit trigger — <code>liga</code> Ligature Substitution</h2>
+  <p class="what">
+    Typing a character followed by an ASCII digit forms a ligature that picks
+    a specific variant. <code>0</code> resets to default; <code>1..9</code> select
+    the indexed alternates. The trailing digit should <em>disappear</em> visually
+    (it merges into the preceding glyph).
+  </p>
+  <div class="row">
+    <div class="label">行0</div>
+    <div class="baseline">行0</div>
+    <div class="styled">行0</div>
+    <div class="expect">expect: 行 with hang4 (default); the 0 is consumed</div>
+  </div>
+  <div class="row">
+    <div class="label">行1</div>
+    <div class="baseline">行1</div>
+    <div class="styled">行1</div>
+    <div class="expect">expect: 行 with hong4 (variant 1); the 1 is consumed</div>
+  </div>
+  <div class="row">
+    <div class="label">畫0</div>
+    <div class="baseline">畫0</div>
+    <div class="styled">畫0</div>
+    <div class="expect">expect: 畫 with waa6 (default)</div>
+  </div>
+  <div class="row">
+    <div class="label">畫1</div>
+    <div class="baseline">畫1</div>
+    <div class="styled">畫1</div>
+    <div class="expect">expect: 畫 with waak6 (variant 1)</div>
+  </div>
+</section>
+
+<section class="test">
+  <h2>4. Chinese-numeral fallback — <code>liga</code> 丅 trigger</h2>
+  <p class="what">
+    For IMEs that make ASCII digits inconvenient, an alternative form
+    <code>字 + 丅 + 中文數字</code> selects the same variants. 丅 (U+4E05)
+    is the trigger and the Chinese numeral picks the index.
+  </p>
+  <div class="row">
+    <div class="label">行丅零</div>
+    <div class="baseline">行丅零</div>
+    <div class="styled">行丅零</div>
+    <div class="expect">expect: 行 with hang4 (default); 丅 and 零 are consumed</div>
+  </div>
+  <div class="row">
+    <div class="label">行丅一</div>
+    <div class="baseline">行丅一</div>
+    <div class="styled">行丅一</div>
+    <div class="expect">expect: 行 with hong4 (variant 1); 丅 and 一 are consumed</div>
+  </div>
+  <div class="row">
+    <div class="label">畫丅一</div>
+    <div class="baseline">畫丅一</div>
+    <div class="styled">畫丅一</div>
+    <div class="expect">expect: 畫 with waak6 (variant 1)</div>
+  </div>
+</section>
+
+<section class="test">
+  <h2>5. Free input</h2>
+  <p class="what">
+    Type anything from the mapping (你 好 人 中 國 文 語 言 銀 家 行 朋 友 心 工
+    作 時 間 畫 書 五 日 月 水 火). Try combining with digits, 丅+numeral
+    triggers, or words like 你好 / 中文 / 銀行 / 畫畫.
+  </p>
+  <textarea
+    id="freeInput"
+    class="free-input"
+    rows="2"
+    spellcheck="false"
+  >你好，我哋一齊去銀行嘅行家嗰度畫畫。行1 畫1 畫丅一</textarea>
+  <div id="freeOutput" class="free-output"></div>
+</section>
+
+<section class="test">
+  <h2>Pipeline report</h2>
+  <p class="what">
+    Auto-loaded from <code>output/report.json</code> (written by
+    <code>generate_test_font.py</code>).
+  </p>
+  <div id="report" class="report-grid">Loading report…</div>
+  <p class="subtitle" style="margin-top:16px;">
+    Download: <a id="dlTtf" href="output/test.ttf">test.ttf</a>
+    · <a id="dlWoff" href="output/test.woff">test.woff</a>
+  </p>
+</section>
+
+<script>
+  // ---- Font-load probe -------------------------------------------------
+  //
+  // We detect three states: font missing (404), font loaded but visually
+  // identical to fallback (probably wrong file), and font loaded with the
+  // expected metrics. The middle case shouldn't happen for our font but
+  // is worth distinguishing for the user.
+  const statusEl = document.getElementById("status");
+
+  document.fonts.ready.then(() => {
+    const face = [...document.fonts].find((f) => f.family === "WingFontTest");
+    if (!face) {
+      statusEl.className = "status fail";
+      statusEl.innerHTML =
+        "❌ <strong>WingFontTest</strong> is not registered. " +
+        "Did you run <code>python tests/generate_test_font.py</code>?";
+      return;
+    }
+    if (face.status !== "loaded") {
+      statusEl.className = "status fail";
+      statusEl.innerHTML =
+        "❌ Font registered but not loaded (status: <code>" +
+        face.status +
+        "</code>). Most likely <code>output/test.woff</code> is missing " +
+        "or the page was opened via <code>file://</code> instead of an HTTP server. " +
+        "Run <code>python tests/serve.py</code>.";
+      return;
+    }
+    statusEl.className = "status ok";
+    statusEl.innerHTML =
+      "✅ <strong>WingFontTest</strong> loaded. " +
+      "Each row below should show romanization above the Hanzi in the right column.";
+  });
+
+  // Defensive fallback: document.fonts.ready resolves immediately if no
+  // @font-face rules are pending. We retry after 1.5s to catch slow loads.
+  setTimeout(() => {
+    const face = [...document.fonts].find((f) => f.family === "WingFontTest");
+    if (!face || face.status === "error") {
+      statusEl.className = "status fail";
+      statusEl.innerHTML =
+        "❌ Failed to load <code>output/test.woff</code>. " +
+        "Make sure the file exists and you're serving over HTTP " +
+        "(<code>python tests/serve.py</code>), not opening the file directly.";
+    }
+  }, 1500);
+
+  // ---- Live preview ----------------------------------------------------
+  const freeInput = document.getElementById("freeInput");
+  const freeOutput = document.getElementById("freeOutput");
+  function sync() { freeOutput.textContent = freeInput.value; }
+  freeInput.addEventListener("input", sync);
+  sync();
+
+  // ---- Report -----------------------------------------------------------
+  fetch("output/report.json", { cache: "no-store" })
+    .then((r) => (r.ok ? r.json() : null))
+    .then((data) => {
+      const el = document.getElementById("report");
+      if (!data) {
+        el.textContent = "report.json not found (regenerate via generate_test_font.py).";
+        return;
+      }
+      const cells = [
+        ["Total glyphs", data.total_glyphs],
+        ["GSUB lookups", data.gsub_lookup_count],
+        ["GSUB features", data.gsub_feature_count],
+        ["calt present?", data.has_calt ? "yes" : "NO"],
+        ["liga present?", data.has_liga ? "yes" : "NO"],
+        ["calt rules (ours)", data.calt_rule_count ?? "—"],
+        ["liga default (×0)", data.liga_default_rules ?? "—"],
+        ["liga variant (×N)", data.liga_variant_rules ?? "—"],
+        ["liga 丅+numeral", data.liga_trigger_rules ?? "—"],
+        [
+          "Lookup types",
+          Object.entries(data.lookup_types)
+            .map(([k, v]) => `T${k}×${v}`)
+            .join(" "),
+        ],
+      ];
+      // Polyphonic chars present in the output cmap — if any are NO, the
+      // matching test panel will not render correctly.
+      if (data.polyphonic_chars_present) {
+        for (const [ch, present] of Object.entries(
+          data.polyphonic_chars_present,
+        )) {
+          cells.push([`cmap: ${ch}`, present ? "yes" : "NO"]);
+        }
+      }
+      el.innerHTML = cells
+        .map(
+          ([k, v]) =>
+            `<div class="cell"><strong>${k}</strong>${v}</div>`,
+        )
+        .join("");
+    })
+    .catch((err) => {
+      document.getElementById("report").textContent =
+        "report.json fetch failed: " + err.message;
+    });
+</script>
+</body>
+</html>

@@ -28,6 +28,8 @@ jobs:
         run: |
           mkdir -p outputs
           set -o xtrace
+          python wing-font.py -v -y 0.3 -opt -f ChironHeiHK-Noto-lshk-B-invert -i input_fonts/ChironHeiHK-B.ttf -a input_fonts/NotoSerif-Regular.ttf -m mappings/canto-lshk.csv -o outputs/ChironHeiHK-Noto-lshk-B.invert -as 0.13
+          python wing-font.py -v -y 0.3 -opt -f ChironHeiHK-Noto-lshk -i input_fonts/ChironHeiHK-R.ttf -a input_fonts/NotoSerif-Regular.ttf -m mappings/canto-lshk.csv -o outputs/ChironHeiHK-Noto-lshk.invert -as 0.13
           python wing-font.py -v -y 0.3 -opt -f ChironSungHK-Noto-lshk -i input_fonts/ChironSungHK-R.ttf -a input_fonts/NotoSerif-Regular.ttf -m mappings/canto-lshk.csv -o outputs/ChironSungHK-Noto-lshk.invert -as 0.13
           python wing-font.py -v -y 0.3 -opt -f ChironSungHK-Noto-yale -i input_fonts/ChironSungHK-R.ttf -a input_fonts/NotoSerif-Regular.ttf -m mappings/canto-yale.csv -o outputs/ChironSungHK-Noto-yale.invert -as 0.13
           python wing-font.py -v -y 0.3 -opt -f ChironSungHK-Noto-chishima -i input_fonts/ChironSungHK-R.ttf -a input_fonts/NotoSerif-Regular.ttf -m mappings/canto-chishima.csv -o outputs/ChironSungHK-Noto-chishima.invert -as 0.13

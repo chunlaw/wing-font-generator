@@ -1,136 +1,202 @@
-# --- 請將這整個函數複製並替換掉你 liga_handler.py 文件中的舊版本 ---
+"""
+liga_handler — emit the `liga` Ligature Substitution lookup that lets the
+user manually pick a variant by typing ``<char><digit>`` (or, as a fallback
+for IMEs that don't easily type Latin digits, ``<char>丅<chinese-numeral>``).
 
-from fontTools.ttLib.tables import otTables
-from fontTools.otlLib import builder
-from utils import get_glyph_name_by_char, chunk, buildDefaultLangSys
-from typing import Dict, Tuple, Any
+This file no longer manages the OpenType ScriptList/LangSys plumbing
+inline — that's centralised in ``utils.register_feature_lookup``. The
+ligature construction itself was already using
+``fontTools.otlLib.builder.LigatureSubstBuilder`` so the only structural
+change is dropping the chunking workaround (``chunk_size``) — the builder
+handles subtable splitting internally via subtable breaks.
+"""
 
-chunk_size = 5000
+from typing import Dict, Tuple
 
-def buildLiga(output_font, char_mapping: Dict[str, Dict[str, Tuple[str, int]]]):
+from fontTools.otlLib.builder import LigatureSubstBuilder
+
+from utils import get_glyph_name_by_char, register_feature_lookup
+
+# Chinese numeral fallback. When typing Latin digits is inconvenient, the
+# user can type 字 + 丅 + 一/二/三/... to pick a variant.
+_CHINESE_NUMERALS = ("零", "一", "二", "三", "四", "五", "六", "七", "八", "九")
+_TRIGGER_CHAR = "丅"
+
+# OpenType Ligature Substitution (GSUB4) uses uint16 offsets within each
+# subtable. A subtable with thousands of ligatures will overflow that
+# 64KB budget — fontTools' auto-splitter has a bug here too
+# (UnboundLocalError on `newLen`), so we pre-emptively split via
+# add_subtable_break() before any subtable approaches the limit.
+#
+# Each ligature serializes to roughly 6 + 2*components bytes plus a
+# 4-byte offset entry. 1000 ligatures per subtable lands well under
+# 32KB even for the 3-component (trigger+numeral) rules, leaving plenty
+# of headroom. Going much higher risks tripping the overflow on fonts
+# with many polyphonic characters; going much lower bloats GSUB size.
+_LIGATURES_PER_SUBTABLE = 1000
+
+
+def buildLiga(
+    output_font, char_mapping: Dict[str, Dict[str, Tuple[str, int]]]
+) -> None:
+    """
+    Build the `liga` lookup with per-character variant-selection rules.
+
+    For each character with N annotations the builder emits:
+      - ``(any-variant, '0')   -> default glyph``
+      - ``(any-variant, 'i')   -> variant-i glyph`` for i in 1..N-1
+      - ``(any-variant, 丅, 零/一/二/...) -> default/variant-i`` as fallback
+
+    Args:
+        output_font: TTFont being mutated.
+        char_mapping: ``char -> {annotation_str: (glyph_name, variant_index)}``.
+    """
     gsub = output_font["GSUB"].table
 
-    # 1. 建立數字 0-9 的字形名稱映射
-    number_glyph_names: Dict[int, str] = {}
-    for i in range(10):
-        char = str(i)
-        glyph_name = get_glyph_name_by_char(output_font, char)
-        if glyph_name:
-            number_glyph_names[i] = glyph_name
-            
-    if not number_glyph_names:
-        print("Warning: Cannot find glyphs for numbers 0-9 in the font. Number-based liga rules will be skipped if absent.")
+    digit_glyphs = _resolve_digits(output_font)
+    trigger_glyph = get_glyph_name_by_char(output_font, _TRIGGER_CHAR)
+    numeral_glyphs = _resolve_chinese_numerals(output_font)
 
-    # 1b. 獲取 '丅' 字元的字形名稱（單個丅作為 trigger）
-    hen_char = '丅'
-    hen_glyph_name = get_glyph_name_by_char(output_font, hen_char)
-    if not hen_glyph_name:
-        print("Warning: Cannot find glyph for '丅' in the font. '丅'+chinese-numeral fallback rules will be skipped if absent.")
-
-    # 1c. 獲取中文數字字元的字形名稱映射 (零 一 二 三 四 五 六 七 八 九)
-    chinese_numerals = ['零','一','二','三','四','五','六','七','八','九']
-    chinese_numeral_glyphs: Dict[int, str] = {}
-    for idx, ch in enumerate(chinese_numerals):
-        glyph = get_glyph_name_by_char(output_font, ch)
-        if glyph:
-            chinese_numeral_glyphs[idx] = glyph
-
-    if not chinese_numeral_glyphs:
-        print("Warning: Cannot find any Chinese numeral glyphs (零-九) in the font. '丅'+chinese-numeral fallback rules will be skipped if absent.")
-
-    # 如果既沒有阿拉伯數字，也沒有丅+中文數字可用，則提前返回
-    if not number_glyph_names and (not hen_glyph_name or not chinese_numeral_glyphs):
-        print("Error: No trigger glyphs found for either direct numbers or '丅'+chinese numerals. Skipping buildLiga.")
+    if not digit_glyphs and not (trigger_glyph and numeral_glyphs):
+        print(
+            "Skipping liga: neither Latin digits nor the 丅+numeral "
+            "fallback is available in the font."
+        )
         return
 
-    # 2. 遍歷數據塊，為每個塊建立一個 Lookup Subtable
-    for char_mapping_chunk in chunk(list(char_mapping.items()), chunk_size):
-        ligaBuilder = builder.LigatureSubstBuilder(output_font, None)
-        
-        # 遍歷塊中的每個字元及其所有注音變體
-        for original_char, anno_strs_dict in char_mapping_chunk:
-            
-            # --- 高效的規則建立邏輯 ---
+    # One unified LigatureSubstBuilder for the whole feature, but we
+    # interleave SUBTABLE_BREAK sentinels every _LIGATURES_PER_SUBTABLE
+    # additions so the eventual build() emits multiple compact subtables
+    # within one Lookup rather than one giant subtable that overflows.
+    liga_builder = LigatureSubstBuilder(output_font, None)
 
-            # a. 獲取該字的原始預設字形
-            default_glyph_name = get_glyph_name_by_char(output_font, original_char)
-            if not default_glyph_name:
-                continue
+    # Tracks the number of real (non-sentinel) ligatures since the last
+    # subtable break, so we know when to insert another break.
+    rules_in_subtable = 0
 
-            # b. 建立一個從變體索引到字形名稱的映射，方便快速查找
-            # 例如 {1: 'uni4E00.v1', 2: 'uni4E00.v2', ...}
-            index_to_glyph_map = {idx: name for name, idx in anno_strs_dict.values()}
-            
-            # c. 獲取該字的所有變體字形列表 (用於作為連字的起始字元)
-            all_variant_glyphs = [name for name, idx in anno_strs_dict.values()]
+    # `add_subtable_break(location)` stores its sentinel keyed by
+    # `(SUBTABLE_BREAK_, location)`. Two calls with the same location
+    # overwrite each other — only one break gets recorded — so we feed
+    # the call a monotonically increasing counter to keep each sentinel
+    # key unique.
+    subtable_break_counter = 0
 
-            # d. 外層迴圈：遍歷該字的所有變體（作為輸入的基礎字形）
-            for base_glyph in all_variant_glyphs:
-                
-                # --- [規則一] 建立 '字+數字' 的連字規則 ---
-                if number_glyph_names:
-                    for num_index, num_glyph_name in number_glyph_names.items():
-                        target_glyph = None
-                        if num_index == 0:
-                            # 規則: (任何變體, '0') -> 預設字形
-                            target_glyph = default_glyph_name
-                        else:
-                            # 規則: (任何變體, 'N') -> 索引為 N 的變體
-                            target_glyph = index_to_glyph_map.get(num_index)
-                        
-                        # 如果找到了目標字形，則建立連字規則
-                        if target_glyph:
-                            ligaBuilder.ligatures[(base_glyph, num_glyph_name)] = target_glyph
+    for original_char, anno_strs_dict in char_mapping.items():
+        default_glyph_name = get_glyph_name_by_char(output_font, original_char)
+        if not default_glyph_name:
+            continue
 
-                # --- [新增備用規則] 建立 '字+丅+中文數字' 的連字規則 ---
-                # 只使用單個丅作為 trigger，然後一個中文數字作為索引
-                if hen_glyph_name and chinese_numeral_glyphs:
-                    for num_index, numeral_glyph_name in chinese_numeral_glyphs.items():
-                        target_glyph_for_chinese_num = None
-                        if num_index == 0:
-                            # 規則: (任何變體, '丅', '零') -> 預設字形
-                            target_glyph_for_chinese_num = default_glyph_name
-                        else:
-                            # 規則: (任何變體, '丅', 中文數字) -> 對應索引的變體
-                            target_glyph_for_chinese_num = index_to_glyph_map.get(num_index)
+        # {variant_index: glyph_name} — needed because we want the *target*
+        # glyph by index, not by annotation string.
+        index_to_glyph = {idx: name for name, idx in anno_strs_dict.values()}
+        all_variant_glyphs = [name for name, _ in anno_strs_dict.values()]
 
-                        if target_glyph_for_chinese_num:
-                            input_seq = (base_glyph, hen_glyph_name, numeral_glyph_name)
-                            ligaBuilder.ligatures[input_seq] = target_glyph_for_chinese_num
+        # Each variant can be the *starting* glyph of a ligature (so a
+        # second digit overrides whatever the first sub picked).
+        for base_glyph in all_variant_glyphs:
+            before = len(liga_builder.ligatures)
+            _add_digit_rules(
+                liga_builder,
+                base_glyph=base_glyph,
+                default_glyph=default_glyph_name,
+                index_to_glyph=index_to_glyph,
+                digit_glyphs=digit_glyphs,
+            )
+            if trigger_glyph and numeral_glyphs:
+                _add_chinese_numeral_rules(
+                    liga_builder,
+                    base_glyph=base_glyph,
+                    default_glyph=default_glyph_name,
+                    index_to_glyph=index_to_glyph,
+                    trigger_glyph=trigger_glyph,
+                    numeral_glyphs=numeral_glyphs,
+                )
+            rules_in_subtable += len(liga_builder.ligatures) - before
+
+            # Insert a subtable break between *characters*, never mid-base,
+            # so a single character's variants stay coverage-grouped.
+            if rules_in_subtable >= _LIGATURES_PER_SUBTABLE:
+                liga_builder.add_subtable_break(subtable_break_counter)
+                subtable_break_counter += 1
+                rules_in_subtable = 0
+
+    # Count excludes the sentinel break entries (their keys start with
+    # the SUBTABLE_BREAK_ marker, which is a string not a glyph tuple).
+    real_rule_count = sum(
+        1 for k in liga_builder.ligatures
+        if not (isinstance(k, tuple) and k and k[0] == liga_builder.SUBTABLE_BREAK_)
+    )
+    if real_rule_count == 0:
+        print("No liga rules produced.")
+        return
+
+    lookup = liga_builder.build()
+    lookup_index = len(gsub.LookupList.Lookup)
+    gsub.LookupList.Lookup.append(lookup)
+    gsub.LookupList.LookupCount = len(gsub.LookupList.Lookup)
+
+    register_feature_lookup(gsub, "liga", lookup_index)
+    print(
+        f"Done liga ({real_rule_count} rules in "
+        f"{lookup.SubTableCount} subtable(s))"
+    )
 
 
-        # --- 後續的 GSUB 表寫入邏輯 (與之前版本相同) ---
-        if len(ligaBuilder.ligatures) > 0:
-            # 檢查 'liga/rlig/dlig/calt/ccmp' feature 是否存在
-            featureTag = 'liga'
-            ligaFeatureIndexes = [i for i, featureRecord in enumerate(gsub.FeatureList.FeatureRecord) if featureRecord.FeatureTag == featureTag]
-            
-            new_lookup_index = len(gsub.LookupList.Lookup)
-            
-            if not ligaFeatureIndexes:
-                featureRecord = otTables.FeatureRecord()
-                featureRecord.Feature = otTables.Feature()
-                featureRecord.FeatureTag = featureTag
-                featureRecord.Feature.LookupListIndex = [new_lookup_index]
-                featureRecord.Feature.LookupCount = 1
-                
-                feature_index_to_add = len(gsub.FeatureList.FeatureRecord)
-                gsub.FeatureList.FeatureRecord.append(featureRecord)
-                gsub.FeatureList.FeatureCount += 1
-                
-                for scriptRecord in gsub.ScriptList.ScriptRecord:
-                    if scriptRecord.Script.DefaultLangSys is None:
-                        scriptRecord.Script.DefaultLangSys = buildDefaultLangSys()
-                    
-                    if feature_index_to_add not in scriptRecord.Script.DefaultLangSys.FeatureIndex:
-                        scriptRecord.Script.DefaultLangSys.FeatureIndex.append(feature_index_to_add)
-                        scriptRecord.Script.DefaultLangSys.FeatureCount += 1
-            else:
-                for idx in ligaFeatureIndexes:
-                    feature = gsub.FeatureList.FeatureRecord[idx].Feature
-                    if new_lookup_index not in feature.LookupListIndex:
-                        feature.LookupListIndex.append(new_lookup_index)
-                        feature.LookupCount += 1
-            
-            gsub.LookupList.Lookup.append(ligaBuilder.build())
-            gsub.LookupList.LookupCount += 1
+def _resolve_digits(font) -> Dict[int, str]:
+    """Resolve the glyph names for ASCII digits 0–9, skipping any missing."""
+    glyphs: Dict[int, str] = {}
+    for i in range(10):
+        name = get_glyph_name_by_char(font, str(i))
+        if name:
+            glyphs[i] = name
+    if not glyphs:
+        print("Warning: no ASCII-digit glyphs found; digit-trigger rules will be skipped.")
+    return glyphs
+
+
+def _resolve_chinese_numerals(font) -> Dict[int, str]:
+    """Resolve glyph names for 零..九, skipping any missing."""
+    glyphs: Dict[int, str] = {}
+    for idx, ch in enumerate(_CHINESE_NUMERALS):
+        name = get_glyph_name_by_char(font, ch)
+        if name:
+            glyphs[idx] = name
+    if not glyphs:
+        print(
+            "Warning: no Chinese-numeral glyphs found; 丅+numeral fallback "
+            "rules will be skipped."
+        )
+    return glyphs
+
+
+def _add_digit_rules(
+    builder: LigatureSubstBuilder,
+    *,
+    base_glyph: str,
+    default_glyph: str,
+    index_to_glyph: Dict[int, str],
+    digit_glyphs: Dict[int, str],
+) -> None:
+    """Emit (base, digit) -> variant rules for one character's variants."""
+    for num_index, digit_glyph in digit_glyphs.items():
+        # Digit '0' resets to the character's default reading; digits 1..9
+        # pick the corresponding variant if it exists.
+        target = default_glyph if num_index == 0 else index_to_glyph.get(num_index)
+        if target:
+            builder.ligatures[(base_glyph, digit_glyph)] = target
+
+
+def _add_chinese_numeral_rules(
+    builder: LigatureSubstBuilder,
+    *,
+    base_glyph: str,
+    default_glyph: str,
+    index_to_glyph: Dict[int, str],
+    trigger_glyph: str,
+    numeral_glyphs: Dict[int, str],
+) -> None:
+    """Emit (base, 丅, numeral) -> variant rules — the IME-friendly fallback."""
+    for num_index, numeral_glyph in numeral_glyphs.items():
+        target = default_glyph if num_index == 0 else index_to_glyph.get(num_index)
+        if target:
+            builder.ligatures[(base_glyph, trigger_glyph, numeral_glyph)] = target
