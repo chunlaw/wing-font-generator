@@ -259,6 +259,12 @@ is having to wire `lookup_index` ourselves and call
 
 ---
 
+## Further reading
+
+* **Know the differences between Jyutping and Yale** — a short visual
+  primer by lingtsi_linguistics:
+  <https://www.instagram.com/p/DS0_iMdD-9G/>.
+
 ## Mapping sources
 
 1. [Typeduck-HK](https://github.com/TypeDuck-HK/TypeDuck-Mac/blob/master/Preparing/Sources/Preparing/Resources/data.csv)
