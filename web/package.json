@@ -10,8 +10,8 @@
     "lint": "eslint . --ext ts,tsx --report-unused-disable-directives --max-warnings 0",
     "preview": "vite preview",
     "predeploy": "yarn build",
-    "//deploy": "Publishes the React app to the ROOT of gh-pages. The `--add` flag means we only add/update files and never remove anything we didn't touch — critical because the build-fonts.yml CI workflow publishes fonts under /fonts/ on the same branch. Without --add, every deploy would wipe the /fonts/ subfolder right after CI populated it.",
-    "deploy": "gh-pages -d dist --add"
+    "//deploy": "Publishes the React app to the ROOT of gh-pages. The `--add` flag means we only add/update files and never remove anything we didn't touch — critical because the build-fonts.yml CI workflow publishes fonts under /fonts/ on the same branch. Without --add, every deploy would wipe the /fonts/ subfolder right after CI populated it. The `--dotfiles` flag is required so `.nojekyll` (which lives in public/ and is copied to dist/.nojekyll by Vite) actually ships to gh-pages — without it, GitHub Pages runs Jekyll, which silently strips every file starting with `_` from the served site, including the Python package init files (`__init__.py`) that the Pyodide worker fetches at runtime.",
+    "deploy": "gh-pages -d dist --add --dotfiles"
   },
   "dependencies": {
     "@emotion/react": "^11.11.4",

@@ -18,6 +18,15 @@ export interface MappingRow {
 export interface GenerateParams {
   baseScale: number;
   annoScale: number;
+  /**
+   * Extra inter-glyph gap inside an annotation string, in em
+   * units. 0 = natural advance (each glyph sits at its native
+   * advance position). Positive opens up — useful for CJK
+   * radical annotations (e.g. cangjie's 一弓十山) where the
+   * default packing looks like a single visual blob. Negative
+   * tightens; push too far and glyphs visibly overlap.
+   */
+  annoSpacing: number;
   yOffsetRatio: number;
   invert: boolean;
   optimize: boolean;

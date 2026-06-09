@@ -416,6 +416,7 @@ export const GenerateProvider = ({ children }: { children: ReactNode }) => {
   const [params, setParams] = useState<GenerateParams>({
     baseScale: 0.75,
     annoScale: 0.13,
+    annoSpacing: 0,
     yOffsetRatio: 0.8,
     invert: false,
     optimize: true,
@@ -497,6 +498,7 @@ export const GenerateProvider = ({ children }: { children: ReactNode }) => {
         newFamilyName: params.familyName || null,
         baseScale: params.baseScale,
         annoScale: params.annoScale,
+        annoSpacing: params.annoSpacing,
         upperYOffsetRatio: params.yOffsetRatio,
         invert: params.invert,
         optimize: params.optimize,
@@ -714,6 +716,7 @@ export const GenerateProvider = ({ children }: { children: ReactNode }) => {
         newFamilyName: `${ps.familyName || "MyWingFont"}_preview`,
         baseScale: ps.baseScale,
         annoScale: ps.annoScale,
+        annoSpacing: ps.annoSpacing,
         upperYOffsetRatio: ps.yOffsetRatio,
         invert: ps.invert,
         // Subsetting on a single-mapping run has nothing to drop, so

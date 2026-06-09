@@ -27,6 +27,9 @@ export interface GenerateParams {
   newFamilyName?: string | null;
   baseScale?: number;
   annoScale?: number;
+  /** Em-units inter-glyph gap inside an annotation string.
+   *  0 = no change, positive opens up, negative tightens. */
+  annoSpacing?: number;
   upperYOffsetRatio?: number;
   invert?: boolean;
   optimize?: boolean;
@@ -224,6 +227,7 @@ export async function generateFont(params: GenerateParams): Promise<GenerateResu
           newFamilyName: params.newFamilyName ?? null,
           baseScale: params.baseScale,
           annoScale: params.annoScale,
+          annoSpacing: params.annoSpacing,
           upperYOffsetRatio: params.upperYOffsetRatio,
           invert: params.invert,
           optimize: params.optimize,

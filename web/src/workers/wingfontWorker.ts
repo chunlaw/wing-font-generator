@@ -178,6 +178,8 @@ interface GeneratePayload {
   newFamilyName?: string | null;
   baseScale?: number;
   annoScale?: number;
+  /** Em-units. Forwarded as `anno_spacing` to the Python runner. */
+  annoSpacing?: number;
   upperYOffsetRatio?: number;
   invert?: boolean;
   optimize?: boolean;
@@ -216,6 +218,7 @@ async function handleGenerate(id: string, payload: GeneratePayload): Promise<voi
     new_family_name: payload.newFamilyName ?? null,
     base_scale: payload.baseScale ?? 0.75,
     anno_scale: payload.annoScale ?? 0.15,
+    anno_spacing: payload.annoSpacing ?? 0.0,
     upper_y_offset_ratio: payload.upperYOffsetRatio ?? 0.8,
     invert: payload.invert ?? false,
     optimize: payload.optimize ?? true,

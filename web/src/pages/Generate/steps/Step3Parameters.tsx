@@ -16,9 +16,13 @@ import {
   FormControlLabel,
   Slider,
   Stack,
+  Switch,
   TextField,
   Typography,
 } from "@mui/material";
+import { useEffect, useState } from "react";
+import { useTheme } from "@mui/material/styles";
+import opentype from "opentype.js";
 import { useGenerate } from "../GenerateContext";
 import { useTranslation } from "../../../i18n/LanguageContext";
 import { GenerateParams } from "../types";
@@ -45,6 +49,58 @@ const Step3Parameters = () => {
   // fire — no mappings, runtime not ready — so the UI can offer a
   // helpful prompt instead of an indefinite spinner.
   const previewBlocked = mappings.length === 0 || !runtimeReady;
+
+  // ── Typographic guide overlay ────────────────────────────────
+  //
+  // When `showGuides` is on, we swap the HTML <Typography>
+  // preview for an SVG-rendered version with horizontal lines
+  // drawn at the font's actual metric positions (ascent, cap,
+  // x-height, baseline, descent). The metrics come from parsing
+  // the preview WOFF with opentype.js. CJK fonts often leave
+  // sCapHeight / sxHeight at 0 — those lines are simply skipped
+  // when the value is unset rather than guessed.
+  const [showGuides, setShowGuides] = useState(false);
+  const [previewMetrics, setPreviewMetrics] =
+    useState<PreviewFontMetrics | null>(null);
+
+  useEffect(() => {
+    setPreviewMetrics(null);
+    if (!previewResult) return;
+    let cancelled = false;
+    previewResult.woffBlob
+      .arrayBuffer()
+      .then((buf) => {
+        if (cancelled) return;
+        try {
+          // opentype.parse copies the bytes, so we don't need to
+          // worry about the WOFF blob being mutated.
+          const f = opentype.parse(buf);
+          const os2 = f.tables.os2 as
+            | { sCapHeight?: number; sxHeight?: number }
+            | undefined;
+          setPreviewMetrics({
+            unitsPerEm: f.unitsPerEm,
+            // opentype.js normalises typo ascender/descender on
+            // .ascender / .descender (descender is negative).
+            ascender: f.ascender,
+            descender: f.descender,
+            capHeight: os2?.sCapHeight ?? 0,
+            xHeight: os2?.sxHeight ?? 0,
+          });
+        } catch {
+          // Parsing failure means we can't draw guides; leave
+          // metrics null so the guide UI silently falls back to
+          // hiding when the toggle is on.
+        }
+      })
+      .catch(() => {
+        // Same — the toggle stays clickable but the SVG render
+        // doesn't get the metric data it needs.
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [previewResult]);
 
   return (
     <Box display="flex" flexDirection="column" gap={3}>
@@ -132,6 +188,14 @@ const Step3Parameters = () => {
             max={0.35}
             step={0.01}
             onChange={(v) => setParam("annoScale", v)}
+          />
+          <LabeledSlider
+            label={t("step3.annoSpacing")}
+            value={params.annoSpacing}
+            min={-0.02}
+            max={0.15}
+            step={0.005}
+            onChange={(v) => setParam("annoSpacing", v)}
           />
           <LabeledSlider
             label={t("step3.yOffset")}
@@ -265,37 +329,45 @@ const Step3Parameters = () => {
                   mb: 2,
                 }}
               >
-                <Typography
-                  sx={{
-                    fontFamily: `"${previewResult.installedFamily}", serif`,
-                    // The chars should fill ~75 % of the preview-pane
-                    // width regardless of how many of them there are.
-                    // For N chars, each one wants width = 75/N % of the
-                    // container; for square CJK glyphs that's also the
-                    // approximate font-size. Clamp at 48 px floor so a
-                    // long phrase stays readable and 144 px ceiling so
-                    // a single char doesn't fill the whole card.
-                    //
-                    // sampleText.length is at least 1 (an empty
-                    // result would never have been set) but we guard
-                    // against div-by-zero just in case.
-                    fontSize: (() => {
-                      const n = Math.max(
-                        1,
-                        previewResult.sampleText.length,
-                      );
-                      return `clamp(48px, ${75 / n}cqw, 144px)`;
-                    })(),
-                    lineHeight: 1.2,
-                    // Defeat the line-break-mid-ligature problem that
-                    // Step 5 also handles — annotated chars should
-                    // never split across lines.
-                    overflowWrap: "normal",
-                    wordBreak: "keep-all",
-                  }}
-                >
-                  {previewResult.sampleText}
-                </Typography>
+                {showGuides && previewMetrics ? (
+                  <PreviewWithGuides
+                    family={previewResult.installedFamily}
+                    text={previewResult.sampleText}
+                    metrics={previewMetrics}
+                  />
+                ) : (
+                  <Typography
+                    sx={{
+                      fontFamily: `"${previewResult.installedFamily}", serif`,
+                      // The chars should fill ~75 % of the preview-pane
+                      // width regardless of how many of them there are.
+                      // For N chars, each one wants width = 75/N % of the
+                      // container; for square CJK glyphs that's also the
+                      // approximate font-size. Clamp at 48 px floor so a
+                      // long phrase stays readable and 144 px ceiling so
+                      // a single char doesn't fill the whole card.
+                      //
+                      // sampleText.length is at least 1 (an empty
+                      // result would never have been set) but we guard
+                      // against div-by-zero just in case.
+                      fontSize: (() => {
+                        const n = Math.max(
+                          1,
+                          previewResult.sampleText.length,
+                        );
+                        return `clamp(48px, ${75 / n}cqw, 144px)`;
+                      })(),
+                      lineHeight: 1.2,
+                      // Defeat the line-break-mid-ligature problem that
+                      // Step 5 also handles — annotated chars should
+                      // never split across lines.
+                      overflowWrap: "normal",
+                      wordBreak: "keep-all",
+                    }}
+                  >
+                    {previewResult.sampleText}
+                  </Typography>
+                )}
               </Box>
               <Typography variant="caption" color="text.secondary">
                 {previewResult.isCustomText ? (
@@ -320,6 +392,30 @@ const Step3Parameters = () => {
                   </>
                 )}
               </Typography>
+
+              {/*
+                Guides toggle. Disabled when we couldn't parse the
+                font's metrics (very rare with valid TTFs). Sits just
+                under the caption so it doesn't push the rendered
+                glyph around. Local state — no need to persist across
+                navigations.
+              */}
+              <FormControlLabel
+                control={
+                  <Switch
+                    size="small"
+                    checked={showGuides}
+                    onChange={(e) => setShowGuides(e.target.checked)}
+                    disabled={!previewMetrics}
+                  />
+                }
+                label={
+                  <Typography variant="caption" color="text.secondary">
+                    {t("step3.preview.showGuides")}
+                  </Typography>
+                }
+                sx={{ mt: 1, ml: 0, "& .MuiFormControlLabel-label": { ml: 0.5 } }}
+              />
             </Box>
           )}
 
@@ -412,6 +508,229 @@ const LabeledSlider = ({ label, value, onChange, min, max, step }: LabeledSlider
         valueLabelDisplay="auto"
       />
     </Box>
+  );
+};
+
+/**
+ * Subset of font metrics we use to draw the typographic guides
+ * overlay. All values are in font units (i.e. fractions of
+ * `unitsPerEm`). `capHeight` / `xHeight` may be 0 if the font's
+ * OS/2 table doesn't declare them (common in CJK fonts) — the
+ * SVG component below skips drawing those lines when the value
+ * is 0.
+ */
+interface PreviewFontMetrics {
+  unitsPerEm: number;
+  ascender: number;
+  descender: number; // negative
+  capHeight: number; // 0 when undefined in OS/2
+  xHeight: number; // 0 when undefined in OS/2
+}
+
+interface PreviewWithGuidesProps {
+  family: string;
+  text: string;
+  metrics: PreviewFontMetrics;
+}
+
+/**
+ * SVG-rendered preview with horizontal guide lines drawn at the
+ * font's metric positions. Used in place of the default <Typography>
+ * preview when the user toggles "Show guides" on.
+ *
+ * Why SVG and not an overlay on the HTML preview:
+ *   Computing where the baseline lives inside a CSS line-box at
+ *   line-height: 1.2 requires per-browser baseline-math fiddling.
+ *   SVG's coordinate system is explicit — we put the baseline at a
+ *   known y and compute ascent/descent offsets from font metrics
+ *   directly. Same browser font engine, so the rendered glyphs look
+ *   identical to the HTML path; only the host changes.
+ *
+ * Coordinate system:
+ *   Each em is 100 SVG units. viewBox width = 100 × N (so each char
+ *   has nominally 1 em of horizontal room), height = 160 (room for
+ *   ascender above + descender below baseline; tuned for typical
+ *   font ratios of ~0.9 ascent + ~0.2 descent). SVG width: 100%
+ *   makes the whole thing scale to fit the parent container the
+ *   same way the HTML preview does.
+ */
+const PreviewWithGuides = ({
+  family,
+  text,
+  metrics,
+}: PreviewWithGuidesProps) => {
+  // Resolve the rendered glyph's fill colour explicitly from the
+  // MUI theme rather than relying on `currentColor`. SVG's
+  // `currentColor` keyword requires the SVG to actually inherit a
+  // `color` value from CSS, which can fail in subtle ways depending
+  // on where the SVG is mounted in the tree. Reading
+  // `palette.text.primary` here gives us a concrete hex value that
+  // mirrors what the surrounding <Typography> would have used
+  // (near-black in light mode, near-white in dark mode), so the
+  // glyph contrast matches the HTML preview exactly.
+  const muiTheme = useTheme();
+  const glyphColor = muiTheme.palette.text.primary;
+
+  const EM = 100; // SVG units per em
+  // Vertical breathing room above the ascender and below the
+  // descender. Without these pads the ascent line sits at y=0 for
+  // most fonts and its "Ascent" label bumps against the Card's
+  // top border. With them, both lines (and their labels) have
+  // some clear space inside the SVG.
+  const TOP_PAD = 20;
+  const BOTTOM_PAD = 20;
+  // Baseline is one em down from the (now padded) top so the
+  // ascender area equals 1 em.
+  const BASELINE_Y = TOP_PAD + EM;
+  // Total height: top pad + 1 em above baseline + 0.6 em below for
+  // descender + bottom pad. 0.6 em is a comfortable upper bound on
+  // descender depth for typical CJK + Latin fonts (descenders
+  // usually go ~0.15–0.25 em below baseline).
+  const VIEW_HEIGHT = BASELINE_Y + EM * 0.6 + BOTTOM_PAD;
+  const n = Math.max(1, text.length);
+  // The glyphs occupy the left portion of the viewBox at 1em per
+  // char. We then add a right-side gutter for the guide-line labels
+  // ("Ascent", "Baseline", etc.) so they don't get drawn ON TOP OF
+  // the rightmost glyph — that's the bug that prompted this change.
+  // 70 SVG units ≈ 0.7em which comfortably fits the widest label
+  // ("x-height") at the label font-size of 7 units.
+  const GLYPH_AREA_WIDTH = EM * n;
+  const LABEL_GUTTER = 70;
+  const VIEW_WIDTH = GLYPH_AREA_WIDTH + LABEL_GUTTER;
+
+  // Convert metric values (in font units) to SVG units. unitsPerEm
+  // → EM gives us the scale factor.
+  const ascentSvg = (metrics.ascender / metrics.unitsPerEm) * EM;
+  // descender is negative in font-units terms; flip sign so we
+  // can add it downwards from baseline below.
+  const descentSvg = (-metrics.descender / metrics.unitsPerEm) * EM;
+  const capSvg = (metrics.capHeight / metrics.unitsPerEm) * EM;
+  const xSvg = (metrics.xHeight / metrics.unitsPerEm) * EM;
+
+  // Build the lines we actually draw. Each entry is gated on the
+  // metric being non-zero so CJK fonts (which often leave
+  // sCapHeight + sxHeight at 0) don't end up with two extra lines
+  // crammed against the baseline.
+  //
+  // Labels are intentionally hard-coded in English here regardless
+  // of the UI's current locale. These are typographic terms of art
+  // — "Baseline" / "Ascent" / "Descent" / "Cap" / "x-height" — and
+  // translating them risks confusion (e.g. translating "Cap" to a
+  // word that doesn't map back to the OS/2 metric name). They also
+  // act as legend-style annotations rather than UI copy, which is
+  // a common convention to leave untranslated.
+  type Guide = { y: number; label: string; color: string };
+  const guides: Guide[] = [
+    {
+      y: BASELINE_Y - ascentSvg,
+      label: "Ascent",
+      color: "#dc2626", // red-600
+    },
+    ...(capSvg > 0
+      ? [
+          {
+            y: BASELINE_Y - capSvg,
+            label: "Cap",
+            color: "#ea580c", // orange-600
+          },
+        ]
+      : []),
+    ...(xSvg > 0
+      ? [
+          {
+            y: BASELINE_Y - xSvg,
+            label: "x-height",
+            color: "#16a34a", // green-600
+          },
+        ]
+      : []),
+    {
+      y: BASELINE_Y,
+      label: "Baseline",
+      color: "#2563eb", // blue-600
+    },
+    {
+      y: BASELINE_Y + descentSvg,
+      label: "Descent",
+      color: "#9333ea", // purple-600
+    },
+  ];
+
+  // Label font-size in SVG units. Roughly 8 units = ~5 % of an
+  // em, which renders as comfortable caption text at any final
+  // display size because the SVG scales as a whole.
+  const LABEL_FONT_SIZE = 7;
+
+  return (
+    <svg
+      viewBox={`0 0 ${VIEW_WIDTH} ${VIEW_HEIGHT}`}
+      preserveAspectRatio="xMidYMid meet"
+      style={{
+        // Fill the available container width. The viewBox aspect
+        // ratio determines the resulting height. We deliberately
+        // dropped the earlier `maxHeight` cap because it was making
+        // the SVG visibly smaller than the surrounding card on wide
+        // screens, which forced the labels (anchored to the
+        // viewBox's right edge) into the same horizontal range as
+        // the glyphs. Letting the SVG fill the container — combined
+        // with the LABEL_GUTTER reserved inside the viewBox — gives
+        // labels their own real estate to live in.
+        width: "100%",
+        height: "auto",
+        overflow: "visible",
+      }}
+    >
+      {/* Guide lines */}
+      {guides.map((g) => (
+        <g key={g.label} opacity={0.7}>
+          <line
+            x1={0}
+            y1={g.y}
+            x2={VIEW_WIDTH}
+            y2={g.y}
+            stroke={g.color}
+            strokeWidth={0.6}
+            strokeDasharray="3 2"
+          />
+          <text
+            x={VIEW_WIDTH - 1}
+            y={g.y - 1}
+            fontSize={LABEL_FONT_SIZE}
+            textAnchor="end"
+            fill={g.color}
+            fontFamily="ui-monospace, SFMono-Regular, Menlo, monospace"
+          >
+            {g.label}
+          </text>
+        </g>
+      ))}
+
+      {/* The actual glyph render. `dominantBaseline=alphabetic`
+          places y on the baseline. font-size in SVG units = EM,
+          which matches our 1-em-per-100-units assumption.
+          `fill={glyphColor}` resolves the dark/light theme colour
+          from the MUI palette directly; `stroke="none"` is
+          explicit (even though it's the SVG default) because
+          `stroke="white"` lives on the label `<text>` elements
+          above and we want it unambiguous that the glyph carries
+          no stroke contour. */}
+      <text
+        // Centre the glyphs in the GLYPH AREA — the left portion
+        // of the viewBox. Using VIEW_WIDTH/2 would centre on the
+        // viewBox midpoint, which is offset by half the
+        // LABEL_GUTTER and visibly drifts the glyphs leftward.
+        x={GLYPH_AREA_WIDTH / 2}
+        y={BASELINE_Y}
+        fontFamily={`"${family}", serif`}
+        fontSize={EM}
+        textAnchor="middle"
+        dominantBaseline="alphabetic"
+        fill={glyphColor}
+        stroke="none"
+      >
+        {text}
+      </text>
+    </svg>
   );
 };
 

@@ -43,6 +43,7 @@ def main(
     new_family_name,
     base_scale=0.75,
     anno_scale=0.15,
+    anno_spacing=0.0,
     upper_y_offset_ratio=0.8,
     invert=False,
     optimize=False,
@@ -72,6 +73,7 @@ def main(
         char_mapping,
         base_scale=base_scale,
         anno_scale=anno_scale,
+        anno_spacing=anno_spacing,
         upper_y_offset_ratio=upper_y_offset_ratio,
         invert=invert,
     )

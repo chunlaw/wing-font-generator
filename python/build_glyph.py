@@ -35,6 +35,7 @@ def generate_annotated_glyphs(
     mapping,
     *,
     anno_scale: float = 0.15,
+    anno_spacing: float = 0.0,
     base_scale: float = 0.75,
     upper_y_offset_ratio: float = 0.8,
     invert: bool = False,
@@ -47,6 +48,15 @@ def generate_annotated_glyphs(
     centred horizontally above (or below if `invert`) the base.
     The first annotation per char re-uses the original glyph name; later
     variants get fresh `wingfontNNNNNN` names appended to the font.
+
+    `anno_spacing` (em-units) adds an extra horizontal gap between
+    consecutive annotation glyphs within a single annotation string.
+    Default 0 reproduces the original behaviour: glyphs sit at their
+    natural-advance positions. Positive values open the annotation
+    up (useful for CJK-radical mappings like Cangjie where the
+    default em-width feels cramped). Negative values tighten — push
+    too far and glyphs visibly overlap. The whole annotation block is
+    re-centred to account for the added width.
 
     Mutates `mapping` in place: each annotation value becomes the tuple
     `(target_glyph_name, variant_index)` that the GSUB handlers need.
@@ -78,6 +88,10 @@ def generate_annotated_glyphs(
         else:
             base_y_offset = round(units_per_em * upper_y_offset_ratio)
             anno_y_offset = 0
+
+        # Em-units → absolute font units. Done once outside the hot
+        # loop because every annotated glyph uses the same value.
+        anno_spacing_units = round(units_per_em * anno_spacing)
 
         # Hoist tables to locals once — every iteration would otherwise
         # do __getitem__ on the TTFont dict-like object, which involves
@@ -142,10 +156,17 @@ def generate_annotated_glyphs(
                         width = round(anno_hmtx[anno_glyph_name][0] * anno_scale)
                         anno_glyph_info.append((anno_glyph_name, width))
 
-                anno_len = sum(w for _, w in anno_glyph_info)
+                # `anno_len` is the total width the annotation block
+                # will occupy, including (N-1) inter-glyph gaps so the
+                # re-centring math below positions it correctly. When
+                # `anno_spacing` is 0 this collapses to the original
+                # natural-advance behaviour.
+                n_anno = len(anno_glyph_info)
+                inter_glyph_padding = max(0, n_anno - 1) * anno_spacing_units
+                anno_len = sum(w for _, w in anno_glyph_info) + inter_glyph_padding
                 x_position = (base_advance_width * base_scale - anno_len) / 2
 
-                for anno_glyph_name, width in anno_glyph_info:
+                for j, (anno_glyph_name, width) in enumerate(anno_glyph_info):
                     if anno_glyph_name in anno_glyph_set:
                         anno_glyph_set[anno_glyph_name].draw(
                             TransformPen(
@@ -161,6 +182,11 @@ def generate_annotated_glyphs(
                             )
                         )
                         x_position += width
+                        # Add the inter-glyph gap after every glyph
+                        # except the last — keeps the block flush at
+                        # the right edge.
+                        if j < n_anno - 1:
+                            x_position += anno_spacing_units
 
                 if out_vmtx is not None and glyph_name in base_glyph_order_set:
                     out_vmtx[new_glyph_name] = base_font["vmtx"][glyph_name]

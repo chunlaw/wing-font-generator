@@ -136,6 +136,7 @@ export type TranslationKey =
   | "step3.familyHint"
   | "step3.baseScale"
   | "step3.annoScale"
+  | "step3.annoSpacing"
   | "step3.yOffset"
   | "step3.invert"
   | "step3.optimize"
@@ -147,6 +148,7 @@ export type TranslationKey =
   | "step3.preview.sampledLabel"
   | "step3.preview.customLabel"
   | "step3.preview.notReady"
+  | "step3.preview.showGuides"
   | "step3.previewText.label"
   | "step3.previewText.placeholder"
   | "step3.previewText.helper"
@@ -304,6 +306,7 @@ export const TRANSLATIONS: Record<Language, Record<TranslationKey, string>> = {
     "step3.familyHint": "會寫入字型的 name 表",
     "step3.baseScale": "底字縮放比",
     "step3.annoScale": "標注縮放比",
+    "step3.annoSpacing": "標注字距（em 比例，正值放寬、負值收緊）",
     "step3.yOffset": "標注垂直位置（em 比例）",
     "step3.invert": "倒置：標注在下、底字在上",
     "step3.optimize": "壓縮輸出（移除未使用字形）",
@@ -316,6 +319,7 @@ export const TRANSLATIONS: Record<Language, Record<TranslationKey, string>> = {
     "step3.preview.sampledLabel": "樣本字詞",
     "step3.preview.customLabel": "預覽文字",
     "step3.preview.notReady": "請先載入字體同至少一條字詞配對。",
+    "step3.preview.showGuides": "顯示字體輔助線（基準線、上下緣等）",
     "step3.previewText.label": "預覽文字",
     "step3.previewText.placeholder": "留空 = 自動揀字詞",
     "step3.previewText.helper": "輸入想預覽嘅文字，會根據對應嘅字詞配對顯示。",
@@ -476,6 +480,7 @@ export const TRANSLATIONS: Record<Language, Record<TranslationKey, string>> = {
     "step3.familyHint": "Written into the font's name table",
     "step3.baseScale": "Base glyph scale",
     "step3.annoScale": "Annotation scale",
+    "step3.annoSpacing": "Annotation letter-spacing (em — positive loosens, negative tightens)",
     "step3.yOffset": "Annotation vertical offset (em ratio)",
     "step3.invert": "Invert: annotation below, base above",
     "step3.optimize": "Subset (drop unused glyphs)",
@@ -489,6 +494,7 @@ export const TRANSLATIONS: Record<Language, Record<TranslationKey, string>> = {
     "step3.preview.customLabel": "Preview text",
     "step3.preview.notReady":
       "Pick fonts and add at least one mapping first.",
+    "step3.preview.showGuides": "Show typographic guides (baseline, ascent, etc.)",
     "step3.previewText.label": "Preview text",
     "step3.previewText.placeholder": "Leave empty to auto-pick",
     "step3.previewText.helper":
