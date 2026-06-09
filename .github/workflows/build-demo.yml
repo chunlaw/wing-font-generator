@@ -1,0 +1,57 @@
+name: Demo Build
+on:
+  push:
+    # Trigger on web-app changes or on Python changes (since the sync
+    # step bundles Python into the static asset directory and we want
+    # to catch incompatible refactors before they ship).
+    paths:
+      - 'web/**'
+      - 'python/**'
+      - '.github/workflows/build-demo.yml'
+  pull_request:
+    paths:
+      - 'web/**'
+      - 'python/**'
+      - '.github/workflows/build-demo.yml'
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    # Run all yarn commands inside web/ so the working tree matches what
+    # contributors see locally when they `cd web && yarn install`.
+    defaults:
+      run:
+        working-directory: web
+
+    steps:
+      - name: Check out repository code
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'yarn'
+          cache-dependency-path: web/yarn.lock
+
+      - name: Install dependencies
+        run: yarn install --frozen-lockfile
+
+      # `yarn build` itself runs `yarn sync` first (see package.json), so
+      # this single step also exercises sync-python.mjs and confirms it
+      # successfully copies every file listed in its MANIFEST. If a
+      # source file moves under python/ without the manifest being
+      # updated, this step fails the PR.
+      - name: Type-check + Vite build
+        run: yarn build
+
+      - name: Upload built site as artifact
+        # Available for download from the Actions run page so you can
+        # inspect the bundle without deploying. Wire up Netlify/Vercel
+        # deploys separately if you want a live preview environment.
+        uses: actions/upload-artifact@v4
+        with:
+          name: web-dist
+          path: web/dist
+          retention-days: 7

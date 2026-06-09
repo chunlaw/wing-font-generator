@@ -1,0 +1,51 @@
+/*
+ * Layout strategy: classic sticky-footer.
+ *
+ * `body` and `#root` are flex columns at least the viewport tall. The
+ * Layout component (a child of #root) is itself a flex column, with the
+ * Outlet wrapped in a `flex: 1` box so the footer always sits at the
+ * bottom of the viewport when content is short, and the whole document
+ * scrolls naturally when content is taller than the viewport.
+ *
+ * Pages render with their natural height — they don't need to opt into
+ * their own overflow handling. Previously #root was `position: fixed`,
+ * which trapped the app inside the viewport and silently clipped any
+ * page that didn't manually set `flex: 1 + overflow: scroll` on its
+ * outer container.
+ */
+body {
+  margin: 0;
+  min-width: 320px;
+  min-height: 100dvh;
+  font-feature-settings: "calt" on, "liga" on;
+  font-language-override: "DFLT";
+}
+
+#root {
+  min-height: 100dvh;
+  display: flex;
+  flex-direction: column;
+}
+
+button {
+  border-radius: 8px;
+  border: 1px solid transparent;
+  padding: 0.6em 1.2em;
+  font-size: 1em;
+  font-weight: 500;
+  font-family: inherit;
+  background-color: #1a1a1a;
+  cursor: pointer;
+  transition: border-color 0.25s;
+}
+button:hover {
+  border-color: #646cff;
+}
+button:focus,
+button:focus-visible {
+  outline: 4px auto -webkit-focus-ring-color;
+}
+
+*:focus-visible {
+  outline: none;
+}

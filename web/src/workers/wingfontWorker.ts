@@ -1,0 +1,286 @@
+/// <reference lib="webworker" />
+/**
+ * wingfontWorker — runs wing-font.py inside Pyodide.
+ *
+ * Lifecycle:
+ *   1. On first message the worker downloads Pyodide from a CDN, loads the
+ *      fonttools + brotli packages, fetches the bundled Python sources and
+ *      writes them into Pyodide's MEMFS at /home/pyodide/wingfont/.
+ *   2. Subsequent generate requests reuse the already-loaded interpreter.
+ *
+ * Wire protocol (main thread → worker):
+ *   { type: "init" }
+ *   { type: "generate", id, payload: GeneratePayload }
+ *
+ * Wire protocol (worker → main thread):
+ *   { type: "ready" }
+ *   { type: "progress", id?, message }
+ *   { type: "result", id, ttf: ArrayBuffer, woff: ArrayBuffer, stdout: string }
+ *   { type: "error", id?, message }
+ */
+
+// Pyodide does not ship ES-module typings on its CDN bundle, so we declare
+// just enough to keep TypeScript honest.
+declare const self: DedicatedWorkerGlobalScope;
+
+interface PyodideAPI {
+  loadPackage: (names: string | string[]) => Promise<void>;
+  runPythonAsync: (code: string) => Promise<unknown>;
+  runPython: (code: string) => unknown;
+  FS: {
+    mkdirTree: (path: string) => void;
+    writeFile: (path: string, data: Uint8Array | string) => void;
+  };
+  globals: {
+    get: (name: string) => unknown;
+    set: (name: string, value: unknown) => void;
+  };
+  setStdout: (opts: { batched?: (s: string) => void }) => void;
+  setStderr: (opts: { batched?: (s: string) => void }) => void;
+  toPy: (obj: unknown) => unknown;
+}
+
+interface PyodideModule {
+  loadPyodide: (opts: { indexURL: string }) => Promise<PyodideAPI>;
+}
+
+// Keep the Pyodide version pinned. Bumping it can require code changes —
+// Pyodide's package list and python-version shift between releases.
+const PYODIDE_VERSION = "0.27.2";
+const PYODIDE_INDEX = `https://cdn.jsdelivr.net/pyodide/v${PYODIDE_VERSION}/full/`;
+// We load the ES-module build (pyodide.mjs) via dynamic import() rather
+// than the legacy classic-script build (pyodide.js) via importScripts().
+// Vite builds this worker as a module worker, and the spec forbids
+// importScripts() inside module workers — the browser surfaces this as
+// "Module scripts don't support importScripts()". Dynamic import works
+// in both classic and module workers, so this is the portable choice.
+const PYODIDE_ESM = `${PYODIDE_INDEX}pyodide.mjs`;
+
+// The wing-font Python sources we ship under /public/wingfont/. They must
+// match the layout that wingfont_main.py expects (it does
+// `from mappings.csv_parser import load_mapping`).
+//
+// `src` is intentionally a leading-slash (origin-absolute) path. The
+// worker's own URL lives under /src/workers/... in Vite dev and under
+// /assets/... in a production build, so relative paths would resolve
+// to non-existent locations like /src/workers/wingfont/runner.py and
+// trigger Vite's SPA fallback (which silently returns index.html as
+// HTML — Python then chokes on `//` as an "unterminated string"). The
+// leading slash forces resolution from the origin where /public/ is
+// served from.
+//
+// If you ever deploy with a non-root Vite `base` (e.g. base: "/app/"),
+// either prepend that base here or, better, plumb import.meta.env.BASE_URL
+// from the main thread through the init message.
+const PY_FILES: { src: string; dest: string }[] = [
+  { src: "/wingfont/wingfont_main.py", dest: "/home/pyodide/wingfont/wingfont_main.py" },
+  { src: "/wingfont/build_glyph.py", dest: "/home/pyodide/wingfont/build_glyph.py" },
+  { src: "/wingfont/chain_context_handler.py", dest: "/home/pyodide/wingfont/chain_context_handler.py" },
+  { src: "/wingfont/liga_handler.py", dest: "/home/pyodide/wingfont/liga_handler.py" },
+  { src: "/wingfont/utils.py", dest: "/home/pyodide/wingfont/utils.py" },
+  { src: "/wingfont/runner.py", dest: "/home/pyodide/wingfont/runner.py" },
+  { src: "/wingfont/mappings/__init__.py", dest: "/home/pyodide/wingfont/mappings/__init__.py" },
+  { src: "/wingfont/mappings/csv_parser.py", dest: "/home/pyodide/wingfont/mappings/csv_parser.py" },
+];
+
+let pyodideReady: Promise<PyodideAPI> | null = null;
+
+function post(msg: Record<string, unknown>, transfer?: Transferable[]): void {
+  if (transfer && transfer.length) {
+    self.postMessage(msg, transfer);
+  } else {
+    self.postMessage(msg);
+  }
+}
+
+function emitProgress(message: string, id?: string): void {
+  post({ type: "progress", id, message });
+}
+
+async function fetchToBytes(path: string): Promise<Uint8Array> {
+  // `path` is an origin-absolute URL (starts with "/"). Resolving against
+  // `self.location.origin` (just scheme + host + port) — never against
+  // `self.location.href` — keeps us independent of where Vite parks the
+  // worker bundle (/src/workers/... in dev vs /assets/... in prod).
+  const url = self.location.origin + path;
+  const res = await fetch(url);
+  if (!res.ok) throw new Error(`Failed to fetch ${url}: ${res.status}`);
+  // Guard against Vite's SPA fallback returning index.html (HTML) when
+  // the file isn't actually there. Without this check Python sees the
+  // <script> body and reports a confusing "unterminated string literal".
+  const contentType = res.headers.get("content-type") ?? "";
+  if (contentType.includes("text/html")) {
+    throw new Error(
+      `Expected ${url} but got HTML — has yarn sync run? ` +
+        "Run `yarn sync` (or restart `yarn dev`) to populate public/wingfont/.",
+    );
+  }
+  const buf = await res.arrayBuffer();
+  return new Uint8Array(buf);
+}
+
+async function ensurePyodide(): Promise<PyodideAPI> {
+  if (pyodideReady) return pyodideReady;
+  pyodideReady = (async () => {
+    emitProgress("Loading Pyodide runtime...");
+    // Dynamic import of the ESM build. The `/* @vite-ignore */` hint
+    // stops Vite from trying to follow this URL at build time — we want
+    // the import resolved at runtime in the browser, by the worker
+    // itself, against jsdelivr's CDN.
+    const pyodideModule: PyodideModule = await import(
+      /* @vite-ignore */ PYODIDE_ESM
+    );
+    const pyodide = await pyodideModule.loadPyodide({
+      indexURL: PYODIDE_INDEX,
+    });
+
+    emitProgress("Loading fonttools and brotli (one-time download)...");
+    await pyodide.loadPackage(["fonttools", "brotli"]);
+
+    emitProgress("Installing wing-font scripts into virtual filesystem...");
+    pyodide.FS.mkdirTree("/home/pyodide/wingfont/mappings");
+    for (const { src, dest } of PY_FILES) {
+      const bytes = await fetchToBytes(src);
+      pyodide.FS.writeFile(dest, bytes);
+    }
+
+    // Route any stray prints to a progress event so the user sees activity.
+    pyodide.setStdout({ batched: (s: string) => emitProgress(s) });
+    pyodide.setStderr({ batched: (s: string) => emitProgress(`[stderr] ${s}`) });
+
+    // Preload the runner module; this also surfaces any syntax errors early.
+    await pyodide.runPythonAsync(`
+import sys
+if "/home/pyodide/wingfont" not in sys.path:
+    sys.path.insert(0, "/home/pyodide/wingfont")
+import runner
+`);
+
+    emitProgress("Pyodide ready.");
+    post({ type: "ready" });
+    return pyodide;
+  })().catch((err) => {
+    pyodideReady = null;
+    post({ type: "error", message: `Init failed: ${err?.message ?? err}` });
+    throw err;
+  });
+  return pyodideReady;
+}
+
+interface GeneratePayload {
+  baseFontBytes: ArrayBuffer;
+  annoFontBytes: ArrayBuffer;
+  mappingCsvText: string;
+  newFamilyName?: string | null;
+  baseScale?: number;
+  annoScale?: number;
+  upperYOffsetRatio?: number;
+  invert?: boolean;
+  optimize?: boolean;
+}
+
+async function handleGenerate(id: string, payload: GeneratePayload): Promise<void> {
+  const pyodide = await ensurePyodide();
+
+  // Move the input buffers into Python land as bytes objects. We use
+  // pyodide.globals to avoid serialising large arrays through runPython
+  // string interpolation.
+  pyodide.globals.set("_base_bytes", new Uint8Array(payload.baseFontBytes));
+  pyodide.globals.set("_anno_bytes", new Uint8Array(payload.annoFontBytes));
+  pyodide.globals.set("_mapping_csv", payload.mappingCsvText);
+  pyodide.globals.set("_progress_cb", (msg: string) =>
+    emitProgress(msg, id),
+  );
+
+  const params = {
+    new_family_name: payload.newFamilyName ?? null,
+    base_scale: payload.baseScale ?? 0.75,
+    anno_scale: payload.annoScale ?? 0.15,
+    upper_y_offset_ratio: payload.upperYOffsetRatio ?? 0.8,
+    invert: payload.invert ?? false,
+    optimize: payload.optimize ?? true,
+  };
+  pyodide.globals.set("_params", pyodide.toPy(params));
+
+  // The runner returns a Python dict-of-bytes. We convert to a JS object,
+  // pull the bytes out as Uint8Arrays, and transfer the underlying buffers
+  // back to the main thread (zero-copy).
+  //
+  // Note: we already converted `params` from a JS object to a Python dict
+  // via `pyodide.toPy(params)` above. The Python side therefore receives
+  // an honest-to-goodness dict — NOT a JsProxy — so it must NOT call
+  // `.to_py()` on it (that method only exists on JsProxy). `**_params`
+  // unpacks the dict directly into kwargs.
+  const result = (await pyodide.runPythonAsync(`
+from runner import generate
+
+_result = generate(
+    bytes(_base_bytes),
+    bytes(_anno_bytes),
+    _mapping_csv,
+    progress_cb=_progress_cb,
+    **_params,
+)
+_result
+`)) as {
+    toJs: (opts: { dict_converter?: typeof Object.fromEntries }) => Map<string, unknown> | Record<string, unknown>;
+    destroy: () => void;
+  };
+
+  // Pyodide returns a PyProxy for the dict; convert it to JS. We ask for
+  // a plain object so we can read .ttf/.woff/.stdout by key.
+  const jsResult = (
+    result.toJs({ dict_converter: Object.fromEntries }) as Record<string, unknown>
+  );
+
+  const ttfU8 = jsResult.ttf as Uint8Array;
+  const woffU8 = jsResult.woff as Uint8Array;
+  const stdout = (jsResult.stdout as string) ?? "";
+
+  // toJs returns Uint8Arrays that *share* memory with WASM. Copy into
+  // standalone ArrayBuffers so we can transfer ownership to the main
+  // thread without leaving dangling references inside Pyodide.
+  const ttfCopy = new Uint8Array(ttfU8).buffer;
+  const woffCopy = new Uint8Array(woffU8).buffer;
+
+  // Clean up the PyProxy aggressively — large generated fonts otherwise
+  // sit in WASM memory until the next GC pass.
+  result.destroy();
+  pyodide.runPython("import gc; gc.collect()");
+
+  post(
+    { type: "result", id, ttf: ttfCopy, woff: woffCopy, stdout },
+    [ttfCopy, woffCopy],
+  );
+}
+
+self.addEventListener("message", (event: MessageEvent) => {
+  const data = event.data as { type: string; id?: string; payload?: GeneratePayload };
+  if (data.type === "init") {
+    ensurePyodide().catch(() => {
+      /* error already posted */
+    });
+    return;
+  }
+  if (data.type === "generate") {
+    const id = data.id ?? "anon";
+    if (!data.payload) {
+      post({ type: "error", id, message: "Missing generate payload" });
+      return;
+    }
+    handleGenerate(id, data.payload).catch((err) => {
+      const message = err instanceof Error ? err.message : String(err);
+      post({ type: "error", id, message });
+    });
+    return;
+  }
+  post({ type: "error", message: `Unknown message type: ${data.type}` });
+});
+
+// Self-bootstrap: start downloading Pyodide as soon as the worker spins up
+// so the cold-start cost is amortised against user input time.
+ensurePyodide().catch(() => {
+  /* error already posted; let the explicit message handler retry */
+});
+
+export {}; // keep this file an ES module
