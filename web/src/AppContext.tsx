@@ -115,7 +115,59 @@ export const AppContextProvider = ({ children }: { children: ReactNode }) => {
 
 export default AppContext;
 
+/**
+ * Restore the user's previously-picked fonts from localStorage, but
+ * always re-derive each font's `source` URL from the current
+ * AVAILABLE_FONTS table. The persisted JSON includes the full
+ * FontOption object — including a `source: "url(https://...)"` string
+ * that was baked in at the time of the previous visit. If we ever
+ * change the font CDN URL (e.g. moving from fonts.chunlaw.io →
+ * wing-fonts.chunlaw.io/fonts), users who visited before the change
+ * would otherwise load fonts from a domain that no longer serves them.
+ *
+ * Strategy: match each saved entry by `name` (the stable identifier)
+ * against AVAILABLE_FONTS, and use the table's current entry verbatim.
+ * Entries whose name is no longer in the catalog (font deleted, renamed)
+ * are dropped silently.
+ *
+ * Falling back to the cantonese-lshk default keeps the showcase
+ * non-empty for first-time visitors.
+ */
+function loadPickedFontsWithFreshUrls(): FontOption[] {
+  const raw = localStorage.getItem("pickedFonts");
+  const fallback = () => [Object.values(AVAILABLE_FONTS["cantonese"].fonts)[0]];
+  if (!raw) return fallback();
+
+  let parsed: unknown;
+  try {
+    parsed = JSON.parse(raw);
+  } catch {
+    return fallback();
+  }
+  if (!Array.isArray(parsed)) return fallback();
+
+  // Build a quick lookup of every font in every language group so we
+  // don't have to search the nested catalog per saved entry.
+  const catalog: Record<string, FontOption> = {};
+  for (const group of Object.values(AVAILABLE_FONTS)) {
+    for (const [name, opt] of Object.entries(group.fonts)) {
+      catalog[name] = opt;
+    }
+  }
+
+  const refreshed: FontOption[] = [];
+  for (const item of parsed) {
+    if (!item || typeof item !== "object") continue;
+    const name = (item as { name?: unknown }).name;
+    if (typeof name !== "string") continue;
+    const current = catalog[name];
+    if (current) refreshed.push(current);
+    // else: drop silently — the font is no longer in the catalog
+  }
+  return refreshed.length > 0 ? refreshed : fallback();
+}
+
 const DEFAULT_STATE: AppContextState = {
   msg: "",
-  pickedFonts: JSON.parse(localStorage.getItem('pickedFonts') ?? "null") ?? [Object.values(AVAILABLE_FONTS["cantonese"].fonts)[0]],
+  pickedFonts: loadPickedFontsWithFreshUrls(),
 };
