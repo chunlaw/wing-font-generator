@@ -20,7 +20,6 @@ export type Language = "zh" | "en";
 export type TranslationKey =
   // Header
   | "header.title"
-  | "header.subtitle"
   | "header.cta.generate"
   | "header.cta.showcase"
   | "header.cta.learnMore"
@@ -29,6 +28,13 @@ export type TranslationKey =
   | "header.theme.toggle"
   // Footer
   | "footer.license"
+  | "footer.about.title"
+  | "footer.about.body"
+  | "footer.links.title"
+  | "footer.links.generate"
+  | "footer.links.showcase"
+  | "footer.links.source"
+  | "footer.credit"
   // Home
   | "home.hero.title"
   | "home.hero.tagline"
@@ -49,6 +55,27 @@ export type TranslationKey =
   | "home.features.f4.body"
   // Showcase (existing Main page)
   | "showcase.tryIt"
+  // About page
+  | "about.hero.title"
+  | "about.hero.tagline"
+  | "about.origin.title"
+  | "about.origin.body"
+  | "about.opensource.title"
+  | "about.opensource.body"
+  | "about.contribute.title"
+  | "about.contribute.intro"
+  | "about.contribute.code.title"
+  | "about.contribute.code.body"
+  | "about.contribute.design.title"
+  | "about.contribute.design.body"
+  | "about.contribute.data.title"
+  | "about.contribute.data.body"
+  | "about.support.title"
+  | "about.support.body"
+  | "about.cta.generate"
+  | "about.cta.showcase"
+  | "about.cta.telegram"
+  | "about.cta.github"
   // Generate (top-level)
   | "generate.title"
   | "generate.runtime.ready"
@@ -129,7 +156,6 @@ export const TRANSLATIONS: Record<Language, Record<TranslationKey, string>> = {
   zh: {
     // Header
     "header.title": "Wing Font",
-    "header.subtitle": "免費開源，自製粵語、倉頡等註音字體",
     "header.cta.generate": "自製字體",
     "header.cta.showcase": "字體展示",
     "header.cta.learnMore": "了解更多！",
@@ -138,6 +164,14 @@ export const TRANSLATIONS: Record<Language, Record<TranslationKey, string>> = {
     "header.theme.toggle": "切換主題",
     // Footer
     "footer.license": "MIT License（自由及開源軟件）",
+    "footer.about.title": "關於 Wing Font",
+    "footer.about.body":
+      "Wing Font 是一套開源工具，讓任何人都可以為粵語、倉頡等任何標註方式自製字型。所有計算都在你的瀏覽器內進行，毋須上傳檔案。",
+    "footer.links.title": "連結",
+    "footer.links.generate": "自製字體",
+    "footer.links.showcase": "字體展示",
+    "footer.links.source": "原始碼（GitHub）",
+    "footer.credit": "由 chunlaw 設計與開發",
     // Home
     "home.hero.title": "Wing Font",
     "home.hero.tagline":
@@ -165,6 +199,35 @@ export const TRANSLATIONS: Record<Language, Record<TranslationKey, string>> = {
       "你的字體與對應表全程不會離開瀏覽器，所有處理皆在本機進行。",
     // Showcase
     "showcase.tryIt": "隨便試 (Try it!!)",
+    // About
+    "about.hero.title": "了解 Wing Font",
+    "about.hero.tagline":
+      "為甚麼這個工具存在，誰在用，怎樣一齊參與。",
+    "about.origin.title": "緣起",
+    "about.origin.body":
+      "中文字可以加語言學會拼音，可以用反切，會唔會可以用平假名添？推而廣之，圍頭話、潮州話、台語、福建話、上海話都可以做埋。我們已經做到 WOFF 字體畀網頁使用 —— 普羅大眾只需要用瀏覽器打開 IT 友做的網站，就睇到。睇歌詞可以跟著唱，睇詩可以一齊讀；教倉頡打字、教移民港孩，亦方便啲啲。",
+    "about.opensource.title": "點解免費又開源？",
+    "about.opensource.body":
+      "若我能說萬國的方言，但時間有限 —— 一齊參與，一齊為語言為文字努力，社會一定會更好。開源亦讓設計師可以用自己鍾意的字體合成屬於自己的版本：很多字體本身有版權，我們無辦法拎來合成畀大家用，但你可以自己搞，開開心心。",
+    "about.contribute.title": "一齊參與",
+    "about.contribute.intro":
+      "Wing Font 永遠不會完美，亦永遠歡迎更多人手。下面係幾條最缺人嘅路。",
+    "about.contribute.code.title": "寫程式",
+    "about.contribute.code.body":
+      "無任歡迎。識寫 code 嘅你，相信會自己搵到 GitHub 連結。",
+    "about.contribute.design.title": "設計",
+    "about.contribute.design.body":
+      "現時拼音擺位未必好突出。歡迎加入 Telegram 群組，傾下應該用咩字體、比例又應該係點。",
+    "about.contribute.data.title": "詞庫",
+    "about.contribute.data.body":
+      "暫時最缺係詞典 —— 同埋多音字嘅預設讀音應該點揀。如果你對某種語言有研究，可以加入 Telegram 群討論。",
+    "about.support.title": "想表達支持？",
+    "about.support.body":
+      "多謝先。話說我都有做巴士 app —— 不妨試埋 hkbus.app。喺 GitHub Sponsors 撐我一啲都好歡迎。",
+    "about.cta.generate": "開始自製字體",
+    "about.cta.showcase": "瀏覽現成字體",
+    "about.cta.telegram": "加入 Telegram 群",
+    "about.cta.github": "去 GitHub",
     // Generate
     "generate.title": "自製註音字體",
     "generate.runtime.ready": "字型引擎已就緒。首次生成需要 30 至 120 秒。",
@@ -247,8 +310,6 @@ export const TRANSLATIONS: Record<Language, Record<TranslationKey, string>> = {
   en: {
     // Header
     "header.title": "Wing Font",
-    "header.subtitle":
-      "Free, open-source generator for Cantonese / Cangjie / Yale annotation fonts.",
     "header.cta.generate": "Make Your Font",
     "header.cta.showcase": "Showcase",
     "header.cta.learnMore": "Learn More",
@@ -257,6 +318,14 @@ export const TRANSLATIONS: Record<Language, Record<TranslationKey, string>> = {
     "header.theme.toggle": "Switch theme",
     // Footer
     "footer.license": "MIT License (free & open source)",
+    "footer.about.title": "About Wing Font",
+    "footer.about.body":
+      "Wing Font is an open-source tool for generating annotation fonts — Cantonese romanization, Cangjie input codes, or any custom scheme. Everything runs in your browser; no files leave your machine.",
+    "footer.links.title": "Links",
+    "footer.links.generate": "Make your font",
+    "footer.links.showcase": "Showcase",
+    "footer.links.source": "Source (GitHub)",
+    "footer.credit": "Designed and built by chunlaw",
     // Home
     "home.hero.title": "Wing Font",
     "home.hero.tagline":
@@ -284,6 +353,35 @@ export const TRANSLATIONS: Record<Language, Record<TranslationKey, string>> = {
       "Your fonts and mapping never leave your browser. Everything runs client-side.",
     // Showcase
     "showcase.tryIt": "Try typing here",
+    // About
+    "about.hero.title": "About Wing Font",
+    "about.hero.tagline":
+      "Why this tool exists, who uses it, and how to get involved.",
+    "about.origin.title": "Origin",
+    "about.origin.body":
+      "Chinese characters can be annotated with LSHK Jyutping, with fanqie, even with hiragana. By extension: Wei Tau, Teochew, Taiwanese, Hokkien, Shanghainese — all of them deserve the same treatment. Wing Font ships these as WOFF fonts the browser can load directly. The general reader doesn't need to install anything: they open a page built by a developer who used the font, and the annotations are just there. Singing along to lyrics, reading classical poetry out loud, teaching Cangjie input to a child returning to Hong Kong — all become a little less effortful.",
+    "about.opensource.title": "Why free and open source?",
+    "about.opensource.body":
+      "If I were to speak in all the tongues of men, time would still be finite — but together we can push language and writing forward. Open source also lets designers compose annotated variants of their own typefaces. Many fonts are under restrictive licences and we can't redistribute the derived output ourselves; but a designer with their own font and the source code can build their version and ship it themselves.",
+    "about.contribute.title": "Get involved",
+    "about.contribute.intro":
+      "Wing Font is never finished. These are the gaps where new hands help the most.",
+    "about.contribute.code.title": "Code",
+    "about.contribute.code.body":
+      "Pull requests welcome. If you write code, you'll find the GitHub link.",
+    "about.contribute.design.title": "Design",
+    "about.contribute.design.body":
+      "The current annotation placement isn't always optimal. Join the Telegram group to discuss which typefaces and proportions work best.",
+    "about.contribute.data.title": "Mappings",
+    "about.contribute.data.body":
+      "The biggest gap right now is mapping data — and deciding which reading should be the default for polyphonic characters. If you've studied a particular language, the Telegram group is where these conversations happen.",
+    "about.support.title": "Want to show support?",
+    "about.support.body":
+      "Thank you in advance. I also built a Hong Kong bus app — try hkbus.app if you're local. Sponsoring on GitHub is also genuinely appreciated.",
+    "about.cta.generate": "Make your own font",
+    "about.cta.showcase": "Browse ready-made fonts",
+    "about.cta.telegram": "Join the Telegram group",
+    "about.cta.github": "View on GitHub",
     // Generate
     "generate.title": "Generate your own annotation font",
     "generate.runtime.ready":

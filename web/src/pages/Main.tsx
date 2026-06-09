@@ -57,6 +57,9 @@ const Main = () => {
 export default Main;
 
 const msgSx: SxProps<Theme> = {
-  fontSize: 36,
+  // Responsive: small phones get a readable 22px, scaling up to 36px
+  // on tablets+. textWrap retained so the showcase line doesn't break
+  // mid-sample.
+  fontSize: { xs: 22, sm: 28, md: 36 },
   textWrap: "nowrap",
 };

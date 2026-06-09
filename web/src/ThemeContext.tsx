@@ -173,13 +173,46 @@ export const ThemeProvider = ({ children }: { children: ReactNode }) => {
         '"Microsoft YaHei"',
         "sans-serif",
       ].join(","),
-      h1: { fontWeight: 700, letterSpacing: "-0.02em" },
-      h2: { fontWeight: 700, letterSpacing: "-0.02em" },
-      h3: { fontWeight: 700, letterSpacing: "-0.02em" },
-      h4: { fontWeight: 600, letterSpacing: "-0.01em" },
-      h5: { fontWeight: 600, letterSpacing: "-0.01em" },
-      h6: { fontWeight: 600 },
+      // Responsive scale: headings grow with viewport so they feel
+      // confident on desktop without overwhelming phones. MUI accepts
+      // breakpoint objects in fontSize since v5.
+      h1: {
+        fontWeight: 800,
+        letterSpacing: "-0.03em",
+        lineHeight: 1.1,
+        fontSize: "clamp(2.25rem, 5vw, 4rem)",
+      },
+      h2: {
+        fontWeight: 700,
+        letterSpacing: "-0.025em",
+        lineHeight: 1.15,
+        fontSize: "clamp(1.875rem, 4vw, 3rem)",
+      },
+      h3: {
+        fontWeight: 700,
+        letterSpacing: "-0.02em",
+        lineHeight: 1.2,
+        fontSize: "clamp(1.625rem, 3.2vw, 2.5rem)",
+      },
+      h4: {
+        fontWeight: 600,
+        letterSpacing: "-0.015em",
+        lineHeight: 1.25,
+        fontSize: "clamp(1.375rem, 2.5vw, 2rem)",
+      },
+      h5: {
+        fontWeight: 600,
+        letterSpacing: "-0.01em",
+        lineHeight: 1.3,
+        fontSize: "clamp(1.25rem, 1.8vw, 1.5rem)",
+      },
+      h6: {
+        fontWeight: 600,
+        lineHeight: 1.4,
+        fontSize: "clamp(1.125rem, 1.4vw, 1.25rem)",
+      },
       subtitle1: { fontWeight: 600 },
+      body1: { lineHeight: 1.65 }, // generous reading line-height
       button: { textTransform: "none", fontWeight: 600 }, // no SHOUTY all-caps
     },
     shape: {
@@ -187,14 +220,75 @@ export const ThemeProvider = ({ children }: { children: ReactNode }) => {
     },
     components: {
       MuiCssBaseline: {
-        styleOverrides: {
+        styleOverrides: (themeArg) => ({
           // Smoother font rendering on macOS / iOS without losing
           // weight on lower-DPI Windows displays.
           body: {
             WebkitFontSmoothing: "antialiased",
             MozOsxFontSmoothing: "grayscale",
+            // -------------------------------------------------------
+            // Layered "aurora" backdrop — three very faint radial
+            // gradients stacked on top of the base background colour.
+            //
+            // Why three layers instead of one:
+            //   A single emerald glow reads great against near-black
+            //   (dark mode) because the contrast headroom turns it
+            //   luminous. The same glow against near-white (light
+            //   mode) just looks like a smudge. To get equivalent
+            //   atmosphere in light mode you need multiple
+            //   complementary washes blending together — the eye
+            //   reads them as ambient colour in the air rather than
+            //   as a coloured blob. This is the trick Stripe /
+            //   Linear / Vercel use on their light marketing pages.
+            //
+            // Layer roles:
+            //   1) emerald, top-left  → brand glow, the dominant note
+            //   2) sky-blue, top-right → cool complement, depth
+            //   3) emerald, bottom-centre → grounding, keeps long
+            //      pages from feeling empty at the bottom
+            //
+            // Opacities are intentionally low (6–14%). Each layer is
+            // nearly invisible alone; together they create the
+            // ambient feel. Dark mode keeps a touch more luminance
+            // because dark surfaces eat more light.
+            //
+            // `backgroundAttachment: fixed` anchors the gradient to
+            // the viewport, so the washes stay put while you scroll.
+            // -------------------------------------------------------
+            backgroundImage:
+              themeArg.palette.mode === "light"
+                ? [
+                    `radial-gradient(ellipse 900px 600px at 10% 0%, ${alpha(
+                      EMERALD[500],
+                      0.12,
+                    )}, transparent 60%)`,
+                    `radial-gradient(ellipse 800px 500px at 90% 5%, ${alpha(
+                      "#60a5fa",
+                      0.10,
+                    )}, transparent 60%)`,
+                    `radial-gradient(ellipse 700px 400px at 50% 100%, ${alpha(
+                      EMERALD[500],
+                      0.06,
+                    )}, transparent 65%)`,
+                  ].join(",")
+                : [
+                    `radial-gradient(ellipse 900px 600px at 10% 0%, ${alpha(
+                      EMERALD[500],
+                      0.14,
+                    )}, transparent 60%)`,
+                    `radial-gradient(ellipse 800px 500px at 90% 5%, ${alpha(
+                      "#60a5fa",
+                      0.10,
+                    )}, transparent 60%)`,
+                    `radial-gradient(ellipse 700px 400px at 50% 100%, ${alpha(
+                      EMERALD[500],
+                      0.08,
+                    )}, transparent 65%)`,
+                  ].join(","),
+            backgroundRepeat: "no-repeat",
+            backgroundAttachment: "fixed",
           },
-        },
+        }),
       },
       MuiTextField: {
         defaultProps: { size: "small" },

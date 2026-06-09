@@ -1,3 +1,17 @@
+/**
+ * @deprecated Superseded by the /about route (see web/src/pages/About.tsx).
+ *
+ * This modal previously held nine accordions of Cantonese FAQ content.
+ * It is no longer rendered anywhere (Header.tsx now links to /about
+ * instead of opening this dialog). The file is kept temporarily so
+ * the Cantonese source text remains accessible while the About page's
+ * translations are reviewed; it can be deleted once those are signed
+ * off.
+ *
+ * Do NOT re-introduce a reference to this component. Add new
+ * introduction copy to translations.ts under the `about.*` keys and
+ * render it from About.tsx.
+ */
 import { ExpandMore } from "@mui/icons-material";
 import {
   Accordion,

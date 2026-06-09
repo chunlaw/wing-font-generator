@@ -25,6 +25,8 @@ import {
   Stack,
   TextField,
   Typography,
+  useMediaQuery,
+  useTheme,
 } from "@mui/material";
 import {
   Add,
@@ -48,7 +50,13 @@ import { useGenerate } from "../GenerateContext";
 import { useTranslation } from "../../../i18n/LanguageContext";
 import { MappingRow } from "../types";
 
-const ROW_HEIGHT = 56;
+// Two row heights — phones get taller rows because we stack the data
+// onto two lines (chars + actions on top, annos + weight below). The
+// 4-column desktop grid would otherwise overflow a 360-wide viewport.
+// react-window needs a numeric itemSize known at render time, so the
+// component computes the right height once per breakpoint flip.
+const ROW_HEIGHT_DESKTOP = 56;
+const ROW_HEIGHT_MOBILE = 88;
 
 /**
  * Bundle of everything a virtualised row needs. Passed to react-window
@@ -61,6 +69,7 @@ interface RowItemData {
   setEditingId: (id: string | null) => void;
   updateMapping: (id: string, patch: Partial<Omit<MappingRow, "id">>) => void;
   requestDelete: (id: string) => void;
+  isMobile: boolean;
 }
 
 /**
@@ -85,6 +94,7 @@ const RowRenderer = memo(function RowRenderer({
       <Row
         row={row}
         isEditing={data.editingId === row.id}
+        isMobile={data.isMobile}
         onStartEdit={() => data.setEditingId(row.id)}
         onStopEdit={() => data.setEditingId(null)}
         onChange={(patch) => data.updateMapping(row.id, patch)}
@@ -117,6 +127,13 @@ const Step2Mappings = () => {
   const [pendingDelete, setPendingDelete] = useState<string | null>(null);
   const [addOpen, setAddOpen] = useState(false);
   const [importError, setImportError] = useState<string | null>(null);
+
+  // Phone-width vs everything else. The mapping table needs different
+  // row heights AND a different visual layout per breakpoint; we route
+  // both through this single flag.
+  const muiTheme = useTheme();
+  const isMobile = useMediaQuery(muiTheme.breakpoints.down("sm"));
+  const rowHeight = isMobile ? ROW_HEIGHT_MOBILE : ROW_HEIGHT_DESKTOP;
 
   // Filter on lowercased substring match across chars + annos.
   const filtered = useMemo(() => {
@@ -156,8 +173,9 @@ const Step2Mappings = () => {
       setEditingId,
       updateMapping,
       requestDelete: setPendingDelete,
+      isMobile,
     }),
-    [filtered, editingId, updateMapping],
+    [filtered, editingId, updateMapping, isMobile],
   );
 
   const handleImport = useCallback(
@@ -264,24 +282,27 @@ const Step2Mappings = () => {
         </Button>
       </Stack>
 
-      {/* Header row (above the virtualised list) */}
+      {/* Header row — hidden on mobile because the per-row cards label
+          themselves inline (no shared column structure to align with). */}
       <Paper variant="outlined" sx={{ overflow: "hidden" }}>
-        <Box
-          display="grid"
-          gridTemplateColumns="2fr 3fr 1fr 96px"
-          sx={{
-            px: 1.5,
-            py: 1,
-            bgcolor: "action.hover",
-            fontWeight: 600,
-            fontSize: 13,
-          }}
-        >
-          <Box>{t("step2.col.chars")}</Box>
-          <Box>{t("step2.col.annos")}</Box>
-          <Box>{t("step2.col.weight")}</Box>
-          <Box />
-        </Box>
+        {!isMobile && (
+          <Box
+            display="grid"
+            gridTemplateColumns="2fr 3fr 1fr 96px"
+            sx={{
+              px: 1.5,
+              py: 1,
+              bgcolor: "action.hover",
+              fontWeight: 600,
+              fontSize: 13,
+            }}
+          >
+            <Box>{t("step2.col.chars")}</Box>
+            <Box>{t("step2.col.annos")}</Box>
+            <Box>{t("step2.col.weight")}</Box>
+            <Box />
+          </Box>
+        )}
 
         {filtered.length === 0 ? (
           <Box sx={{ p: 4, textAlign: "center", color: "text.secondary" }}>
@@ -293,15 +314,12 @@ const Step2Mappings = () => {
           <FixedSizeList<RowItemData>
             ref={listRef}
             height={420}
-            // FixedSizeList requires a numeric or "100%" width. Using
-            // "100%" lets it fill its grid cell so the row content
-            // aligns with the header row above.
             width="100%"
             itemCount={filtered.length}
-            itemSize={ROW_HEIGHT}
-            // Stable item keys so React doesn't tear edit state when a
-            // row's position changes due to filtering. Falls back to
-            // index if a row somehow has no id.
+            // itemSize changes based on breakpoint (88px stacked card
+            // on phones, 56px row on desktop). react-window
+            // recomputes layout when itemSize changes.
+            itemSize={rowHeight}
             itemKey={(index, data) => data.rows[index]?.id ?? index}
             itemData={rowItemData}
             overscanCount={4}
@@ -348,13 +366,134 @@ const Step2Mappings = () => {
 interface RowProps {
   row: MappingRow;
   isEditing: boolean;
+  isMobile: boolean;
   onStartEdit: () => void;
   onStopEdit: () => void;
   onChange: (patch: Partial<Omit<MappingRow, "id">>) => void;
   onDelete: () => void;
 }
 
-const Row = ({ row, isEditing, onStartEdit, onStopEdit, onChange, onDelete }: RowProps) => {
+const Row = ({
+  row,
+  isEditing,
+  isMobile,
+  onStartEdit,
+  onStopEdit,
+  onChange,
+  onDelete,
+}: RowProps) => {
+  // Edit/delete action buttons — shared between mobile + desktop.
+  const actions = (
+    <Box display="flex" justifyContent="flex-end" gap={0.5}>
+      {isEditing ? (
+        <IconButton size="small" onClick={onStopEdit}>
+          <SaveIcon fontSize="small" />
+        </IconButton>
+      ) : (
+        <IconButton size="small" onClick={onStartEdit}>
+          <EditIcon fontSize="small" />
+        </IconButton>
+      )}
+      <IconButton size="small" onClick={onDelete} color="warning">
+        <DeleteIcon fontSize="small" />
+      </IconButton>
+    </Box>
+  );
+
+  if (isMobile) {
+    // --- Mobile: stacked card-style row -----------------------------
+    // Top line: chars (large, serif) + actions on the right
+    // Bottom line: annos (monospace) + weight badge
+    // Fits comfortably in a 360px-wide viewport with no horizontal scroll.
+    return (
+      <Box
+        sx={{
+          px: 1.5,
+          py: 1,
+          height: ROW_HEIGHT_MOBILE,
+          borderBottom: 1,
+          borderColor: "divider",
+          display: "flex",
+          flexDirection: "column",
+          justifyContent: "center",
+          gap: 0.5,
+          "&:hover": { bgcolor: "action.hover" },
+        }}
+      >
+        <Box display="flex" alignItems="center" justifyContent="space-between" gap={1}>
+          {isEditing ? (
+            <TextField
+              value={row.chars}
+              onChange={(e) => onChange({ chars: e.target.value })}
+              size="small"
+              variant="standard"
+              autoFocus
+              sx={{ flex: 1 }}
+            />
+          ) : (
+            <Box sx={{ fontSize: 20, fontFamily: "serif", flex: 1, minWidth: 0 }}>
+              {row.chars}
+            </Box>
+          )}
+          {actions}
+        </Box>
+        <Box display="flex" alignItems="center" gap={1}>
+          {isEditing ? (
+            <TextField
+              value={row.annos}
+              onChange={(e) => onChange({ annos: e.target.value })}
+              size="small"
+              variant="standard"
+              sx={{ flex: 1 }}
+            />
+          ) : (
+            <Box
+              sx={{
+                fontFamily: "ui-monospace, monospace",
+                fontSize: 13,
+                color: "text.secondary",
+                flex: 1,
+                overflow: "hidden",
+                textOverflow: "ellipsis",
+                whiteSpace: "nowrap",
+              }}
+            >
+              {row.annos}
+            </Box>
+          )}
+          {isEditing ? (
+            <TextField
+              value={row.weight ?? ""}
+              onChange={(e) => {
+                const v = e.target.value.trim();
+                onChange({ weight: v === "" ? undefined : Number(v) });
+              }}
+              size="small"
+              variant="standard"
+              type="number"
+              sx={{ width: 60 }}
+            />
+          ) : (
+            <Box
+              sx={{
+                color: "text.secondary",
+                fontSize: 11,
+                px: 0.75,
+                py: 0.25,
+                borderRadius: 1,
+                bgcolor: "action.hover",
+                flexShrink: 0,
+              }}
+            >
+              ⚖ {row.weight ?? "—"}
+            </Box>
+          )}
+        </Box>
+      </Box>
+    );
+  }
+
+  // --- Desktop: 4-column grid (unchanged from before) -------------
   return (
     <Box
       display="grid"
@@ -362,7 +501,7 @@ const Row = ({ row, isEditing, onStartEdit, onStopEdit, onChange, onDelete }: Ro
       alignItems="center"
       sx={{
         px: 1.5,
-        height: ROW_HEIGHT,
+        height: ROW_HEIGHT_DESKTOP,
         borderBottom: 1,
         borderColor: "divider",
         gap: 1,
@@ -408,20 +547,7 @@ const Row = ({ row, isEditing, onStartEdit, onStopEdit, onChange, onDelete }: Ro
           {row.weight ?? "—"}
         </Box>
       )}
-      <Box display="flex" justifyContent="flex-end" gap={0.5}>
-        {isEditing ? (
-          <IconButton size="small" onClick={onStopEdit}>
-            <SaveIcon fontSize="small" />
-          </IconButton>
-        ) : (
-          <IconButton size="small" onClick={onStartEdit}>
-            <EditIcon fontSize="small" />
-          </IconButton>
-        )}
-        <IconButton size="small" onClick={onDelete} color="warning">
-          <DeleteIcon fontSize="small" />
-        </IconButton>
-      </Box>
+      {actions}
     </Box>
   );
 };

@@ -37,7 +37,7 @@ const Specimen = () => {
     >
       <FontHeader family={fontOption.name} displayName={fontOption.displayName} />
       <TextField
-        label="隨便試 (Try it!!)"
+        label={"隨便試 (Try it!!)"}
         value={msg}
         onChange={({ target: { value } }) => setMsg(value)}
         fullWidth
@@ -54,6 +54,10 @@ const Specimen = () => {
 export default Specimen;
 
 const msgSx: SxProps<Theme> = {
-  fontSize: 72,
+  // Specimen pages exist to *display* fonts large — but 72px overflows
+  // phones. Scale gradually so the font still feels like a feature
+  // on desktop while remaining usable on a 360-wide screen.
+  fontSize: { xs: 32, sm: 44, md: 56, lg: 72 },
   textWrap: "wrap",
+  lineHeight: 1.4,
 };

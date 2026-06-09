@@ -5,8 +5,27 @@
  * file is the orchestration shell: it provides the GenerateContext,
  * renders an MUI Stepper, and swaps between the 5 step bodies based
  * on the current index.
+ *
+ * Responsive layout:
+ *   - md+ (>=900px): horizontal Stepper at top, step body below.
+ *     The standard wide-screen experience.
+ *   - xs/sm (<900px): vertical Stepper where each step's body renders
+ *     inline below its own label. Horizontal labels-below-dots
+ *     ("alternativeLabel") doesn't fit on a phone — 5 labels in a
+ *     ~360px viewport overlap and become unreadable. Vertical
+ *     orientation is the standard MUI idiom for narrow stepper UIs.
  */
-import { Box, Step, StepButton, Stepper, Typography } from "@mui/material";
+import {
+  Box,
+  Step,
+  StepButton,
+  StepContent,
+  StepLabel,
+  Stepper,
+  Typography,
+  useMediaQuery,
+  useTheme,
+} from "@mui/material";
 import { GenerateProvider, useGenerate } from "./Generate/GenerateContext";
 import { useTranslation } from "../i18n/LanguageContext";
 import Step1Fonts from "./Generate/steps/Step1Fonts";
@@ -25,11 +44,13 @@ const Generate = () => {
 
 const GenerateInner = () => {
   const { t } = useTranslation();
+  const theme = useTheme();
+  const isMobile = useMediaQuery(theme.breakpoints.down("md"));
   const { currentStep, setCurrentStep } = useGenerate();
 
   // Step labels are i18n keys; bodies are React components. Keeping
-  // them in one array lets the stepper and the body switch stay in
-  // perfect sync as we add/remove steps in the future.
+  // them in one array lets the desktop AND mobile renderers stay in
+  // perfect sync without duplicating the step list.
   const steps = [
     { label: t("generate.step1.label"), body: <Step1Fonts /> },
     { label: t("generate.step2.label"), body: <Step2Mappings /> },
@@ -40,22 +61,47 @@ const GenerateInner = () => {
 
   return (
     <Box width="100%" my={2} display="flex" flexDirection="column" gap={3}>
-      <Typography variant="h5">{t("generate.title")}</Typography>
+      <Typography variant="h4">{t("generate.title")}</Typography>
 
-      {/* Non-linear stepper — every step is clickable any time, so the
-          user can jump back to tweak fonts after seeing the preview,
-          for example. nonLinear + StepButton is the MUI idiom. */}
-      <Stepper activeStep={currentStep} nonLinear alternativeLabel>
-        {steps.map((step, idx) => (
-          <Step key={step.label} completed={false}>
-            <StepButton onClick={() => setCurrentStep(idx)}>
-              {step.label}
-            </StepButton>
-          </Step>
-        ))}
-      </Stepper>
-
-      <Box>{steps[currentStep]?.body}</Box>
+      {isMobile ? (
+        // --- Mobile / vertical layout ---------------------------------
+        // Each step body renders inline below its label via StepContent.
+        // We keep the stepper non-linear (StepButton + onClick) so users
+        // can jump around freely; the visible "active" step controls
+        // which body is currently expanded.
+        <Stepper
+          activeStep={currentStep}
+          orientation="vertical"
+          nonLinear
+        >
+          {steps.map((step, idx) => (
+            <Step key={step.label}>
+              <StepButton onClick={() => setCurrentStep(idx)}>
+                <StepLabel>{step.label}</StepLabel>
+              </StepButton>
+              <StepContent>
+                {/* py:2 so the inline body doesn't crowd the next step
+                    label visually. */}
+                <Box py={2}>{step.body}</Box>
+              </StepContent>
+            </Step>
+          ))}
+        </Stepper>
+      ) : (
+        // --- Desktop / horizontal layout ------------------------------
+        <>
+          <Stepper activeStep={currentStep} nonLinear alternativeLabel>
+            {steps.map((step, idx) => (
+              <Step key={step.label} completed={false}>
+                <StepButton onClick={() => setCurrentStep(idx)}>
+                  {step.label}
+                </StepButton>
+              </Step>
+            ))}
+          </Stepper>
+          <Box>{steps[currentStep]?.body}</Box>
+        </>
+      )}
     </Box>
   );
 };

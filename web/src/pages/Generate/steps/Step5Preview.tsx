@@ -146,17 +146,14 @@ const Step5Preview = () => {
         variant="outlined"
         sx={{
           fontFamily: result.installedFamily,
-          fontSize: 56,
+          // Responsive: 28px on a phone, scaling up to 56px on lg+.
+          // 56px overflows narrow viewports and makes the ligature
+          // bug (handled by renderWithNoBreaks) more frequent.
+          fontSize: { xs: 28, sm: 36, md: 48, lg: 56 },
           lineHeight: 1.5,
-          p: 2,
+          p: { xs: 1.5, md: 2 },
           minHeight: 100,
-          // pre-wrap: preserve whitespace + allow wrapping
           whiteSpace: "pre-wrap",
-          // overflow-wrap (vs the old wordBreak: break-word) only
-          // breaks long words when they'd otherwise overflow, and
-          // respects Unicode line-break opportunities for everything
-          // else. wordBreak: break-word was too aggressive and split
-          // ligature pairs across lines (see renderWithNoBreaks above).
           overflowWrap: "break-word",
         }}
       >

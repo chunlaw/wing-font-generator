@@ -34,7 +34,9 @@ const rootSx: SxProps<Theme> = {
   display: "flex",
   flexDirection: "column",
   alignItems: "center",
-  px: 2,
+  // Responsive horizontal padding so wide screens get more breathing
+  // room without compressing phones.
+  px: { xs: 2, md: 3, lg: 4 },
 };
 
 const outletSx: SxProps<Theme> = {
