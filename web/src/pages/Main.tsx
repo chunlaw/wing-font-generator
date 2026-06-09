@@ -12,9 +12,11 @@ import { useNavigate } from "react-router-dom";
 import { useTemplateRotation } from "../utils/hooks";
 import { FontHeader } from "../components/components/FonttHeader";
 import FontPicker from "../components/main/FontPicker";
+import { useTranslation } from "../i18n/LanguageContext";
 
 const Main = () => {
   const { msg, setMsg, pickedFonts } = useContext(AppContext);
+  const { t } = useTranslation();
   const navigate = useNavigate();
   const msgShown = useTemplateRotation(msg);
   return (
@@ -27,7 +29,7 @@ const Main = () => {
       my={1}
     >
       <TextField
-        label="隨便試 (Try it!!)"
+        label={t("showcase.tryIt")}
         value={msg}
         onChange={({ target: { value } }) => setMsg(value)}
         fullWidth

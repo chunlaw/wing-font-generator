@@ -75,6 +75,11 @@ def buildChainSub(output_font, word_mapping, char_mapping):
             Order determines rule priority (earlier rules win in calt).
         char_mapping: ``char -> {annotation_str: (glyph_name, variant_index)}``.
     """
+    # Status line convention: emit "Processing X..." up front so the user
+    # sees activity, then "Processing X... DONE (...)" at the bottom of
+    # the function. The web UI coalesces the two into a single updating
+    # line via a prefix-match rule in GenerateContext.appendOrCoalesce.
+    print("Processing chain context substitution...", flush=True)
     gsub = output_font["GSUB"].table
     glyph_order = output_font.getGlyphOrder()
 
@@ -184,6 +189,7 @@ def buildChainSub(output_font, word_mapping, char_mapping):
     if not chain_builder.rules:
         # No multi-character words were buildable; nothing to register.
         gsub.LookupList.LookupCount = len(gsub.LookupList.Lookup)
+        print("Processing chain context substitution... DONE (0 rules)", flush=True)
         return
 
     chain_lookup = chain_builder.build()
@@ -193,4 +199,8 @@ def buildChainSub(output_font, word_mapping, char_mapping):
 
     register_feature_lookup(gsub, "calt", chain_index)
 
-    print("Done ChainContextSubst")
+    print(
+        f"Processing chain context substitution... DONE "
+        f"({len(chain_builder.rules)} rules)",
+        flush=True,
+    )

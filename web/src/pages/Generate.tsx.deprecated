@@ -1,0 +1,2 @@
+/* DEPRECATED — see ./Generate/index.tsx */
+export {} from './Generate/index';

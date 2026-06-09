@@ -24,6 +24,9 @@ def generate_glyphs(base_font, anno_font, output_font, mapping, anno_scale=0.15,
         anno_y_offset = 0
 
     # --- 第一部分：處理有註音的字形 ---
+    # Status line for Part 1 (annotated glyph composition). The matching
+    # "...DONE" line prints below the loop. UI coalesces them.
+    print("Processing annotated glyph composition...", flush=True)
     processed_glyph_names = set() # 新增：記錄被第一部分處理過的字形名稱
     cnt = 0
     for base_char, anno_strs_dict in mapping.items():
@@ -84,10 +87,20 @@ def generate_glyphs(base_font, anno_font, output_font, mapping, anno_scale=0.15,
             if i == 0:
                 output_font.getBestCmap()[ord(base_char)] = new_glyph_name
 
+    # End of Part 1 — emit the matching DONE so the UI coalesces.
+    print(
+        f"Processing annotated glyph composition... DONE "
+        f"({len(processed_glyph_names)} characters processed)",
+        flush=True,
+    )
+
     # --- 第二部分：處理沒有註音的字形 (帶有診斷信息) ---
-    print("\nProcessing and scaling un-annotated glyphs...")
-    print("="*40)
-    
+    # Status line: appears first so the UI shows the step is running.
+    # The matching "Processing un-annotated glyph scaling... DONE" prints
+    # at the bottom of this block; the web UI coalesces them onto the
+    # same line via GenerateContext.appendOrCoalesce.
+    print("Processing un-annotated glyph scaling...", flush=True)
+
     skipped_unencoded = []
     skipped_no_outline = []
     
@@ -115,13 +128,14 @@ def generate_glyphs(base_font, anno_font, output_font, mapping, anno_scale=0.15,
         new_lsb = round(base_lsb * base_scale + x_offset)
         output_font['hmtx'][glyph_name] = (base_advance_width, new_lsb)
     
-    # --- 打印診斷報告 ---
-    if skipped_no_outline:
-        print(f"\n[INFO] Skipped {len(skipped_no_outline)} glyphs because they have no outlines (e.g., space):")
-        # 只打印前10個以避免刷屏
-        print(" -> ", ", ".join(skipped_no_outline[:10]) + ('...' if len(skipped_no_outline) > 10 else ''))
-
-    # 我們的新邏輯會處理未編碼字形，所以這裡的檢查是為了完整性
-    print("\n[INFO] Unencoded glyphs are now being scaled.")
-    print("="*40)
-    print("Done scaling un-annotated glyphs.")
+    # Final status line — coalesces with the "Processing..." opener.
+    # Suffix carries the number of glyphs we actually scaled so the user
+    # gets a sense of work done without separate info lines.
+    scaled_count = (
+        len(base_glyph_order) - len(skipped_no_outline) - len(processed_glyph_names)
+    )
+    print(
+        f"Processing un-annotated glyph scaling... DONE "
+        f"({scaled_count} scaled, {len(skipped_no_outline)} skipped no-outline)",
+        flush=True,
+    )

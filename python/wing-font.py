@@ -71,7 +71,9 @@ def main(
 
     # if size optimization is required
     if optimize:
-        print("Optimizing font size by subsetting...")
+        # Status line for the subset step. The DONE counterpart prints
+        # after subsetter.subset() completes.
+        print("Processing font subset...", flush=True)
         # 初始列表：保留數字
         glyphs_to_be_kept = [get_glyph_name_by_char(base_font, str(i)) for i in range(0, 10)]
         
@@ -93,8 +95,7 @@ def main(
         # silently stops working in subset output.
         chars_to_keep_additionally += '丅零一二三四五六七八九'
 
-        # 2. 遍歷這些字符，將它們的 glyph name 加入列表
-        print(f"Keeping additional {len(chars_to_keep_additionally)} punctuation and letter glyphs...")
+        # Build keep list (silent — no need for intermediate status)
         for char in chars_to_keep_additionally:
             glyph_name = get_glyph_name_by_char(base_font, char)
             if glyph_name:  # 確保字形存在於字體中
@@ -104,25 +105,23 @@ def main(
 
         # Make subset to reduce file size
         subsetter = subset.Subsetter()
-        
-        # --- 修改開始 (步驟 3: 清理列表) ---
-        
-        # 過濾掉 None 值並移除重複項，確保列表乾淨
         valid_glyphs_to_keep = list(set(g for g in glyphs_to_be_kept if g is not None))
-        print(f"Total unique glyphs to keep: {len(valid_glyphs_to_keep)}")
-        
         subsetter.populate(glyphs=valid_glyphs_to_keep)
-        
-        # --- 修改結束 ---
-        
         subsetter.subset(output_font)
+        print(
+            f"Processing font subset... DONE "
+            f"({len(valid_glyphs_to_keep)} glyphs kept)",
+            flush=True,
+        )
 
     # Save the new font
+    print("Processing TTF save...", flush=True)
     output_font.save(str(output_prefix)+".ttf")
-    print(f"New font saved as {output_prefix}.ttf")
+    print("Processing TTF save... DONE", flush=True)
     output_font.flavor = 'woff'
+    print("Processing WOFF save...", flush=True)
     output_font.save(str(output_prefix+".woff"))
-    print(f"New font saved as {output_prefix}.woff")
+    print("Processing WOFF save... DONE", flush=True)
     
     # Close the font objects
     base_font.close()

@@ -71,17 +71,23 @@ def generate(
     mapping_path = os.path.join(work_dir, "mapping.csv")
     output_prefix = os.path.join(work_dir, "output")
 
-    _emit(progress_cb, "Writing inputs to virtual filesystem...")
+    # All long-ish steps follow the convention:
+    #   1. Emit "Processing X..."  (UI shows immediately)
+    #   2. Do the work
+    #   3. Emit "Processing X... DONE" (UI coalesces onto the same line)
+    _emit(progress_cb, "Processing input files...")
     with open(base_path, "wb") as f:
         f.write(base_font_bytes)
     with open(anno_path, "wb") as f:
         f.write(anno_font_bytes)
     with open(mapping_path, "w", encoding="utf-8") as f:
         f.write(mapping_csv_text)
+    _emit(progress_cb, "Processing input files... DONE")
 
-    _emit(progress_cb, "Importing wing-font modules...")
+    _emit(progress_cb, "Processing module imports...")
     # Imported lazily so the import cost only hits when we actually generate.
     import wingfont_main  # noqa: E402
+    _emit(progress_cb, "Processing module imports... DONE")
 
     captured = io.StringIO()
 
@@ -108,7 +114,10 @@ def generate(
 
     tee = _Tee(sys.stdout, captured)
 
-    _emit(progress_cb, "Running pipeline (this can take 30-120s)...")
+    # The inner pipeline (chain_context_handler, liga_handler,
+    # build_glyph, wing-font.py) prints its own granular
+    # "Processing X..." → "Processing X... DONE" pairs, which the UI
+    # coalesces into single updating lines. No outer wrapper needed.
     with contextlib.redirect_stdout(tee):
         try:
             wingfont_main.main(
@@ -127,13 +136,14 @@ def generate(
             traceback.print_exc(file=tee)
             raise
 
-    _emit(progress_cb, "Reading generated font files...")
+    _emit(progress_cb, "Processing output files...")
     with open(output_prefix + ".ttf", "rb") as f:
         ttf_bytes = f.read()
     with open(output_prefix + ".woff", "rb") as f:
         woff_bytes = f.read()
+    _emit(progress_cb, "Processing output files... DONE")
 
-    _emit(progress_cb, "Done.")
+    _emit(progress_cb, "All Done")
     return {
         "ttf": ttf_bytes,
         "woff": woff_bytes,

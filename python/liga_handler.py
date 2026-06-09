@@ -51,6 +51,11 @@ def buildLiga(
         output_font: TTFont being mutated.
         char_mapping: ``char -> {annotation_str: (glyph_name, variant_index)}``.
     """
+    # Emit the "Processing ..." line up front so the UI shows activity;
+    # the matching "Processing ... DONE (N rules in M subtables)" appears
+    # at the bottom of this function and gets coalesced onto the same
+    # line by the web UI's appendOrCoalesce logic.
+    print("Processing ligature substitution...", flush=True)
     gsub = output_font["GSUB"].table
 
     digit_glyphs = _resolve_digits(output_font)
@@ -59,8 +64,9 @@ def buildLiga(
 
     if not digit_glyphs and not (trigger_glyph and numeral_glyphs):
         print(
-            "Skipping liga: neither Latin digits nor the 丅+numeral "
-            "fallback is available in the font."
+            "Processing ligature substitution... DONE "
+            "(skipped — no triggers available)",
+            flush=True,
         )
         return
 
@@ -127,7 +133,7 @@ def buildLiga(
         if not (isinstance(k, tuple) and k and k[0] == liga_builder.SUBTABLE_BREAK_)
     )
     if real_rule_count == 0:
-        print("No liga rules produced.")
+        print("Processing ligature substitution... DONE (0 rules)", flush=True)
         return
 
     lookup = liga_builder.build()
@@ -137,8 +143,9 @@ def buildLiga(
 
     register_feature_lookup(gsub, "liga", lookup_index)
     print(
-        f"Done liga ({real_rule_count} rules in "
-        f"{lookup.SubTableCount} subtable(s))"
+        f"Processing ligature substitution... DONE "
+        f"({real_rule_count} rules in {lookup.SubTableCount} subtable(s))",
+        flush=True,
     )
 
 

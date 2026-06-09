@@ -1,7 +1,9 @@
 import { GitHub as GitHubIcon, Instagram, Telegram } from "@mui/icons-material";
 import { Box, IconButton, SxProps, Theme } from "@mui/material";
+import { useTranslation } from "../../i18n/LanguageContext";
 
 const Footer = () => {
+  const { t } = useTranslation();
   return (
     <Box sx={rootSx}>
       <Box>
@@ -29,7 +31,7 @@ const Footer = () => {
           <Instagram />
         </IconButton>
       </Box>
-      <Box>MIT License (Free & Open Source)</Box>
+      <Box>{t("footer.license")}</Box>
     </Box>
   );
 };

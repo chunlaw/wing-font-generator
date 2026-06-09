@@ -1,19 +1,30 @@
 import { BrowserRouter, Route, Routes } from "react-router-dom";
 import Layout from "./components/layouts/Layout";
-import Main from "./pages/Main";
+import Home from "./pages/Home";
+import Showcase from "./pages/Main";
 import Specimen from "./pages/Specimen";
 import Generate from "./pages/Generate";
 
+/**
+ * Route map:
+ *   /                   → Home (new landing page, what-this-is intro)
+ *   /showcase           → existing showcase (formerly at /)
+ *   /specimen/:family   → per-font specimen page
+ *   /generate           → stepped font-generation flow
+ *
+ * `Showcase` is the same component the old `/` route used (pages/Main.tsx).
+ * Aliased on import for readability; renaming the file isn't worth the
+ * git churn.
+ */
 function App() {
   return (
     <BrowserRouter>
       <Routes>
         <Route path="/" element={<Layout />}>
-          {/* /generate is matched first so it doesn't collide with the
-              catch-all :path? route used by Main. */}
+          <Route index element={<Home />} />
           <Route path="generate" element={<Generate />} />
           <Route path="specimen/:family" element={<Specimen />} />
-          <Route path=":path?" element={<Main />} />
+          <Route path="showcase" element={<Showcase />} />
         </Route>
       </Routes>
     </BrowserRouter>

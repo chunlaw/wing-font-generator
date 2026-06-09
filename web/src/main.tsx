@@ -5,14 +5,20 @@ import "./index.css";
 import { CssBaseline } from "@mui/material";
 import { AppContextProvider } from "./AppContext.tsx";
 import { ThemeProvider } from "./ThemeContext.tsx";
+import { LanguageProvider } from "./i18n/LanguageContext.tsx";
 
 ReactDOM.createRoot(document.getElementById("root")!).render(
   <React.StrictMode>
-    <ThemeProvider>
-      <AppContextProvider>
-        <CssBaseline />
-        <App />
-      </AppContextProvider>
-    </ThemeProvider>
+    {/* LanguageProvider is outermost so even the Theme + App contexts can
+        read translations during their own initialisation if they ever
+        need to (currently they don't, but it's the safer ordering). */}
+    <LanguageProvider>
+      <ThemeProvider>
+        <AppContextProvider>
+          <CssBaseline />
+          <App />
+        </AppContextProvider>
+      </ThemeProvider>
+    </LanguageProvider>
   </React.StrictMode>,
 );
