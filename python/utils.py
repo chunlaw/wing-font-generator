@@ -14,9 +14,87 @@ What remains here:
     GSUB feature, creating the feature record on any script/langsys that
     doesn't yet expose it. Both handlers share this so they don't each
     reimplement the script/langsys walk.
+  - `step_timer` — context manager that emits the standard
+    "Processing X..." → "Processing X... DONE (Ns)" progress lines so
+    every step uses the same format and gets elapsed-time reporting.
 """
 
+import time
+
 from fontTools.ttLib.tables import otTables
+
+
+# Process-global recorder used by step_timer and any inline timing
+# code (runner.py). Reset at the start of each pipeline run via
+# reset_step_timings(); read for the summary table via get_step_timings().
+_step_timings: list[tuple[str, float]] = []
+
+
+def record_step_time(name: str, elapsed: float) -> None:
+    """Public hook so callers that do their own time.perf_counter()
+    bookkeeping (e.g. runner.py's inline-timed input/output steps) can
+    still contribute to the final summary table."""
+    _step_timings.append((name, elapsed))
+
+
+def get_step_timings() -> list[tuple[str, float]]:
+    """Return a copy of the recorded (name, elapsed_seconds) tuples in
+    the order they completed."""
+    return list(_step_timings)
+
+
+def reset_step_timings() -> None:
+    """Clear the recorder. Call once at the start of each pipeline run
+    so consecutive runs don't accumulate stale timings."""
+    _step_timings.clear()
+
+
+class step_timer:
+    """
+    Context manager for the project-wide step-progress convention.
+
+    Usage:
+
+        with step_timer("chain context substitution") as t:
+            ... do work ...
+            t.note("17 rules")   # optional extra info appended to DONE
+
+    Output (one line in the web UI thanks to GenerateContext's
+    `appendOrCoalesce` trick that collapses Processing/DONE pairs):
+
+        Processing chain context substitution... DONE (1.2s, 17 rules)
+
+    Also records its elapsed time into the process-global recorder
+    consumed by runner.py to print a per-step summary table at the
+    end of the run.
+    """
+
+    def __init__(self, name: str):
+        self.name = name
+        self._note = ""
+        self._t0 = 0.0
+
+    def __enter__(self) -> "step_timer":
+        print(f"Processing {self.name}...", flush=True)
+        self._t0 = time.perf_counter()
+        return self
+
+    def note(self, info: str) -> None:
+        """Append a note that will be shown inside the DONE parentheses."""
+        self._note = info
+
+    def __exit__(self, exc_type, exc_val, exc_tb):
+        elapsed = time.perf_counter() - self._t0
+        record_step_time(self.name, elapsed)
+        suffix = f"{elapsed:.1f}s"
+        if self._note:
+            suffix += f", {self._note}"
+        # On exception, still emit a final line so the UI doesn't show
+        # the step as forever pending — mark it as FAILED so the user
+        # knows what happened. Don't swallow the exception either.
+        marker = "DONE" if exc_type is None else "FAILED"
+        print(f"Processing {self.name}... {marker} ({suffix})", flush=True)
+        return False
 
 
 def get_glyph_name_by_char(font, char):

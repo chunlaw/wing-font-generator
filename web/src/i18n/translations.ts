@@ -90,6 +90,7 @@ export type TranslationKey =
   | "step2.add.chars"
   | "step2.add.annos"
   | "step2.add.weight"
+  | "step2.add.weightHint"
   | "step2.add.commit"
   | "step2.col.chars"
   | "step2.col.annos"
@@ -205,6 +206,8 @@ export const TRANSLATIONS: Record<Language, Record<TranslationKey, string>> = {
     "step2.add.chars": "漢字（如「行」或「銀行」）",
     "step2.add.annos": "注音（如「hong4」或「ngan4 hong4」）",
     "step2.add.weight": "權重",
+    "step2.add.weightHint":
+      "留空即為 1。較大數值代表此讀音優先：影響預設讀音、變體截斷及字詞優先級。",
     "step2.add.commit": "加入",
     "step2.col.chars": "漢字",
     "step2.col.annos": "注音",
@@ -322,6 +325,8 @@ export const TRANSLATIONS: Record<Language, Record<TranslationKey, string>> = {
     "step2.add.chars": "Characters (e.g. 行 or 銀行)",
     "step2.add.annos": "Romanization (e.g. hong4 or ngan4 hong4)",
     "step2.add.weight": "Weight",
+    "step2.add.weightHint":
+      "Leave blank for 1. Higher values prioritise this reading: affects the default reading, variant truncation, and word-rule order.",
     "step2.add.commit": "Add",
     "step2.col.chars": "Characters",
     "step2.col.annos": "Romanization",

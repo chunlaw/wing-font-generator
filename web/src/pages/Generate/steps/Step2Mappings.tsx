@@ -33,13 +33,66 @@ import {
   Edit as EditIcon,
   Save as SaveIcon,
 } from "@mui/icons-material";
-import { ChangeEvent, useCallback, useDeferredValue, useMemo, useState } from "react";
+import {
+  ChangeEvent,
+  memo,
+  useCallback,
+  useDeferredValue,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+} from "react";
+import { FixedSizeList, ListChildComponentProps } from "react-window";
 import { useGenerate } from "../GenerateContext";
 import { useTranslation } from "../../../i18n/LanguageContext";
 import { MappingRow } from "../types";
-import { VirtualList } from "../VirtualList";
 
 const ROW_HEIGHT = 56;
+
+/**
+ * Bundle of everything a virtualised row needs. Passed to react-window
+ * as `itemData` so the RowRenderer can stay declared at module scope
+ * (hoisted out of the component body) and be properly memoizable.
+ */
+interface RowItemData {
+  rows: MappingRow[];
+  editingId: string | null;
+  setEditingId: (id: string | null) => void;
+  updateMapping: (id: string, patch: Partial<Omit<MappingRow, "id">>) => void;
+  requestDelete: (id: string) => void;
+}
+
+/**
+ * react-window RowRenderer. Receives `{index, style, data}`; the
+ * `style` prop carries the absolute positioning react-window computed
+ * for this row and MUST be applied to our outer element, otherwise
+ * every row stacks at (0, 0).
+ *
+ * memo'd because react-window calls this on every scroll frame; the
+ * cells inside (TextField, IconButton) are not cheap to rebuild
+ * unnecessarily.
+ */
+const RowRenderer = memo(function RowRenderer({
+  index,
+  style,
+  data,
+}: ListChildComponentProps<RowItemData>) {
+  const row = data.rows[index];
+  if (!row) return null;
+  return (
+    <div style={style}>
+      <Row
+        row={row}
+        isEditing={data.editingId === row.id}
+        onStartEdit={() => data.setEditingId(row.id)}
+        onStopEdit={() => data.setEditingId(null)}
+        onChange={(patch) => data.updateMapping(row.id, patch)}
+        onDelete={() => data.requestDelete(row.id)}
+      />
+    </div>
+  );
+});
 
 const Step2Mappings = () => {
   const { t } = useTranslation();
@@ -75,6 +128,37 @@ const Step2Mappings = () => {
         r.annos.toLowerCase().includes(q),
     );
   }, [mappings, deferredSearch]);
+
+  // react-window's FixedSizeList keeps its scroll position when its
+  // itemCount shrinks, which means after the user scrolls to the bottom
+  // and then types a search query that filters down to a few rows, the
+  // viewport stays scrolled past the new content — looks broken. Reset
+  // to the top whenever the filter (or the underlying mappings) changes.
+  //
+  // `useRef<T>(null)` produces a RefObject<T> (the read-only flavour)
+  // which is what JSX `ref` props want. Using <FixedSizeList<RowItemData>>
+  // makes the generic match the list element below; that match matters
+  // because React refs are invariant in T.
+  const listRef = useRef<FixedSizeList<RowItemData>>(null);
+  useEffect(() => {
+    listRef.current?.scrollTo(0);
+  }, [deferredSearch, mappings]);
+
+  // Bundle every per-row dependency into a single object passed via
+  // itemData. react-window calls the RowRenderer with (index, style,
+  // data); using itemData (instead of inline render closures) lets us
+  // hoist RowRenderer out of the component body and have it be
+  // properly memoizable.
+  const rowItemData = useMemo<RowItemData>(
+    () => ({
+      rows: filtered,
+      editingId,
+      setEditingId,
+      updateMapping,
+      requestDelete: setPendingDelete,
+    }),
+    [filtered, editingId, updateMapping],
+  );
 
   const handleImport = useCallback(
     async (event: ChangeEvent<HTMLInputElement>) => {
@@ -169,6 +253,12 @@ const Step2Mappings = () => {
           variant="contained"
           startIcon={<Add />}
           onClick={() => setAddOpen(true)}
+          // Stop "新增一行" / "Add row" from wrapping vertically when
+          // the search field next to it eats most of the row's width.
+          // `flexShrink: 0` keeps the button at its content-natural
+          // width; `whiteSpace: nowrap` is belt-and-braces in case some
+          // ancestor sets it differently.
+          sx={{ flexShrink: 0, whiteSpace: "nowrap" }}
         >
           {t("step2.add.button")}
         </Button>
@@ -200,21 +290,24 @@ const Step2Mappings = () => {
               : `No matches for "${search}"`}
           </Box>
         ) : (
-          <VirtualList<MappingRow>
-            items={filtered}
-            itemHeight={ROW_HEIGHT}
+          <FixedSizeList<RowItemData>
+            ref={listRef}
             height={420}
-            renderRow={(row) => (
-              <Row
-                row={row}
-                isEditing={editingId === row.id}
-                onStartEdit={() => setEditingId(row.id)}
-                onStopEdit={() => setEditingId(null)}
-                onChange={(patch) => updateMapping(row.id, patch)}
-                onDelete={() => setPendingDelete(row.id)}
-              />
-            )}
-          />
+            // FixedSizeList requires a numeric or "100%" width. Using
+            // "100%" lets it fill its grid cell so the row content
+            // aligns with the header row above.
+            width="100%"
+            itemCount={filtered.length}
+            itemSize={ROW_HEIGHT}
+            // Stable item keys so React doesn't tear edit state when a
+            // row's position changes due to filtering. Falls back to
+            // index if a row somehow has no id.
+            itemKey={(index, data) => data.rows[index]?.id ?? index}
+            itemData={rowItemData}
+            overscanCount={4}
+          >
+            {RowRenderer}
+          </FixedSizeList>
         )}
       </Paper>
 
@@ -382,6 +475,11 @@ const AddDialog = ({ open, onClose, onAdd }: AddDialogProps) => {
             onChange={(e) => setWeight(e.target.value)}
             type="number"
             fullWidth
+            // Subtle nudge so users know the column actually matters —
+            // most readers see "Weight" and assume metadata, but it
+            // drives the default-reading pick + variant truncation +
+            // calt rule order downstream in csv_parser.py.
+            helperText={t("step2.add.weightHint")}
           />
         </Stack>
       </DialogContent>

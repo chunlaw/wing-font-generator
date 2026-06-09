@@ -15,10 +15,11 @@ The function `generate(...)` is the single entry point. Everything is
 synchronous; the caller (a Web Worker) is responsible for not blocking the UI.
 """
 
+import contextlib
+import io
 import os
 import sys
-import io
-import contextlib
+import time
 import traceback
 
 # Ensure /home/pyodide/wingfont is on sys.path so `import wingfont_main`,
@@ -26,6 +27,36 @@ import traceback
 _WINGFONT_DIR = "/home/pyodide/wingfont"
 if _WINGFONT_DIR not in sys.path:
     sys.path.insert(0, _WINGFONT_DIR)
+
+
+def _format_summary(timings: list[tuple[str, float]], total: float) -> list[str]:
+    """Build a small monospace-friendly summary table.
+
+    Returns a list of lines that the caller can _emit one-by-one. Done
+    that way (rather than one big multi-line string) so each row
+    arrives as its own progress event and they don't get coalesced by
+    the UI's appendOrCoalesce trick.
+    """
+    if not timings:
+        return []
+    name_width = max(len(name) for name, _ in timings)
+    name_width = max(name_width, len("Step"))
+    # 8 chars handles up to "9999.9s" with room to spare.
+    time_width = 8
+    sep = "─" * (name_width + time_width + 3)
+
+    lines = [
+        "Per-step timing summary:",
+        sep,
+        f"  {'Step':<{name_width}}  {'Time':>{time_width}}",
+        sep,
+    ]
+    for name, elapsed in timings:
+        lines.append(f"  {name:<{name_width}}  {elapsed:>{time_width - 1}.1f}s")
+    lines.append(sep)
+    lines.append(f"  {'Total':<{name_width}}  {total:>{time_width - 1}.1f}s")
+    lines.append(sep)
+    return lines
 
 
 def _emit(progress_cb, message: str) -> None:
@@ -63,6 +94,20 @@ def generate(
     Raises on failure; the worker should catch and forward the message.
     """
 
+    # Wall-clock start — used for the final "All Done (Ns total)" line so
+    # the user can see end-to-end runtime regardless of how many inner
+    # steps printed their own timings.
+    _t0_total = time.perf_counter()
+
+    # Reset the process-global timing recorder so we don't accumulate
+    # across runs in a long-lived Pyodide session.
+    from utils import (
+        get_step_timings,
+        record_step_time,
+        reset_step_timings,
+    )
+    reset_step_timings()
+
     work_dir = "/tmp/wingfont_run"
     os.makedirs(work_dir, exist_ok=True)
 
@@ -71,10 +116,11 @@ def generate(
     mapping_path = os.path.join(work_dir, "mapping.csv")
     output_prefix = os.path.join(work_dir, "output")
 
-    # All long-ish steps follow the convention:
-    #   1. Emit "Processing X..."  (UI shows immediately)
-    #   2. Do the work
-    #   3. Emit "Processing X... DONE" (UI coalesces onto the same line)
+    # Step convention (matches utils.step_timer's output):
+    #   "Processing X..."          shown immediately
+    #   "Processing X... DONE (Ns)" shown when finished; UI replaces the
+    # previous line in place via GenerateContext.appendOrCoalesce.
+    _t0 = time.perf_counter()
     _emit(progress_cb, "Processing input files...")
     with open(base_path, "wb") as f:
         f.write(base_font_bytes)
@@ -82,12 +128,17 @@ def generate(
         f.write(anno_font_bytes)
     with open(mapping_path, "w", encoding="utf-8") as f:
         f.write(mapping_csv_text)
-    _emit(progress_cb, "Processing input files... DONE")
+    _elapsed = time.perf_counter() - _t0
+    record_step_time("input files", _elapsed)
+    _emit(progress_cb, f"Processing input files... DONE ({_elapsed:.1f}s)")
 
+    _t0 = time.perf_counter()
     _emit(progress_cb, "Processing module imports...")
     # Imported lazily so the import cost only hits when we actually generate.
     import wingfont_main  # noqa: E402
-    _emit(progress_cb, "Processing module imports... DONE")
+    _elapsed = time.perf_counter() - _t0
+    record_step_time("module imports", _elapsed)
+    _emit(progress_cb, f"Processing module imports... DONE ({_elapsed:.1f}s)")
 
     captured = io.StringIO()
 
@@ -131,21 +182,34 @@ def generate(
                 upper_y_offset_ratio=upper_y_offset_ratio,
                 invert=invert,
                 optimize=optimize,
+                # WOFF is generated in JS via CompressionStream — much
+                # faster than Pyodide doing it via wasm-compiled zlib.
+                skip_woff=True,
             )
         except Exception:
             traceback.print_exc(file=tee)
             raise
 
+    _t0 = time.perf_counter()
     _emit(progress_cb, "Processing output files...")
     with open(output_prefix + ".ttf", "rb") as f:
         ttf_bytes = f.read()
-    with open(output_prefix + ".woff", "rb") as f:
-        woff_bytes = f.read()
-    _emit(progress_cb, "Processing output files... DONE")
+    _elapsed = time.perf_counter() - _t0
+    record_step_time("output files", _elapsed)
+    _emit(progress_cb, f"Processing output files... DONE ({_elapsed:.1f}s)")
 
-    _emit(progress_cb, "All Done")
+    # Per-step summary table — emitted line-by-line so the UI's
+    # appendOrCoalesce trick doesn't collapse it into one update.
+    total_elapsed = time.perf_counter() - _t0_total
+    for line in _format_summary(get_step_timings(), total_elapsed):
+        _emit(progress_cb, line)
+
+    _emit(progress_cb, f"All Done ({total_elapsed:.1f}s total)")
+    # `woff` is intentionally None — the worker fills it in by running
+    # the TTF bytes through the browser's CompressionStream, which is
+    # an order of magnitude faster than Pyodide doing zlib in wasm.
     return {
         "ttf": ttf_bytes,
-        "woff": woff_bytes,
+        "woff": None,
         "stdout": captured.getvalue(),
     }

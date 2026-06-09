@@ -15,7 +15,7 @@ const LanguageSwitcher = () => {
   // The button always shows the language the user will switch TO when
   // clicked — same convention as the theme switcher (which shows the
   // mode you'd switch to, not the current mode).
-  const label = lang === "zh" ? "EN" : "中文";
+  const label = lang === "zh" ? "EN" : "中";
 
   return (
     <Tooltip title={t("header.lang.toggle")} arrow>

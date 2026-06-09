@@ -7,9 +7,56 @@
  * the shaping.
  */
 import { Alert, Box, Button, Paper, Stack, TextField, Typography } from "@mui/material";
-import { useEffect, useState } from "react";
+import { Fragment, ReactNode, useEffect, useState } from "react";
 import { useGenerate } from "../GenerateContext";
 import { useTranslation } from "../../../i18n/LanguageContext";
+
+/**
+ * Wrap each ligature-trigger group (`字1`, `字23`, `字丅一`, …) in a
+ * `<span style="white-space: nowrap">` so the browser can't break the
+ * line inside the group. If it did, the OpenType `liga` rule would
+ * fail — the shaper handles each visual line as a separate run, so
+ * splitting `行|1` between two lines produces a default-form `行`
+ * followed by a stray `1`, not the variant the user wanted.
+ *
+ * The regex matches:
+ *   - any non-digit / non-trigger character
+ *   - followed by either 1+ ASCII digits 0-9
+ *   - or the trigger `丅` followed by exactly one Chinese numeral
+ *
+ * Characters that aren't part of a trigger group are emitted as plain
+ * text fragments — they're free to wrap normally.
+ */
+const TRIGGER_REGEX = /([^\s0-9丅])(?:([0-9]+)|(丅[零一二三四五六七八九]))/g;
+
+function renderWithNoBreaks(text: string): ReactNode[] {
+  const parts: ReactNode[] = [];
+  let lastIndex = 0;
+  let match: RegExpExecArray | null;
+  // Reset state — RegExp objects are stateful when /g is set.
+  TRIGGER_REGEX.lastIndex = 0;
+  while ((match = TRIGGER_REGEX.exec(text)) !== null) {
+    if (match.index > lastIndex) {
+      parts.push(
+        <Fragment key={`t-${lastIndex}`}>
+          {text.substring(lastIndex, match.index)}
+        </Fragment>,
+      );
+    }
+    parts.push(
+      <span key={`g-${match.index}`} style={{ whiteSpace: "nowrap" }}>
+        {match[0]}
+      </span>,
+    );
+    lastIndex = TRIGGER_REGEX.lastIndex;
+  }
+  if (lastIndex < text.length) {
+    parts.push(
+      <Fragment key={`t-${lastIndex}`}>{text.substring(lastIndex)}</Fragment>,
+    );
+  }
+  return parts;
+}
 
 const Step5Preview = () => {
   const { t } = useTranslation();
@@ -103,11 +150,17 @@ const Step5Preview = () => {
           lineHeight: 1.5,
           p: 2,
           minHeight: 100,
+          // pre-wrap: preserve whitespace + allow wrapping
           whiteSpace: "pre-wrap",
-          wordBreak: "break-word",
+          // overflow-wrap (vs the old wordBreak: break-word) only
+          // breaks long words when they'd otherwise overflow, and
+          // respects Unicode line-break opportunities for everything
+          // else. wordBreak: break-word was too aggressive and split
+          // ligature pairs across lines (see renderWithNoBreaks above).
+          overflowWrap: "break-word",
         }}
       >
-        {sample}
+        {renderWithNoBreaks(sample)}
       </Paper>
     </Box>
   );

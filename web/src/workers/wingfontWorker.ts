@@ -7,6 +7,9 @@
  *      fonttools + brotli packages, fetches the bundled Python sources and
  *      writes them into Pyodide's MEMFS at /home/pyodide/wingfont/.
  *   2. Subsequent generate requests reuse the already-loaded interpreter.
+ *   3. After Python returns the TTF, the worker generates the WOFF in
+ *      pure JS via the browser's CompressionStream — much faster than
+ *      asking Pyodide to do it.
  *
  * Wire protocol (main thread → worker):
  *   { type: "init" }
@@ -18,6 +21,7 @@
  *   { type: "result", id, ttf: ArrayBuffer, woff: ArrayBuffer, stdout: string }
  *   { type: "error", id?, message }
  */
+import { ttfToWoff } from "../utils/ttfToWoff";
 
 // Pyodide does not ship ES-module typings on its CDN bundle, so we declare
 // just enough to keep TypeScript honest.
@@ -234,23 +238,38 @@ _result
   );
 
   const ttfU8 = jsResult.ttf as Uint8Array;
-  const woffU8 = jsResult.woff as Uint8Array;
+  // runner.py now returns woff=None on purpose; we generate the WOFF
+  // ourselves below using the browser's native CompressionStream,
+  // which is dramatically faster than Pyodide's wasm-compiled zlib.
   const stdout = (jsResult.stdout as string) ?? "";
 
-  // toJs returns Uint8Arrays that *share* memory with WASM. Copy into
-  // standalone ArrayBuffers so we can transfer ownership to the main
-  // thread without leaving dangling references inside Pyodide.
+  // toJs returns a Uint8Array that *shares* memory with WASM. Copy
+  // into a standalone ArrayBuffer so we can transfer ownership to the
+  // main thread without leaving a dangling reference inside Pyodide.
   const ttfCopy = new Uint8Array(ttfU8).buffer;
-  const woffCopy = new Uint8Array(woffU8).buffer;
 
-  // Clean up the PyProxy aggressively — large generated fonts otherwise
-  // sit in WASM memory until the next GC pass.
+  // Clean up the PyProxy aggressively — large generated fonts
+  // otherwise sit in WASM memory until the next GC pass.
   result.destroy();
   pyodide.runPython("import gc; gc.collect()");
 
+  // --- Generate WOFF in JS ---------------------------------------
+  // Browser CompressionStream is ~20-50x faster than Pyodide's
+  // wasm-zlib for this workload. We emit progress lines that match
+  // the existing "Processing X..." → "Processing X... DONE" format
+  // so the main thread coalesces them into the same updating-line UI.
+  emitProgress("Processing WOFF wrap (JS)...", id);
+  const wrapStart = performance.now();
+  const woffBuffer = await ttfToWoff(ttfCopy.slice(0));
+  const wrapMs = performance.now() - wrapStart;
+  emitProgress(
+    `Processing WOFF wrap (JS)... DONE (${(wrapMs / 1000).toFixed(1)}s)`,
+    id,
+  );
+
   post(
-    { type: "result", id, ttf: ttfCopy, woff: woffCopy, stdout },
-    [ttfCopy, woffCopy],
+    { type: "result", id, ttf: ttfCopy, woff: woffBuffer, stdout },
+    [ttfCopy, woffBuffer],
   );
 }
 

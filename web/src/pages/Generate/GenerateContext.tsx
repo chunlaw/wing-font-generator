@@ -69,6 +69,11 @@ interface GenerateContextValue {
 
   // --- Step 4: log + run ---
   progressLog: string[];
+  /** 0..1 progress derived from step weights below. -1 when no run
+   *  has started; never decreases during a single run. */
+  progress: number;
+  /** Name of the step currently in progress (for UI labels), or null. */
+  currentProcessingStep: string | null;
   isGenerating: boolean;
   error: string | null;
   runtimeStatus: string;
@@ -81,6 +86,41 @@ interface GenerateContextValue {
   // --- Stepper navigation ---
   currentStep: number;
   setCurrentStep: (n: number) => void;
+}
+
+/**
+ * Heuristic per-step weight, expressed as a fraction of total work.
+ * Derived from the user's observed 302s baseline and refined for the
+ * post-optimization pipeline. Numbers don't have to sum to exactly 1.0
+ * — they get normalized at use time. Keep them roughly in proportion
+ * to expected runtime so the bar advances smoothly rather than in
+ * lopsided jumps.
+ *
+ * Steps not in this map default to a small weight (0.01) so unknown
+ * "Processing X..." lines from future code still nudge the bar
+ * forward instead of stalling.
+ */
+const STEP_WEIGHTS: Record<string, number> = {
+  "input files": 0.005,
+  "module imports": 0.02, // mostly cached after first run
+  "annotated glyph composition": 0.42,
+  "chain context substitution": 0.10,
+  "ligature substitution": 0.01,
+  "un-annotated glyph scaling": 0.005,
+  "font subset": 0.07,
+  "TTF save": 0.30,
+  "WOFF wrap (JS)": 0.03,
+  "output files": 0.005,
+};
+const DEFAULT_STEP_WEIGHT = 0.01;
+const TOTAL_WEIGHT = Object.values(STEP_WEIGHTS).reduce((s, w) => s + w, 0);
+
+/** Extract a step name from a "Processing X..." or
+ *  "Processing X... DONE (...)" line. Returns null for lines that
+ *  don't match the pattern. */
+function parseStepName(line: string): string | null {
+  const m = line.match(/^Processing (.+?)\.\.\.(?:$| DONE| FAILED)/);
+  return m ? m[1] : null;
 }
 
 const GenerateContext = createContext<GenerateContextValue | null>(null);
@@ -216,6 +256,8 @@ export const GenerateProvider = ({ children }: { children: ReactNode }) => {
 
   // --- Step 4: log + run -----------------------------------------------
   const [progressLog, setProgressLog] = useState<string[]>([]);
+  const [progress, setProgress] = useState<number>(-1);
+  const [currentProcessingStep, setCurrentProcessingStep] = useState<string | null>(null);
   const [isGenerating, setIsGenerating] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [runtimeStatus, setRuntimeStatus] = useState<string>(
@@ -224,6 +266,10 @@ export const GenerateProvider = ({ children }: { children: ReactNode }) => {
   const [runtimeReady, setRuntimeReady] = useState(false);
   const [result, setResult] = useState<GenerateResult | null>(null);
   const installedFaceRef = useRef<FontFace | null>(null);
+
+  // We accumulate completed step weights here so the progress bar only
+  // ever moves forward, regardless of the order steps complete in.
+  const completedWeightRef = useRef<number>(0);
 
   // Kick off Pyodide load early; the user has filled in fonts/mappings
   // by the time they click Generate, so the runtime should be warm.
@@ -258,6 +304,9 @@ export const GenerateProvider = ({ children }: { children: ReactNode }) => {
     setError(null);
     setProgressLog([]);
     setResult(null);
+    setProgress(0);
+    setCurrentProcessingStep(null);
+    completedWeightRef.current = 0;
 
     try {
       // Slice arraybuffers so transferring them to the worker doesn't
@@ -279,7 +328,27 @@ export const GenerateProvider = ({ children }: { children: ReactNode }) => {
         upperYOffsetRatio: params.yOffsetRatio,
         invert: params.invert,
         optimize: params.optimize,
-        onProgress: (msg) => setProgressLog((prev) => appendOrCoalesce(prev, msg)),
+        onProgress: (msg) => {
+          // Parse step boundaries to drive the determinate progress
+          // bar. "Processing X..." marks a step start; "Processing X...
+          // DONE (...)" or "... FAILED (...)" marks the end.
+          const step = parseStepName(msg);
+          if (step) {
+            const weight = STEP_WEIGHTS[step] ?? DEFAULT_STEP_WEIGHT;
+            if (msg.includes(" DONE") || msg.includes(" FAILED")) {
+              completedWeightRef.current += weight;
+              setProgress(
+                Math.min(0.99, completedWeightRef.current / TOTAL_WEIGHT),
+              );
+              setCurrentProcessingStep(null);
+            } else {
+              // Step just started — show it as the current in-progress
+              // step name (drives the spinner label in Step 4).
+              setCurrentProcessingStep(step);
+            }
+          }
+          setProgressLog((prev) => appendOrCoalesce(prev, msg));
+        },
       });
 
       // Install the WOFF as @font-face so Step 5 can render with it.
@@ -296,11 +365,16 @@ export const GenerateProvider = ({ children }: { children: ReactNode }) => {
         woffBlob: r.woffBlob,
         installedFamily: family,
       });
+      // Pipeline successfully completed — slam the bar to 100%.
+      setProgress(1);
+      setCurrentProcessingStep(null);
       // Auto-advance to the preview step. User can navigate back if
       // they want to tweak anything.
       setCurrentStep(4);
     } catch (err) {
       setError(err instanceof Error ? err.message : String(err));
+      // Leave the progress bar at wherever it got so the user can see
+      // roughly how far the pipeline got before failing.
     } finally {
       setIsGenerating(false);
     }
@@ -329,6 +403,8 @@ export const GenerateProvider = ({ children }: { children: ReactNode }) => {
       params,
       setParam,
       progressLog,
+      progress,
+      currentProcessingStep,
       isGenerating,
       error,
       runtimeStatus,
@@ -356,6 +432,8 @@ export const GenerateProvider = ({ children }: { children: ReactNode }) => {
       params,
       setParam,
       progressLog,
+      progress,
+      currentProcessingStep,
       isGenerating,
       error,
       runtimeStatus,

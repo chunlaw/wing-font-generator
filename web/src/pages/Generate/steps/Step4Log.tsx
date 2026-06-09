@@ -27,6 +27,8 @@ const Step4Log = () => {
   const { t } = useTranslation();
   const {
     progressLog,
+    progress,
+    currentProcessingStep,
     isGenerating,
     error,
     runtimeReady,
@@ -98,7 +100,29 @@ const Step4Log = () => {
         </Tooltip>
       </Stack>
 
-      {isGenerating && <LinearProgress />}
+      {/* Determinate progress bar driven by step weights in
+          GenerateContext. We show -1 (idle) as a blank space rather
+          than a 0% bar so the section doesn't reserve vertical room
+          before the first run. When isGenerating but progress hasn't
+          started ticking yet, fall back to an indeterminate bar so
+          the user sees activity. */}
+      {progress >= 0 && (
+        <Box>
+          <LinearProgress
+            variant={isGenerating && progress === 0 ? "indeterminate" : "determinate"}
+            value={Math.round(progress * 100)}
+          />
+          <Box
+            display="flex"
+            justifyContent="space-between"
+            mt={0.5}
+            sx={{ fontSize: 12, color: "text.secondary" }}
+          >
+            <span>{currentProcessingStep ?? (progress >= 1 ? "Done" : "")}</span>
+            <span>{Math.round(progress * 100)}%</span>
+          </Box>
+        </Box>
+      )}
 
       {error && (
         <Alert severity="error" variant="outlined">
