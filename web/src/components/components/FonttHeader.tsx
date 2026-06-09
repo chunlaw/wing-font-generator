@@ -15,7 +15,12 @@ export const FontHeader = ({ family, displayName, idx }: FontHeaderProps) => {
   const { removePickedFont } = useContext(AppContext)
 
   const handleDownload = (format: "ttf" | "woff") => {
-    window.open(`https://fonts.chunlaw.io/${family}.${format}`, "_blank");
+    // VITE_FONT_URL is set in web/.env.{development,production} to the
+    // current font CDN host. Going via the env var (instead of
+    // hard-coding the URL) means future domain changes are a single
+    // .env edit + redeploy.
+    const base = import.meta.env.VITE_FONT_URL ?? "";
+    window.open(`${base}/${family}.${format}`, "_blank");
     setOpen(false);
   };
 

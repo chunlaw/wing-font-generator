@@ -83,16 +83,45 @@ a handler module, the two copies could drift silently. The new layout
 makes `python/` the single source of truth and treats the web app's
 bundled copies as build artifacts produced by `web/scripts/sync-python.mjs`.
 
-Two GitHub Actions handle the two halves independently:
+Two GitHub Actions handle the two halves independently. They publish to
+**different paths on the same `gh-pages` branch**, so they don't
+overwrite each other:
 
-| Workflow | Trigger | What it does |
+| Workflow | Trigger | What it publishes |
 | --- | --- | --- |
-| `build-fonts.yml` | `python/**` changes | Runs `wing-font.py` 25× and publishes results to `gh-pages` (the font CDN) |
-| `build-demo.yml` | `web/**` or `python/**` changes | `yarn build` (which includes the sync step), uploads the dist as a CI artifact |
+| `build-fonts.yml` | push to `python/**` (auto) or `workflow_dispatch` (manual) | Runs `wing-font.py` 25× → deploys outputs to `gh-pages` `/fonts/` subfolder (served at <https://wing-fonts.chunlaw.io/fonts/X.woff>) + uploads a `wing-fonts` artifact for inspection |
+| `build-demo.yml` | push to `web/**` or `python/**` | `yarn build` (which includes the sync step), uploads the dist as a `web-dist` artifact (validation only, no deploy) |
 
-The font-CDN deploy and the web-app deploy stay separate. The Vite build
-re-runs whenever the Python pipeline changes so we catch
-incompatibilities before they ship.
+### Publishing the React app
+
+`cd web && yarn deploy`. It runs `yarn build` then `gh-pages -d dist --add`
+to push `web/dist/` to the gh-pages ROOT. The `--add` flag is important:
+it adds/updates files without wiping the `/fonts/` subfolder that the
+fonts workflow placed there. CNAME (`wing-fonts.chunlaw.io`) comes from
+`web/public/CNAME` which Vite copies into `dist/`.
+
+### Publishing fonts
+
+Automatic on every push that touches `python/**`. The workflow
+generates the 25 fonts, force-with-lease-pushes them into the
+`/fonts/` subfolder of `gh-pages`, and uploads a copy as a workflow
+artifact for inspection. To trigger manually (e.g. after re-running
+the test rig and confirming output): Actions tab → "Fonts Generation"
+→ "Run workflow".
+
+### How the two writers coexist
+
+- `build-fonts.yml` uses `target-folder: fonts` + `clean: true`. The
+  `clean: true` is **scoped to the target folder** — it wipes only
+  `/fonts/`, never the React app at the branch root.
+- `yarn deploy` uses `gh-pages -d dist --add`. The `--add` flag adds and
+  updates files without wiping anything else — so `/fonts/` survives
+  every web deploy.
+- A `concurrency: gh-pages-fonts` group in `build-fonts.yml` serialises
+  CI runs (so two simultaneous font deploys can't fight). For the
+  much rarer case of `yarn deploy` colliding with an in-progress CI
+  push, the gh-pages action uses force-with-lease and will retry on
+  non-fast-forward.
 
 ---
 

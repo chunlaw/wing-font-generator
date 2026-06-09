@@ -7,6 +7,15 @@ node_modules
 # and do not check it in.
 public/wingfont/
 
+# `public/fonts/` is no longer needed locally — the build-fonts.yml CI
+# workflow publishes fonts directly to gh-pages /fonts/ on every push
+# that touches python/**. `yarn deploy` ignores this directory via the
+# `--add` flag (it adds/updates files but never wipes paths it doesn't
+# touch), so even if you stage fonts here locally they wouldn't be
+# pushed by yarn deploy. Kept in the ignore list anyway in case you
+# want to drop test fonts here without staining the repo.
+public/fonts/
+
 # Vite cache + transient logs
 .vite/
 yarn-error.log

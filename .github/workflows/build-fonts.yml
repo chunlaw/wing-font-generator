@@ -1,4 +1,32 @@
 name: Fonts Generation
+
+# Builds the 25 production fonts and publishes them to the `fonts/`
+# subfolder of the `gh-pages` branch — i.e. served at
+# https://wing-fonts.chunlaw.io/fonts/X.{ttf,woff}.
+#
+# Coexistence with `yarn deploy`
+# ------------------------------
+# `yarn deploy` (from web/) writes to the gh-pages branch ROOT — index.html,
+# /assets/, /favicon.ico, etc. This workflow writes to gh-pages /fonts/
+# only (via `target-folder: fonts`). Different paths, no collision.
+#
+# An earlier version had both writers cleaning the entire branch on each
+# push, which led to whichever wrote last clobbering the other. Two
+# mitigations are now in place:
+#
+#   1. JamesIves' deploy action's `clean: true` here only cleans the
+#      target-folder (`fonts/`), not the whole branch. The React app at
+#      the root is unaffected.
+#   2. `yarn deploy` runs `gh-pages -d dist --add`, which means it adds
+#      and updates files but never removes the /fonts/ subfolder this
+#      workflow just placed.
+#
+# The remaining race window — both workflows pushing within the same
+# few seconds — is mitigated by the `concurrency` group below
+# (serialises CI pushes) and by the actions retrying on
+# non-fast-forward. In practice manual yarn deploys and CI auto-runs
+# don't usually collide.
+
 on:
   push:
     # Avoid spending CI minutes on web-only changes — fonts only need to
@@ -9,7 +37,16 @@ on:
   workflow_dispatch:
 
 permissions:
+  # Needed for the gh-pages push.
   contents: write
+
+# Serialise concurrent CI runs to the same target so two pushes never
+# race each other. `cancel-in-progress: false` means a newer run waits
+# for the older one rather than interrupting it — important because we
+# don't want a half-uploaded /fonts/ on the live branch.
+concurrency:
+  group: gh-pages-fonts
+  cancel-in-progress: false
 
 jobs:
   Generate-Fonts:
@@ -65,22 +102,46 @@ jobs:
           python wing-font.py -opt -f ChironSungHK-Noto-lau-It -i input_fonts/ChironSungHK-R-It.ttf -a input_fonts/NotoSerif-Regular.ttf -m mappings/canto-lau.csv -o outputs/ChironSungHK-Noto-lau-It -as 0.13
           python wing-font.py -f ChironSungHK-cangjie-It -i input_fonts/ChironSungHK-R-It.ttf -a input_fonts/ChironSungHK-R-It.ttf -m mappings/cangjie.csv -o outputs/ChironSungHK-cangjie-It -as 0.25
 
-      - name: create deployment folder
-        # Step lives outside python/ so its `mkdir` lands at the repo root.
-        working-directory: .
-        run: mkdir -p fonts
-      - name: cp files into deployment folder
+      - name: Stage font outputs for deploy
+        # Collect just the .ttf/.woff files into a flat folder so the
+        # deploy action below has a clean tree to upload — no Python
+        # intermediates, no stale files from previous runs.
+        # We deliberately do NOT bundle CNAME here: the gh-pages root
+        # already owns the CNAME via web/public/CNAME shipped by
+        # `yarn deploy`, and dropping a competing CNAME inside /fonts/
+        # would be ignored anyway (GitHub Pages only honours the
+        # top-level CNAME file).
         working-directory: .
         run: |
-          cp \
-          python/outputs/*.ttf \
-          python/outputs/*.woff \
-          CNAME \
-          fonts/
-      - name: Upload fonts
+          mkdir -p fonts
+          cp python/outputs/*.ttf fonts/
+          cp python/outputs/*.woff fonts/
+          ls -lh fonts/
+      - name: Upload fonts as workflow artifact
+        # Kept as an inspectable artifact even though we now also
+        # deploy. Handy for verifying what was published and for
+        # local-side download if someone wants to grab a specific run.
+        uses: actions/upload-artifact@v4
+        with:
+          name: wing-fonts
+          path: fonts/
+          retention-days: 30
+      - name: Deploy fonts to gh-pages /fonts/
         uses: JamesIves/github-pages-deploy-action@v4
         with:
-            folder: fonts
-            commit-message: Update resources
-            branch: gh-pages
-            clean: true
+          # Source folder we just staged.
+          folder: fonts
+          # Target SUBFOLDER on gh-pages — everything outside /fonts/
+          # (i.e. the React app at the branch root) is untouched.
+          target-folder: fonts
+          branch: gh-pages
+          # `clean: true` here is scoped to the target-folder, so it
+          # wipes only /fonts/ (lets us drop renamed/removed fonts
+          # cleanly). The React app at the root is safe.
+          clean: true
+          commit-message: "fonts: update from ${{ github.sha }}"
+          # Use force-with-lease so we don't clobber a concurrent
+          # push from `yarn deploy` — if the remote moved while we
+          # were uploading, the action retries with the latest state.
+          force: false
+          single-commit: false

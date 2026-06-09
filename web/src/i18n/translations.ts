@@ -22,6 +22,7 @@ export type TranslationKey =
   | "header.title"
   | "header.subtitle"
   | "header.cta.generate"
+  | "header.cta.showcase"
   | "header.cta.learnMore"
   | "header.cta.sponsor"
   | "header.lang.toggle"
@@ -130,6 +131,7 @@ export const TRANSLATIONS: Record<Language, Record<TranslationKey, string>> = {
     "header.title": "Wing Font",
     "header.subtitle": "免費開源，自製粵語、倉頡等註音字體",
     "header.cta.generate": "自製字體",
+    "header.cta.showcase": "字體展示",
     "header.cta.learnMore": "了解更多！",
     "header.cta.sponsor": "捐助",
     "header.lang.toggle": "切換語言",
@@ -248,6 +250,7 @@ export const TRANSLATIONS: Record<Language, Record<TranslationKey, string>> = {
     "header.subtitle":
       "Free, open-source generator for Cantonese / Cangjie / Yale annotation fonts.",
     "header.cta.generate": "Make Your Font",
+    "header.cta.showcase": "Showcase",
     "header.cta.learnMore": "Learn More",
     "header.cta.sponsor": "Sponsor",
     "header.lang.toggle": "Switch language",

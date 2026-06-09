@@ -10,7 +10,8 @@
     "lint": "eslint . --ext ts,tsx --report-unused-disable-directives --max-warnings 0",
     "preview": "vite preview",
     "predeploy": "yarn build",
-    "deploy": "gh-pages -d dist"
+    "//deploy": "Publishes the React app to the ROOT of gh-pages. The `--add` flag means we only add/update files and never remove anything we didn't touch — critical because the build-fonts.yml CI workflow publishes fonts under /fonts/ on the same branch. Without --add, every deploy would wipe the /fonts/ subfolder right after CI populated it.",
+    "deploy": "gh-pages -d dist --add"
   },
   "dependencies": {
     "@emotion/react": "^11.11.4",
