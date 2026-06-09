@@ -5,3 +5,28 @@
 .DS_Store
 
 **/__pycache__
+
+# Source input fonts must be tracked even though the `*ttf` rule above
+# would normally exclude them — they're inputs to wing-font.py, not
+# generated outputs, and the build-fonts.yml CI workflow can't run
+# without them. The `!` prefix re-includes paths that an earlier rule
+# would have ignored.
+#
+# If the input_fonts/ directory grows large enough to make plain Git
+# painful (currently ~195 MB across 9 fonts), consider migrating to
+# Git LFS:
+#
+#   git lfs install
+#   git lfs track "python/input_fonts/*.ttf"
+#   git add .gitattributes python/input_fonts/*.ttf
+#   git commit -m "fonts: move to LFS"
+#
+# That keeps git history lean while still serving the files through
+# GitHub's CDN (subject to LFS bandwidth quotas on free accounts).
+!python/input_fonts/
+!python/input_fonts/*.ttf
+
+# Generated outputs are still ignored — those live in python/outputs/
+# at the build site and gh-pages /fonts/ at the deploy site, never in
+# git.
+python/outputs/
