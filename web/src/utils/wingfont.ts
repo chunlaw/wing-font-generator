@@ -30,6 +30,13 @@ export interface GenerateParams {
   upperYOffsetRatio?: number;
   invert?: boolean;
   optimize?: boolean;
+  /**
+   * If true, ask the runner to swap in pre-trimmed font bytes
+   * (populated by an earlier `preparePreviewFonts()` call) before
+   * running the pipeline. Used by the live-preview path; ignored by
+   * the runner when the cache is cold or doesn't match the bytes.
+   */
+  useTrimCache?: boolean;
   onProgress?: (message: string) => void;
 }
 
@@ -39,17 +46,43 @@ export interface GenerateResult {
   stdout: string;
 }
 
+export interface PreparePreviewFontsParams {
+  baseFontBytes: ArrayBuffer;
+  annoFontBytes: ArrayBuffer;
+  /** All chars any future preview might need, packed together as a
+   *  single string. Whitespace is ignored by the runner. */
+  charsText: string;
+  onProgress?: (message: string) => void;
+}
+
+export interface PreparePreviewFontsResult {
+  /** True if the cache was already warm with these inputs and no
+   *  work was done. */
+  cached: boolean;
+  /** Wall-clock seconds the trim took, if any was performed. */
+  elapsedS?: number;
+}
+
 type WorkerInbound =
   | { type: "ready" }
   | { type: "progress"; id?: string; message: string }
   | { type: "result"; id: string; ttf: ArrayBuffer; woff: ArrayBuffer; stdout: string }
+  | { type: "prepare-done"; id: string; cached: boolean; elapsedS?: number }
   | { type: "error"; id?: string; message: string };
 
-interface PendingRequest {
-  resolve: (value: GenerateResult) => void;
-  reject: (err: Error) => void;
-  onProgress?: (message: string) => void;
-}
+type PendingRequest =
+  | {
+      kind: "generate";
+      resolve: (value: GenerateResult) => void;
+      reject: (err: Error) => void;
+      onProgress?: (message: string) => void;
+    }
+  | {
+      kind: "prepare";
+      resolve: (value: PreparePreviewFontsResult) => void;
+      reject: (err: Error) => void;
+      onProgress?: (message: string) => void;
+    };
 
 let worker: Worker | null = null;
 const pending = new Map<string, PendingRequest>();
@@ -89,11 +122,30 @@ function ensureWorker(): Worker {
         const req = pending.get(data.id);
         if (!req) return;
         pending.delete(data.id);
+        if (req.kind !== "generate") {
+          req.reject(
+            new Error("Got `result` message for non-generate request"),
+          );
+          return;
+        }
         req.resolve({
           ttfBlob: new Blob([data.ttf], { type: "font/ttf" }),
           woffBlob: new Blob([data.woff], { type: "font/woff" }),
           stdout: data.stdout,
         });
+        break;
+      }
+      case "prepare-done": {
+        const req = pending.get(data.id);
+        if (!req) return;
+        pending.delete(data.id);
+        if (req.kind !== "prepare") {
+          req.reject(
+            new Error("Got `prepare-done` message for non-prepare request"),
+          );
+          return;
+        }
+        req.resolve({ cached: data.cached, elapsedS: data.elapsedS });
         break;
       }
       case "error": {
@@ -150,6 +202,7 @@ export async function generateFont(params: GenerateParams): Promise<GenerateResu
 
   return new Promise<GenerateResult>((resolve, reject) => {
     pending.set(id, {
+      kind: "generate",
       resolve,
       reject,
       onProgress: params.onProgress,
@@ -174,6 +227,54 @@ export async function generateFont(params: GenerateParams): Promise<GenerateResu
           upperYOffsetRatio: params.upperYOffsetRatio,
           invert: params.invert,
           optimize: params.optimize,
+          useTrimCache: params.useTrimCache,
+        },
+      },
+      transfer,
+    );
+  });
+}
+
+/**
+ * Ask the runner to pre-trim the input fonts to just the chars the
+ * user might preview, and cache the trimmed bytes in Pyodide.
+ * Subsequent `generateFont` calls with `useTrimCache: true` and the
+ * same input bytes will see the cache and skip the expensive
+ * full-font load + subset, dropping per-preview latency from 2-4 s
+ * to a few hundred ms.
+ *
+ * Safe to call repeatedly; the runner is idempotent (it no-ops when
+ * the cache already covers the requested chars for the same font
+ * pair). Cheap to call before navigating to Step 3, since the work
+ * happens in the worker without blocking the UI.
+ */
+export async function preparePreviewFonts(
+  params: PreparePreviewFontsParams,
+): Promise<PreparePreviewFontsResult> {
+  const w = ensureWorker();
+  const id = `prep-${++nextId}`;
+
+  return new Promise<PreparePreviewFontsResult>((resolve, reject) => {
+    pending.set(id, {
+      kind: "prepare",
+      resolve,
+      reject,
+      onProgress: params.onProgress,
+    });
+
+    const transfer: Transferable[] = [
+      params.baseFontBytes,
+      params.annoFontBytes,
+    ];
+
+    w.postMessage(
+      {
+        type: "prepare-preview-fonts",
+        id,
+        payload: {
+          baseFontBytes: params.baseFontBytes,
+          annoFontBytes: params.annoFontBytes,
+          charsText: params.charsText,
         },
       },
       transfer,

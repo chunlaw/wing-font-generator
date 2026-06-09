@@ -46,21 +46,33 @@ const MANIFEST = [
   ["utils.py", "utils.py"],
   ["runner.py", "runner.py"],
 
-  // mappings/ package — csv_parser plus the CSVs we want to ship as
-  // built-in defaults. Add more CSVs here if you want them visible in
-  // the in-browser font generator's dropdown.
+  // mappings/ package — csv_parser plus the CSVs we ship as built-in
+  // preset options in Step 2. Keep the list in sync with the
+  // `BUILT_IN_MAPPINGS` array in web/src/utils/wingfontPresets.ts —
+  // both should reference the same set of files.
   ["mappings/__init__.py", "mappings/__init__.py"],
   ["mappings/csv_parser.py", "mappings/csv_parser.py"],
   ["mappings/canto-lshk.csv", "mappings/canto-lshk.csv"],
   ["mappings/canto-yale.csv", "mappings/canto-yale.csv"],
+  ["mappings/canto-lau.csv", "mappings/canto-lau.csv"],
+  ["mappings/canto-guangdong.csv", "mappings/canto-guangdong.csv"],
+  ["mappings/canto-chishima.csv", "mappings/canto-chishima.csv"],
   ["mappings/cangjie.csv", "mappings/cangjie.csv"],
 
-  // Default sample fonts loaded when the user hasn't uploaded their own.
-  // Kept small — the 23 MB Chiron font is intentional and worth the cost
-  // for a good first-run experience, but consider hosting on a CDN if
-  // the bundle size becomes a problem.
+  // Built-in fonts surfaced as preset options in Step 1. Keep in sync
+  // with `BUILT_IN_BASE_FONTS` in wingfontPresets.ts. The Chiron fonts
+  // weigh 5–25 MB each — they're the dominant chunk of public/ — but
+  // the curated set is intentional for a good first-run UX.
+  //
+  // 方正楷体.ttf is renamed to FZKaiti.ttf in the bundle because the
+  // worker fetches via origin-absolute URL and non-ASCII filenames
+  // need URL encoding which we'd rather not have to round-trip.
   ["input_fonts/NotoSerif-Regular.ttf", "NotoSerif-Regular.ttf"],
   ["input_fonts/ChironSungHK-R.ttf", "ChironSungHK-R.ttf"],
+  ["input_fonts/ChironSungHK-R-It.ttf", "ChironSungHK-R-It.ttf"],
+  ["input_fonts/ChironHeiHK-R.ttf", "ChironHeiHK-R.ttf"],
+  ["input_fonts/ChironHeiHK-B.ttf", "ChironHeiHK-B.ttf"],
+  ["input_fonts/方正楷体.ttf", "FZKaiti.ttf"],
 ];
 
 async function exists(path) {

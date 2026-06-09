@@ -12,7 +12,6 @@ import {
   Button,
   CircularProgress,
   IconButton,
-  LinearProgress,
   Paper,
   Stack,
   Tooltip,
@@ -74,17 +73,103 @@ const Step4Log = () => {
       </Alert>
 
       <Stack direction="row" spacing={2} alignItems="center">
+        {/*
+          Progress-button: while generating, the button background
+          fills left-to-right via a ::before pseudo-element whose
+          width tracks the `progress` value, and the label updates
+          to include the live percentage. The fill itself IS the
+          activity indicator — no spinner icon — and the percentage
+          floats above the fill via z-index.
+
+          The separate LinearProgress that used to sit below this
+          row was removed; the button now carries the bar, freeing
+          vertical space and tying the "is it moving?" feedback to
+          the action the user just took.
+        */}
         <Button
           variant="contained"
           color="primary"
           size="large"
           onClick={generate}
           disabled={isGenerating}
-          startIcon={
-            isGenerating ? <CircularProgress size={18} color="inherit" /> : undefined
-          }
+          sx={{
+            position: "relative",
+            overflow: "hidden",
+            // Wide enough that the label doesn't reflow when the
+            // percentage rolls past two digits.
+            minWidth: 200,
+            // Keep full visual weight while disabled — the fill is
+            // the cue that work is happening, not a faded button.
+            "&.Mui-disabled": {
+              color: "primary.contrastText",
+              backgroundColor: "primary.main",
+              opacity: 1,
+              cursor: "progress",
+            },
+            // The fill itself. Translucent (opacity 0.55) so the
+            // base button colour still bleeds through — without
+            // this, the label gets visually swallowed by the dark
+            // band sweeping across the button. Animates smoothly
+            // via `transition` so the step-weight estimator's
+            // natural jumpiness reads as intentional movement
+            // rather than jitter.
+            //
+            // Note on z-order: an absolutely-positioned ::before
+            // with `z-index: 0` actually stacks ABOVE inline text
+            // children (which are at layer 5 in the CSS stacking
+            // spec, while positioned z-index:0 is layer 6). That's
+            // why the previous version hid the label even though
+            // `& > *` had z-index 1 — text nodes aren't elements,
+            // so the selector missed them. We now wrap the label
+            // in an explicit <Box component="span"> below so it
+            // becomes a positioned element of its own, sitting
+            // unambiguously above the fill.
+            ...(isGenerating && {
+              "&::before": {
+                content: '""',
+                position: "absolute",
+                left: 0,
+                top: 0,
+                bottom: 0,
+                // Floor at 4% so the fill is visible from the very
+                // first tick — pure 0 looks like nothing is
+                // happening at all.
+                width: `${Math.max(progress * 100, 4)}%`,
+                backgroundColor: "primary.dark",
+                opacity: 0.55,
+                transition: "width 200ms linear",
+                zIndex: 0,
+              },
+            }),
+          }}
         >
-          {isGenerating ? t("step4.run.running") : t("step4.run.idle")}
+          <Box
+            component="span"
+            sx={{
+              // Wraps the spinner + label so they form a single
+              // positioned element that definitively stacks above
+              // the ::before fill. `display: inline-flex` keeps the
+              // spinner and text on one line with a small gap.
+              position: "relative",
+              zIndex: 1,
+              display: "inline-flex",
+              alignItems: "center",
+              gap: 1,
+            }}
+          >
+            {isGenerating && (
+              // Re-introduced because the fill alone can look
+              // frozen during the heavier steps (chain-context
+              // substitution, TTF save) where the bar stays at the
+              // same percentage for several seconds. A spinning
+              // ring is unambiguous "something is happening" even
+              // when the fill isn't moving.
+              <CircularProgress size={16} color="inherit" thickness={5} />
+            )}
+            {isGenerating
+              ? `${t("step4.run.running")} ${Math.round(progress * 100)}%`
+              : t("step4.run.idle")}
+          </Box>
         </Button>
         <Box flex={1} />
         <Tooltip title={copied ? t("step4.copied") : t("step4.copy")} arrow>
@@ -100,28 +185,24 @@ const Step4Log = () => {
         </Tooltip>
       </Stack>
 
-      {/* Determinate progress bar driven by step weights in
-          GenerateContext. We show -1 (idle) as a blank space rather
-          than a 0% bar so the section doesn't reserve vertical room
-          before the first run. When isGenerating but progress hasn't
-          started ticking yet, fall back to an indeterminate bar so
-          the user sees activity. */}
-      {progress >= 0 && (
-        <Box>
-          <LinearProgress
-            variant={isGenerating && progress === 0 ? "indeterminate" : "determinate"}
-            value={Math.round(progress * 100)}
-          />
-          <Box
-            display="flex"
-            justifyContent="space-between"
-            mt={0.5}
-            sx={{ fontSize: 12, color: "text.secondary" }}
-          >
-            <span>{currentProcessingStep ?? (progress >= 1 ? "Done" : "")}</span>
-            <span>{Math.round(progress * 100)}%</span>
-          </Box>
-        </Box>
+      {/* Step-name caption — small, secondary, only shown while
+          there's something to say. The button carries the
+          percentage; this just adds the human-readable phase
+          ("Processing chain context substitution..."). */}
+      {isGenerating && currentProcessingStep && (
+        <Typography
+          variant="caption"
+          color="text.secondary"
+          sx={{
+            fontFamily: "monospace",
+            whiteSpace: "nowrap",
+            overflow: "hidden",
+            textOverflow: "ellipsis",
+            mt: -1, // tighten the gap to the button row above
+          }}
+        >
+          {currentProcessingStep}
+        </Typography>
       )}
 
       {error && (

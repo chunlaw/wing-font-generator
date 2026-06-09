@@ -104,8 +104,18 @@ def get_glyph_name_by_char(font, char):
     Returns ``None`` if the character is not encoded. Some cmap subtables
     map to glyph *indices* rather than names (rare but legal); we handle
     that case by indexing the glyph order.
+
+    Defensive against ``getBestCmap()`` returning ``None`` — that
+    happens when a font has no usable Unicode cmap subtable at all
+    (rare for legit fonts; common when an upstream loader fed us
+    HTML or other garbage instead of font bytes). Treating no-cmap
+    as "char not encoded" gives the caller a clean None instead of
+    a confusing ``TypeError: argument of type 'NoneType' is not
+    iterable``.
     """
     cmap = font.getBestCmap()
+    if cmap is None:
+        return None
     char_code = ord(char)
     if char_code not in cmap:
         return None

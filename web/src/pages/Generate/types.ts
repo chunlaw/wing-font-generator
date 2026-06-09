@@ -32,3 +32,36 @@ export interface GenerateResult {
    *  preview textbox can reference it. */
   installedFamily: string;
 }
+
+/**
+ * Result of a parameter-tuning preview run.
+ *
+ * The Preview pane in Step 3 lets the user try the current parameters
+ * against a representative sample of mappings before committing to a
+ * full generation that could take a minute or more. The Python
+ * pipeline is run with a CSV containing only the mappings whose
+ * `chars` are needed to render `sampleText`, so the run collapses to
+ * a few hundred ms.
+ *
+ * `installedFamily` is intentionally a separate family-name from
+ * `GenerateResult.installedFamily` so a preview and a full result can
+ * coexist on the page without trampling each other's @font-face
+ * registration.
+ */
+export interface PreviewResult {
+  woffBlob: Blob;
+  installedFamily: string;
+  /** What text the preview actually renders — either user-supplied
+   *  (when the "Preview text" field is filled in) or auto-picked
+   *  from the longest sample-eligible mapping row. */
+  sampleText: string;
+  /** The mapping rows that fed the preview CSV. Usually one (the
+   *  auto-picked row), but can be several when the user typed
+   *  custom preview text that spans multiple mappings. */
+  sampleRows: MappingRow[];
+  /** True when `sampleText` came from the user-controlled "Preview
+   *  text" field; false when it was auto-picked. The UI uses this
+   *  to choose the right caption ("Sampled mapping" vs "Preview
+   *  text"). */
+  isCustomText: boolean;
+}

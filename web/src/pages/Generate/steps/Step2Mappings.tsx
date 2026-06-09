@@ -20,8 +20,13 @@ import {
   DialogContent,
   DialogContentText,
   DialogTitle,
+  FormControl,
   IconButton,
+  InputLabel,
+  MenuItem,
   Paper,
+  Select,
+  SelectChangeEvent,
   Stack,
   TextField,
   Typography,
@@ -48,6 +53,7 @@ import {
 import { FixedSizeList, ListChildComponentProps } from "react-window";
 import { useGenerate } from "../GenerateContext";
 import { useTranslation } from "../../../i18n/LanguageContext";
+import { BUILT_IN_MAPPINGS } from "../../../utils/wingfontPresets";
 import { MappingRow } from "../types";
 
 // Two row heights — phones get taller rows because we stack the data
@@ -113,8 +119,9 @@ const Step2Mappings = () => {
     clearMappings,
     addMapping,
     loadMappingsFromCsvText,
-    loadDefaultMappings,
+    loadBuiltInMappings,
     exportMappingsAsCsv,
+    mappingsPresetKey,
   } = useGenerate();
 
   const [search, setSearch] = useState("");
@@ -206,14 +213,19 @@ const Step2Mappings = () => {
     URL.revokeObjectURL(url);
   }, [exportMappingsAsCsv]);
 
-  const handleLoadDefault = useCallback(async () => {
-    try {
-      await loadDefaultMappings();
-      setImportError(null);
-    } catch (err) {
-      setImportError(err instanceof Error ? err.message : String(err));
-    }
-  }, [loadDefaultMappings]);
+  const handlePresetChange = useCallback(
+    async (event: SelectChangeEvent<string>) => {
+      const next = BUILT_IN_MAPPINGS.find((p) => p.key === event.target.value);
+      if (!next) return;
+      try {
+        await loadBuiltInMappings(next);
+        setImportError(null);
+      } catch (err) {
+        setImportError(err instanceof Error ? err.message : String(err));
+      }
+    },
+    [loadBuiltInMappings],
+  );
 
   return (
     <Box display="flex" flexDirection="column" gap={2}>
@@ -226,15 +238,62 @@ const Step2Mappings = () => {
 
       {importError && <Alert severity="error">{importError}</Alert>}
 
-      {/* Toolbar: import / default / export / clear + count */}
-      <Stack direction="row" spacing={1} flexWrap="wrap" rowGap={1}>
+      {/* Toolbar: import / preset picker / export / clear + count */}
+      <Stack
+        direction="row"
+        spacing={1}
+        flexWrap="wrap"
+        rowGap={1}
+        alignItems="center"
+      >
         <Button variant="outlined" component="label" size="small">
           {t("step2.import.button")}
           <input hidden type="file" accept=".csv,text/csv" onChange={handleImport} />
         </Button>
-        <Button variant="text" size="small" onClick={handleLoadDefault}>
-          {t("step2.import.useDefault")}
-        </Button>
+        {/*
+          Built-in mapping presets dropdown. Replaces the old single
+          "use default" text button now that we ship multiple
+          Cantonese romanizations + Cangjie. The value-binding uses
+          empty-string as the sentinel for "Custom / no preset" (MUI
+          Select can't bind to `null`); whenever the user edits or
+          imports their own CSV, the context clears
+          `mappingsPresetKey` to null which renders here as "".
+        */}
+        <FormControl size="small" sx={{ minWidth: 200 }}>
+          {/*
+            `shrink` on the InputLabel + `notched` on the Select
+            (forwarded to its underlying OutlinedInput) are required
+            because we use `displayEmpty` with an empty-string
+            sentinel for the "Custom / no preset" state. Without
+            both, MUI thinks the field is empty when
+            mappingsPresetKey is null and lets the label slide back
+            into the centre, where it overlaps the placeholder text
+            our renderValue paints. Forcing shrink keeps the label
+            in the notched-top position always.
+          */}
+          <InputLabel id="mappings-preset-label" shrink>
+            {t("step2.import.preset")}
+          </InputLabel>
+          <Select
+            labelId="mappings-preset-label"
+            label={t("step2.import.preset")}
+            value={mappingsPresetKey ?? ""}
+            onChange={handlePresetChange}
+            displayEmpty
+            notched
+            renderValue={(selected) => {
+              if (!selected) return t("step2.import.presetCustom");
+              const opt = BUILT_IN_MAPPINGS.find((p) => p.key === selected);
+              return opt?.label ?? selected;
+            }}
+          >
+            {BUILT_IN_MAPPINGS.map((preset) => (
+              <MenuItem key={preset.key} value={preset.key}>
+                {preset.label}
+              </MenuItem>
+            ))}
+          </Select>
+        </FormControl>
         <Button
           variant="text"
           size="small"

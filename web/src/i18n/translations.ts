@@ -101,6 +101,7 @@ export type TranslationKey =
   | "step1.anno.hint"
   | "step1.upload"
   | "step1.useDefault"
+  | "step1.presetLabel"
   | "step1.preview.title"
   | "step1.preview.hint"
   | "step1.preview.notLoaded"
@@ -110,6 +111,8 @@ export type TranslationKey =
   | "step2.description"
   | "step2.import.button"
   | "step2.import.useDefault"
+  | "step2.import.preset"
+  | "step2.import.presetCustom"
   | "step2.export.button"
   | "step2.clear.button"
   | "step2.count"
@@ -136,6 +139,17 @@ export type TranslationKey =
   | "step3.yOffset"
   | "step3.invert"
   | "step3.optimize"
+  | "step3.preview.title"
+  | "step3.preview.description"
+  | "step3.preview.updating"
+  | "step3.preview.firstRun"
+  | "step3.preview.idle"
+  | "step3.preview.sampledLabel"
+  | "step3.preview.customLabel"
+  | "step3.preview.notReady"
+  | "step3.previewText.label"
+  | "step3.previewText.placeholder"
+  | "step3.previewText.helper"
   // Step 4 — log
   | "step4.title"
   | "step4.description"
@@ -175,25 +189,25 @@ export const TRANSLATIONS: Record<Language, Record<TranslationKey, string>> = {
     // Home
     "home.hero.title": "Wing Font",
     "home.hero.tagline":
-      "在純文字裡將注音直接顯示在漢字上方 — 毋須 HTML 標記、毋須額外排版，只要載入字體就行。",
+      "在純文字裡將標注直接顯示在漢字上方 — 毋須 HTML 標記、毋須額外排版，只要載入字體就行。",
     "home.hero.cta.generate": "自製你的字體",
     "home.hero.cta.showcase": "瀏覽現成字體",
     "home.what.title": "這是甚麼",
     "home.what.body":
-      "Wing Font 是一套字型生成工具。輸入兩個 TTF（一個漢字、一個拉丁字母）加上字符對應 CSV，便會輸出一個全新的 OpenType 字型 — 每個漢字字形都直接刻上注音，可作粵拼、耶魯、倉頡等任何標註用途。輸出的字型可用於網頁、Word、Telegram、Email 等任何支援自訂字型的地方。",
+      "Wing Font 是一套字型生成工具。輸入兩個 TTF（一個底字、一個標注字）加上字符對應 CSV，便會輸出一個全新的 OpenType 字型 — 每個底字字形都直接刻上標注，可作粵拼、耶魯、倉頡等任何標注用途。輸出的字型可用於網頁、Word、Telegram、Email 等任何支援自訂字型的地方。",
     "home.how.title": "如何運作",
     "home.how.body":
       "整套字型生成流程已通過 Pyodide 編譯為 WebAssembly，直接在你的瀏覽器執行。毋須安裝 Python，毋須上傳檔案到伺服器，毋須付費，所有資料留在本機。",
     "home.features.title": "功能特色",
-    "home.features.f1.title": "純文字就有注音",
+    "home.features.f1.title": "純文字就有標注",
     "home.features.f1.body":
-      "注音直接刻入字形本身，無需 HTML <ruby> 標記。複製字到任何位置都會帶住注音一齊出現。",
+      "標注直接刻入字形本身，無需 HTML <ruby> 標記。複製字到任何位置都會帶住標注一齊出現。",
     "home.features.f2.title": "字詞自動切換",
     "home.features.f2.body":
       "「銀行 / 行人」中的「行」會自動切換不同讀音，源自 OpenType 的 calt 字體上下文替換規則。",
     "home.features.f3.title": "手動選擇變體",
     "home.features.f3.body":
-      "鍵入「字1」、「字2」可手動指定多音字的注音，方便糾正自動判斷。",
+      "鍵入「字1」、「字2」可手動指定多音字的標注，方便糾正自動判斷。",
     "home.features.f4.title": "完全本機運算",
     "home.features.f4.body":
       "你的字體與對應表全程不會離開瀏覽器，所有處理皆在本機進行。",
@@ -229,7 +243,7 @@ export const TRANSLATIONS: Record<Language, Record<TranslationKey, string>> = {
     "about.cta.telegram": "加入 Telegram 群",
     "about.cta.github": "去 GitHub",
     // Generate
-    "generate.title": "自製註音字體",
+    "generate.title": "自製標注字體",
     "generate.runtime.ready": "字型引擎已就緒。首次生成需要 30 至 120 秒。",
     "generate.runtime.loading": "字型引擎載入中：",
     "generate.button.generate": "開始生成",
@@ -246,13 +260,14 @@ export const TRANSLATIONS: Record<Language, Record<TranslationKey, string>> = {
     // Step 1
     "step1.title": "步驟 1：選擇字體",
     "step1.description":
-      "上載兩個 TTF：底字（漢字部分）和註音字（小字母部分），或使用預設字體。",
+      "上載兩個 TTF：底字（漢字部分）和標注字，或從下拉選單揀預設字體。",
     "step1.base.label": "底字（漢字）",
     "step1.base.hint": "通常為宋體或楷書",
-    "step1.anno.label": "註音字（拉丁字母）",
-    "step1.anno.hint": "通常為 Noto Serif 或 Sans",
+    "step1.anno.label": "標注字",
+    "step1.anno.hint": "拉丁字母用 Noto Serif；中文標注（如倉頡）用宋體或黑體",
     "step1.upload": "上載 TTF",
     "step1.useDefault": "使用預設",
+    "step1.presetLabel": "預設字體",
     "step1.preview.title": "字形預覽",
     "step1.preview.hint": "字體加載後，下面會顯示樣本字形",
     "step1.preview.notLoaded": "（未加載字體）",
@@ -263,19 +278,21 @@ export const TRANSLATIONS: Record<Language, Record<TranslationKey, string>> = {
       "由 CSV 載入你的字符對應，亦可直接搜尋、新增、編輯或刪除。",
     "step2.import.button": "載入 CSV",
     "step2.import.useDefault": "使用預設 (canto-lshk)",
+    "step2.import.preset": "預設字詞配對",
+    "step2.import.presetCustom": "自訂",
     "step2.export.button": "匯出 CSV",
     "step2.clear.button": "全部清除",
     "step2.count": "{count} 個對應",
-    "step2.search.placeholder": "搜尋字或注音…",
+    "step2.search.placeholder": "搜尋字或標注…",
     "step2.add.button": "新增一行",
     "step2.add.chars": "漢字（如「行」或「銀行」）",
-    "step2.add.annos": "注音（如「hong4」或「ngan4 hong4」）",
+    "step2.add.annos": "標注（如「hong4」、「ngan4 hong4」、「一弓十山」）",
     "step2.add.weight": "權重",
     "step2.add.weightHint":
       "留空即為 1。較大數值代表此讀音優先：影響預設讀音、變體截斷及字詞優先級。",
     "step2.add.commit": "加入",
     "step2.col.chars": "漢字",
-    "step2.col.annos": "注音",
+    "step2.col.annos": "標注",
     "step2.col.weight": "權重",
     "step2.col.actions": "",
     "step2.empty": "尚未加載任何對應。按上方按鈕載入 CSV 或新增。",
@@ -286,16 +303,28 @@ export const TRANSLATIONS: Record<Language, Record<TranslationKey, string>> = {
     "step3.family": "字體名稱",
     "step3.familyHint": "會寫入字型的 name 表",
     "step3.baseScale": "底字縮放比",
-    "step3.annoScale": "注音縮放比",
-    "step3.yOffset": "注音垂直位置（em 比例）",
-    "step3.invert": "倒置：注音在下、底字在上",
+    "step3.annoScale": "標注縮放比",
+    "step3.yOffset": "標注垂直位置（em 比例）",
+    "step3.invert": "倒置：標注在下、底字在上",
     "step3.optimize": "壓縮輸出（移除未使用字形）",
+    "step3.preview.title": "即時預覽",
+    "step3.preview.description":
+      "改參數後會自動重新生成，無需手動觸發。每次約 2–4 秒。",
+    "step3.preview.updating": "更新中…",
+    "step3.preview.firstRun": "首次生成樣本中…",
+    "step3.preview.idle": "等待生成…",
+    "step3.preview.sampledLabel": "樣本字詞",
+    "step3.preview.customLabel": "預覽文字",
+    "step3.preview.notReady": "請先載入字體同至少一條字詞配對。",
+    "step3.previewText.label": "預覽文字",
+    "step3.previewText.placeholder": "留空 = 自動揀字詞",
+    "step3.previewText.helper": "輸入想預覽嘅文字，會根據對應嘅字詞配對顯示。",
     // Step 4
     "step4.title": "步驟 4：執行記錄",
     "step4.description": "字型生成過程的即時輸出。",
     "step4.empty": "尚未執行。請按下方按鈕開始生成。",
     "step4.run.idle": "開始生成",
-    "step4.run.running": "生成中…",
+    "step4.run.running": "生成中",
     "step4.copy": "複製記錄",
     "step4.copied": "已複製",
     // Step 5
@@ -334,7 +363,7 @@ export const TRANSLATIONS: Record<Language, Record<TranslationKey, string>> = {
     "home.hero.cta.showcase": "Browse ready-made fonts",
     "home.what.title": "What it is",
     "home.what.body":
-      "Wing Font is a font-generation tool. Give it two TTFs (one Chinese, one Latin) plus a CSV mapping characters to romanizations, and it produces a new OpenType font whose glyphs have the annotations baked in. The output works anywhere a custom font can be loaded — websites, Word, Telegram, email, you name it.",
+      "Wing Font is a font-generation tool. Give it two TTFs (one for the base characters, one for the annotation glyphs) plus a CSV mapping characters to annotations, and it produces a new OpenType font whose glyphs have those annotations baked in. The output works anywhere a custom font can be loaded — websites, Word, Telegram, email, you name it.",
     "home.how.title": "How it works",
     "home.how.body":
       "The whole pipeline runs in your browser via Pyodide (WebAssembly). No Python install, no uploads to a server, no fees, no data leaves your machine.",
@@ -404,10 +433,11 @@ export const TRANSLATIONS: Record<Language, Record<TranslationKey, string>> = {
       "Upload two TTFs — one for the base Chinese character, one for the small romanization letterforms. Or use the bundled defaults.",
     "step1.base.label": "Base font (Chinese)",
     "step1.base.hint": "Usually a Song (serif) or Kai face",
-    "step1.anno.label": "Annotation font (Latin)",
-    "step1.anno.hint": "Usually Noto Serif or Sans",
+    "step1.anno.label": "Annotation font",
+    "step1.anno.hint": "Noto Serif for Latin romanizations; a CJK font for mappings like cangjie",
     "step1.upload": "Upload TTF",
     "step1.useDefault": "Use default",
+    "step1.presetLabel": "Built-in font",
     "step1.preview.title": "Glyph preview",
     "step1.preview.hint": "Sample glyphs appear here once a font is loaded.",
     "step1.preview.notLoaded": "(no font loaded)",
@@ -418,6 +448,8 @@ export const TRANSLATIONS: Record<Language, Record<TranslationKey, string>> = {
       "Import a CSV with character → romanization mappings, or search, add, edit and delete entries directly.",
     "step2.import.button": "Import CSV",
     "step2.import.useDefault": "Use default (canto-lshk)",
+    "step2.import.preset": "Built-in mapping",
+    "step2.import.presetCustom": "Custom",
     "step2.export.button": "Export CSV",
     "step2.clear.button": "Clear all",
     "step2.count": "{count} entries",
@@ -447,12 +479,26 @@ export const TRANSLATIONS: Record<Language, Record<TranslationKey, string>> = {
     "step3.yOffset": "Annotation vertical offset (em ratio)",
     "step3.invert": "Invert: annotation below, base above",
     "step3.optimize": "Subset (drop unused glyphs)",
+    "step3.preview.title": "Live preview",
+    "step3.preview.description":
+      "Re-renders automatically whenever you change a parameter — no need to trigger it manually. Each run takes about 2–4 seconds.",
+    "step3.preview.updating": "Updating…",
+    "step3.preview.firstRun": "Rendering the first sample…",
+    "step3.preview.idle": "Waiting to render…",
+    "step3.preview.sampledLabel": "Sampled mapping",
+    "step3.preview.customLabel": "Preview text",
+    "step3.preview.notReady":
+      "Pick fonts and add at least one mapping first.",
+    "step3.previewText.label": "Preview text",
+    "step3.previewText.placeholder": "Leave empty to auto-pick",
+    "step3.previewText.helper":
+      "Type the text you want to preview — uses whichever mappings cover it.",
     // Step 4
     "step4.title": "Step 4: Generation log",
     "step4.description": "Live output from the font-generation pipeline.",
     "step4.empty": "Not started. Click the button below to generate.",
     "step4.run.idle": "Generate",
-    "step4.run.running": "Generating…",
+    "step4.run.running": "Generating",
     "step4.copy": "Copy log",
     "step4.copied": "Copied",
     // Step 5

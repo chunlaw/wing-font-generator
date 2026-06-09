@@ -181,6 +181,22 @@ interface GeneratePayload {
   upperYOffsetRatio?: number;
   invert?: boolean;
   optimize?: boolean;
+  /**
+   * If true, ask the runner to swap in pre-trimmed font bytes from
+   * the in-Pyodide cache (populated by `prepare-preview-fonts`).
+   * Used by the live-preview path to skip the slow input-font load
+   * and full-font subset on the original 10-20 MB CJK file.
+   */
+  useTrimCache?: boolean;
+}
+
+interface PrepareTrimPayload {
+  baseFontBytes: ArrayBuffer;
+  annoFontBytes: ArrayBuffer;
+  /** Concatenated chars that any future preview might want to render.
+   *  Typically the union of all chars from all sample-eligible
+   *  mapping rows. */
+  charsText: string;
 }
 
 async function handleGenerate(id: string, payload: GeneratePayload): Promise<void> {
@@ -203,6 +219,7 @@ async function handleGenerate(id: string, payload: GeneratePayload): Promise<voi
     upper_y_offset_ratio: payload.upperYOffsetRatio ?? 0.8,
     invert: payload.invert ?? false,
     optimize: payload.optimize ?? true,
+    use_trim_cache: payload.useTrimCache ?? false,
   };
   pyodide.globals.set("_params", pyodide.toPy(params));
 
@@ -273,8 +290,72 @@ _result
   );
 }
 
+/**
+ * Pre-trim the input fonts in Pyodide to just the chars the user
+ * might preview. The result is cached inside the Python runner; a
+ * subsequent generate() with `useTrimCache: true` will swap in the
+ * trimmed bytes and skip the slow input-font load and full subset.
+ *
+ * This handler always returns a "prepare-done" message (with cached:
+ * true or false) so the main thread can resolve its promise without
+ * caring about the cache path taken.
+ */
+async function handlePrepareTrim(
+  id: string,
+  payload: PrepareTrimPayload,
+): Promise<void> {
+  const pyodide = await ensurePyodide();
+
+  pyodide.globals.set("_pt_base_bytes", new Uint8Array(payload.baseFontBytes));
+  pyodide.globals.set("_pt_anno_bytes", new Uint8Array(payload.annoFontBytes));
+  pyodide.globals.set("_pt_chars_text", payload.charsText);
+  pyodide.globals.set("_pt_progress_cb", (msg: string) =>
+    emitProgress(msg, id),
+  );
+
+  const result = (await pyodide.runPythonAsync(`
+from runner import prepare_preview_fonts
+
+_pt_result = prepare_preview_fonts(
+    bytes(_pt_base_bytes),
+    bytes(_pt_anno_bytes),
+    _pt_chars_text,
+    progress_cb=_pt_progress_cb,
+)
+_pt_result
+`)) as {
+    toJs: (opts: {
+      dict_converter?: typeof Object.fromEntries;
+    }) => Record<string, unknown>;
+    destroy: () => void;
+  };
+
+  const jsResult = result.toJs({ dict_converter: Object.fromEntries }) as Record<
+    string,
+    unknown
+  >;
+  result.destroy();
+  // No big buffers to clean up here, but a small gc nudges Python to
+  // release the temp TTFont objects from the subset pass promptly.
+  pyodide.runPython("import gc; gc.collect()");
+
+  post({
+    type: "prepare-done",
+    id,
+    cached: Boolean(jsResult.cached),
+    elapsedS:
+      typeof jsResult.elapsed_s === "number"
+        ? (jsResult.elapsed_s as number)
+        : undefined,
+  });
+}
+
 self.addEventListener("message", (event: MessageEvent) => {
-  const data = event.data as { type: string; id?: string; payload?: GeneratePayload };
+  const data = event.data as {
+    type: string;
+    id?: string;
+    payload?: GeneratePayload | PrepareTrimPayload;
+  };
   if (data.type === "init") {
     ensurePyodide().catch(() => {
       /* error already posted */
@@ -287,7 +368,19 @@ self.addEventListener("message", (event: MessageEvent) => {
       post({ type: "error", id, message: "Missing generate payload" });
       return;
     }
-    handleGenerate(id, data.payload).catch((err) => {
+    handleGenerate(id, data.payload as GeneratePayload).catch((err) => {
+      const message = err instanceof Error ? err.message : String(err);
+      post({ type: "error", id, message });
+    });
+    return;
+  }
+  if (data.type === "prepare-preview-fonts") {
+    const id = data.id ?? "anon";
+    if (!data.payload) {
+      post({ type: "error", id, message: "Missing prepare-trim payload" });
+      return;
+    }
+    handlePrepareTrim(id, data.payload as PrepareTrimPayload).catch((err) => {
       const message = err instanceof Error ? err.message : String(err);
       post({ type: "error", id, message });
     });

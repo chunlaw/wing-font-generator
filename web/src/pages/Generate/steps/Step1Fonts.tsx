@@ -10,13 +10,23 @@ import {
   Alert,
   Box,
   Button,
+  FormControl,
+  InputLabel,
+  MenuItem,
   Paper,
+  Select,
+  SelectChangeEvent,
   Stack,
   Typography,
 } from "@mui/material";
 import { ChangeEvent, useCallback, useState } from "react";
 import { useGenerate } from "../GenerateContext";
 import { useTranslation } from "../../../i18n/LanguageContext";
+import {
+  BUILT_IN_ANNO_FONTS,
+  BUILT_IN_BASE_FONTS,
+  BuiltInPreset,
+} from "../../../utils/wingfontPresets";
 import GlyphPreview from "../GlyphPreview";
 
 // Sample characters chosen to exercise both fonts in their intended use:
@@ -34,8 +44,8 @@ const Step1Fonts = () => {
     annoFont,
     setBaseFont,
     setAnnoFont,
-    loadDefaultBaseFont,
-    loadDefaultAnnoFont,
+    loadBuiltInBaseFont,
+    loadBuiltInAnnoFont,
   } = useGenerate();
   const [loadError, setLoadError] = useState<string | null>(null);
 
@@ -80,9 +90,11 @@ const Step1Fonts = () => {
           fileName={baseFont.name}
           isDefault={baseFont.isDefault && baseFont.bytes === null}
           onUpload={(e) => handleUpload(e, "base")}
-          onUseDefault={async () => {
+          presetOptions={BUILT_IN_BASE_FONTS}
+          presetKey={baseFont.presetKey}
+          onPresetChange={async (preset) => {
             try {
-              await loadDefaultBaseFont();
+              await loadBuiltInBaseFont(preset);
               setLoadError(null);
             } catch (err) {
               setLoadError(err instanceof Error ? err.message : String(err));
@@ -92,7 +104,7 @@ const Step1Fonts = () => {
           sampleChars={BASE_SAMPLES}
           glyphSize={56}
           uploadLabel={t("step1.upload")}
-          useDefaultLabel={t("step1.useDefault")}
+          presetLabel={t("step1.presetLabel")}
           previewTitle={t("step1.preview.title")}
         />
         <FontSlotCard
@@ -101,9 +113,15 @@ const Step1Fonts = () => {
           fileName={annoFont.name}
           isDefault={annoFont.isDefault && annoFont.bytes === null}
           onUpload={(e) => handleUpload(e, "anno")}
-          onUseDefault={async () => {
+          // Annotation slot now has multiple presets (Latin Noto
+          // Serif + CJK Chiron variants) because cangjie-style
+          // mappings annotate with CJK radical characters instead
+          // of romanizations. Same dropdown UX as the base slot.
+          presetOptions={BUILT_IN_ANNO_FONTS}
+          presetKey={annoFont.presetKey}
+          onPresetChange={async (preset) => {
             try {
-              await loadDefaultAnnoFont();
+              await loadBuiltInAnnoFont(preset);
               setLoadError(null);
             } catch (err) {
               setLoadError(err instanceof Error ? err.message : String(err));
@@ -113,7 +131,7 @@ const Step1Fonts = () => {
           sampleChars={ANNO_SAMPLES}
           glyphSize={36}
           uploadLabel={t("step1.upload")}
-          useDefaultLabel={t("step1.useDefault")}
+          presetLabel={t("step1.presetLabel")}
           previewTitle={t("step1.preview.title")}
         />
       </Stack>
@@ -127,13 +145,28 @@ interface FontSlotCardProps {
   fileName: string;
   isDefault: boolean;
   onUpload: (event: ChangeEvent<HTMLInputElement>) => void;
-  onUseDefault: () => Promise<void>;
   bytes: ArrayBuffer | null;
   sampleChars: string[];
   glyphSize: number;
   uploadLabel: string;
-  useDefaultLabel: string;
   previewTitle: string;
+  /**
+   * Built-in preset options for this slot. When non-null, the card
+   * renders a Select dropdown of the listed presets. When null,
+   * falls back to a "Use default" text button (the single-preset
+   * case for the annotation slot).
+   */
+  presetOptions: BuiltInPreset[] | null;
+  /** Currently-selected preset key, or null when the slot holds a
+   *  user-uploaded file. */
+  presetKey: string | null;
+  /** Required when presetOptions is non-null — called when the user
+   *  picks a row from the dropdown. */
+  onPresetChange?: (preset: BuiltInPreset) => Promise<void> | void;
+  /** Used only in the no-dropdown fallback path. */
+  presetLabel?: string;
+  onUseDefault?: () => Promise<void>;
+  useDefaultLabel?: string;
 }
 
 const FontSlotCard = ({
@@ -142,14 +175,24 @@ const FontSlotCard = ({
   fileName,
   isDefault,
   onUpload,
-  onUseDefault,
   bytes,
   sampleChars,
   glyphSize,
   uploadLabel,
-  useDefaultLabel,
   previewTitle,
+  presetOptions,
+  presetKey,
+  onPresetChange,
+  presetLabel,
+  onUseDefault,
+  useDefaultLabel,
 }: FontSlotCardProps) => {
+  const handlePresetChange = (event: SelectChangeEvent<string>) => {
+    if (!presetOptions || !onPresetChange) return;
+    const next = presetOptions.find((p) => p.key === event.target.value);
+    if (next) void onPresetChange(next);
+  };
+
   return (
     <Paper variant="outlined" sx={{ p: 2, flex: 1, minWidth: 0 }}>
       <Typography variant="subtitle1" sx={{ fontWeight: 600 }}>
@@ -159,14 +202,81 @@ const FontSlotCard = ({
         {hint}
       </Typography>
 
-      <Stack direction="row" spacing={1} sx={{ mt: 1.5, mb: 1 }}>
-        <Button variant="outlined" component="label" size="small" fullWidth>
+      {/*
+        Upload button on the left, preset chooser on the right.
+
+        When `presetOptions` is provided we render a Select dropdown
+        (the new multi-preset path). When it's null we render a
+        plain "Use default" text button (the fallback for the
+        annotation slot which currently has only one preset to offer
+        — a one-row Select would be needless ceremony).
+
+        The upload button uses `flex: 1` + `minWidth: 0` rather than
+        the old `fullWidth: width 100%` because flex children with
+        100% width were squeezing the right-hand control enough that
+        its label could wrap onto two lines on narrow viewports.
+      */}
+      <Stack direction="row" spacing={1} sx={{ mt: 1.5, mb: 1 }} alignItems="center">
+        <Button
+          variant="outlined"
+          component="label"
+          size="small"
+          sx={{ flex: 1, minWidth: 0 }}
+        >
           {uploadLabel}
           <input hidden type="file" accept=".ttf,.otf,font/ttf" onChange={onUpload} />
         </Button>
-        <Button variant="text" size="small" onClick={onUseDefault}>
-          {useDefaultLabel}
-        </Button>
+        {presetOptions ? (
+          <FormControl
+            size="small"
+            sx={{ flexShrink: 0, minWidth: 180, maxWidth: "60%" }}
+          >
+            {/*
+              `shrink` + `notched` are mandatory when using
+              `displayEmpty` with an empty-string sentinel. Without
+              both, MUI keeps the label in its centred-empty position
+              when presetKey is null (user-uploaded state) and it
+              overlaps with the "—" placeholder our renderValue
+              paints. Forcing shrink locks the label to the
+              notched-top position; `notched` tells the OutlinedInput
+              to render the gap in its border to receive it.
+            */}
+            <InputLabel id={`${label}-preset-label`} shrink>
+              {presetLabel}
+            </InputLabel>
+            <Select
+              labelId={`${label}-preset-label`}
+              label={presetLabel}
+              // Empty string represents the "no preset / user
+              // upload" state. MUI's Select needs a falsy-string
+              // sentinel because it can't take `null` directly.
+              value={presetKey ?? ""}
+              onChange={handlePresetChange}
+              displayEmpty
+              notched
+              renderValue={(selected) => {
+                if (!selected) return "—";
+                const opt = presetOptions.find((p) => p.key === selected);
+                return opt?.label ?? selected;
+              }}
+            >
+              {presetOptions.map((preset) => (
+                <MenuItem key={preset.key} value={preset.key}>
+                  {preset.label}
+                </MenuItem>
+              ))}
+            </Select>
+          </FormControl>
+        ) : (
+          <Button
+            variant="text"
+            size="small"
+            onClick={onUseDefault}
+            sx={{ flexShrink: 0, whiteSpace: "nowrap" }}
+          >
+            {useDefaultLabel}
+          </Button>
+        )}
       </Stack>
 
       <Typography
