@@ -158,21 +158,21 @@ jobs:
           # fine. Tune individually if any script needs more room.
           #
           # Inverted variants — ChironSung Regular:
-          python wing-font.py -v -y 0.3 -opt -f ChironSungHK-Google-thai-Invert -i input_fonts/ChironSungHK-R.ttf -a 'input_fonts/GoogleSans-VariableFont_GRAD,opsz,wght.ttf' -m mappings/canto-thai.csv -o outputs/ChironSungHK-Google-thai-Invert -as 0.13
-          python wing-font.py -v -y 0.3 -opt -f ChironSungHK-NotoJP-katakana-Invert -i input_fonts/ChironSungHK-R.ttf -a input_fonts/NotoSansJP-VariableFont_wght.ttf -m mappings/canto-katakana.csv -o outputs/ChironSungHK-NotoJP-katakana-Invert -as 0.13
-          python wing-font.py -v -y 0.3 -opt -f ChironSungHK-NotoKR-korean-Invert -i input_fonts/ChironSungHK-R.ttf -a input_fonts/NotoSansKR-VariableFont_wght.ttf -m mappings/canto-korean.csv -o outputs/ChironSungHK-NotoKR-korean-Invert -as 0.13
+          python wing-font.py -v -y 0.3 -opt -f ChironSungHK-Google-thai-Invert -i input_fonts/ChironSungHK-R.ttf -a 'input_fonts/GoogleSans-VariableFont_GRAD,opsz,wght.ttf' -m mappings/canto-thai.csv -o outputs/ChironSungHK-Google-thai-Invert -as 0.22
+          python wing-font.py -v -y 0.3 -opt -f ChironSungHK-NotoJP-katakana-Invert -i input_fonts/ChironSungHK-R.ttf -a input_fonts/NotoSansJP-VariableFont_wght.ttf -m mappings/canto-katakana.csv -o outputs/ChironSungHK-NotoJP-katakana-Invert -as 0.24
+          python wing-font.py -v -y 0.3 -opt -f ChironSungHK-NotoKR-korean-Invert -i input_fonts/ChironSungHK-R.ttf -a input_fonts/NotoSansKR-VariableFont_wght.ttf -m mappings/canto-korean.csv -o outputs/ChironSungHK-NotoKR-korean-Invert -as 0.24
           # Inverted variants — ChironSung Italic:
-          python wing-font.py -v -y 0.3 -opt -f ChironSungHK-Google-thai-It-Invert -i input_fonts/ChironSungHK-R-It.ttf -a 'input_fonts/GoogleSans-VariableFont_GRAD,opsz,wght.ttf' -m mappings/canto-thai.csv -o outputs/ChironSungHK-Google-thai-It-Invert -as 0.13
-          python wing-font.py -v -y 0.3 -opt -f ChironSungHK-NotoJP-katakana-It-Invert -i input_fonts/ChironSungHK-R-It.ttf -a input_fonts/NotoSansJP-VariableFont_wght.ttf -m mappings/canto-katakana.csv -o outputs/ChironSungHK-NotoJP-katakana-It-Invert -as 0.13
-          python wing-font.py -v -y 0.3 -opt -f ChironSungHK-NotoKR-korean-It-Invert -i input_fonts/ChironSungHK-R-It.ttf -a input_fonts/NotoSansKR-VariableFont_wght.ttf -m mappings/canto-korean.csv -o outputs/ChironSungHK-NotoKR-korean-It-Invert -as 0.13
+          python wing-font.py -v -y 0.3 -opt -f ChironSungHK-Google-thai-It-Invert -i input_fonts/ChironSungHK-R-It.ttf -a 'input_fonts/GoogleSans-VariableFont_GRAD,opsz,wght.ttf' -m mappings/canto-thai.csv -o outputs/ChironSungHK-Google-thai-It-Invert -as 0.22
+          python wing-font.py -v -y 0.3 -opt -f ChironSungHK-NotoJP-katakana-It-Invert -i input_fonts/ChironSungHK-R-It.ttf -a input_fonts/NotoSansJP-VariableFont_wght.ttf -m mappings/canto-katakana.csv -o outputs/ChironSungHK-NotoJP-katakana-It-Invert -as 0.24
+          python wing-font.py -v -y 0.3 -opt -f ChironSungHK-NotoKR-korean-It-Invert -i input_fonts/ChironSungHK-R-It.ttf -a input_fonts/NotoSansKR-VariableFont_wght.ttf -m mappings/canto-korean.csv -o outputs/ChironSungHK-NotoKR-korean-It-Invert -as 0.24
           # Standard variants — ChironSung Regular:
-          python wing-font.py -opt -f ChironSungHK-Google-thai -i input_fonts/ChironSungHK-R.ttf -a 'input_fonts/GoogleSans-VariableFont_GRAD,opsz,wght.ttf' -m mappings/canto-thai.csv -o outputs/ChironSungHK-Google-thai -as 0.13
-          python wing-font.py -opt -f ChironSungHK-NotoJP-katakana -i input_fonts/ChironSungHK-R.ttf -a input_fonts/NotoSansJP-VariableFont_wght.ttf -m mappings/canto-katakana.csv -o outputs/ChironSungHK-NotoJP-katakana -as 0.13
-          python wing-font.py -opt -f ChironSungHK-NotoKR-korean -i input_fonts/ChironSungHK-R.ttf -a input_fonts/NotoSansKR-VariableFont_wght.ttf -m mappings/canto-korean.csv -o outputs/ChironSungHK-NotoKR-korean -as 0.13
+          python wing-font.py -opt -f ChironSungHK-Google-thai -i input_fonts/ChironSungHK-R.ttf -a 'input_fonts/GoogleSans-VariableFont_GRAD,opsz,wght.ttf' -m mappings/canto-thai.csv -o outputs/ChironSungHK-Google-thai -as 0.22
+          python wing-font.py -opt -f ChironSungHK-NotoJP-katakana -i input_fonts/ChironSungHK-R.ttf -a input_fonts/NotoSansJP-VariableFont_wght.ttf -m mappings/canto-katakana.csv -o outputs/ChironSungHK-NotoJP-katakana -as 0.24
+          python wing-font.py -opt -f ChironSungHK-NotoKR-korean -i input_fonts/ChironSungHK-R.ttf -a input_fonts/NotoSansKR-VariableFont_wght.ttf -m mappings/canto-korean.csv -o outputs/ChironSungHK-NotoKR-korean -as 0.24
           # Standard variants — ChironSung Italic:
-          python wing-font.py -opt -f ChironSungHK-Google-thai-It -i input_fonts/ChironSungHK-R-It.ttf -a 'input_fonts/GoogleSans-VariableFont_GRAD,opsz,wght.ttf' -m mappings/canto-thai.csv -o outputs/ChironSungHK-Google-thai-It -as 0.13
-          python wing-font.py -opt -f ChironSungHK-NotoJP-katakana-It -i input_fonts/ChironSungHK-R-It.ttf -a input_fonts/NotoSansJP-VariableFont_wght.ttf -m mappings/canto-katakana.csv -o outputs/ChironSungHK-NotoJP-katakana-It -as 0.13
-          python wing-font.py -opt -f ChironSungHK-NotoKR-korean-It -i input_fonts/ChironSungHK-R-It.ttf -a input_fonts/NotoSansKR-VariableFont_wght.ttf -m mappings/canto-korean.csv -o outputs/ChironSungHK-NotoKR-korean-It -as 0.13
+          python wing-font.py -opt -f ChironSungHK-Google-thai-It -i input_fonts/ChironSungHK-R-It.ttf -a 'input_fonts/GoogleSans-VariableFont_GRAD,opsz,wght.ttf' -m mappings/canto-thai.csv -o outputs/ChironSungHK-Google-thai-It -as 0.22
+          python wing-font.py -opt -f ChironSungHK-NotoJP-katakana-It -i input_fonts/ChironSungHK-R-It.ttf -a input_fonts/NotoSansJP-VariableFont_wght.ttf -m mappings/canto-katakana.csv -o outputs/ChironSungHK-NotoJP-katakana-It -as 0.24
+          python wing-font.py -opt -f ChironSungHK-NotoKR-korean-It -i input_fonts/ChironSungHK-R-It.ttf -a input_fonts/NotoSansKR-VariableFont_wght.ttf -m mappings/canto-korean.csv -o outputs/ChironSungHK-NotoKR-korean-It -as 0.24
           # === Hero sample font =====================================
           #
           # Tiny 8-char font (~20-30 KB) used to render the home-page
@@ -205,15 +205,15 @@ jobs:
           # in-browser /generate flow via web/scripts/sync-python.mjs
           # but aren't pre-built here.
           # Data source: AlanJui/Piau-Im + AlanJui/rime-tlpa.
-          python wing-font.py -opt -f NotoSansTC-Huninn-tailo -i input_fonts/NotoSansTC-VariableFont_wght.ttf -a input_fonts/Huninn-Regular.ttf -m mappings/taigi-tl-toned.csv -o outputs/NotoSansTC-Huninn-tailo -as 0.13
-          python wing-font.py -opt -f NotoSansTC-Huninn-poj -i input_fonts/NotoSansTC-VariableFont_wght.ttf -a input_fonts/Huninn-Regular.ttf -m mappings/taigi-poj-toned.csv -o outputs/NotoSansTC-Huninn-poj -as 0.13
+          python wing-font.py -opt -f NotoSansTC-Huninn-tailo -i input_fonts/NotoSansTC-VariableFont_wght.ttf -a input_fonts/Huninn-Regular.ttf -m mappings/taigi-tl-toned.csv -o outputs/NotoSansTC-Huninn-tailo -as 0.24
+          python wing-font.py -opt -f NotoSansTC-Huninn-poj -i input_fonts/NotoSansTC-VariableFont_wght.ttf -a input_fonts/Huninn-Regular.ttf -m mappings/taigi-poj-toned.csv -o outputs/NotoSansTC-Huninn-poj -as 0.24
           # Tiny hero-sample font (~17 KB) for the Taiwanese line that
           # rotates into the home-page hero alongside the Cantonese one.
           # Contains only the 7 unique chars of 「家己的歌，家己唱；家己的字，家己選。」
           # with their Tâi-lô annotations; referenced by the @font-face
           # `NotoSansTC-Huninn-hero-tailo` in web/src/index.css. If the
           # hero line changes, edit python/mappings/hero-taigi.csv.
-          python wing-font.py -opt -f NotoSansTC-Huninn-hero-tailo -i input_fonts/NotoSansTC-VariableFont_wght.ttf -a input_fonts/Huninn-Regular.ttf -m mappings/hero-taigi.csv -o outputs/NotoSansTC-Huninn-hero-tailo -as 0.13
+          python wing-font.py -opt -f NotoSansTC-Huninn-hero-tailo -i input_fonts/NotoSansTC-VariableFont_wght.ttf -a input_fonts/Huninn-Regular.ttf -m mappings/hero-taigi.csv -o outputs/NotoSansTC-Huninn-hero-tailo -as 0.24
           # === Teochew / Min Nan (潮州話) showcase ===================
           #
           # The second non-Cantonese dialect surfaced on the site, reusing
@@ -233,8 +233,8 @@ jobs:
           # Data source: learn-teochew/learn-teochew.github.io
           # (teochew_scrape.json) converted with the learn-teochew/parsetc
           # parser. See python/mappings/teochew-README.md.
-          python wing-font.py -opt -f NotoSansTC-Huninn-teochew-pengim -i input_fonts/NotoSansTC-VariableFont_wght.ttf -a input_fonts/Huninn-Regular.ttf -m mappings/teochew-gdpi.csv -o outputs/NotoSansTC-Huninn-teochew-pengim -as 0.13
-          python wing-font.py -opt -f NotoSansTC-Huninn-teochew-puj -i input_fonts/NotoSansTC-VariableFont_wght.ttf -a input_fonts/Huninn-Regular.ttf -m mappings/teochew-duffus.csv -o outputs/NotoSansTC-Huninn-teochew-puj -as 0.13
+          python wing-font.py -opt -f NotoSansTC-Huninn-teochew-pengim -i input_fonts/NotoSansTC-VariableFont_wght.ttf -a input_fonts/Huninn-Regular.ttf -m mappings/teochew-gdpi.csv -o outputs/NotoSansTC-Huninn-teochew-pengim -as 0.24
+          python wing-font.py -opt -f NotoSansTC-Huninn-teochew-puj -i input_fonts/NotoSansTC-VariableFont_wght.ttf -a input_fonts/Huninn-Regular.ttf -m mappings/teochew-duffus.csv -o outputs/NotoSansTC-Huninn-teochew-puj -as 0.24
           # Tiny hero-sample font (~17 KB) for the Teochew line that
           # rotates into the home-page hero alongside the Cantonese and
           # Taiwanese ones. Contains only the 7 unique chars of
@@ -242,7 +242,7 @@ jobs:
           # annotations; referenced by the @font-face
           # `NotoSansTC-Huninn-hero-pengim` in web/src/index.css. If the
           # hero line changes, edit python/mappings/hero-teochew.csv.
-          python wing-font.py -opt -f NotoSansTC-Huninn-hero-pengim -i input_fonts/NotoSansTC-VariableFont_wght.ttf -a input_fonts/Huninn-Regular.ttf -m mappings/hero-teochew.csv -o outputs/NotoSansTC-Huninn-hero-pengim -as 0.13
+          python wing-font.py -opt -f NotoSansTC-Huninn-hero-pengim -i input_fonts/NotoSansTC-VariableFont_wght.ttf -a input_fonts/Huninn-Regular.ttf -m mappings/hero-teochew.csv -o outputs/NotoSansTC-Huninn-hero-pengim -as 0.24
 
       - name: Stage font outputs for deploy
         # Collect just the .ttf/.woff files into a flat folder so the
