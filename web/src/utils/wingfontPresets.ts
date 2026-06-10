@@ -80,6 +80,18 @@ export const BUILT_IN_BASE_FONTS: BuiltInPreset[] = [
     url: "/wingfont/FZKaiti.ttf",
     filename: "FZKaiti.ttf",
   },
+  // Sans-serif CJK base — the natural pairing for the Taiwanese /
+  // Southern Min showcase fonts. Also a good general-purpose base.
+  // This is the VARIABLE font, so the Step 1 picker exposes its
+  // weight slider; the default lands on Regular (400) via
+  // defaultAxisLocation in GenerateContext, and wing-font.py
+  // auto-instances it to a static master before composition.
+  {
+    key: "notosanstc",
+    label: "思源黑體 (Noto Sans TC)",
+    url: "/wingfont/NotoSansTC-VariableFont_wght.ttf",
+    filename: "NotoSansTC-VariableFont_wght.ttf",
+  },
 ];
 
 // ---------- Annotation fonts (the "標注字" slot in Step 1) --------
@@ -101,7 +113,30 @@ export const BUILT_IN_BASE_FONTS: BuiltInPreset[] = [
 // different keys to keep the two pickers' state independent
 // (selecting "chironhei-r" as base shouldn't pre-select the same
 // font in the anno slot).
+//
+// First-entry convention: BUILT_IN_ANNO_FONTS[0] is the DEFAULT
+// annotation font (consumed by DEFAULT_ANNO_FONT_PRESET below).
+// Huninn 粉圓 holds that slot because it covers the broadest range
+// of annotation needs in one file: Latin letters + every Tâi-lô /
+// POJ combining-tone diacritic + CJK ideographs. That makes it a
+// reasonable "just works" default whether the user picks a
+// Cantonese (Latin), Taiwanese (toned-Latin), or Cangjie (CJK)
+// mapping. The other options below stay for users who want a
+// specific stylistic flavour.
 export const BUILT_IN_ANNO_FONTS: BuiltInPreset[] = [
+  // Default annotation font — see comment block above for why.
+  // Annotation font for the Taiwanese / Southern Min mappings:
+  // Huninn (jf-openhuninn) carries the full set of Tâi-lô / POJ
+  // combining tone marks (U+0300/0301/0302/030C/0304/030D/030B)
+  // plus the nasal ⁿ (U+207F) and the POJ o͘ dot (U+0358). Pair
+  // it with any of the taigi-* mappings; also handles Latin
+  // Cantonese romanizations (LSHK, Yale, etc.) cleanly.
+  {
+    key: "anno-huninn",
+    label: "Huninn 粉圓 (Tâi-lô / POJ)",
+    url: "/wingfont/Huninn-Regular.ttf",
+    filename: "Huninn-Regular.ttf",
+  },
   {
     key: "anno-notoserif-r",
     label: "Noto Serif Regular (Latin)",
@@ -206,6 +241,92 @@ export const BUILT_IN_MAPPINGS: BuiltInPreset[] = [
     label: "倉頡",
     url: "/wingfont/mappings/cangjie.csv",
     filename: "cangjie.csv",
+  },
+  // Taiwanese / Southern Min (河洛話) — pair these with the Noto Sans
+  // TC base and the Huninn annotation font. The two "-toned" CSVs use
+  // diacritic tone marks (what the showcase fonts ship); the four
+  // numeric-tone CSVs keep tones as trailing digits. Data source:
+  // AlanJui/Piau-Im + AlanJui/rime-tlpa.
+  {
+    key: "taigi-tl-toned",
+    label: "台羅 (Tâi-lô, 調符)",
+    url: "/wingfont/mappings/taigi-tl-toned.csv",
+    filename: "taigi-tl-toned.csv",
+  },
+  {
+    key: "taigi-poj-toned",
+    label: "白話字 (POJ, 調符)",
+    url: "/wingfont/mappings/taigi-poj-toned.csv",
+    filename: "taigi-poj-toned.csv",
+  },
+  {
+    key: "taigi-tl",
+    label: "台羅 (Tâi-lô, 調號)",
+    url: "/wingfont/mappings/taigi-tl.csv",
+    filename: "taigi-tl.csv",
+  },
+  {
+    key: "taigi-poj",
+    label: "白話字 (POJ, 調號)",
+    url: "/wingfont/mappings/taigi-poj.csv",
+    filename: "taigi-poj.csv",
+  },
+  {
+    key: "taigi-tlpa",
+    label: "台語音標 (TLPA, 調號)",
+    url: "/wingfont/mappings/taigi-tlpa.csv",
+    filename: "taigi-tlpa.csv",
+  },
+  {
+    key: "taigi-bp",
+    label: "閩拼方案 (BP, 調號)",
+    url: "/wingfont/mappings/taigi-bp.csv",
+    filename: "taigi-bp.csv",
+  },
+  // Teochew / Min Nan (潮州話) — pair these with the Noto Sans TC base
+  // and the Huninn annotation font (Huninn carries every combining
+  // tone mark used by the Tie-lo and Pe̍h-ūe-jī diacritic schemes,
+  // plus the nasal ⁿ U+207F). gdpi / ggnn / dieghv / sinwz use numeric
+  // tones; tlo / duffus use diacritic tones. Source: the readings in
+  // learn-teochew's teochew_scrape.json (Geng'dang Pêng'im), converted
+  // to the other schemes with the parsetc parser. Primary reading of a
+  // polyphonic character is encoded with the highest weight so it is
+  // picked as the font default — see python/mappings/teochew-README.md.
+  {
+    key: "teochew-gdpi",
+    label: "潮州話拼音 (Peng'im, 廣東拼音)",
+    url: "/wingfont/mappings/teochew-gdpi.csv",
+    filename: "teochew-gdpi.csv",
+  },
+  {
+    key: "teochew-duffus",
+    label: "潮州白話字 (Duffus / PUJ, 調符)",
+    url: "/wingfont/mappings/teochew-duffus.csv",
+    filename: "teochew-duffus.csv",
+  },
+  {
+    key: "teochew-tlo",
+    label: "潮羅 (Tie-lo, 調符)",
+    url: "/wingfont/mappings/teochew-tlo.csv",
+    filename: "teochew-tlo.csv",
+  },
+  {
+    key: "teochew-ggnn",
+    label: "家己儂拼音 (Gaginang, 調號)",
+    url: "/wingfont/mappings/teochew-ggnn.csv",
+    filename: "teochew-ggnn.csv",
+  },
+  {
+    key: "teochew-dieghv",
+    label: "潮語拼音 (Dieghv, 調號)",
+    url: "/wingfont/mappings/teochew-dieghv.csv",
+    filename: "teochew-dieghv.csv",
+  },
+  {
+    key: "teochew-sinwz",
+    label: "潮州新文字 (Sinwenz)",
+    url: "/wingfont/mappings/teochew-sinwz.csv",
+    filename: "teochew-sinwz.csv",
   },
 ];
 

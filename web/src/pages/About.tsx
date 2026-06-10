@@ -83,6 +83,12 @@ const About = () => {
         body={t("about.opensource.body")}
       />
 
+      {/* Beyond Cantonese — dialect expansion (Taiwanese / Southern Min) */}
+      <Section
+        title={t("about.dialects.title")}
+        body={t("about.dialects.body")}
+      />
+
       {/* Contributing — intro paragraph + three role cards */}
       <Box maxWidth={1100} mx="auto" width="100%" px={2}>
         <Typography variant="h4" gutterBottom>

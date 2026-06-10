@@ -24,6 +24,14 @@ export const TEMPLATES: string[] = [
   "留在彼此的身邊　牽著手再繼續飛",
   "永遠有一個吻未嘗",
   "望著他雙眼想別人　人留下了留不低那片心",
+  // Taiwanese / Southern Min samples — render with the 思源黑體（台羅）
+  // or （白話字）showcase fonts to see Tâi-lô / POJ tone marks above.
+  "天烏烏　欲落雨",
+  "思念故鄉的月光　風吹過稻田",
+  // Teochew (潮州話) samples — render with the 思源黑體（潮拼）or
+  // （潮州白話字）showcase fonts to see Peng'im / PUJ above the chars.
+  "家己人講家己話",
+  "潮州人講潮州話",
 ];
 
 export interface FontOption {
@@ -106,6 +114,56 @@ export const AVAILABLE_FONTS: FontSet = {
         displayName: "昭源宋體（諺文標注）",
         name: "ChironSungHK-NotoKR-korean",
         source: `url(${import.meta.env.VITE_FONT_URL}/ChironSungHK-NotoKR-korean.woff) format('woff')`,
+      },
+    },
+  },
+  // Taiwanese / Southern Min (河洛話) — the first non-Cantonese dialect
+  // showcased. Base CJK font is Noto Sans TC; romanization is set in
+  // Huninn (jf-openhuninn), which carries the Tâi-lô / POJ combining
+  // tone marks. The two entries mirror the LSHK / Yale pairing on the
+  // Cantonese side: a primary romanization and a historical one. Both
+  // .woff files are produced by .github/workflows/build-fonts.yml.
+  taiwanese: {
+    lang: {
+      zh: "臺語",
+    },
+    fonts: {
+      "NotoSansTC-Huninn-tailo": {
+        displayName: "思源黑體（台羅）",
+        name: "NotoSansTC-Huninn-tailo",
+        source: `url(${import.meta.env.VITE_FONT_URL}/NotoSansTC-Huninn-tailo.woff) format('woff')`,
+      },
+      "NotoSansTC-Huninn-poj": {
+        displayName: "思源黑體（白話字）",
+        name: "NotoSansTC-Huninn-poj",
+        source: `url(${import.meta.env.VITE_FONT_URL}/NotoSansTC-Huninn-poj.woff) format('woff')`,
+      },
+    },
+  },
+  // Teochew / Min Nan (潮州話) — the second non-Cantonese dialect
+  // showcased, sharing the Taiwanese pairing: Noto Sans TC base CJK
+  // font + Huninn (jf-openhuninn) for the romanization (Huninn carries
+  // the Pe̍h-ūe-jī diacritics — combining tilde, dot-above, diaeresis-
+  // below — plus the nasal ⁿ U+207F). Two entries mirror the
+  // Cantonese LSHK / Yale pairing: a primary modern romanization
+  // (Peng'im, numeric tones) and a historical one (Duffus / PUJ,
+  // diacritic tones). Both .woff files are produced by
+  // .github/workflows/build-fonts.yml. Mapping data is derived from
+  // learn-teochew's teochew_scrape.json via the parsetc parser.
+  teochew: {
+    lang: {
+      zh: "潮州話",
+    },
+    fonts: {
+      "NotoSansTC-Huninn-teochew-pengim": {
+        displayName: "思源黑體（潮拼）",
+        name: "NotoSansTC-Huninn-teochew-pengim",
+        source: `url(${import.meta.env.VITE_FONT_URL}/NotoSansTC-Huninn-teochew-pengim.woff) format('woff')`,
+      },
+      "NotoSansTC-Huninn-teochew-puj": {
+        displayName: "思源黑體（潮州白話字）",
+        name: "NotoSansTC-Huninn-teochew-puj",
+        source: `url(${import.meta.env.VITE_FONT_URL}/NotoSansTC-Huninn-teochew-puj.woff) format('woff')`,
       },
     },
   },

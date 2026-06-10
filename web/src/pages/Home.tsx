@@ -29,8 +29,12 @@ import {
   Tabs,
   Typography,
 } from "@mui/material";
-import CheckCircleOutlineIcon from "@mui/icons-material/CheckCircleOutline";
-import { Fragment, ReactNode, useState } from "react";
+import PaletteOutlinedIcon from "@mui/icons-material/PaletteOutlined";
+import DescriptionOutlinedIcon from "@mui/icons-material/DescriptionOutlined";
+import LanguageOutlinedIcon from "@mui/icons-material/LanguageOutlined";
+import LaptopOutlinedIcon from "@mui/icons-material/LaptopOutlined";
+import type { SvgIconComponent } from "@mui/icons-material";
+import { Fragment, ReactNode, useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useTranslation } from "../i18n/LanguageContext";
 
@@ -55,9 +59,106 @@ function renderInlineCode(text: string): ReactNode[] {
   );
 }
 
+/*
+ * Hero samples that rotate in the landing hero. Each entry is a
+ * self-demonstrating line of plain UTF-8 text plus the subset
+ * @font-face (declared in index.css) that bakes its annotations in:
+ *   • Cantonese (LSHK Jyutping) — ChironSung base
+ *   • Taiwanese / Southern Min (Tâi-lô) — Noto Sans TC base + Huninn
+ *   • Teochew (Peng'im) — Noto Sans TC base + Huninn
+ * The fallback chain after each subset font covers the brief
+ * font-display: swap window and any glyphs not in the subset (e.g.
+ * the Taiwanese line's 、；。 punctuation).
+ */
+/*
+ * Each sample renders as exactly TWO ROWS — one entry per row in the
+ * `lines` array, rendered as separate <div>s inside the hero Box.
+ *
+ * Two-row format was chosen because:
+ *   • The Taiwanese / Peng'im samples are long enough that they
+ *     naturally wrap at the maxWidth=820 hero container — making
+ *     them effectively two rows already.
+ *   • The Cantonese phrase is shorter and would have stayed on ONE
+ *     row without an explicit split, which felt visually
+ *     inconsistent. Splitting it into two lines matches the
+ *     visual rhythm of the others (sub-phrase on row 1, sub-phrase
+ *     on row 2).
+ *
+ * Punctuation lives on row 1 (e.g. the trailing ；) where the
+ * original text has it; the Cantonese line has no inner punctuation
+ * because the original lyric doesn't. The renderer doesn't touch
+ * the strings — what's here is what shows up on screen.
+ */
+const HERO_SAMPLES: { lines: [string, string]; fontFamily: string }[] = [
+  {
+    lines: ["各有各唱自己歌", "各找自我"],
+    fontFamily:
+      '"ChironSungHK-hero-sample", "Noto Serif TC", "Songti TC", serif',
+  },
+  {
+    lines: ["家己的歌，家己唱；", "家己的字，家己選。"],
+    fontFamily:
+      '"NotoSansTC-Huninn-hero-tailo", "Noto Sans TC", "PingFang TC", sans-serif',
+  },
+  {
+    lines: ["家己个歌，家己唱；", "家己个字，家己揀。"],
+    fontFamily:
+      '"NotoSansTC-Huninn-hero-pengim", "Noto Sans TC", "PingFang TC", sans-serif',
+  },
+];
+
 const Home = () => {
   const { t } = useTranslation();
   const navigate = useNavigate();
+
+  // Rotate the hero sample with a crossfade transition.
+  //
+  // Timing:
+  //   • HERO_DISPLAY_MS — fully-visible hold time per phrase.
+  //   • HERO_FADE_MS    — fade-out duration AND fade-in duration.
+  // Total cycle per phrase = DISPLAY + FADE_OUT + FADE_IN ≈ 3.6s,
+  // long enough for a reader to take in the phrase + appreciate
+  // the annotated rendering before the swap. Adjust either
+  // constant to re-tune; the rest of the logic is invariant.
+  //
+  // Why a self-scheduled timeout chain instead of setInterval:
+  // setInterval would tick every (DISPLAY + FADE) ms regardless of
+  // where we are in the fade-out → swap → fade-in sequence, which
+  // can drift if the React commit happens to lag. Chaining
+  // setTimeout calls keeps the swap exactly at the FADE_OUT
+  // boundary every cycle.
+  const HERO_DISPLAY_MS = 3000;
+  const HERO_FADE_MS = 300;
+  const [heroIdx, setHeroIdx] = useState(0);
+  const [heroVisible, setHeroVisible] = useState(true);
+  useEffect(() => {
+    let displayTimer: ReturnType<typeof setTimeout>;
+    let swapTimer: ReturnType<typeof setTimeout>;
+
+    const cycle = () => {
+      // Phase 1: hold the current phrase fully visible for DISPLAY_MS.
+      displayTimer = setTimeout(() => {
+        // Phase 2: fade the current phrase OUT over FADE_MS.
+        setHeroVisible(false);
+        swapTimer = setTimeout(() => {
+          // Phase 3: at the bottom of the fade, swap to the next
+          // phrase AND set visible=true so the CSS transition runs
+          // back up (fade-in over FADE_MS). Then schedule the next
+          // hold-and-cycle.
+          setHeroIdx((i) => (i + 1) % HERO_SAMPLES.length);
+          setHeroVisible(true);
+          cycle();
+        }, HERO_FADE_MS);
+      }, HERO_DISPLAY_MS);
+    };
+    cycle();
+
+    return () => {
+      clearTimeout(displayTimer);
+      clearTimeout(swapTimer);
+    };
+  }, []);
+  const heroSample = HERO_SAMPLES[heroIdx];
 
   const features = [
     { title: "home.features.f1.title", body: "home.features.f1.body" },
@@ -85,6 +186,11 @@ const Home = () => {
     { label: "Affinity", bodyKey: "home.platforms.tabs.affinity" },
     { label: "Adobe", bodyKey: "home.platforms.tabs.adobe" },
     { label: "Microsoft Word", bodyKey: "home.platforms.tabs.word" },
+    // Pages and Keynote share an install pattern (macOS Font Book →
+    // iWork's typography panel ligature toggle) and the same iWork
+    // typesetter quirk we worked around with the calt→ccmp move, so
+    // they're collapsed into one tab.
+    { label: "Pages / Keynote", bodyKey: "home.platforms.tabs.iwork" },
     // Browsers share one combined tab — install steps are identical
     // (drop .woff/.ttf on the server, add @font-face CSS). The chips
     // above name them individually for visual clarity; the tabs
@@ -153,8 +259,7 @@ const Home = () => {
         */}
         <Box
           sx={{
-            fontFamily:
-              '"ChironSungHK-hero-sample", "Noto Serif TC", "Songti TC", serif',
+            fontFamily: heroSample.fontFamily,
             // Responsive type: 2× the tagline on phones, 3× on
             // desktop. Each glyph carries the annotation above it,
             // so the line is visually taller than plain CJK text —
@@ -162,19 +267,34 @@ const Home = () => {
             fontSize: { xs: "2.4rem", sm: "3rem", md: "3.6rem" },
             lineHeight: 1.6,
             mb: { xs: 2, md: 3 },
-            // Word-break controls so the phrase doesn't visually
-            // split between 歌 and 各 (the lyric's natural caesura).
-            // wordBreak: 'keep-all' tells the browser to keep CJK
-            // runs together; the explicit space between the two
-            // sub-phrases is the only valid break point.
-            wordBreak: "keep-all",
+            // Two rows is the consistent visual format across all
+            // three samples (see HERO_SAMPLES doc). Each line in
+            // `heroSample.lines` renders as its own <div> below, so
+            // the rendered hero is always exactly two rows tall
+            // regardless of the phrase's length — no need to rely on
+            // container width to force a line break.
             // The annotated chars look better with a touch of
             // letter-spacing — the romanizations above each
             // character bleed slightly into neighbours otherwise.
             letterSpacing: "0.04em",
+            // Reserve two lines' height up front so the layout
+            // doesn't jump when fonts load / the rotation swaps.
+            // Two rows × lineHeight 1.6 = 3.2em.
+            minHeight: "3.2em",
+            // Crossfade animation. The opacity flips between 1 and 0
+            // on the rotation cycle (see the cycle() effect above);
+            // the CSS transition does the actual fade interpolation
+            // over HERO_FADE_MS. ease-in-out makes the in/out curves
+            // feel symmetric.
+            opacity: heroVisible ? 1 : 0,
+            transition: `opacity ${HERO_FADE_MS}ms ease-in-out`,
           }}
         >
-          各有各唱自己歌　各找自我
+          {heroSample.lines.map((line, idx) => (
+            <Box component="div" key={idx}>
+              {line}
+            </Box>
+          ))}
         </Box>
         <Typography
           variant="caption"
@@ -254,59 +374,77 @@ const Home = () => {
         >
           {t("home.platforms.body")}
         </Typography>
-        <Stack
-          direction="row"
-          spacing={1}
-          flexWrap="wrap"
-          justifyContent="center"
-          rowGap={1.5}
-          sx={{ mb: 4 }}
-        >
-          {[
-            "Canva",
-            "Affinity",
-            "Adobe",
-            "Microsoft Word",
-            // Browsers listed individually rather than as a single
-            // "Web Browsers" chip — the explicit names read with
-            // more confidence than the generic category, and they
-            // each occupy their own visual unit so users scanning
-            // the row see the specific browser they use.
-            "Chrome",
-            "Firefox",
-            "Safari",
-            "Windows",
-            "macOS",
-            "Linux",
-          ].map((platform) => (
-            <Chip
-              key={platform}
-              label={platform}
-              variant="outlined"
-              // ✓ icon as a positive "verified" cue — same role as
-              // the unicode ✓ at the top of the browser tab body
-              // below, just rendered as a proper MUI icon here so
-              // it lines up cleanly with the chip text.
-              //
-              // `success.main` instead of `primary.main` because
-              // green reads as "yes, confirmed" universally, while
-              // the brand primary would compete with the
-              // surrounding theme accents (CTAs, "free" line).
-              icon={
-                <CheckCircleOutlineIcon
-                  fontSize="small"
-                  sx={{ color: "success.main" }}
+        {/*
+          Chips arranged as 4 rows of 3, grouped by category. The
+          rows are unlabeled — the icons within each row are visually
+          consistent (palette / document / globe / laptop) and the
+          brand names are universally recognised, so explicit row
+          labels would be redundant vertical noise.
+
+          Rows (left to right within each row, top to bottom across):
+            1. Canva, Affinity, Adobe          — design tools
+            2. Microsoft Word, Pages, Keynote  — documents & slides
+            3. Chrome, Firefox, Safari         — browsers
+            4. Windows, macOS, Linux           — operating systems
+
+          Same icon repeats within a row. Repetition is intentional —
+          it reinforces "these chips belong together" visually. The
+          icon is a CATEGORY glyph from Material Icons (NOT a brand
+          mark), so no trademark exposure.
+
+          Outer Stack stacks rows vertically; each inner Stack lays
+          out chips horizontally with `flexWrap: wrap` so a very
+          narrow phone can still break a row over two lines if the
+          chips don't fit.
+        */}
+        <Stack spacing={1.25} sx={{ mb: 4 }}>
+          {(
+            [
+              [
+                { label: "Canva", Icon: PaletteOutlinedIcon },
+                { label: "Affinity", Icon: PaletteOutlinedIcon },
+                { label: "Adobe", Icon: PaletteOutlinedIcon },
+              ],
+              [
+                { label: "Microsoft Word", Icon: DescriptionOutlinedIcon },
+                { label: "Pages", Icon: DescriptionOutlinedIcon },
+                { label: "Keynote", Icon: DescriptionOutlinedIcon },
+              ],
+              [
+                { label: "Chrome", Icon: LanguageOutlinedIcon },
+                { label: "Firefox", Icon: LanguageOutlinedIcon },
+                { label: "Safari", Icon: LanguageOutlinedIcon },
+              ],
+              [
+                { label: "Windows", Icon: LaptopOutlinedIcon },
+                { label: "macOS", Icon: LaptopOutlinedIcon },
+                { label: "Linux", Icon: LaptopOutlinedIcon },
+              ],
+            ] as { label: string; Icon: SvgIconComponent }[][]
+          ).map((row, rowIdx) => (
+            <Stack
+              key={rowIdx}
+              direction="row"
+              spacing={1}
+              flexWrap="wrap"
+              justifyContent="center"
+              rowGap={1}
+            >
+              {row.map(({ label, Icon }) => (
+                <Chip
+                  key={label}
+                  label={label}
+                  variant="outlined"
+                  icon={<Icon fontSize="small" />}
+                  sx={{
+                    fontSize: 14,
+                    height: 32,
+                    fontWeight: 500,
+                    "& .MuiChip-icon": { color: "text.secondary" },
+                  }}
                 />
-              }
-              sx={{
-                fontSize: 14,
-                height: 32,
-                fontWeight: 500,
-                // MUI overrides Chip-icon colour by default; force
-                // it back to inherit so our sx wins.
-                "& .MuiChip-icon": { color: "success.main" },
-              }}
-            />
+              ))}
+            </Stack>
           ))}
         </Stack>
         <Typography

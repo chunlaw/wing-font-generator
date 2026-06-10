@@ -68,6 +68,35 @@ def main(
     anno_font = TTFont(anno_font_file)
     output_font = TTFont(base_font_file)
 
+    # ── Tier 1: auto-instance a variable BASE font ──────────────────
+    # If the base font is variable and the caller didn't pick an
+    # explicit axis location, derive a sensible static instance. The
+    # composition step rewrites glyf outlines and the subsetter cannot
+    # reconcile a leftover gvar against them (it crashes in
+    # TupleVariation.decompileDeltas_), so a variable base MUST be made
+    # static before we touch glyf. This lets callers pass e.g.
+    # NotoSansTC-VariableFont_wght.ttf directly.
+    #
+    # We pin the weight axis to Regular (400), NOT the font's own axis
+    # default: several CJK variable fonts — Noto Sans TC among them —
+    # default `wght` to Thin (100), which is far too light to read as
+    # an annotation base. 400 is clamped into the axis's range; every
+    # other axis (width, optical size, …) takes its default. Callers
+    # can still override via `base_axis_location`.
+    #
+    # Annotation fonts are intentionally NOT auto-instanced here: they
+    # aren't glyf-rewritten, so the existing variable-annotation path
+    # (Google Sans / Noto Sans JP·KR) keeps working unchanged.
+    if "fvar" in base_font and not base_axis_location:
+        base_axis_location = {}
+        for axis in base_font["fvar"].axes:
+            if axis.axisTag == "wght":
+                base_axis_location[axis.axisTag] = min(
+                    max(400.0, axis.minValue), axis.maxValue
+                )
+            else:
+                base_axis_location[axis.axisTag] = axis.defaultValue
+
     # ── Tier 2: variable-font axis instancing ───────────────────────
     # When the caller picked an axis location for a VARIABLE font,
     # bake the chosen instance into the glyf table NOW and drop

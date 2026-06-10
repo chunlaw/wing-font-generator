@@ -50,6 +50,7 @@ export type TranslationKey =
   | "home.platforms.tabs.affinity"
   | "home.platforms.tabs.adobe"
   | "home.platforms.tabs.word"
+  | "home.platforms.tabs.iwork"
   | "home.platforms.tabs.web"
   | "home.platforms.tabs.windows"
   | "home.platforms.tabs.macos"
@@ -76,6 +77,8 @@ export type TranslationKey =
   | "about.origin.body"
   | "about.opensource.title"
   | "about.opensource.body"
+  | "about.dialects.title"
+  | "about.dialects.body"
   | "about.contribute.title"
   | "about.contribute.intro"
   | "about.contribute.code.title"
@@ -247,6 +250,8 @@ export const TRANSLATIONS: Record<Language, Record<TranslationKey, string>> = {
       "先在作業系統安裝字型。\n關閉並重新開啟 Adobe Illustrator / Photoshop / InDesign。\n字型會以家族名稱出現在字型選單。\n在 Illustrator 與 InDesign 中，開啟「字元」面板並確認「連字」選項已開啟——數字標注（如「字1」）才能正常運作。",
     "home.platforms.tabs.word":
       "先在作業系統安裝字型。\n關閉並重啟 Word。\n在「常用 > 字型」選單中找到字型。\n如需啟用數字標注：「格式 > 字型 > 進階 > OpenType 功能 > 連字」設為「僅限標準」或更高。",
+    "home.platforms.tabs.iwork":
+      "先用 macOS 字體簿安裝字型（見 macOS 分頁）。\n開啟 Pages 或 Keynote，字型會以家族名稱出現在「格式 > 字型」選單。\n啟用數字標注：選取文字後，「格式 > 字型 > 顯示字體」，於排版面板開啟「連字（Ligatures）」。\nPages 與 Keynote 預設會抑制 CJK 文字的部分 OpenType 功能，但我們已將詞語對應規則放到 ccmp（強制啟用），因此「銀行 → ngan4 hong4」這類自動上下文判定無需設定即可運作。",
     "home.platforms.tabs.web":
       "將下載的 .woff 與 .ttf 上傳至你的伺服器（或任何 CSS 能存取的位置）。\n在 CSS 中加入 @font-face 宣告（生成器 Step 5 對話框提供可複製的範本）。\n套用字型：`font-family: '你的字型家族名稱'`。\n毋須額外設定——`liga` 在所有現代瀏覽器預設啟用，`ccmp` 依 OpenType 規格屬於強制執行，Chrome、Firefox、Safari 均自動套用。",
     "home.platforms.tabs.windows":
@@ -286,6 +291,9 @@ export const TRANSLATIONS: Record<Language, Record<TranslationKey, string>> = {
     "about.opensource.title": "點解免費又開源？",
     "about.opensource.body":
       "若我能說萬國的方言，但時間有限 —— 一齊參與，一齊為語言為文字努力，社會一定會更好。開源亦讓設計師可以用自己鍾意的字體合成屬於自己的版本：很多字體本身有版權，我們無辦法拎來合成畀大家用，但你可以自己搞，開開心心。",
+    "about.dialects.title": "唔止廣東話",
+    "about.dialects.body":
+      "Wing Font 由廣東話開始，但設計上一直想支援更多漢語方言。最新加入嘅係臺語（河洛話）：用思源黑體（Noto Sans TC）做底字，配搭 Huninn（粉圓）標注台羅（Tâi-lô）同白話字（POJ）嘅聲調符號，字音資料源自 AlanJui 嘅 Piau-Im 同 rime-tlpa 開源字庫。喺首頁可以睇到「家己的歌，家己唱；家己的字，家己選。」嘅台羅示範，亦可以喺製作頁揀台語拼音方案，自己整一套。歡迎更多方言加入。",
     "about.contribute.title": "一齊參與",
     "about.contribute.intro":
       "Wing Font 永遠不會完美，亦永遠歡迎更多人手。下面係幾條最缺人嘅路。",
@@ -471,6 +479,8 @@ export const TRANSLATIONS: Record<Language, Record<TranslationKey, string>> = {
       "Install the font through your operating system.\nQuit and restart Illustrator / Photoshop / InDesign.\nThe font appears in the font menu under its family name.\nIn Illustrator and InDesign, open the Character panel and verify “Ligatures” is enabled — required for the digit-override path (字1) to fire.",
     "home.platforms.tabs.word":
       "Install the font through your operating system.\nQuit and restart Word.\nFind the font under Home > Font.\nTo enable digit overrides: Format > Font > Advanced > OpenType Features > Ligatures → set to “Standard Only” or higher.",
+    "home.platforms.tabs.iwork":
+      "Install the font via macOS Font Book (see the macOS tab).\nOpen Pages or Keynote; the font appears in Format > Font under its family name.\nTo enable digit overrides: select the text, open Format > Font > Show Fonts, then in the Typography panel enable “Ligatures.”\nPages and Keynote suppress some OpenType features on CJK runs by default — our pipeline routes word-context disambiguation through `ccmp` (always on), so auto-context like “銀行 → ngan4 hong4” works without any toggle.",
     "home.platforms.tabs.web":
       "Upload the .woff and .ttf to your server (or anywhere your CSS can reach them).\nAdd the @font-face snippet from the generator's Step 5 dialog to your stylesheet.\nUse the font like any other: `font-family: 'YourFamilyName'`.\nNo extra setup needed — `liga` is default-on in all modern browsers and `ccmp` is mandatory per OpenType spec, so both fire automatically in Chrome, Firefox, and Safari.",
     "home.platforms.tabs.windows":
@@ -510,6 +520,9 @@ export const TRANSLATIONS: Record<Language, Record<TranslationKey, string>> = {
     "about.opensource.title": "Why free and open source?",
     "about.opensource.body":
       "If I were to speak in all the tongues of men, time would still be finite — but together we can push language and writing forward. Open source also lets designers compose annotated variants of their own typefaces. Many fonts are under restrictive licences and we can't redistribute the derived output ourselves; but a designer with their own font and the source code can build their version and ship it themselves.",
+    "about.dialects.title": "Beyond Cantonese",
+    "about.dialects.body":
+      "Wing Font began with Cantonese, but it was always meant to carry more Sinitic topolects. The newest addition is Taiwanese / Southern Min (Hō-ló): Noto Sans TC as the base character font, with Huninn (jf-openhuninn) setting the Tâi-lô and Pe̍h-ōe-jī (POJ) tone marks. The reading data comes from AlanJui's open Piau-Im and rime-tlpa dictionaries. You can see the Tâi-lô sample 「家己的歌，家己唱；家己的字，家己選。」 on the home page, and pick a Taiwanese romanization scheme in the generator to build your own. More dialects are welcome.",
     "about.contribute.title": "Get involved",
     "about.contribute.intro":
       "Wing Font is never finished. These are the gaps where new hands help the most.",

@@ -61,6 +61,26 @@ const MANIFEST = [
   ["mappings/canto-korean.csv", "mappings/canto-korean.csv"],
   ["mappings/canto-katakana.csv", "mappings/canto-katakana.csv"],
   ["mappings/cangjie.csv", "mappings/cangjie.csv"],
+  // Taiwanese / Southern Min (河洛話) mappings — surfaced as Step 2
+  // presets for the Noto Sans TC + Huninn pairing. Two diacritic
+  // ("-toned") schemes plus four numeric-tone schemes.
+  ["mappings/taigi-tl-toned.csv", "mappings/taigi-tl-toned.csv"],
+  ["mappings/taigi-poj-toned.csv", "mappings/taigi-poj-toned.csv"],
+  ["mappings/taigi-tl.csv", "mappings/taigi-tl.csv"],
+  ["mappings/taigi-poj.csv", "mappings/taigi-poj.csv"],
+  ["mappings/taigi-tlpa.csv", "mappings/taigi-tlpa.csv"],
+  ["mappings/taigi-bp.csv", "mappings/taigi-bp.csv"],
+  // Teochew / Min Nan (潮州話) mappings — surfaced as Step 2 presets for
+  // the Noto Sans TC + Huninn pairing. Two diacritic schemes (tlo,
+  // duffus) plus four numeric-tone schemes (gdpi, ggnn, dieghv, sinwz).
+  // Source: learn-teochew teochew_scrape.json readings, converted with
+  // the parsetc parser. Keep in sync with BUILT_IN_MAPPINGS.
+  ["mappings/teochew-gdpi.csv", "mappings/teochew-gdpi.csv"],
+  ["mappings/teochew-duffus.csv", "mappings/teochew-duffus.csv"],
+  ["mappings/teochew-tlo.csv", "mappings/teochew-tlo.csv"],
+  ["mappings/teochew-ggnn.csv", "mappings/teochew-ggnn.csv"],
+  ["mappings/teochew-dieghv.csv", "mappings/teochew-dieghv.csv"],
+  ["mappings/teochew-sinwz.csv", "mappings/teochew-sinwz.csv"],
 
   // Built-in fonts surfaced as preset options in Step 1. Keep in sync
   // with `BUILT_IN_BASE_FONTS` in wingfontPresets.ts. The Chiron fonts
@@ -88,6 +108,20 @@ const MANIFEST = [
   ],
   ["input_fonts/NotoSansJP-VariableFont_wght.ttf", "NotoSansJP-VF.ttf"],
   ["input_fonts/NotoSansKR-VariableFont_wght.ttf", "NotoSansKR-VF.ttf"],
+  // Taiwanese / Southern Min showcase pairing: Noto Sans TC base CJK
+  // font + Huninn (jf-openhuninn) annotation font carrying the Tâi-lô
+  // / POJ tone marks. Keep in sync with BUILT_IN_BASE_FONTS /
+  // BUILT_IN_ANNO_FONTS in wingfontPresets.ts.
+  // Noto Sans TC is the variable font, bundled under its own name so
+  // the Step 1 picker shows the weight slider. The default weight
+  // resolves to Regular (400) — see defaultAxisLocation in
+  // GenerateContext — and wing-font.py auto-instances the variable
+  // base to a static master before composition (CLI + Pyodide alike).
+  [
+    "input_fonts/NotoSansTC-VariableFont_wght.ttf",
+    "NotoSansTC-VariableFont_wght.ttf",
+  ],
+  ["input_fonts/Huninn-Regular.ttf", "Huninn-Regular.ttf"],
 
   // Third-party wheels — emscripten/wasm Python packages that
   // micropip pulls in at worker boot. The filename here MUST match

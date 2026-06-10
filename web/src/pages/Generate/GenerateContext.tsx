@@ -181,14 +181,28 @@ function extractGlyphCoverage(bytes: ArrayBuffer): Set<number> | undefined {
 
 /**
  * Build the default axis-location object for a list of axes.
- * Each axis's `default` becomes the initial value. Returns
- * undefined when there are no axes (non-variable font).
+ *
+ * Each axis takes its own `default` value, EXCEPT the weight axis,
+ * which we pin to Regular (400, clamped into the axis range) rather
+ * than the font's declared default. Several CJK variable fonts —
+ * Noto Sans TC / JP / KR among them — declare a `wght` default of
+ * Thin (100), which is far too light to read as either a base or an
+ * annotation glyph. 400 is the universally-expected "Regular", and
+ * this mirrors the auto-instance rule in python/wing-font.py so the
+ * in-browser preview, the generated font, and the CI-built showcase
+ * fonts all land on the same weight. The user can still drag the
+ * weight slider afterwards. Returns undefined for non-variable fonts.
  */
 function defaultAxisLocation(
   axes: FontAxis[] | undefined,
 ): AxisLocation | undefined {
   if (!axes || axes.length === 0) return undefined;
-  return Object.fromEntries(axes.map((a) => [a.tag, a.default]));
+  return Object.fromEntries(
+    axes.map((a) => [
+      a.tag,
+      a.tag === "wght" ? Math.min(Math.max(400, a.min), a.max) : a.default,
+    ]),
+  );
 }
 
 interface GenerateContextValue {

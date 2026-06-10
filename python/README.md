@@ -291,9 +291,25 @@ is having to wire `lookup_index` ourselves and call
 
 ## Mapping sources
 
+### Cantonese (廣東話)
+
 1. [Typeduck-HK](https://github.com/TypeDuck-HK/TypeDuck-Mac/blob/master/Preparing/Sources/Preparing/Resources/data.csv)
 2. [粵語審音配詞字庫](https://humanum.arts.cuhk.edu.hk/Lexis/lexi-can/)
 3. [Cantonese Romanization Converter](https://www.kodensha.jp/webapp/cantonese/can_converter_e.html)
+
+### Taiwanese / Southern Min (河洛話)
+
+The `taigi-*.csv` mappings are derived from AlanJui's open dictionaries.
+The base character→reading data is the `漢字庫` table of
+`Ho_Lok_Ue.db`; the cross-scheme spellings (TLPA / POJ / 閩拼) and the
+tone-mark placement come from the same project's conversion tables and
+`mod_帶調符音標.py`.
+
+1. [AlanJui/Piau-Im](https://github.com/AlanJui/Piau-Im)
+2. [AlanJui/rime-tlpa](https://github.com/AlanJui/rime-tlpa)
+
+The romanization is set in [Huninn (jf-openhuninn)](https://github.com/justfont/open-huninn-font),
+which carries the full Tâi-lô / POJ combining tone marks.
 
 ---
 
