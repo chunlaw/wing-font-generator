@@ -38,8 +38,22 @@ export type TranslationKey =
   // Home
   | "home.hero.title"
   | "home.hero.tagline"
+  | "home.hero.sampleCaption"
   | "home.hero.cta.generate"
   | "home.hero.cta.showcase"
+  | "home.platforms.title"
+  | "home.platforms.body"
+  | "home.platforms.free"
+  | "home.platforms.learnMoreTitle"
+  | "home.platforms.learnMoreSubtitle"
+  | "home.platforms.tabs.canva"
+  | "home.platforms.tabs.affinity"
+  | "home.platforms.tabs.adobe"
+  | "home.platforms.tabs.word"
+  | "home.platforms.tabs.web"
+  | "home.platforms.tabs.windows"
+  | "home.platforms.tabs.macos"
+  | "home.platforms.tabs.linux"
   | "home.what.title"
   | "home.what.body"
   | "home.how.title"
@@ -214,8 +228,33 @@ export const TRANSLATIONS: Record<Language, Record<TranslationKey, string>> = {
     "home.hero.title": "Wing Font",
     "home.hero.tagline":
       "在純文字裡將標注直接顯示在漢字上方 — 毋須 HTML 標記、毋須額外排版，只要載入字體就行。",
+    "home.hero.sampleCaption":
+      "上面是純 UTF-8 文字，標注由 Wing Font 即時渲染。",
     "home.hero.cta.generate": "自製你的字體",
     "home.hero.cta.showcase": "瀏覽現成字體",
+    "home.platforms.title": "你常用的軟件全部支援",
+    "home.platforms.body":
+      "輸出標準 TTF / WOFF 字型檔，能在任何支援自訂字型的軟件中載入，無需特殊外掛或設定。",
+    "home.platforms.free": "✓ 完全免費，無需註冊。",
+    "home.platforms.learnMoreTitle": "在你的軟件上使用",
+    "home.platforms.learnMoreSubtitle":
+      "選擇你常用的軟件或作業系統，查看安裝與設定步驟。",
+    "home.platforms.tabs.canva":
+      "開啟設計，點擊文字元素。\n在字型選單按「上載字型」，選擇下載的 .ttf 檔案。\n到文字效果面板開啟「Ligatures（連字）」選項——沒有它，「字1」這類數字標注不會生效。\n免費帳戶可能需升級至 Canva Pro 方能上載字型。",
+    "home.platforms.tabs.affinity":
+      "先在作業系統安裝字型（見 Windows / macOS / Linux 分頁）。\n關閉並重新開啟 Affinity Designer / Photo / Publisher。\n字型隨即出現在所有字型選單。預設已啟用連字，毋須額外設定。",
+    "home.platforms.tabs.adobe":
+      "先在作業系統安裝字型。\n關閉並重新開啟 Adobe Illustrator / Photoshop / InDesign。\n字型會以家族名稱出現在字型選單。\n在 Illustrator 與 InDesign 中，開啟「字元」面板並確認「連字」選項已開啟——數字標注（如「字1」）才能正常運作。",
+    "home.platforms.tabs.word":
+      "先在作業系統安裝字型。\n關閉並重啟 Word。\n在「常用 > 字型」選單中找到字型。\n如需啟用數字標注：「格式 > 字型 > 進階 > OpenType 功能 > 連字」設為「僅限標準」或更高。",
+    "home.platforms.tabs.web":
+      "將下載的 .woff 與 .ttf 上傳至你的伺服器（或任何 CSS 能存取的位置）。\n在 CSS 中加入 @font-face 宣告（生成器 Step 5 對話框提供可複製的範本）。\n套用字型：`font-family: '你的字型家族名稱'`。\n毋須額外設定——`liga` 在所有現代瀏覽器預設啟用，`ccmp` 依 OpenType 規格屬於強制執行，Chrome、Firefox、Safari 均自動套用。",
+    "home.platforms.tabs.windows":
+      "右鍵點擊 .ttf 檔案，選擇「安裝」（或「為所有使用者安裝」以全系統可用）。\n或拖曳 .ttf 至「設定 > 個人化 > 字型」。\n重啟已開啟的應用程式，否則它們無法載入新字型。",
+    "home.platforms.tabs.macos":
+      "雙擊 .ttf 檔案——「字體簿（Font Book）」會自動開啟。\n在字體簿預覽視窗中點擊「安裝字型」。\n字型隨即可供所有應用程式使用，毋須重啟系統。",
+    "home.platforms.tabs.linux":
+      "將 .ttf 複製至 `~/.fonts/`（單一使用者）或 `/usr/share/fonts/truetype/`（全系統）。\n執行 `fc-cache -f` 更新字型快取。\n重啟需要使用此字型的 GUI 應用程式。",
     "home.what.title": "這是甚麼",
     "home.what.body":
       "Wing Font 是一套字型生成工具。輸入兩個 TTF（一個底字、一個標注字）加上字符對應 CSV，便會輸出一個全新的 OpenType 字型 — 每個底字字形都直接刻上標注，可作粵拼、耶魯、倉頡等任何標注用途。輸出的字型可用於網頁、Word、Telegram、Email 等任何支援自訂字型的地方。",
@@ -413,8 +452,33 @@ export const TRANSLATIONS: Record<Language, Record<TranslationKey, string>> = {
     "home.hero.title": "Wing Font",
     "home.hero.tagline":
       "Show pronunciation annotations above Chinese characters in plain text — no HTML markup, no special apps, just install the font.",
+    "home.hero.sampleCaption":
+      "Plain UTF-8 text above, rendered by Wing Font itself.",
     "home.hero.cta.generate": "Generate your own font",
     "home.hero.cta.showcase": "Browse ready-made fonts",
+    "home.platforms.title": "Works everywhere you do",
+    "home.platforms.body":
+      "Standard TTF and WOFF files. Drop them anywhere a custom font goes — no plug-ins, no special integration.",
+    "home.platforms.free": "✓ And it's 100% free, no signup.",
+    "home.platforms.learnMoreTitle": "Using it on your platform",
+    "home.platforms.learnMoreSubtitle":
+      "Pick the app or operating system you use most and see what to do.",
+    "home.platforms.tabs.canva":
+      "Open a design and click any text element.\nIn the font picker, choose “Upload a font” and select the .ttf you downloaded.\nEnable “Ligatures” in the text effects panel — without it, digit overrides like “字1” won't fire.\nFree accounts may need a Canva Pro upgrade to upload custom fonts.",
+    "home.platforms.tabs.affinity":
+      "Install the font through your operating system (see the Windows / macOS / Linux tabs).\nQuit and reopen Affinity Designer / Photo / Publisher.\nThe font now appears in every font picker. Ligatures are enabled by default — no app-side setup needed.",
+    "home.platforms.tabs.adobe":
+      "Install the font through your operating system.\nQuit and restart Illustrator / Photoshop / InDesign.\nThe font appears in the font menu under its family name.\nIn Illustrator and InDesign, open the Character panel and verify “Ligatures” is enabled — required for the digit-override path (字1) to fire.",
+    "home.platforms.tabs.word":
+      "Install the font through your operating system.\nQuit and restart Word.\nFind the font under Home > Font.\nTo enable digit overrides: Format > Font > Advanced > OpenType Features > Ligatures → set to “Standard Only” or higher.",
+    "home.platforms.tabs.web":
+      "Upload the .woff and .ttf to your server (or anywhere your CSS can reach them).\nAdd the @font-face snippet from the generator's Step 5 dialog to your stylesheet.\nUse the font like any other: `font-family: 'YourFamilyName'`.\nNo extra setup needed — `liga` is default-on in all modern browsers and `ccmp` is mandatory per OpenType spec, so both fire automatically in Chrome, Firefox, and Safari.",
+    "home.platforms.tabs.windows":
+      "Right-click the .ttf file and choose “Install” (or “Install for all users” for system-wide access).\nAlternatively, drag the .ttf into Settings > Personalization > Fonts.\nRestart any application that was already running, otherwise it won't see the new font.",
+    "home.platforms.tabs.macos":
+      "Double-click the .ttf file — Font Book opens automatically.\nClick “Install Font” in the Font Book preview window.\nThe font becomes immediately available in every application — no restart needed.",
+    "home.platforms.tabs.linux":
+      "Copy the .ttf to `~/.fonts/` (current user) or `/usr/share/fonts/truetype/` (all users).\nRun `fc-cache -f` to refresh the font cache.\nRestart any GUI applications you want to use the font in.",
     "home.what.title": "What it is",
     "home.what.body":
       "Wing Font is a font-generation tool. Give it two TTFs (one for the base characters, one for the annotation glyphs) plus a CSV mapping characters to annotations, and it produces a new OpenType font whose glyphs have those annotations baked in. The output works anywhere a custom font can be loaded — websites, Word, Telegram, email, you name it.",

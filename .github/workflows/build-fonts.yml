@@ -173,6 +173,20 @@ jobs:
           python wing-font.py -opt -f ChironSungHK-Google-thai-It -i input_fonts/ChironSungHK-R-It.ttf -a 'input_fonts/GoogleSans-VariableFont_GRAD,opsz,wght.ttf' -m mappings/canto-thai.csv -o outputs/ChironSungHK-Google-thai-It -as 0.13
           python wing-font.py -opt -f ChironSungHK-NotoJP-katakana-It -i input_fonts/ChironSungHK-R-It.ttf -a input_fonts/NotoSansJP-VariableFont_wght.ttf -m mappings/canto-katakana.csv -o outputs/ChironSungHK-NotoJP-katakana-It -as 0.13
           python wing-font.py -opt -f ChironSungHK-NotoKR-korean-It -i input_fonts/ChironSungHK-R-It.ttf -a input_fonts/NotoSansKR-VariableFont_wght.ttf -m mappings/canto-korean.csv -o outputs/ChironSungHK-NotoKR-korean-It -as 0.13
+          # === Hero sample font =====================================
+          #
+          # Tiny 8-char font (~20-30 KB) used to render the home-page
+          # hero text. The mapping CSV contains only the characters
+          # of the chosen lyric line so the subsetter produces the
+          # smallest possible output; the @font-face referencing
+          # this file in web/src/pages/Home.tsx loads in well under
+          # 100ms on any connection, with no perceptible LCP hit.
+          #
+          # If the hero text changes, edit python/mappings/hero-sample.csv
+          # (add the new chars + LSHK annotations) and let the next CI
+          # run rebuild this file. The Home.tsx hero references it by
+          # the family name `ChironSungHK-hero-sample`.
+          python wing-font.py -opt -f ChironSungHK-hero-sample -i input_fonts/ChironSungHK-R.ttf -a input_fonts/NotoSerif-Regular.ttf -m mappings/hero-sample.csv -o outputs/ChironSungHK-hero-sample -as 0.13
 
       - name: Stage font outputs for deploy
         # Collect just the .ttf/.woff files into a flat folder so the

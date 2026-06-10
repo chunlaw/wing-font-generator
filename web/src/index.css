@@ -49,3 +49,28 @@ button:focus-visible {
 *:focus-visible {
   outline: none;
 }
+
+/*
+ * Hero sample font — a ~25 KB subset of ChironSung Sung + Noto Serif
+ * built by .github/workflows/build-fonts.yml from
+ * python/mappings/hero-sample.csv. Contains only the 8 characters used
+ * in the Home page hero lyric, so the LCP impact is negligible and
+ * the first-load swap is barely perceptible.
+ *
+ * `font-display: swap` means the page renders immediately in the
+ * system font and upgrades to this font when it arrives — better
+ * than blocking text on font load (which would show blank space on
+ * slow connections).
+ *
+ * If this file 404s (e.g. CI hasn't rebuilt the gh-pages /fonts/
+ * directory yet after this entry was added), the hero text falls
+ * back to the system serif via the Box's `font-family` chain. The
+ * site stays functional; the hero just looks unstyled until CI
+ * catches up.
+ */
+@font-face {
+  font-family: "ChironSungHK-hero-sample";
+  src: url("https://wing-fonts.chunlaw.io/fonts/ChironSungHK-hero-sample.woff")
+    format("woff");
+  font-display: swap;
+}
