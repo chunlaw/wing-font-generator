@@ -40,6 +40,37 @@ export type FontSet = Record<
   }
 >;
 
+/*
+ * Showcase curation:
+ *
+ * The CI workflow (.github/workflows/build-fonts.yml) builds ~30 font
+ * variants and deploys them all to wing-fonts.chunlaw.io/fonts/. The
+ * showcase page surfaces only a CURATED SUBSET of those builds — 6
+ * entries chosen to demonstrate maximally-distinct concepts rather
+ * than visually-similar romanization variants.
+ *
+ * Showcasing rule: every entry must illustrate a different angle of
+ * the product's range. If two entries look near-identical to a
+ * casual viewer (e.g. LSHK vs Lau, both Latin-letter romanizations
+ * on the same Sung base), only ONE belongs here.
+ *
+ * Currently surfaced (6):
+ *   • LSHK Jyutping  — primary / most-widely-used Latin romanization
+ *   • Yale           — historical alternative Latin romanization
+ *   • Cangjie        — completely different concept: CJK input method
+ *   • Thai script    — non-Latin transliteration (Google Sans)
+ *   • Katakana       — non-Latin transliteration (Noto Sans JP)
+ *   • Hangul         — non-Latin transliteration (Noto Sans KR)
+ *
+ * Built but NOT showcased (still reachable directly under /fonts/):
+ *   • Chishima / Lau / Guangdong — three additional Latin romanizations,
+ *     redundant with LSHK + Yale for showcase purposes.
+ *   • Every *-It italic variant — same content, subtle base-font style
+ *     variation that doesn't teach anything new at picker resolution.
+ *
+ * If you want a dropped variant re-surfaced, add it back here — the
+ * file is the only place that controls what the FontPicker shows.
+ */
 export const AVAILABLE_FONTS: FontSet = {
   cantonese: {
     lang: {
@@ -56,55 +87,25 @@ export const AVAILABLE_FONTS: FontSet = {
         name: "ChironSungHK-Noto-yale",
         source: `url(${import.meta.env.VITE_FONT_URL}/ChironSungHK-Noto-yale.woff) format('woff')`,
       },
-      "ChironSungHK-Noto-chishima": {
-        displayName: "昭源宋體（千島式表記法）",
-        name: "ChironSungHK-Noto-chishima",
-        source: `url(${import.meta.env.VITE_FONT_URL}/ChironSungHK-Noto-chishima.woff) format('woff')`,
-      },
-      "ChironSungHK-Noto-lau": {
-        displayName: "昭源宋體（劉錫祥）",
-        name: "ChironSungHK-Noto-lau",
-        source: `url(${import.meta.env.VITE_FONT_URL}/ChironSungHK-Noto-lau.woff) format('woff')`,
-      },
-      "ChironSungHK-Noto-guangdong": {
-        displayName: "昭源宋體（廣州話）",
-        name: "ChironSungHK-Noto-guangdong",
-        source: `url(${import.meta.env.VITE_FONT_URL}/ChironSungHK-Noto-lau.woff) format('woff')`,
-      },
       "ChironSungHK-cangjie": {
         displayName: "昭源宋體（倉頡）",
         name: "ChironSungHK-cangjie",
         source: `url(${import.meta.env.VITE_FONT_URL}/ChironSungHK-cangjie.woff) format('woff')`,
       },
-      "ChironSungHK-Noto-lshk-It": {
-        displayName: "昭源宋體（香港語言學會 斜體）",
-        name: "ChironSungHK-Noto-lshk-It",
-        source: `url(${import.meta.env.VITE_FONT_URL}/ChironSungHK-Noto-lshk-It.woff) format('woff')`,
+      "ChironSungHK-Google-thai": {
+        displayName: "昭源宋體（泰文標注）",
+        name: "ChironSungHK-Google-thai",
+        source: `url(${import.meta.env.VITE_FONT_URL}/ChironSungHK-Google-thai.woff) format('woff')`,
       },
-      "ChironSungHK-Noto-yale-It": {
-        displayName: "昭源宋體（耶魯拼音 斜體）",
-        name: "ChironSungHK-Noto-yale-It",
-        source: `url(${import.meta.env.VITE_FONT_URL}/ChironSungHK-Noto-yale-It.woff) format('woff')`,
+      "ChironSungHK-NotoJP-katakana": {
+        displayName: "昭源宋體（片假名標注）",
+        name: "ChironSungHK-NotoJP-katakana",
+        source: `url(${import.meta.env.VITE_FONT_URL}/ChironSungHK-NotoJP-katakana.woff) format('woff')`,
       },
-      "ChironSungHK-Noto-chishima-It": {
-        displayName: "昭源宋體（千島式表記法 斜體）",
-        name: "ChironSungHK-Noto-chishima",
-        source: `url(${import.meta.env.VITE_FONT_URL}/ChironSungHK-Noto-chishima-It.woff) format('woff')`,
-      },
-      "ChironSungHK-Noto-lau-It": {
-        displayName: "昭源宋體（劉錫祥 斜體）",
-        name: "ChironSungHK-Noto-lau",
-        source: `url(${import.meta.env.VITE_FONT_URL}/ChironSungHK-Noto-lau-It.woff) format('woff')`,
-      },
-      "ChironSungHK-Noto-guangdong-It": {
-        displayName: "昭源宋體（廣州話 斜體）",
-        name: "ChironSungHK-Noto-guangdong",
-        source: `url(${import.meta.env.VITE_FONT_URL}/ChironSungHK-Noto-lau-It.woff) format('woff')`,
-      },
-      "ChironSungHK-cangjie-It": {
-        displayName: "昭源宋體（倉頡 斜體）",
-        name: "ChironSungHK-cangjie-It",
-        source: `url(${import.meta.env.VITE_FONT_URL}/ChironSungHK-cangjie-It.woff) format('woff')`,
+      "ChironSungHK-NotoKR-korean": {
+        displayName: "昭源宋體（諺文標注）",
+        name: "ChironSungHK-NotoKR-korean",
+        source: `url(${import.meta.env.VITE_FONT_URL}/ChironSungHK-NotoKR-korean.woff) format('woff')`,
       },
     },
   },

@@ -120,6 +120,30 @@ export const BUILT_IN_ANNO_FONTS: BuiltInPreset[] = [
     url: "/wingfont/ChironHeiHK-R.ttf",
     filename: "ChironHeiHK-R.ttf",
   },
+  // Script-specific annotation fonts paired with the canto-thai /
+  // canto-katakana / canto-korean mappings (which transliterate
+  // Cantonese phonetics into Thai / Katakana / Hangul characters
+  // respectively). Renamed during sync to drop the commas in
+  // Google Sans's source filename and to shorten "VariableFont_..."
+  // to "-VF" for URL cleanliness — see web/scripts/sync-python.mjs.
+  {
+    key: "anno-googlesans-thai",
+    label: "Google Sans (Thai)",
+    url: "/wingfont/GoogleSans-VF.ttf",
+    filename: "GoogleSans-VF.ttf",
+  },
+  {
+    key: "anno-notosansjp",
+    label: "Noto Sans JP (Katakana)",
+    url: "/wingfont/NotoSansJP-VF.ttf",
+    filename: "NotoSansJP-VF.ttf",
+  },
+  {
+    key: "anno-notosanskr",
+    label: "Noto Sans KR (Hangul)",
+    url: "/wingfont/NotoSansKR-VF.ttf",
+    filename: "NotoSansKR-VF.ttf",
+  },
 ];
 
 // ---------- Mapping dictionaries (the Step 2 picker) ---------------
@@ -158,6 +182,24 @@ export const BUILT_IN_MAPPINGS: BuiltInPreset[] = [
     label: "千島式 (Chishima)",
     url: "/wingfont/mappings/canto-chishima.csv",
     filename: "canto-chishima.csv",
+  },
+  {
+    key: "canto-thai",
+    label: "泰文 (Thai script)",
+    url: "/wingfont/mappings/canto-thai.csv",
+    filename: "canto-thai.csv",
+  },
+  {
+    key: "canto-korean",
+    label: "諺文 (Hangul)",
+    url: "/wingfont/mappings/canto-korean.csv",
+    filename: "canto-korean.csv",
+  },
+  {
+    key: "canto-katakana",
+    label: "片仮名 (Katakana)",
+    url: "/wingfont/mappings/canto-katakana.csv",
+    filename: "canto-katakana.csv",
   },
   {
     key: "cangjie",

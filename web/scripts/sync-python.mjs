@@ -57,6 +57,9 @@ const MANIFEST = [
   ["mappings/canto-lau.csv", "mappings/canto-lau.csv"],
   ["mappings/canto-guangdong.csv", "mappings/canto-guangdong.csv"],
   ["mappings/canto-chishima.csv", "mappings/canto-chishima.csv"],
+  ["mappings/canto-thai.csv", "mappings/canto-thai.csv"],
+  ["mappings/canto-korean.csv", "mappings/canto-korean.csv"],
+  ["mappings/canto-katakana.csv", "mappings/canto-katakana.csv"],
   ["mappings/cangjie.csv", "mappings/cangjie.csv"],
 
   // Built-in fonts surfaced as preset options in Step 1. Keep in sync
@@ -73,6 +76,18 @@ const MANIFEST = [
   ["input_fonts/ChironHeiHK-R.ttf", "ChironHeiHK-R.ttf"],
   ["input_fonts/ChironHeiHK-B.ttf", "ChironHeiHK-B.ttf"],
   ["input_fonts/方正楷体.ttf", "FZKaiti.ttf"],
+  // Script-specific annotation fonts paired with the canto-thai /
+  // canto-katakana / canto-korean mappings above. Renamed for URL
+  // cleanliness: Google Sans's source filename has commas in it
+  // ("GoogleSans-VariableFont_GRAD,opsz,wght.ttf") which need URL
+  // encoding; the Noto Sans pair gets "-VF" in place of
+  // "-VariableFont_wght" for the same reason.
+  [
+    "input_fonts/GoogleSans-VariableFont_GRAD,opsz,wght.ttf",
+    "GoogleSans-VF.ttf",
+  ],
+  ["input_fonts/NotoSansJP-VariableFont_wght.ttf", "NotoSansJP-VF.ttf"],
+  ["input_fonts/NotoSansKR-VariableFont_wght.ttf", "NotoSansKR-VF.ttf"],
 
   // Third-party wheels — emscripten/wasm Python packages that
   // micropip pulls in at worker boot. The filename here MUST match

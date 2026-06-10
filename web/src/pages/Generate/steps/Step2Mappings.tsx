@@ -122,6 +122,8 @@ const Step2Mappings = () => {
     loadBuiltInMappings,
     exportMappingsAsCsv,
     mappingsPresetKey,
+    baseFont,
+    annoFont,
   } = useGenerate();
 
   const [search, setSearch] = useState("");
@@ -129,6 +131,86 @@ const Step2Mappings = () => {
   // debounce-window number. The user sees their typed character
   // immediately, the list updates on the next frame.
   const deferredSearch = useDeferredValue(search);
+
+  // Whether the user has expanded the "missing characters" details
+  // panel below the coverage Alert. Default collapsed because for a
+  // mapping with a few hundred missing chars, dumping them all
+  // immediately would dominate the screen.
+  const [coverageExpanded, setCoverageExpanded] = useState(false);
+
+  /**
+   * Coverage check: which characters in the user's mappings aren't in
+   * the loaded fonts' cmaps. Only computed when we have both fonts'
+   * coverage sets cached AND at least one mapping row to check.
+   *
+   * Why bake the membership into a Set per font upfront (in
+   * GenerateContext's extractGlyphCoverage): this useMemo runs every
+   * time `mappings` changes, and `mappings` can be 137k rows. Doing
+   * a per-row, per-char Set.has() against pre-computed sets is
+   * O(total chars) — typically a few hundred thousand lookups,
+   * which is fast (<50ms even on a phone). Re-parsing the font with
+   * opentype.js for each render would block for hundreds of ms.
+   *
+   * Output: { baseMissing, annoMissing } where each is a sorted
+   * deduplicated array of single-character strings (the characters
+   * that the user's mapping references but the font doesn't cover).
+   * We cap the display at ~50 chars but the array is uncapped so
+   * the totals are accurate.
+   */
+  const coverage = useMemo(() => {
+    if (
+      !baseFont.glyphCoverage ||
+      !annoFont.glyphCoverage ||
+      mappings.length === 0
+    ) {
+      return null;
+    }
+    const baseSet = baseFont.glyphCoverage;
+    const annoSet = annoFont.glyphCoverage;
+    const baseMissing = new Set<string>();
+    const annoMissing = new Set<string>();
+    let baseTotal = 0;
+    let annoTotal = 0;
+    const seenBase = new Set<string>();
+    const seenAnno = new Set<string>();
+    for (const row of mappings) {
+      // Base side: every codepoint in `chars` must be in baseSet.
+      // Iterate via for-of so surrogate pairs are walked as one
+      // grapheme (not two UTF-16 code units), and use codePointAt(0)
+      // which returns the full codepoint regardless of plane.
+      for (const ch of row.chars) {
+        if (seenBase.has(ch)) continue;
+        seenBase.add(ch);
+        baseTotal++;
+        const cp = ch.codePointAt(0);
+        if (cp !== undefined && !baseSet.has(cp)) {
+          baseMissing.add(ch);
+        }
+      }
+      // Anno side: split on whitespace (the CSV uses spaces between
+      // per-character annotations like "ngan4 hong4") then walk each
+      // visible character. Spaces themselves are separators, not text
+      // that needs to render, so we drop them.
+      for (const ch of row.annos.replace(/\s/g, "")) {
+        if (seenAnno.has(ch)) continue;
+        seenAnno.add(ch);
+        annoTotal++;
+        const cp = ch.codePointAt(0);
+        if (cp !== undefined && !annoSet.has(cp)) {
+          annoMissing.add(ch);
+        }
+      }
+    }
+    // Sort by codepoint for stable, predictable display. Could also
+    // sort by frequency in the mapping but that requires a second
+    // pass and isn't obviously more useful.
+    return {
+      baseMissing: [...baseMissing].sort(),
+      annoMissing: [...annoMissing].sort(),
+      baseTotal,
+      annoTotal,
+    };
+  }, [mappings, baseFont.glyphCoverage, annoFont.glyphCoverage]);
 
   const [editingId, setEditingId] = useState<string | null>(null);
   const [pendingDelete, setPendingDelete] = useState<string | null>(null);
@@ -237,6 +319,166 @@ const Step2Mappings = () => {
       </Box>
 
       {importError && <Alert severity="error">{importError}</Alert>}
+
+      {/*
+        Coverage validator.
+
+        Only renders when BOTH font cmaps are cached AND there's at
+        least one mapping row to check — otherwise there's nothing
+        meaningful to say and the Alert would just be noise. Hidden
+        entirely when every character is covered (the silent-success
+        case): no "✓ Coverage OK" badge, because users who don't have
+        a problem don't need a confirmation.
+
+        When uncovered chars exist:
+          - severity="warning" — not an error, the user can still
+            generate; the missing chars will just render as .notdef
+            (typically tofu boxes) in the output font.
+          - First-line headline: per-side counts ("X chars in base
+            column missing; Y chars in annotations missing"). Numbers
+            only — saves vertical space.
+          - Expand-on-click: shows the actual missing chars (capped at
+            ~50 to avoid dumping 5,000 obscure CJK chars; the count
+            is still accurate). The button label flips to "Hide".
+       */}
+      {coverage &&
+        (coverage.baseMissing.length > 0 ||
+          coverage.annoMissing.length > 0) && (
+          <Alert
+            severity="warning"
+            variant="outlined"
+            action={
+              <Button
+                color="inherit"
+                size="small"
+                onClick={() => setCoverageExpanded((v) => !v)}
+              >
+                {coverageExpanded
+                  ? t("step2.coverage.hide")
+                  : t("step2.coverage.show")}
+              </Button>
+            }
+          >
+            {/*
+              Two per-font status lines. Showing BOTH lines (even when
+              one side is fully covered) is deliberate: it visibly
+              confirms that the validator ran for each font and tells
+              the user where the actionable problem is.
+
+              Status uses ✓ / ⚠ glyph plus a per-side missing/total
+              count. The "all covered" case reads as a positive
+              confirmation rather than an ambiguous "0/N".
+            */}
+            <Box>
+              <Typography variant="body2">
+                {coverage.baseMissing.length === 0
+                  ? t("step2.coverage.baseOk").replace(
+                      "{total}",
+                      String(coverage.baseTotal),
+                    )
+                  : t("step2.coverage.baseMissing")
+                      .replace(
+                        "{missing}",
+                        String(coverage.baseMissing.length),
+                      )
+                      .replace("{total}", String(coverage.baseTotal))}
+              </Typography>
+              <Typography variant="body2" sx={{ mt: 0.25 }}>
+                {coverage.annoMissing.length === 0
+                  ? t("step2.coverage.annoOk").replace(
+                      "{total}",
+                      String(coverage.annoTotal),
+                    )
+                  : t("step2.coverage.annoMissing")
+                      .replace(
+                        "{missing}",
+                        String(coverage.annoMissing.length),
+                      )
+                      .replace("{total}", String(coverage.annoTotal))}
+              </Typography>
+            </Box>
+            {coverageExpanded && (
+              <Box mt={1.5}>
+                {coverage.baseMissing.length > 0 && (
+                  <Box sx={{ mb: coverage.annoMissing.length > 0 ? 1 : 0 }}>
+                    <Typography
+                      variant="caption"
+                      color="text.secondary"
+                      sx={{ display: "block", mb: 0.5 }}
+                    >
+                      {t("step2.coverage.baseLabel")}
+                    </Typography>
+                    <Typography
+                      variant="body2"
+                      sx={{
+                        // Use the base font's own visual rendering for
+                        // the missing chars when possible — but most
+                        // browsers will fall back to a system CJK font
+                        // for chars the loaded font can't render
+                        // anyway, which is exactly what we want here
+                        // (the user CAN see the char to know what
+                        // it is). Wrap in a fixed-width-friendly stack
+                        // so the list doesn't read like prose.
+                        fontFamily:
+                          "ui-monospace, SFMono-Regular, Menlo, monospace",
+                        wordBreak: "break-all",
+                      }}
+                    >
+                      {coverage.baseMissing.slice(0, 50).join(" ")}
+                      {coverage.baseMissing.length > 50 && (
+                        <Typography
+                          component="span"
+                          variant="caption"
+                          color="text.secondary"
+                        >
+                          {" "}
+                          {t("step2.coverage.andMore").replace(
+                            "{n}",
+                            String(coverage.baseMissing.length - 50),
+                          )}
+                        </Typography>
+                      )}
+                    </Typography>
+                  </Box>
+                )}
+                {coverage.annoMissing.length > 0 && (
+                  <Box>
+                    <Typography
+                      variant="caption"
+                      color="text.secondary"
+                      sx={{ display: "block", mb: 0.5 }}
+                    >
+                      {t("step2.coverage.annoLabel")}
+                    </Typography>
+                    <Typography
+                      variant="body2"
+                      sx={{
+                        fontFamily:
+                          "ui-monospace, SFMono-Regular, Menlo, monospace",
+                        wordBreak: "break-all",
+                      }}
+                    >
+                      {coverage.annoMissing.slice(0, 50).join(" ")}
+                      {coverage.annoMissing.length > 50 && (
+                        <Typography
+                          component="span"
+                          variant="caption"
+                          color="text.secondary"
+                        >
+                          {" "}
+                          {t("step2.coverage.andMore").replace(
+                            "{n}",
+                            String(coverage.annoMissing.length - 50),
+                          )}
+                        </Typography>
+                      )}
+                    </Typography>
+                  </Box>
+                )}
+              </Box>
+            )}
+          </Alert>
+        )}
 
       {/* Toolbar: import / preset picker / export / clear + count */}
       <Stack

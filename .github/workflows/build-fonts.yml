@@ -84,20 +84,54 @@ jobs:
         run: |
           mkdir -p outputs
           set -o xtrace
-          python wing-font.py -v -y 0.3 -opt -f ChironHeiHK-Noto-lshk-B-invert -i input_fonts/ChironHeiHK-B.ttf -a input_fonts/NotoSerif-Regular.ttf -m mappings/canto-lshk.csv -o outputs/ChironHeiHK-Noto-lshk-B.invert -as 0.13
-          python wing-font.py -v -y 0.3 -opt -f ChironHeiHK-Noto-lshk -i input_fonts/ChironHeiHK-R.ttf -a input_fonts/NotoSerif-Regular.ttf -m mappings/canto-lshk.csv -o outputs/ChironHeiHK-Noto-lshk.invert -as 0.13
-          python wing-font.py -v -y 0.3 -opt -f ChironSungHK-Noto-lshk -i input_fonts/ChironSungHK-R.ttf -a input_fonts/NotoSerif-Regular.ttf -m mappings/canto-lshk.csv -o outputs/ChironSungHK-Noto-lshk.invert -as 0.13
-          python wing-font.py -v -y 0.3 -opt -f ChironSungHK-Noto-yale -i input_fonts/ChironSungHK-R.ttf -a input_fonts/NotoSerif-Regular.ttf -m mappings/canto-yale.csv -o outputs/ChironSungHK-Noto-yale.invert -as 0.13
-          python wing-font.py -v -y 0.3 -opt -f ChironSungHK-Noto-chishima -i input_fonts/ChironSungHK-R.ttf -a input_fonts/NotoSerif-Regular.ttf -m mappings/canto-chishima.csv -o outputs/ChironSungHK-Noto-chishima.invert -as 0.13
-          python wing-font.py -v -y 0.3 -opt -f ChironSungHK-Noto-guangdong -i input_fonts/ChironSungHK-R.ttf -a input_fonts/NotoSerif-Regular.ttf -m mappings/canto-guangdong.csv -o outputs/ChironSungHK-Noto-guangdong.invert -as 0.13
-          python wing-font.py -v -y 0.3 -opt -f ChironSungHK-Noto-lau -i input_fonts/ChironSungHK-R.ttf -a input_fonts/NotoSerif-Regular.ttf -m mappings/canto-lau.csv -o outputs/ChironSungHK-Noto-lau.invert -as 0.13
-          python wing-font.py -v -y 0.3 -f ChironSungHK-cangjie -i input_fonts/ChironSungHK-R.ttf -a input_fonts/ChironSungHK-R.ttf -m mappings/cangjie.csv -o outputs/ChironSungHK-cangjie.invert -as 0.25
-          python wing-font.py -v -y 0.3 -opt -f ChironSungHK-Noto-lshk-It -i input_fonts/ChironSungHK-R-It.ttf -a input_fonts/NotoSerif-Regular.ttf -m mappings/canto-lshk.csv -o outputs/ChironSungHK-Noto-lshk-It.invert -as 0.13
-          python wing-font.py -v -y 0.3 -opt -f ChironSungHK-Noto-yale-It -i input_fonts/ChironSungHK-R-It.ttf -a input_fonts/NotoSerif-Regular.ttf -m mappings/canto-yale.csv -o outputs/ChironSungHK-Noto-yale-It.invert -as 0.13
-          python wing-font.py -v -y 0.3 -opt -f ChironSungHK-Noto-chishima-It -i input_fonts/ChironSungHK-R-It.ttf -a input_fonts/NotoSerif-Regular.ttf -m mappings/canto-chishima.csv -o outputs/ChironSungHK-Noto-chishima-It.invert -as 0.13
-          python wing-font.py -v -y 0.3 -opt -f ChironSungHK-Noto-guangdong-It -i input_fonts/ChironSungHK-R-It.ttf -a input_fonts/NotoSerif-Regular.ttf -m mappings/canto-guangdong.csv -o outputs/ChironSungHK-Noto-guangdong-It.invert -as 0.13
-          python wing-font.py -v -y 0.3 -opt -f ChironSungHK-Noto-lau-It -i input_fonts/ChironSungHK-R-It.ttf -a input_fonts/NotoSerif-Regular.ttf -m mappings/canto-lau.csv -o outputs/ChironSungHK-Noto-lau-It.invert -as 0.13
-          python wing-font.py -v -y 0.3 -f ChironSungHK-cangjie-It -i input_fonts/ChironSungHK-R-It.ttf -a input_fonts/ChironSungHK-R-It.ttf -m mappings/cangjie.csv -o outputs/ChironSungHK-cangjie-It.invert -as 0.25
+          # ─ Naming convention (applies to every line below) ────────
+          #
+          # Output font names follow `<Base>-<Anno>-<mapping>[-It][-Invert]`:
+          #   • <Base>     ChironSungHK or ChironHeiHK (+ -B for Bold)
+          #   • <Anno>     Noto (for NotoSerif Latin annotation),
+          #                Google (for Google Sans Thai),
+          #                NotoJP / NotoKR (for the JP / KR Noto Sans).
+          #                Cangjie has no <Anno> segment because the
+          #                annotation is the base font itself.
+          #   • <mapping>  Lowercase mapping suffix: lshk / yale /
+          #                chishima / guangdong / lau / cangjie /
+          #                thai / katakana / korean. Lowercase by
+          #                convention because mapping CSV filenames
+          #                are lowercase.
+          #   • -It        Capitalised, present iff the base font is
+          #                the italic Chiron Sung. Style suffixes are
+          #                title-cased for legibility.
+          #   • -Invert    Capitalised, present iff `-v` (annotation
+          #                below base) is set. The `-f` family name
+          #                MUST include this suffix or the inverted
+          #                build collides at OS-level with its
+          #                non-inverted twin (same family + subfamily
+          #                = the OS keeps one and silently drops the
+          #                other from Font Book / Word / Pages).
+          #
+          # Output FILENAMES mirror the family name exactly (no
+          # `.invert` period separator) so the file and the font
+          # identify themselves consistently.
+          #
+          # === Inverted variants (annotation below base) ============
+          # ChironHei + LSHK (only Hei combo we ship):
+          python wing-font.py -v -y 0.3 -opt -f ChironHeiHK-Noto-lshk-B-Invert -i input_fonts/ChironHeiHK-B.ttf -a input_fonts/NotoSerif-Regular.ttf -m mappings/canto-lshk.csv -o outputs/ChironHeiHK-Noto-lshk-B-Invert -as 0.13
+          python wing-font.py -v -y 0.3 -opt -f ChironHeiHK-Noto-lshk-Invert -i input_fonts/ChironHeiHK-R.ttf -a input_fonts/NotoSerif-Regular.ttf -m mappings/canto-lshk.csv -o outputs/ChironHeiHK-Noto-lshk-Invert -as 0.13
+          # ChironSung Regular + each Cantonese romanization:
+          python wing-font.py -v -y 0.3 -opt -f ChironSungHK-Noto-lshk-Invert -i input_fonts/ChironSungHK-R.ttf -a input_fonts/NotoSerif-Regular.ttf -m mappings/canto-lshk.csv -o outputs/ChironSungHK-Noto-lshk-Invert -as 0.13
+          python wing-font.py -v -y 0.3 -opt -f ChironSungHK-Noto-yale-Invert -i input_fonts/ChironSungHK-R.ttf -a input_fonts/NotoSerif-Regular.ttf -m mappings/canto-yale.csv -o outputs/ChironSungHK-Noto-yale-Invert -as 0.13
+          python wing-font.py -v -y 0.3 -opt -f ChironSungHK-Noto-chishima-Invert -i input_fonts/ChironSungHK-R.ttf -a input_fonts/NotoSerif-Regular.ttf -m mappings/canto-chishima.csv -o outputs/ChironSungHK-Noto-chishima-Invert -as 0.13
+          python wing-font.py -v -y 0.3 -opt -f ChironSungHK-Noto-guangdong-Invert -i input_fonts/ChironSungHK-R.ttf -a input_fonts/NotoSerif-Regular.ttf -m mappings/canto-guangdong.csv -o outputs/ChironSungHK-Noto-guangdong-Invert -as 0.13
+          python wing-font.py -v -y 0.3 -opt -f ChironSungHK-Noto-lau-Invert -i input_fonts/ChironSungHK-R.ttf -a input_fonts/NotoSerif-Regular.ttf -m mappings/canto-lau.csv -o outputs/ChironSungHK-Noto-lau-Invert -as 0.13
+          python wing-font.py -v -y 0.3 -f ChironSungHK-cangjie-Invert -i input_fonts/ChironSungHK-R.ttf -a input_fonts/ChironSungHK-R.ttf -m mappings/cangjie.csv -o outputs/ChironSungHK-cangjie-Invert -as 0.25
+          # ChironSung Italic + each Cantonese romanization:
+          python wing-font.py -v -y 0.3 -opt -f ChironSungHK-Noto-lshk-It-Invert -i input_fonts/ChironSungHK-R-It.ttf -a input_fonts/NotoSerif-Regular.ttf -m mappings/canto-lshk.csv -o outputs/ChironSungHK-Noto-lshk-It-Invert -as 0.13
+          python wing-font.py -v -y 0.3 -opt -f ChironSungHK-Noto-yale-It-Invert -i input_fonts/ChironSungHK-R-It.ttf -a input_fonts/NotoSerif-Regular.ttf -m mappings/canto-yale.csv -o outputs/ChironSungHK-Noto-yale-It-Invert -as 0.13
+          python wing-font.py -v -y 0.3 -opt -f ChironSungHK-Noto-chishima-It-Invert -i input_fonts/ChironSungHK-R-It.ttf -a input_fonts/NotoSerif-Regular.ttf -m mappings/canto-chishima.csv -o outputs/ChironSungHK-Noto-chishima-It-Invert -as 0.13
+          python wing-font.py -v -y 0.3 -opt -f ChironSungHK-Noto-guangdong-It-Invert -i input_fonts/ChironSungHK-R-It.ttf -a input_fonts/NotoSerif-Regular.ttf -m mappings/canto-guangdong.csv -o outputs/ChironSungHK-Noto-guangdong-It-Invert -as 0.13
+          python wing-font.py -v -y 0.3 -opt -f ChironSungHK-Noto-lau-It-Invert -i input_fonts/ChironSungHK-R-It.ttf -a input_fonts/NotoSerif-Regular.ttf -m mappings/canto-lau.csv -o outputs/ChironSungHK-Noto-lau-It-Invert -as 0.13
+          python wing-font.py -v -y 0.3 -f ChironSungHK-cangjie-It-Invert -i input_fonts/ChironSungHK-R-It.ttf -a input_fonts/ChironSungHK-R-It.ttf -m mappings/cangjie.csv -o outputs/ChironSungHK-cangjie-It-Invert -as 0.25
+          # === Standard variants (annotation above base) ============
           python wing-font.py -opt -f ChironSungHK-Noto-lshk -i input_fonts/ChironSungHK-R.ttf -a input_fonts/NotoSerif-Regular.ttf -m mappings/canto-lshk.csv -o outputs/ChironSungHK-Noto-lshk -as 0.13
           python wing-font.py -opt -f ChironSungHK-Noto-yale -i input_fonts/ChironSungHK-R.ttf -a input_fonts/NotoSerif-Regular.ttf -m mappings/canto-yale.csv -o outputs/ChironSungHK-Noto-yale -as 0.13
           python wing-font.py -opt -f ChironSungHK-Noto-chishima -i input_fonts/ChironSungHK-R.ttf -a input_fonts/NotoSerif-Regular.ttf -m mappings/canto-chishima.csv -o outputs/ChironSungHK-Noto-chishima -as 0.13
@@ -110,6 +144,35 @@ jobs:
           python wing-font.py -opt -f ChironSungHK-Noto-guangdong-It -i input_fonts/ChironSungHK-R-It.ttf -a input_fonts/NotoSerif-Regular.ttf -m mappings/canto-guangdong.csv -o outputs/ChironSungHK-Noto-guangdong-It -as 0.13
           python wing-font.py -opt -f ChironSungHK-Noto-lau-It -i input_fonts/ChironSungHK-R-It.ttf -a input_fonts/NotoSerif-Regular.ttf -m mappings/canto-lau.csv -o outputs/ChironSungHK-Noto-lau-It -as 0.13
           python wing-font.py -f ChironSungHK-cangjie-It -i input_fonts/ChironSungHK-R-It.ttf -a input_fonts/ChironSungHK-R-It.ttf -m mappings/cangjie.csv -o outputs/ChironSungHK-cangjie-It -as 0.25
+          # === Script-specific annotation variants ==================
+          #
+          # Cantonese phonetics transliterated into Thai / Katakana /
+          # Hangul, paired with the matching annotation font. The
+          # <Anno> segment is "Google" (for Google Sans Thai),
+          # "NotoJP" (Noto Sans JP), or "NotoKR" (Noto Sans KR) —
+          # NOT "Noto-" like the Latin variants, because the
+          # annotation font is no longer NotoSerif.
+          #
+          # Annotation strings are short (1-3 visible chars + tone
+          # digit), so `-as 0.13` from the canto-lshk block reads
+          # fine. Tune individually if any script needs more room.
+          #
+          # Inverted variants — ChironSung Regular:
+          python wing-font.py -v -y 0.3 -opt -f ChironSungHK-Google-thai-Invert -i input_fonts/ChironSungHK-R.ttf -a 'input_fonts/GoogleSans-VariableFont_GRAD,opsz,wght.ttf' -m mappings/canto-thai.csv -o outputs/ChironSungHK-Google-thai-Invert -as 0.13
+          python wing-font.py -v -y 0.3 -opt -f ChironSungHK-NotoJP-katakana-Invert -i input_fonts/ChironSungHK-R.ttf -a input_fonts/NotoSansJP-VariableFont_wght.ttf -m mappings/canto-katakana.csv -o outputs/ChironSungHK-NotoJP-katakana-Invert -as 0.13
+          python wing-font.py -v -y 0.3 -opt -f ChironSungHK-NotoKR-korean-Invert -i input_fonts/ChironSungHK-R.ttf -a input_fonts/NotoSansKR-VariableFont_wght.ttf -m mappings/canto-korean.csv -o outputs/ChironSungHK-NotoKR-korean-Invert -as 0.13
+          # Inverted variants — ChironSung Italic:
+          python wing-font.py -v -y 0.3 -opt -f ChironSungHK-Google-thai-It-Invert -i input_fonts/ChironSungHK-R-It.ttf -a 'input_fonts/GoogleSans-VariableFont_GRAD,opsz,wght.ttf' -m mappings/canto-thai.csv -o outputs/ChironSungHK-Google-thai-It-Invert -as 0.13
+          python wing-font.py -v -y 0.3 -opt -f ChironSungHK-NotoJP-katakana-It-Invert -i input_fonts/ChironSungHK-R-It.ttf -a input_fonts/NotoSansJP-VariableFont_wght.ttf -m mappings/canto-katakana.csv -o outputs/ChironSungHK-NotoJP-katakana-It-Invert -as 0.13
+          python wing-font.py -v -y 0.3 -opt -f ChironSungHK-NotoKR-korean-It-Invert -i input_fonts/ChironSungHK-R-It.ttf -a input_fonts/NotoSansKR-VariableFont_wght.ttf -m mappings/canto-korean.csv -o outputs/ChironSungHK-NotoKR-korean-It-Invert -as 0.13
+          # Standard variants — ChironSung Regular:
+          python wing-font.py -opt -f ChironSungHK-Google-thai -i input_fonts/ChironSungHK-R.ttf -a 'input_fonts/GoogleSans-VariableFont_GRAD,opsz,wght.ttf' -m mappings/canto-thai.csv -o outputs/ChironSungHK-Google-thai -as 0.13
+          python wing-font.py -opt -f ChironSungHK-NotoJP-katakana -i input_fonts/ChironSungHK-R.ttf -a input_fonts/NotoSansJP-VariableFont_wght.ttf -m mappings/canto-katakana.csv -o outputs/ChironSungHK-NotoJP-katakana -as 0.13
+          python wing-font.py -opt -f ChironSungHK-NotoKR-korean -i input_fonts/ChironSungHK-R.ttf -a input_fonts/NotoSansKR-VariableFont_wght.ttf -m mappings/canto-korean.csv -o outputs/ChironSungHK-NotoKR-korean -as 0.13
+          # Standard variants — ChironSung Italic:
+          python wing-font.py -opt -f ChironSungHK-Google-thai-It -i input_fonts/ChironSungHK-R-It.ttf -a 'input_fonts/GoogleSans-VariableFont_GRAD,opsz,wght.ttf' -m mappings/canto-thai.csv -o outputs/ChironSungHK-Google-thai-It -as 0.13
+          python wing-font.py -opt -f ChironSungHK-NotoJP-katakana-It -i input_fonts/ChironSungHK-R-It.ttf -a input_fonts/NotoSansJP-VariableFont_wght.ttf -m mappings/canto-katakana.csv -o outputs/ChironSungHK-NotoJP-katakana-It -as 0.13
+          python wing-font.py -opt -f ChironSungHK-NotoKR-korean-It -i input_fonts/ChironSungHK-R-It.ttf -a input_fonts/NotoSansKR-VariableFont_wght.ttf -m mappings/canto-korean.csv -o outputs/ChironSungHK-NotoKR-korean-It -as 0.13
 
       - name: Stage font outputs for deploy
         # Collect just the .ttf/.woff files into a flat folder so the

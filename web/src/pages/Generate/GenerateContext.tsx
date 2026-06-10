@@ -68,6 +68,14 @@ interface FontSlot {
    *  axis's `default` when bytes are first loaded; user can change
    *  via the Step 1 sliders. Undefined for non-variable fonts. */
   axisLocation?: AxisLocation;
+  /**
+   * Set of Unicode codepoints this font's cmap covers. Cached here
+   * so the Step 2 coverage validator can check "does this char
+   * exist in the font?" in O(1) per check, without re-parsing the
+   * font on every mapping change. Populated alongside `axes` when
+   * bytes load; undefined when no font is loaded yet.
+   */
+  glyphCoverage?: Set<number>;
 }
 
 /**
@@ -111,6 +119,61 @@ function extractAxes(bytes: ArrayBuffer): FontAxis[] | undefined {
         max: a.maxValue,
       };
     });
+  } catch {
+    return undefined;
+  }
+}
+
+/**
+ * Build the set of Unicode codepoints supported by a font's cmap.
+ *
+ * Used by Step 2's coverage validator to flag characters in the
+ * user's mapping CSV that the selected font can't actually render.
+ * Returns undefined if parsing fails OR if no encoded codepoints
+ * could be found — callers treat that as "we don't know what's
+ * covered, skip validation" rather than blocking the user.
+ *
+ * Implementation: iterate every glyph and harvest its `.unicode`
+ * (primary codepoint) and `.unicodes` (all codepoints aliased to
+ * this glyph) properties. This is the documented opentype.js API
+ * and works uniformly across font flavours (CID-keyed CJK, regular
+ * TrueType, CFF/OTF) — unlike `font.tables.cmap.glyphIndexMap`
+ * which is an internal-detail field that doesn't always survive
+ * parsing on some CJK fonts (Chiron in particular).
+ *
+ * Performance: for a ~30k-glyph CJK font this iterates 30k objects
+ * with a Set.add per encoded codepoint. Typically completes in
+ * 30-80ms on a modern device — fine to run synchronously on
+ * font load.
+ */
+function extractGlyphCoverage(bytes: ArrayBuffer): Set<number> | undefined {
+  try {
+    const f = opentype.parse(bytes.slice(0));
+    const codepoints = new Set<number>();
+    // opentype.js Glyph type, kept loose because we only read two
+    // well-documented fields.
+    type Glyph = {
+      unicode?: number;
+      unicodes?: number[];
+    };
+    const glyphs = f.glyphs as { get?: (i: number) => Glyph | undefined };
+    for (let i = 0; i < f.numGlyphs; i++) {
+      const g = glyphs.get?.(i);
+      if (!g) continue;
+      if (typeof g.unicode === "number") {
+        codepoints.add(g.unicode);
+      }
+      if (Array.isArray(g.unicodes)) {
+        for (const cp of g.unicodes) {
+          if (typeof cp === "number") codepoints.add(cp);
+        }
+      }
+    }
+    // An "empty" coverage set is almost certainly an error (no
+    // encoded glyphs at all?); treat it the same as parse failure
+    // so the validator stays silent rather than incorrectly
+    // reporting "all characters missing".
+    return codepoints.size > 0 ? codepoints : undefined;
   } catch {
     return undefined;
   }
@@ -343,6 +406,7 @@ export const GenerateProvider = ({ children }: { children: ReactNode }) => {
       presetKey: null,
       axes,
       axisLocation: defaultAxisLocation(axes),
+      glyphCoverage: extractGlyphCoverage(bytes),
     });
   }, []);
   const setAnnoFont = useCallback((bytes: ArrayBuffer, name: string) => {
@@ -354,6 +418,7 @@ export const GenerateProvider = ({ children }: { children: ReactNode }) => {
       presetKey: null,
       axes,
       axisLocation: defaultAxisLocation(axes),
+      glyphCoverage: extractGlyphCoverage(bytes),
     });
   }, []);
 
@@ -426,6 +491,7 @@ export const GenerateProvider = ({ children }: { children: ReactNode }) => {
         presetKey: preset.key,
         axes,
         axisLocation: defaultAxisLocation(axes),
+        glyphCoverage: extractGlyphCoverage(bytes),
       });
     },
     [],

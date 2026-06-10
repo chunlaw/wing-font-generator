@@ -129,6 +129,15 @@ export type TranslationKey =
   | "step2.col.weight"
   | "step2.col.actions"
   | "step2.empty"
+  | "step2.coverage.baseOk"
+  | "step2.coverage.baseMissing"
+  | "step2.coverage.annoOk"
+  | "step2.coverage.annoMissing"
+  | "step2.coverage.show"
+  | "step2.coverage.hide"
+  | "step2.coverage.baseLabel"
+  | "step2.coverage.annoLabel"
+  | "step2.coverage.andMore"
   | "step2.confirmDelete"
   // Step 3 — parameters
   | "step3.title"
@@ -312,6 +321,17 @@ export const TRANSLATIONS: Record<Language, Record<TranslationKey, string>> = {
     "step2.col.weight": "權重",
     "step2.col.actions": "",
     "step2.empty": "尚未加載任何對應。按上方按鈕載入 CSV 或新增。",
+    "step2.coverage.baseOk": "底字字型 ✓ 已涵蓋全部 {total} 個字元",
+    "step2.coverage.baseMissing":
+      "底字字型 ⚠ 缺少 {missing}/{total} 個字元（不在字型 cmap 內）",
+    "step2.coverage.annoOk": "標注字型 ✓ 已涵蓋全部 {total} 個字元",
+    "step2.coverage.annoMissing":
+      "標注字型 ⚠ 缺少 {missing}/{total} 個字元（不在字型 cmap 內）",
+    "step2.coverage.show": "顯示缺失字元",
+    "step2.coverage.hide": "隱藏",
+    "step2.coverage.baseLabel": "底字字型缺少的字元：",
+    "step2.coverage.annoLabel": "標注字型缺少的字元：",
+    "step2.coverage.andMore": "還有 {n} 個未顯示",
     "step2.confirmDelete": "確定要刪除嗎？",
     // Step 3
     "step3.title": "步驟 3：參數設定",
@@ -332,7 +352,7 @@ export const TRANSLATIONS: Record<Language, Record<TranslationKey, string>> = {
     "step3.optimize": "壓縮輸出（移除未使用字形）",
     "step3.preview.title": "即時預覽",
     "step3.preview.description":
-      "改參數後會自動重新生成，無需手動觸發。每次約 2–4 秒。",
+      "改參數後會自動重新生成，無需手動觸發。每次約 10–20 秒，視乎字型大小與對應表規模而定。",
     "step3.preview.updating": "更新中…",
     "step3.preview.firstRun": "首次生成樣本中…",
     "step3.preview.idle": "等待生成…",
@@ -502,6 +522,18 @@ export const TRANSLATIONS: Record<Language, Record<TranslationKey, string>> = {
     "step2.col.actions": "",
     "step2.empty":
       "No mappings loaded yet. Use the buttons above to import a CSV or add a row.",
+    "step2.coverage.baseOk": "Base font ✓ all {total} characters covered",
+    "step2.coverage.baseMissing":
+      "Base font ⚠ missing {missing} of {total} characters in your mappings",
+    "step2.coverage.annoOk":
+      "Annotation font ✓ all {total} characters covered",
+    "step2.coverage.annoMissing":
+      "Annotation font ⚠ missing {missing} of {total} characters in your mappings",
+    "step2.coverage.show": "Show missing",
+    "step2.coverage.hide": "Hide",
+    "step2.coverage.baseLabel": "Missing from base font:",
+    "step2.coverage.annoLabel": "Missing from annotation font:",
+    "step2.coverage.andMore": "and {n} more",
     "step2.confirmDelete": "Delete this row?",
     // Step 3
     "step3.title": "Step 3: Parameters",
@@ -523,7 +555,7 @@ export const TRANSLATIONS: Record<Language, Record<TranslationKey, string>> = {
     "step3.optimize": "Subset (drop unused glyphs)",
     "step3.preview.title": "Live preview",
     "step3.preview.description":
-      "Re-renders automatically whenever you change a parameter — no need to trigger it manually. Each run takes about 2–4 seconds.",
+      "Re-renders automatically whenever you change a parameter — no need to trigger it manually. Each run takes about 10–20 seconds, depending on font size and mapping length.",
     "step3.preview.updating": "Updating…",
     "step3.preview.firstRun": "Rendering the first sample…",
     "step3.preview.idle": "Waiting to render…",

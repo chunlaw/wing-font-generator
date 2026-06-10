@@ -291,24 +291,48 @@ def generate(
     # versions. We compare by content hash, not object identity, so
     # the JS side doesn't need to track which buffer was sent — it
     # just sets the flag and we figure it out from the bytes.
-    if use_trim_cache and _preview_trim_cache is not None:
-        c_base, c_anno, _c_chars, t_base_bytes, t_anno_bytes = _preview_trim_cache
-        if (
-            _hash_bytes(base_font_bytes) == c_base
-            and _hash_bytes(anno_font_bytes) == c_anno
-        ):
+    #
+    # The cache-decision log line (hit OR miss) is intentionally
+    # emitted on every call when use_trim_cache=True. Previously
+    # only the hit case was logged; that made cache misses
+    # invisible to debugging — "why is my preview slow?" had no
+    # observable answer. Now the preview status panel in Step 3
+    # always shows one of these two lines, which is the cheapest
+    # way to tell at a glance whether the optimisation is firing.
+    if use_trim_cache:
+        if _preview_trim_cache is None:
             _emit(
                 progress_cb,
-                f"Using pre-trimmed fonts "
-                f"({len(t_base_bytes) // 1024} KB + "
-                f"{len(t_anno_bytes) // 1024} KB)",
+                "Pre-trim cache cold — running on full font",
             )
-            base_font_bytes = t_base_bytes
-            anno_font_bytes = t_anno_bytes
-        # Cache miss is silent — the run continues with the original
-        # bytes, just slower. The JS side is responsible for calling
-        # prepare_preview_fonts() before previews if it wants fast
-        # ones.
+        else:
+            c_base, c_anno, _c_chars, t_base_bytes, t_anno_bytes = _preview_trim_cache
+            input_base_hash = _hash_bytes(base_font_bytes)
+            input_anno_hash = _hash_bytes(anno_font_bytes)
+            if input_base_hash == c_base and input_anno_hash == c_anno:
+                _emit(
+                    progress_cb,
+                    f"Using pre-trimmed fonts "
+                    f"({len(t_base_bytes) // 1024} KB + "
+                    f"{len(t_anno_bytes) // 1024} KB)",
+                )
+                base_font_bytes = t_base_bytes
+                anno_font_bytes = t_anno_bytes
+            else:
+                # Cache exists but for a different font pair. This is
+                # the most common silent-failure mode: prepare ran
+                # with one set of bytes (e.g. the bundled preset) and
+                # generate is now called with subtly different bytes
+                # (e.g. user re-uploaded the same file, producing a
+                # fresh ArrayBuffer with identical content but —
+                # somehow — a different hash). Surface both hashes so
+                # we can debug.
+                _emit(
+                    progress_cb,
+                    f"Pre-trim cache MISS — input hashes "
+                    f"{input_base_hash[:8]}/{input_anno_hash[:8]} "
+                    f"vs cached {c_base[:8]}/{c_anno[:8]}",
+                )
 
     work_dir = "/tmp/wingfont_run"
     os.makedirs(work_dir, exist_ok=True)
