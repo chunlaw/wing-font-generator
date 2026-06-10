@@ -48,9 +48,23 @@ interface PyodideModule {
   loadPyodide: (opts: { indexURL: string }) => Promise<PyodideAPI>;
 }
 
-// Keep the Pyodide version pinned. Bumping it can require code changes —
-// Pyodide's package list and python-version shift between releases.
-const PYODIDE_VERSION = "0.27.2";
+// Pin the Pyodide version explicitly. Bumping it can require code changes
+// — Pyodide's package list and CPython version shift between releases. To
+// rebump in future:
+//   1) Change this string.
+//   2) Verify the new release ships the packages we loadPackage() below
+//      (currently fontTools + brotli). Check the matching pyodide-lock.json
+//      at the same CDN path.
+//   3) If we ever start pulling third-party wheels (e.g. uharfbuzz) via
+//      micropip.install(<url>), the wheel filename's `cpXYZ` and
+//      `pyodide_YYYY_N` ABI tags must match this Pyodide release.
+//   4) Smoke-test the full Cantonese pipeline before merging.
+//
+// 0.29.4 (current stable as of June 2026) was picked when we needed
+// uharfbuzz support, because uharfbuzz's prebuilt Pyodide wheels target
+// recent Pyodide ABIs. Bumping from 0.27.2 in one shot avoids hunting
+// for an older uharfbuzz wheel that matched the old ABI.
+const PYODIDE_VERSION = "0.29.4";
 const PYODIDE_INDEX = `https://cdn.jsdelivr.net/pyodide/v${PYODIDE_VERSION}/full/`;
 // We load the ES-module build (pyodide.mjs) via dynamic import() rather
 // than the legacy classic-script build (pyodide.js) via importScripts().
