@@ -226,6 +226,48 @@ const Step3Parameters = () => {
               label={t("step3.optimize")}
             />
           </Stack>
+
+          {/*
+            Advanced section — currently just the trigger-character
+            override. Visually separated by a Divider + small section
+            label so users glancing at Step 3 immediately understand
+            that everything ABOVE is day-to-day visual params, and
+            everything BELOW is opt-in customisation they probably
+            don't need to touch.
+
+            Trigger-character TextField:
+            - `maxLength: 2` on the input limits typing to 2 UTF-16
+              code units (exactly one BMP char or one surrogate pair).
+            - `onChange` normalises via `[...v][0]` (spread-iterator
+              grapheme split) so any multi-codepoint paste collapses
+              to the first codepoint silently — matches how the Python
+              pipeline reads the value via cmap lookup.
+            - Empty string is allowed and flips the helperText to
+              explain the trigger+numeral path is now disabled (the
+              universal digit-suffix path still works).
+            - Width capped at 220px — a single-character input field
+              at fullWidth looks absurd.
+          */}
+          <Divider flexItem sx={{ mt: 1 }} />
+          <Typography variant="overline" color="text.secondary" sx={{ mt: -1 }}>
+            {t("step3.advancedSectionLabel")}
+          </Typography>
+          <TextField
+            label={t("step3.triggerChar.label")}
+            helperText={
+              params.triggerChar === ""
+                ? t("step3.triggerChar.hintDisabled")
+                : t("step3.triggerChar.hint")
+            }
+            value={params.triggerChar}
+            onChange={(e) => {
+              const v = e.target.value;
+              const normalised = v === "" ? "" : ([...v][0] ?? "");
+              setParam("triggerChar", normalised);
+            }}
+            slotProps={{ htmlInput: { maxLength: 2 } }}
+            sx={{ maxWidth: 220 }}
+          />
         </Box>
 
         {/* ---- Preview column (left on desktop, bottom on mobile) --- */}

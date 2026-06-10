@@ -544,6 +544,10 @@ export const GenerateProvider = ({ children }: { children: ReactNode }) => {
     invert: false,
     optimize: true,
     familyName: "MyWingFont",
+    // `丅` (U+4E05) is the historical default — a rare Han character
+    // that won't collide with normal text. Users can change this in
+    // Step 3 if they prefer something easier to type with their IME.
+    triggerChar: "丅",
   });
   const setParam = useCallback<GenerateContextValue["setParam"]>(
     (key, value) => setParams((p) => ({ ...p, [key]: value })),
@@ -627,6 +631,7 @@ export const GenerateProvider = ({ children }: { children: ReactNode }) => {
         optimize: params.optimize,
         baseAxisLocation: baseFont.axisLocation,
         annoAxisLocation: annoFont.axisLocation,
+        triggerChar: params.triggerChar,
         onProgress: (msg) => {
           // Parse step boundaries to drive the determinate progress
           // bar. "Processing X..." marks a step start; "Processing X...
@@ -846,6 +851,9 @@ export const GenerateProvider = ({ children }: { children: ReactNode }) => {
         invert: ps.invert,
         baseAxisLocation: bf.axisLocation,
         annoAxisLocation: af.axisLocation,
+        // Match the user's chosen trigger char so the preview's liga
+        // rules use the same separator the real generate would.
+        triggerChar: ps.triggerChar,
         // Subsetting on a single-mapping run has nothing to drop, so
         // it costs the same regardless. Honour the user's choice for
         // consistency with the full run they'll trigger later.

@@ -3,7 +3,7 @@
 from fontTools.ttLib import TTFont
 from mappings.csv_parser import load_mapping
 from chain_context_handler import buildChainSub
-from liga_handler import buildLiga
+from liga_handler import buildLiga, DEFAULT_TRIGGER_CHAR
 from build_glyph import generate_annotated_glyphs, scale_glyphs
 import sys
 import argparse
@@ -50,6 +50,18 @@ def main(
     skip_woff=False,
     base_axis_location=None,
     anno_axis_location=None,
+    # --- Override-trigger character ---
+    #
+    # Controls the character that goes between a base char and a
+    # Chinese numeral when the user wants to manually select a
+    # variant via the IME-friendly path (e.g. `行<trigger>一` →
+    # variant 1 of 行). Default `丅` (U+4E05) is a deliberately-rare
+    # Han character that won't collide with normal text; users can
+    # override to something easier to type with their IME (e.g.
+    # `々`, `〇`). Empty string disables the trigger+numeral path
+    # entirely while leaving the universal digit-suffix path
+    # (`行1`, `行2`, …) intact.
+    trigger_char=DEFAULT_TRIGGER_CHAR,
 ):
     # Load the fonts and mapping.
     base_font = TTFont(base_font_file)
@@ -143,7 +155,7 @@ def main(
 
     # --- Phase 2: build GSUB rules ---------------------------------------
     buildChainSub(output_font, word_mapping, char_mapping)
-    buildLiga(output_font, char_mapping)
+    buildLiga(output_font, char_mapping, trigger_char=trigger_char)
 
     # --- Phase 3: subset + scale (the perf-critical reordering) ----------
     #
@@ -253,6 +265,17 @@ if __name__ == "__main__":
     parser.add_argument('-as', '--anno-scale', type=float, default=0.15, help="The scaling factor for the base font")
     parser.add_argument('-v', '--invert', action='store_true', help='Invert the annotation and base glyph')
     parser.add_argument('-opt', '--optimize', action="store_true", help="Optimizing size by subsetting annotated glyph only")
+    parser.add_argument(
+        '--trigger-char',
+        default=DEFAULT_TRIGGER_CHAR,
+        help=(
+            "Override-trigger character for the IME-friendly variant "
+            "path: `<base><trigger><numeral>` → variant N. Default "
+            f"`{DEFAULT_TRIGGER_CHAR}` (U+4E05). Pass an empty string "
+            "to disable the trigger+numeral path while keeping "
+            "the digit-suffix path (`<base><1-9>`)."
+        ),
+    )
     try:
         options = parser.parse_args()
     except:
@@ -268,5 +291,6 @@ if __name__ == "__main__":
         anno_scale=options.anno_scale,
         upper_y_offset_ratio=options.upper_y_offset_ratio,
         invert=options.invert,
-        optimize=options.optimize
+        optimize=options.optimize,
+        trigger_char=options.trigger_char,
     )

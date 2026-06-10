@@ -243,6 +243,11 @@ def generate(
     use_trim_cache: bool = False,
     base_axis_location: dict | None = None,
     anno_axis_location: dict | None = None,
+    # Override-trigger character for the IME-friendly variant
+    # selection path. Forwarded to wingfont_main.main() which
+    # forwards it to liga_handler.buildLiga(). Default `丅` (U+4E05);
+    # empty string disables the trigger+numeral path entirely.
+    trigger_char: str = "丅",
     progress_cb=None,
 ):
     """
@@ -382,6 +387,7 @@ def generate(
                 upper_y_offset_ratio=upper_y_offset_ratio,
                 invert=invert,
                 optimize=optimize,
+                trigger_char=trigger_char,
                 # WOFF is generated in JS via CompressionStream — much
                 # faster than Pyodide doing it via wasm-compiled zlib.
                 skip_woff=True,

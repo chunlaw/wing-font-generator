@@ -242,6 +242,14 @@ interface GeneratePayload {
    * and full-font subset on the original 10-20 MB CJK file.
    */
   useTrimCache?: boolean;
+  /**
+   * Override-trigger character for the IME-friendly variant path
+   * (`<base><trigger><numeral>` → variant N). Forwarded to the
+   * Python runner as `trigger_char`. Default `丅` (U+4E05); empty
+   * string disables the trigger+numeral path while keeping the
+   * digit-suffix path (`<base><1-9>`) intact.
+   */
+  triggerChar?: string;
 }
 
 interface PrepareTrimPayload {
@@ -277,6 +285,7 @@ async function handleGenerate(id: string, payload: GeneratePayload): Promise<voi
     use_trim_cache: payload.useTrimCache ?? false,
     base_axis_location: payload.baseAxisLocation ?? null,
     anno_axis_location: payload.annoAxisLocation ?? null,
+    trigger_char: payload.triggerChar ?? "丅",
   };
   pyodide.globals.set("_params", pyodide.toPy(params));
 

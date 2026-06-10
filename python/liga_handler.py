@@ -18,9 +18,13 @@ from fontTools.otlLib.builder import LigatureSubstBuilder
 from utils import get_glyph_name_by_char, register_feature_lookup, step_timer
 
 # Chinese numeral fallback. When typing Latin digits is inconvenient, the
-# user can type 字 + 丅 + 一/二/三/... to pick a variant.
+# user can type 字 + <trigger> + 一/二/三/... to pick a variant. The
+# trigger character is configurable via the `trigger_char` param to
+# buildLiga(); the default `丅` is a deliberately-rare Han character so
+# it doesn't collide with normal text, but users can override to
+# something easier-to-type with their IME (e.g. `々`, `〇`, `〃`).
 _CHINESE_NUMERALS = ("零", "一", "二", "三", "四", "五", "六", "七", "八", "九")
-_TRIGGER_CHAR = "丅"
+DEFAULT_TRIGGER_CHAR = "丅"
 
 # OpenType Ligature Substitution (GSUB4) uses uint16 offsets within each
 # subtable. A subtable with thousands of ligatures will overflow that
@@ -37,7 +41,10 @@ _LIGATURES_PER_SUBTABLE = 1000
 
 
 def buildLiga(
-    output_font, char_mapping: Dict[str, Dict[str, Tuple[str, int]]]
+    output_font,
+    char_mapping: Dict[str, Dict[str, Tuple[str, int]]],
+    *,
+    trigger_char: str = DEFAULT_TRIGGER_CHAR,
 ) -> None:
     """
     Build the `liga` lookup with per-character variant-selection rules.
@@ -45,17 +52,31 @@ def buildLiga(
     For each character with N annotations the builder emits:
       - ``(any-variant, '0')   -> default glyph``
       - ``(any-variant, 'i')   -> variant-i glyph`` for i in 1..N-1
-      - ``(any-variant, 丅, 零/一/二/...) -> default/variant-i`` as fallback
+      - ``(any-variant, <trigger>, 零/一/二/...) -> default/variant-i`` as fallback
 
     Args:
         output_font: TTFont being mutated.
         char_mapping: ``char -> {annotation_str: (glyph_name, variant_index)}``.
+        trigger_char: The single-character separator for the IME-friendly
+            variant override (e.g. ``行<trigger>一`` to select variant 1).
+            Defaults to ``丅`` (U+4E05). Pass ``""`` to disable the
+            trigger+numeral path entirely (only the digit-suffix path will
+            be emitted). The character MUST exist in the font's cmap, MUST
+            be a single codepoint, and SHOULD NOT appear in the user's
+            mapping (it'd collide with an annotated character).
     """
     with step_timer("ligature substitution") as timer:
         gsub = output_font["GSUB"].table
 
         digit_glyphs = _resolve_digits(output_font)
-        trigger_glyph = get_glyph_name_by_char(output_font, _TRIGGER_CHAR)
+        # Empty trigger_char disables the trigger+numeral path. We still
+        # honour the digit-suffix rules in that case so the user can
+        # always override via the universal Latin-digit path.
+        trigger_glyph = (
+            get_glyph_name_by_char(output_font, trigger_char)
+            if trigger_char
+            else None
+        )
         numeral_glyphs = _resolve_chinese_numerals(output_font)
 
         if not digit_glyphs and not (trigger_glyph and numeral_glyphs):

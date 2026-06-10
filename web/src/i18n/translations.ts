@@ -135,6 +135,10 @@ export type TranslationKey =
   | "step3.description"
   | "step3.family"
   | "step3.familyHint"
+  | "step3.advancedSectionLabel"
+  | "step3.triggerChar.label"
+  | "step3.triggerChar.hint"
+  | "step3.triggerChar.hintDisabled"
   | "step3.baseScale"
   | "step3.annoScale"
   | "step3.annoSpacing"
@@ -167,7 +171,15 @@ export type TranslationKey =
   | "step5.noResult"
   | "step5.sampleText"
   | "step5.download.ttf"
-  | "step5.download.woff";
+  | "step5.download.woff"
+  | "step5.cssSnippet.title"
+  | "step5.cssSnippet.button"
+  | "step5.cssSnippet.copy"
+  | "step5.cssSnippet.copied"
+  | "step5.cssSnippet.hint"
+  | "step5.cssSnippet.close"
+  | "step5.cssSnippet.designAppTitle"
+  | "step5.cssSnippet.designAppHint";
 
 export const TRANSLATIONS: Record<Language, Record<TranslationKey, string>> = {
   zh: {
@@ -306,6 +318,12 @@ export const TRANSLATIONS: Record<Language, Record<TranslationKey, string>> = {
     "step3.description": "微調字形位置、大小與輸出選項。",
     "step3.family": "字體名稱",
     "step3.familyHint": "會寫入字型的 name 表",
+    "step3.advancedSectionLabel": "進階",
+    "step3.triggerChar.label": "標注切換字元",
+    "step3.triggerChar.hint":
+      "用「字 + 此字元 + 一/二/…」手動切換多音字標注。預設「丅」（U+4E05）較為罕用、不易與正文衝突；可改成你的輸入法容易打到的字（如「々」「〇」）。",
+    "step3.triggerChar.hintDisabled":
+      "已停用「丅 + 中文數字」標注路徑；只能透過「字 + 0/1/2/…」的數字後綴方式手動切換多音字。",
     "step3.baseScale": "底字縮放比",
     "step3.annoScale": "標注縮放比",
     "step3.annoSpacing": "標注字距（em 比例，正值放寬、負值收緊）",
@@ -341,6 +359,16 @@ export const TRANSLATIONS: Record<Language, Record<TranslationKey, string>> = {
     "step5.sampleText": "你好世界 — 試試輸入「銀行」、「行家」、「行1」、「畫畫」",
     "step5.download.ttf": "下載 TTF",
     "step5.download.woff": "下載 WOFF",
+    "step5.cssSnippet.title": "在 CSS 中使用",
+    "step5.cssSnippet.button": "嵌入網站",
+    "step5.cssSnippet.copy": "複製程式碼",
+    "step5.cssSnippet.copied": "已複製",
+    "step5.cssSnippet.hint":
+      "將下載的 .woff 與 .ttf 放在與 CSS 同目錄；若放在其他位置，請相應更新 url() 內的路徑。",
+    "step5.cssSnippet.close": "關閉",
+    "step5.cssSnippet.designAppTitle": "於設計工具中使用",
+    "step5.cssSnippet.designAppHint":
+      "在 Canva、InDesign、Word 等工具，需在文字設定開啟「連字（Ligatures）」選項，數字標注（如「字1」、「字丅一」）才會生效。詞語對應（如「銀行」、「行人」）則無需任何設定即可自動運作。",
   },
   en: {
     // Header
@@ -481,6 +509,12 @@ export const TRANSLATIONS: Record<Language, Record<TranslationKey, string>> = {
       "Tune glyph sizes, vertical position, and output options.",
     "step3.family": "Family name",
     "step3.familyHint": "Written into the font's name table",
+    "step3.advancedSectionLabel": "Advanced",
+    "step3.triggerChar.label": "Variant trigger character",
+    "step3.triggerChar.hint":
+      "Types as `<char><trigger><numeral>` (e.g. 行 + trigger + 一) to manually pick a variant. Default `丅` (U+4E05) is deliberately rare so it doesn't collide with normal text — replace it with whatever your IME can produce easily (e.g. `々`, `〇`).",
+    "step3.triggerChar.hintDisabled":
+      "Trigger+numeral override is disabled. Users can still pick variants with the universal digit-suffix path (`<char><1-9>`).",
     "step3.baseScale": "Base glyph scale",
     "step3.annoScale": "Annotation scale",
     "step3.annoSpacing": "Annotation letter-spacing (em — positive loosens, negative tightens)",
@@ -519,5 +553,15 @@ export const TRANSLATIONS: Record<Language, Record<TranslationKey, string>> = {
       "Hello world — try typing 銀行, 行家, 行1, or 畫畫",
     "step5.download.ttf": "Download TTF",
     "step5.download.woff": "Download WOFF",
+    "step5.cssSnippet.title": "Use in your stylesheet",
+    "step5.cssSnippet.button": "Embed in website",
+    "step5.cssSnippet.copy": "Copy snippet",
+    "step5.cssSnippet.copied": "Copied",
+    "step5.cssSnippet.hint":
+      "Save the downloaded .woff and .ttf to the same folder as your stylesheet, or update the url() paths to point at wherever you host them.",
+    "step5.cssSnippet.close": "Close",
+    "step5.cssSnippet.designAppTitle": "Using it in a design app",
+    "step5.cssSnippet.designAppHint":
+      "In Canva, InDesign, Word, and similar tools, enable the \"Ligatures\" option in the text settings so the digit-override feature (e.g. 字1, 字丅一) fires. Word-context disambiguation (e.g. 銀行, 行人) works automatically without any setting.",
   },
 };

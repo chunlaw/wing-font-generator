@@ -51,6 +51,17 @@ export interface GenerateParams {
   invert: boolean;
   optimize: boolean;
   familyName: string;
+  /**
+   * Single character that goes between a base char and a Chinese
+   * numeral when the user wants to manually pick a variant via the
+   * IME-friendly path (e.g. `行<trigger>一` → variant 1 of 行).
+   * Default `丅` (U+4E05). An empty string disables the
+   * trigger+numeral path entirely while keeping the digit-suffix
+   * path (`行1`, `行2`, …) intact. Validation happens at the UI
+   * layer: must be a single codepoint, ideally not a character the
+   * user's mapping annotates.
+   */
+  triggerChar: string;
 }
 
 /** Successful generation result; null until the user clicks Generate. */

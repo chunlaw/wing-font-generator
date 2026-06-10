@@ -45,6 +45,13 @@ export interface GenerateParams {
    * the runner when the cache is cold or doesn't match the bytes.
    */
   useTrimCache?: boolean;
+  /**
+   * Override-trigger character for the IME-friendly variant path
+   * (`<base><trigger><numeral>` → variant N). Default `丅` (U+4E05);
+   * empty string disables the trigger+numeral path while keeping the
+   * universal digit-suffix path (`<base><1-9>`) intact.
+   */
+  triggerChar?: string;
   onProgress?: (message: string) => void;
 }
 
@@ -239,6 +246,7 @@ export async function generateFont(params: GenerateParams): Promise<GenerateResu
           useTrimCache: params.useTrimCache,
           baseAxisLocation: params.baseAxisLocation,
           annoAxisLocation: params.annoAxisLocation,
+          triggerChar: params.triggerChar,
         },
       },
       transfer,

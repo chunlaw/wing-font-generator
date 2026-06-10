@@ -6,7 +6,23 @@
  * textbox just needs to apply the family name and let the browser do
  * the shaping.
  */
-import { Alert, Box, Button, Paper, Stack, TextField, Typography } from "@mui/material";
+import {
+  Alert,
+  Box,
+  Button,
+  Dialog,
+  DialogActions,
+  DialogContent,
+  DialogTitle,
+  Divider,
+  IconButton,
+  Paper,
+  Stack,
+  TextField,
+  Tooltip,
+  Typography,
+} from "@mui/material";
+import { Code, ContentCopy } from "@mui/icons-material";
 import { Fragment, ReactNode, useEffect, useState } from "react";
 import { useGenerate } from "../GenerateContext";
 import { useTranslation } from "../../../i18n/LanguageContext";
@@ -64,6 +80,8 @@ const Step5Preview = () => {
   const [sample, setSample] = useState<string>(() => t("step5.sampleText"));
   const [ttfUrl, setTtfUrl] = useState<string | null>(null);
   const [woffUrl, setWoffUrl] = useState<string | null>(null);
+  const [snippetCopied, setSnippetCopied] = useState(false);
+  const [snippetDialogOpen, setSnippetDialogOpen] = useState(false);
 
   // Refresh sample text when language changes so the prompt is in the
   // active locale. Without this it'd freeze to whatever locale was
@@ -102,6 +120,39 @@ const Step5Preview = () => {
 
   const baseName = (params.familyName || "wingfont").replace(/\s+/g, "-");
 
+  // Resolve the family name once for both the @font-face declaration and
+  // the usage example. Falls back to the file basename if the user blanked
+  // the field — that's what the worker would default to too.
+  const cssFamilyName = params.familyName || "wingfont";
+  // Build a multi-source @font-face. Order matters: browsers walk the src
+  // list and pick the first format they support, so WOFF goes before TTF
+  // — modern browsers grab the smaller WOFF, older fallbacks land on TTF.
+  // `font-display: swap` prevents the FOIT (flash-of-invisible-text)
+  // gap while the font streams.
+  const cssSnippet = [
+    `@font-face {`,
+    `  font-family: '${cssFamilyName}';`,
+    `  src: url('${baseName}.woff') format('woff'),`,
+    `       url('${baseName}.ttf') format('truetype');`,
+    `  font-display: swap;`,
+    `}`,
+    ``,
+    `.your-class {`,
+    `  font-family: '${cssFamilyName}', sans-serif;`,
+    `}`,
+  ].join("\n");
+
+  const copySnippet = async () => {
+    try {
+      await navigator.clipboard.writeText(cssSnippet);
+      setSnippetCopied(true);
+      setTimeout(() => setSnippetCopied(false), 1500);
+    } catch {
+      // Clipboard API can fail in non-secure contexts (rare). The user
+      // can still select-and-copy manually, so it's not worth surfacing.
+    }
+  };
+
   return (
     <Box display="flex" flexDirection="column" gap={2}>
       <Box>
@@ -132,7 +183,124 @@ const Step5Preview = () => {
             {t("step5.download.woff")}
           </Button>
         )}
+        {/*
+          "How to embed" — opens a Dialog with the @font-face snippet
+          + copy button. Text-variant so it visually de-emphasises
+          itself against the primary/outlined download buttons: this
+          is a help affordance, not a primary action. Sits in the
+          same Stack so it wraps cleanly on narrow viewports.
+        */}
+        <Button
+          variant="text"
+          color="primary"
+          startIcon={<Code />}
+          onClick={() => setSnippetDialogOpen(true)}
+        >
+          {t("step5.cssSnippet.button")}
+        </Button>
       </Stack>
+
+      {/*
+        CSS snippet Dialog. Opt-in: zero vertical space when closed,
+        a focused modal when the user wants the embed code. Width
+        capped at sm so the snippet doesn't sprawl on wide screens
+        but the code block can still scroll horizontally if a very
+        long family name overflows.
+      */}
+      <Dialog
+        open={snippetDialogOpen}
+        onClose={() => setSnippetDialogOpen(false)}
+        fullWidth
+        maxWidth="sm"
+      >
+        <DialogTitle
+          sx={{
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "space-between",
+            pr: 1,
+          }}
+        >
+          {t("step5.cssSnippet.title")}
+          <Tooltip
+            title={
+              snippetCopied
+                ? t("step5.cssSnippet.copied")
+                : t("step5.cssSnippet.copy")
+            }
+            arrow
+          >
+            <IconButton size="small" onClick={copySnippet}>
+              <ContentCopy fontSize="small" />
+            </IconButton>
+          </Tooltip>
+        </DialogTitle>
+        <DialogContent dividers>
+          <Box
+            component="pre"
+            // `pre` so newlines + leading spaces survive; `overflowX: auto`
+            // so a long family name scrolls inside the block rather than
+            // forcing the dialog wider. Monospace + action.hover gives the
+            // "this is code, you can copy it" affordance without a
+            // syntax-highlighter dependency.
+            sx={{
+              m: 0,
+              p: { xs: 1, sm: 1.5 },
+              bgcolor: "action.hover",
+              borderRadius: 1,
+              fontFamily: "ui-monospace, SFMono-Regular, Menlo, monospace",
+              fontSize: { xs: 12, sm: 13 },
+              lineHeight: 1.5,
+              whiteSpace: "pre",
+              overflowX: "auto",
+              color: "text.primary",
+            }}
+          >
+            {cssSnippet}
+          </Box>
+          <Typography
+            variant="caption"
+            color="text.secondary"
+            sx={{ display: "block", mt: 1.5 }}
+          >
+            {t("step5.cssSnippet.hint")}
+          </Typography>
+          {/*
+            Design-app note. Distinct from the CSS hint above because
+            it applies to a totally different deployment surface
+            (Canva, InDesign, Word, etc. — where the font is uploaded
+            as a desktop font, not @font-face'd). Surfaced here
+            because Step 5 is the moment users decide what to do with
+            the file they just downloaded; both CSS and design-app
+            usage start from the same TTF/WOFF.
+
+            The note exists because design tools default the
+            "Ligatures" toggle OFF and our digit-trigger / 丅+numeral
+            overrides ride on liga. Without enabling it the user sees
+            字1 render as "字 then 1" rather than the variant glyph —
+            looks like a bug but is just a one-time setting flip.
+          */}
+          <Divider sx={{ my: 2 }} />
+          <Typography
+            variant="subtitle2"
+            sx={{ display: "block", mb: 0.5 }}
+          >
+            {t("step5.cssSnippet.designAppTitle")}
+          </Typography>
+          <Typography
+            variant="caption"
+            color="text.secondary"
+            sx={{ display: "block" }}
+          >
+            {t("step5.cssSnippet.designAppHint")}
+          </Typography>
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={() => setSnippetDialogOpen(false)}>
+            {t("step5.cssSnippet.close")}
+          </Button>
+        </DialogActions>
+      </Dialog>
 
       <TextField
         fullWidth
