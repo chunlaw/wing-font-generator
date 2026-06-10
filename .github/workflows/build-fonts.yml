@@ -10,22 +10,31 @@ name: Fonts Generation
 # /assets/, /favicon.ico, etc. This workflow writes to gh-pages /fonts/
 # only (via `target-folder: fonts`). Different paths, no collision.
 #
-# An earlier version had both writers cleaning the entire branch on each
-# push, which led to whichever wrote last clobbering the other. Two
-# mitigations are now in place:
+# Both writers force-push a SINGLE COMMIT per deploy so the gh-pages
+# branch tree stays at "current snapshot" size — no history accumulation,
+# no stale-hashed-asset bloat, fast checkout for GitHub's auto
+# pages-build-deployment workflow:
 #
-#   1. JamesIves' deploy action's `clean: true` here only cleans the
-#      target-folder (`fonts/`), not the whole branch. The React app at
-#      the root is unaffected.
-#   2. `yarn deploy` runs `gh-pages -d dist --add`, which means it adds
-#      and updates files but never removes the /fonts/ subfolder this
-#      workflow just placed.
+#   * `single-commit: true` here resets gh-pages history to one commit
+#     containing the current state after JamesIves cleans+copies /fonts/.
+#   * `yarn deploy` runs `gh-pages --no-history --remove '{assets,wingfont}/**'`
+#     which does the equivalent on the web side: clean replace of the two
+#     subdirs the React build owns, leave /fonts/ alone, force-push one
+#     commit.
+#
+# Coexistence safety:
+#   * `clean: true` here is scoped to `target-folder` (`fonts/`), so this
+#     workflow never touches the React app at the root.
+#   * `yarn deploy`'s `--remove "{assets,wingfont}/**"` (not the default
+#     `--remove '.'`) means it never wipes /fonts/.
 #
 # The remaining race window — both workflows pushing within the same
 # few seconds — is mitigated by the `concurrency` group below
 # (serialises CI pushes) and by the actions retrying on
 # non-fast-forward. In practice manual yarn deploys and CI auto-runs
-# don't usually collide.
+# don't usually collide. With single-commit on both sides, the retry
+# logic re-fetches the latest state before the force-push, so the worst
+# case is "second push waits briefly and tries again".
 
 on:
   push:
@@ -140,8 +149,11 @@ jobs:
           # cleanly). The React app at the root is safe.
           clean: true
           commit-message: "fonts: update from ${{ github.sha }}"
-          # Use force-with-lease so we don't clobber a concurrent
-          # push from `yarn deploy` — if the remote moved while we
-          # were uploading, the action retries with the latest state.
-          force: false
-          single-commit: false
+          # `single-commit: true` rewrites gh-pages history to one
+          # commit per deploy, containing the resulting tree (web app
+          # at root + new fonts at /fonts/). Branch size = current
+          # snapshot, forever — see the comment block at the top of
+          # this file for why we converged on this. force-push is
+          # implicit with single-commit (you can't rewrite history
+          # without it); the action retries on non-fast-forward.
+          single-commit: true

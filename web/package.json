@@ -10,8 +10,11 @@
     "lint": "eslint . --ext ts,tsx --report-unused-disable-directives --max-warnings 0",
     "preview": "vite preview",
     "predeploy": "yarn build",
-    "//deploy": "Publishes the React app to the ROOT of gh-pages. The `--add` flag means we only add/update files and never remove anything we didn't touch — critical because the build-fonts.yml CI workflow publishes fonts under /fonts/ on the same branch. Without --add, every deploy would wipe the /fonts/ subfolder right after CI populated it. The `--dotfiles` flag is required so `.nojekyll` (which lives in public/ and is copied to dist/.nojekyll by Vite) actually ships to gh-pages — without it, GitHub Pages runs Jekyll, which silently strips every file starting with `_` from the served site, including the Python package init files (`__init__.py`) that the Pyodide worker fetches at runtime.",
-    "deploy": "gh-pages -d dist --add --dotfiles"
+    "//deploy.intent": "Publish the React app to the ROOT of gh-pages, leaving /fonts/ (owned by .github/workflows/build-fonts.yml) untouched, and keep the branch lean by force-pushing a single commit per deploy.",
+    "//deploy.no-history": "`--no-history` force-pushes one commit per deploy. The previous setup accumulated months of hashed Vite bundles (assets/index-XXXX.js, etc.) because the old `--add` flag preserved everything, including stale builds — gh-pages branch grew to >500 files and the auto pages-build-deployment workflow took several minutes just to checkout. Single-commit history keeps the branch tree size = current snapshot, forever.",
+    "//deploy.remove": "`--remove '{assets,wingfont}/**'` is what replaces `--add`. The default gh-pages CLI behavior with no `--add` is `--remove '.'` (wipe the whole branch), which would clobber the /fonts/ that build-fonts.yml just deployed. By overriding `--remove` to ONLY the two subdirs we actually own (assets/ for Vite's hashed bundles, wingfont/ for the Python sources mirror copied by sync-python.mjs), we get a clean replace of web-owned content while /fonts/ survives untouched. Root-level files (index.html, .nojekyll, CNAME, vite.svg, favicon.ico) have stable filenames and are simply overwritten by the copy step.",
+    "//deploy.dotfiles": "`--dotfiles` is still required so `.nojekyll` (which lives in public/ and is copied to dist/.nojekyll by Vite) actually ships to gh-pages — without it, GitHub Pages runs Jekyll, which silently strips every file starting with `_` from the served site, including the Python package init files (`__init__.py`) that the Pyodide worker fetches at runtime.",
+    "deploy": "gh-pages -d dist --no-history --dotfiles --remove \"{assets,wingfont}/**\""
   },
   "dependencies": {
     "@emotion/react": "^11.11.4",
