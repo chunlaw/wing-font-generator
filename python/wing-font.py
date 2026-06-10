@@ -49,10 +49,18 @@ def main(
     optimize=False,
     skip_woff=False,
 ):
-    # Load the fonts and mapping
+    # Load the fonts and mapping.
     base_font = TTFont(base_font_file)
     anno_font = TTFont(anno_font_file)
     output_font = TTFont(base_font_file)
+    # Keep the raw annotation-font bytes so we can hand them to
+    # HarfBuzz inside generate_annotated_glyphs. HarfBuzz needs the
+    # original file blob (it builds its own font object via
+    # hb.Face(blob)); we can't reconstruct an equivalent blob from
+    # the fontTools TTFont without re-serialising, which would be
+    # wasteful for every glyph composition.
+    with open(anno_font_file, "rb") as _f:
+        anno_font_bytes = _f.read()
     word_mapping, char_mapping = load_mapping(base_font, mapping)
 
     if new_family_name is not None:
@@ -69,6 +77,7 @@ def main(
     processed = generate_annotated_glyphs(
         base_font,
         anno_font,
+        anno_font_bytes,
         output_font,
         char_mapping,
         base_scale=base_scale,

@@ -73,6 +73,17 @@ const MANIFEST = [
   ["input_fonts/ChironHeiHK-R.ttf", "ChironHeiHK-R.ttf"],
   ["input_fonts/ChironHeiHK-B.ttf", "ChironHeiHK-B.ttf"],
   ["input_fonts/方正楷体.ttf", "FZKaiti.ttf"],
+
+  // Third-party wheels — emscripten/wasm Python packages that
+  // micropip pulls in at worker boot. The filename here MUST match
+  // the URL hard-coded in wingfontWorker.ts; if you swap the wheel
+  // (e.g. after bumping Pyodide across an ABI boundary), update
+  // both files in lockstep. See python/wheels/README.md for the
+  // refresh procedure.
+  [
+    "wheels/uharfbuzz-0.55.0-cp310-abi3-pyodide_2025_0_wasm32.whl",
+    "wheels/uharfbuzz-0.55.0-cp310-abi3-pyodide_2025_0_wasm32.whl",
+  ],
 ];
 
 async function exists(path) {

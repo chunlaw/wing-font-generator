@@ -31,6 +31,7 @@ GLYPH_PREFIX = "wingfont"
 def generate_annotated_glyphs(
     base_font,
     anno_font,
+    anno_font_bytes,
     output_font,
     mapping,
     *,
@@ -49,11 +50,24 @@ def generate_annotated_glyphs(
     The first annotation per char re-uses the original glyph name; later
     variants get fresh `wingfontNNNNNN` names appended to the font.
 
+    Layout uses real OpenType shaping via HarfBuzz. The earlier
+    implementation did a naive per-char advance walk, which worked for
+    Latin romanizations and Cangjie radicals (linear scripts with
+    full-advance glyphs) but mispositioned Thai vowel/tone marks,
+    Arabic dots, Indic vowel-mark stacks, and anything else relying on
+    GSUB substitution or GPOS mark-anchor positioning. We now shape
+    each annotation string with HarfBuzz, then place the resulting
+    glyph run using each glyph's (x_offset, y_offset, x_advance).
+
+    `anno_font_bytes` is the raw bytes of the annotation font; HarfBuzz
+    builds its own font object from this blob via `hb.Face(blob)`. We
+    can't reuse the fontTools `anno_font` object because HarfBuzz
+    expects a serialised font, not a parsed TTFont.
+
     `anno_spacing` (em-units) adds an extra horizontal gap between
-    consecutive annotation glyphs within a single annotation string.
-    Default 0 reproduces the original behaviour: glyphs sit at their
-    natural-advance positions. Positive values open the annotation
-    up (useful for CJK-radical mappings like Cangjie where the
+    consecutive annotation glyphs in the post-shape layout. Default 0
+    reproduces natural-advance positioning. Positive values open the
+    block up (useful for CJK-radical mappings like Cangjie where the
     default em-width feels cramped). Negative values tighten — push
     too far and glyphs visibly overlap. The whole annotation block is
     re-centred to account for the added width.
@@ -66,6 +80,23 @@ def generate_annotated_glyphs(
     later so those glyphs aren't re-scaled (their outlines are already
     at the right size, having been composed via the same scale here).
     """
+    # Lazy import so the module loads cheaply on hosts that don't run
+    # the composition path (test scripts, etc.). The Pyodide worker
+    # installs uharfbuzz via micropip at boot; the native-Python
+    # build-fonts CI installs uharfbuzz from PyPI.
+    import uharfbuzz as hb
+
+    # Build the HarfBuzz font once per `generate_annotated_glyphs`
+    # call — every annotation string in the mapping is shaped against
+    # the same face. Re-creating the face per shape would be wasteful
+    # when a 100k-row mapping triggers tens of thousands of shape
+    # calls.
+    hb_face = hb.Face(anno_font_bytes)
+    hb_font = hb.Font(hb_face)
+    # The fontTools anno_font is still used for glyph-name resolution
+    # (HarfBuzz returns numeric glyph IDs; we need names to feed
+    # `anno_glyph_set[name].draw(...)` below). The HB glyph index
+    # corresponds 1:1 with fontTools' getGlyphOrder() output.
     with step_timer("annotated glyph composition") as timer:
         output_glyph_name_used: dict[str, bool] = {}
 
@@ -141,33 +172,81 @@ def generate_annotated_glyphs(
                     )
                 )
 
-                # Resolve each annotation character once, cache (name,
-                # width). The original code looked the name up twice
-                # (once for total-width math, once for drawing) — a
-                # noticeable cost when this runs ~30k times per build
-                # for the bigger mappings.
-                anno_glyph_info: list[tuple[str, int]] = []
-                for char in anno_str:
-                    anno_glyph_name = get_glyph_name_by_char(anno_font, char)
-                    if (
-                        isinstance(anno_glyph_name, str)
-                        and anno_glyph_name in anno_glyph_order_set
-                    ):
-                        width = round(anno_hmtx[anno_glyph_name][0] * anno_scale)
-                        anno_glyph_info.append((anno_glyph_name, width))
+                # Shape the annotation string with HarfBuzz. This
+                # applies the annotation font's GSUB rules (Indic
+                # reordering, Arabic positional forms, etc.) and
+                # GPOS positioning (mark-to-base anchors that put
+                # Thai vowels above their consonants, kerning, …).
+                # The result is a list of (glyph_id, x_offset,
+                # y_offset, x_advance) tuples in the font's native
+                # design units — same coordinate space as
+                # `hmtx[name][0]` returned for the naive path.
+                buf = hb.Buffer()
+                buf.add_str(anno_str)
+                # `guess_segment_properties` auto-detects script,
+                # direction, and language from the Unicode codepoints
+                # in the buffer. Good enough for our use case
+                # (Latin, Thai, Arabic, Indic, CJK) without
+                # requiring the caller to tag each annotation.
+                buf.guess_segment_properties()
+                hb.shape(hb_font, buf)
+
+                # Translate HarfBuzz output into the (name, width)
+                # pairs the existing layout code expects. The shape
+                # result already includes any GPOS x_offset; we keep
+                # it separate so we can add it AT DRAW TIME rather
+                # than baking it into the running x_position
+                # (otherwise marks that re-emit advance=0 would
+                # accumulate the offset wrong).
+                shaped: list[tuple[str, int, int, int]] = []
+                # Tuple shape: (glyph_name, x_offset, y_offset, x_advance)
+                # all in unscaled font-design units.
+                for info, pos in zip(buf.glyph_infos, buf.glyph_positions):
+                    gid = info.codepoint  # HarfBuzz quirk: `codepoint`
+                    # field on glyph_info is actually the glyph index
+                    # post-shaping, NOT the original Unicode
+                    # codepoint. Naming is a long-standing HB
+                    # confusion — see harfbuzz/uharfbuzz#142.
+                    if 0 <= gid < len(anno_glyph_order):
+                        anno_glyph_name = anno_glyph_order[gid]
+                        if anno_glyph_name in anno_glyph_order_set:
+                            shaped.append(
+                                (
+                                    anno_glyph_name,
+                                    pos.x_offset,
+                                    pos.y_offset,
+                                    pos.x_advance,
+                                )
+                            )
 
                 # `anno_len` is the total width the annotation block
-                # will occupy, including (N-1) inter-glyph gaps so the
-                # re-centring math below positions it correctly. When
-                # `anno_spacing` is 0 this collapses to the original
-                # natural-advance behaviour.
-                n_anno = len(anno_glyph_info)
+                # will occupy in OUTPUT units, including (N-1)
+                # inter-glyph gaps so the re-centring math below
+                # positions it correctly. The width per glyph is the
+                # post-shape x_advance (which respects substitutions
+                # and per-glyph adjustments). When `anno_spacing` is
+                # 0 and the annotation is a linear script (Latin,
+                # cangjie) this collapses to the same number as the
+                # old naive walk.
+                n_anno = len(shaped)
                 inter_glyph_padding = max(0, n_anno - 1) * anno_spacing_units
-                anno_len = sum(w for _, w in anno_glyph_info) + inter_glyph_padding
+                anno_len = (
+                    sum(round(adv * anno_scale) for _, _, _, adv in shaped)
+                    + inter_glyph_padding
+                )
                 x_position = (base_advance_width * base_scale - anno_len) / 2
 
-                for j, (anno_glyph_name, width) in enumerate(anno_glyph_info):
+                for j, (anno_glyph_name, xoff, yoff, xadv) in enumerate(shaped):
                     if anno_glyph_name in anno_glyph_set:
+                        # Apply the per-glyph (x_offset, y_offset)
+                        # from HarfBuzz on top of the running
+                        # x_position / anno_y_offset. The offsets
+                        # are what makes mark glyphs (Thai vowels,
+                        # Arabic dots, Devanagari ukar etc.) sit at
+                        # the right place over the base glyph; the
+                        # offsets are zero for plain Latin and
+                        # cangjie so the existing scripts render
+                        # identically to before.
                         anno_glyph_set[anno_glyph_name].draw(
                             TransformPen(
                                 pen,
@@ -176,12 +255,16 @@ def generate_annotated_glyphs(
                                     0,
                                     0,
                                     anno_scale,
-                                    x_position,
-                                    anno_y_offset,
+                                    x_position + xoff * anno_scale,
+                                    anno_y_offset + yoff * anno_scale,
                                 ),
                             )
                         )
-                        x_position += width
+                        # Advance by the shaped x_advance (NOT the
+                        # naive hmtx advance — they differ when GPOS
+                        # adjusts spacing or GSUB has substituted in
+                        # a glyph with a different metric).
+                        x_position += round(xadv * anno_scale)
                         # Add the inter-glyph gap after every glyph
                         # except the last — keeps the block flush at
                         # the right edge.
@@ -287,6 +370,7 @@ def scale_glyphs(
 def generate_glyphs(
     base_font,
     anno_font,
+    anno_font_bytes,
     output_font,
     mapping,
     anno_scale: float = 0.15,
@@ -301,10 +385,16 @@ def generate_glyphs(
     New callers (including wing-font.py with optimize=True) should use
     `generate_annotated_glyphs` + `scale_glyphs` directly so they can
     defer scaling until after subsetting and pass a much smaller list.
+
+    `anno_font_bytes` is the raw bytes of the annotation font, used by
+    `generate_annotated_glyphs` for HarfBuzz shaping. Callers that
+    still use this wrapper need to read the file bytes themselves
+    alongside the TTFont object.
     """
     processed = generate_annotated_glyphs(
         base_font,
         anno_font,
+        anno_font_bytes,
         output_font,
         mapping,
         anno_scale=anno_scale,

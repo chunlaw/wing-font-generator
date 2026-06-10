@@ -1,5 +1,11 @@
 Brotli==1.0.9
 fonttools==4.55.3
+# uharfbuzz is required by build_glyph.py for OpenType shaping
+# (Thai mark positioning, Arabic positional forms, Indic reordering,
+# kerning, etc.). The web pipeline ships a wasm32-emscripten build
+# of the same version under python/wheels/ — keep these in sync so
+# CLI and Pyodide produce identical font output.
+uharfbuzz==0.55.0
 pip==25.0
 setuptools==75.8.0
 unicodedata2==15.1.0

@@ -369,7 +369,20 @@ const Step3Parameters = () => {
                   </Typography>
                 )}
               </Box>
-              <Typography variant="caption" color="text.secondary">
+              {/*
+                `display: block` is required: <Typography
+                variant="caption"> defaults to <span> (inline), and
+                the FormControlLabel below is inline-block. When the
+                caption is short enough to fit (e.g. Chinese
+                "樣本字詞: 我 → ngo5"), the toggle ends up rendered on
+                the same row. Forcing block guarantees the two stay
+                on separate rows regardless of language / viewport.
+              */}
+              <Typography
+                variant="caption"
+                color="text.secondary"
+                sx={{ display: "block" }}
+              >
                 {previewResult.isCustomText ? (
                   <>
                     {t("step3.preview.customLabel")}:{" "}

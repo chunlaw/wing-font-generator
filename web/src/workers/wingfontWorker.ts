@@ -152,8 +152,11 @@ async function ensurePyodide(): Promise<PyodideAPI> {
       indexURL: PYODIDE_INDEX,
     });
 
-    emitProgress("Loading fonttools and brotli (one-time download)...");
-    await pyodide.loadPackage(["fonttools", "brotli"]);
+    emitProgress("Loading fonttools, brotli, micropip (one-time download)...");
+    // `micropip` is the pure-Python wheel installer we use to pull in
+    // `uharfbuzz` below. It's a Pyodide-shipped package so it loads
+    // alongside fontTools without a separate fetch.
+    await pyodide.loadPackage(["fonttools", "brotli", "micropip"]);
 
     emitProgress("Installing wing-font scripts into virtual filesystem...");
     pyodide.FS.mkdirTree("/home/pyodide/wingfont/mappings");
@@ -161,6 +164,35 @@ async function ensurePyodide(): Promise<PyodideAPI> {
       const bytes = await fetchToBytes(src);
       pyodide.FS.writeFile(dest, bytes);
     }
+
+    // Install uharfbuzz from a wheel hosted in our public/ folder.
+    // PyPI doesn't host emscripten/wasm wheels, so we ship the
+    // wheel locally (see python/wheels/README.md). The filename
+    // here MUST match the file copied by sync-python.mjs's MANIFEST
+    // entry; if you bump uharfbuzz or change the Pyodide ABI,
+    // update both in lockstep.
+    //
+    // The wheel is ~940 KB; install adds ~2-3 s to first-time boot
+    // but is cached by the browser thereafter. The 0.55.0 wheel is
+    // cp310-abi3 (PEP 384 stable ABI) so it works against any
+    // CPython 3.10+ Pyodide ships.
+    //
+    // ABI tag: pyodide_2025_0 = emscripten-4.0.9 + Python 3.13,
+    // which is what Pyodide 0.29.4 actually serves. The earlier
+    // "0.29 uses Python 3.12" guidance was about the 0.29.0
+    // line — 0.29.4 was bumped to 3.13. If you ever see micropip
+    // reject the wheel with "platform … is not compatible with
+    // Pyodide's platform 'emscripten-X.Y.Z-wasm32'", read the
+    // emscripten version off the error and swap to the matching
+    // pyodide_YYYY_N wheel uharfbuzz ships.
+    emitProgress("Installing uharfbuzz (OpenType shaping engine)...");
+    const uharfbuzzUrl =
+      `${self.location.origin}/wingfont/wheels/` +
+      `uharfbuzz-0.55.0-cp310-abi3-pyodide_2025_0_wasm32.whl`;
+    await pyodide.runPythonAsync(`
+import micropip
+await micropip.install("${uharfbuzzUrl}")
+`);
 
     // Route any stray prints to a progress event so the user sees activity.
     pyodide.setStdout({ batched: (s: string) => emitProgress(s) });
