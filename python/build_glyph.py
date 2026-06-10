@@ -40,6 +40,8 @@ def generate_annotated_glyphs(
     base_scale: float = 0.75,
     upper_y_offset_ratio: float = 0.8,
     invert: bool = False,
+    base_axis_location: dict | None = None,
+    anno_axis_location: dict | None = None,
 ):
     """
     Compose annotated variant glyphs (former Part 1 of generate_glyphs).
@@ -93,6 +95,17 @@ def generate_annotated_glyphs(
     # calls.
     hb_face = hb.Face(anno_font_bytes)
     hb_font = hb.Font(hb_face)
+    # When the annotation font is a variable font and the caller
+    # picked a non-default axis location, push the same coordinates
+    # into the HB shaper so substitutions / mark anchors that depend
+    # on the axis (e.g. weight-specific kerning) match the glyph
+    # outlines we'll later draw from `anno_glyph_set`. `set_variations`
+    # silently ignores tags the face doesn't actually declare, so
+    # passing a stray axis is harmless.
+    if anno_axis_location:
+        hb_font.set_variations(
+            {k: float(v) for k, v in anno_axis_location.items()}
+        )
     # The fontTools anno_font is still used for glyph-name resolution
     # (HarfBuzz returns numeric glyph IDs; we need names to feed
     # `anno_glyph_set[name].draw(...)` below). The HB glyph index
@@ -100,9 +113,18 @@ def generate_annotated_glyphs(
     with step_timer("annotated glyph composition") as timer:
         output_glyph_name_used: dict[str, bool] = {}
 
-        base_glyph_set = base_font.getGlyphSet()
-        anno_glyph_set = anno_font.getGlyphSet()
-        output_glyph_set = output_font.getGlyphSet()
+        # `location=None` is the same as omitting the kwarg — fontTools
+        # returns the default-instance glyph set. Passing a dict tells
+        # the variable-font machinery to interpolate outlines at that
+        # axis location, which is how Tier 2 variable-font support
+        # actually picks up the chosen weight / width / etc. Non-variable
+        # fonts ignore the kwarg entirely.
+        base_glyph_set = base_font.getGlyphSet(location=base_axis_location)
+        anno_glyph_set = anno_font.getGlyphSet(location=anno_axis_location)
+        # The output font's variable axes mirror the base font's (we
+        # initialised output_font = TTFont(base_font_file)), so we use
+        # the same base axis location.
+        output_glyph_set = output_font.getGlyphSet(location=base_axis_location)
 
         anno_glyph_order = anno_font.getGlyphOrder()
         base_glyph_order = base_font.getGlyphOrder()
@@ -293,6 +315,19 @@ def generate_annotated_glyphs(
                 if i == 0:
                     out_cmap[ord(base_char)] = new_glyph_name
 
+        # Push the new wingfont* glyph names from glyf.glyphOrder
+        # up into font.glyphOrder. fontTools' glyf table __setitem__
+        # auto-appends new names to its OWN glyphOrder, but the
+        # FONT-level cached glyphOrder doesn't refresh — which bites
+        # us specifically when the input was a variable font that
+        # `instantiateVariableFont` populated font.glyphOrder for in
+        # main(). Without this sync, the subsetter later builds
+        # reverseGlyphMap from the stale font.glyphOrder and throws
+        # KeyError on every wingfont* name we added. For the
+        # non-instanced path this is effectively a no-op (the two
+        # orders are already in sync).
+        output_font.setGlyphOrder(output_font["glyf"].glyphOrder)
+
         timer.note(f"{len(processed_glyph_names)} characters processed")
         return processed_glyph_names
 
@@ -304,6 +339,7 @@ def scale_glyphs(
     base_scale: float,
     *,
     skip_glyph_names: set[str] | None = None,
+    base_axis_location: dict | None = None,
 ):
     """
     Shrink the given glyph names in `output_font` by `base_scale`, using
@@ -329,8 +365,11 @@ def scale_glyphs(
         # would under native CPython, so local-variable bindings here
         # buy a measurable speedup independent of the deferred-scaling
         # change.
-        base_glyph_set = base_font.getGlyphSet()
-        output_glyph_set = output_font.getGlyphSet()
+        # Use the same axis location as generate_annotated_glyphs so
+        # the un-annotated glyphs we shrink here are sampled from the
+        # same variable-font instance as the annotated ones.
+        base_glyph_set = base_font.getGlyphSet(location=base_axis_location)
+        output_glyph_set = output_font.getGlyphSet(location=base_axis_location)
         base_hmtx = base_font["hmtx"]
         out_glyf = output_font["glyf"]
         out_hmtx = output_font["hmtx"]

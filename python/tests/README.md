@@ -8,7 +8,7 @@ visually verifies every rule type fires.
 
 | File                         | Purpose                                                                                    |
 | ---------------------------- | ------------------------------------------------------------------------------------------ |
-| `test_mapping.csv`           | Curated 43-line mapping. Includes polyphonic chars (行, 畫) and words that trigger `calt`. |
+| `test_mapping.csv`           | Curated 43-line mapping. Includes polyphonic chars (行, 畫) and words that trigger `ccmp`. |
 | `generate_test_font.py`      | Runs `wing-font.py` against `test_mapping.csv`. Writes `output/test.{ttf,woff,…}`.         |
 | `viewer.html`                | Static page that loads the WOFF and renders each test case side-by-side with the system font. |
 | `serve.py`                   | Regenerates + serves over HTTP (browsers won't load `@font-face` from `file://`).         |
@@ -34,11 +34,12 @@ python tests/serve.py --no-regen
 1. **Default reading** — every char in the mapping shows its primary
    romanization. This proves `build_glyph.py` produces the variant-0
    glyphs and the cmap remap works.
-2. **Word context (`calt`)** — types `銀行` / `行家` and the same char
+2. **Word context (`ccmp`)** — types `銀行` / `行家` and the same char
    `行` switches between `hong4` and `hang4` depending on the word.
    This proves the new `ChainContextSubstBuilder` rules are wired
    correctly and the source font's existing `calt` lookups didn't get
-   overwritten.
+   overwritten. (Our chain-context rules are registered under `ccmp`
+   rather than `calt` — see `chain_context_handler.py` for why.)
 3. **Digit trigger (`liga`)** — types `行1` and the `1` disappears
    while `行` switches to its variant-1 reading. Proves the
    `LigatureSubstBuilder` rules and `utils.register_feature_lookup`

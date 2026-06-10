@@ -201,7 +201,7 @@
 </section>
 
 <section class="test">
-  <h2>2. Word context — <code>calt</code> Chain Contextual Substitution</h2>
+  <h2>2. Word context — <code>ccmp</code> Chain Contextual Substitution</h2>
   <p class="what">
     Some characters change reading depending on the word they appear in.
     The polyphonic char <strong>行</strong> is <em>hang4</em> by default but
@@ -212,25 +212,25 @@
     <div class="label">行 (alone)</div>
     <div class="baseline">行</div>
     <div class="styled">行</div>
-    <div class="expect">expect: hang4 (default reading, no calt fires)</div>
+    <div class="expect">expect: hang4 (default reading, no ccmp fires)</div>
   </div>
   <div class="row">
     <div class="label">銀行</div>
     <div class="baseline">銀行</div>
     <div class="styled">銀行</div>
-    <div class="expect">expect: ngan4, hong4 — calt switches 行 to hong4</div>
+    <div class="expect">expect: ngan4, hong4 — ccmp switches 行 to hong4</div>
   </div>
   <div class="row">
     <div class="label">行家</div>
     <div class="baseline">行家</div>
     <div class="styled">行家</div>
-    <div class="expect">expect: hong4, gaa1 — calt switches 行 to hong4</div>
+    <div class="expect">expect: hong4, gaa1 — ccmp switches 行 to hong4</div>
   </div>
   <div class="row">
     <div class="label">行人</div>
     <div class="baseline">行人</div>
     <div class="styled">行人</div>
-    <div class="expect">expect: hang4, jan4 — calt confirms default for this word</div>
+    <div class="expect">expect: hang4, jan4 — ccmp confirms default for this word</div>
   </div>
   <div class="row">
     <div class="label">畫畫</div>
@@ -397,9 +397,9 @@
         ["Total glyphs", data.total_glyphs],
         ["GSUB lookups", data.gsub_lookup_count],
         ["GSUB features", data.gsub_feature_count],
-        ["calt present?", data.has_calt ? "yes" : "NO"],
+        ["ccmp present?", data.has_ccmp ? "yes" : "NO"],
         ["liga present?", data.has_liga ? "yes" : "NO"],
-        ["calt rules (ours)", data.calt_rule_count ?? "—"],
+        ["ccmp rules (ours)", data.ccmp_rule_count ?? "—"],
         ["liga default (×0)", data.liga_default_rules ?? "—"],
         ["liga variant (×N)", data.liga_variant_rules ?? "—"],
         ["liga 丅+numeral", data.liga_trigger_rules ?? "—"],

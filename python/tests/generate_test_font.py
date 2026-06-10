@@ -3,8 +3,10 @@ generate_test_font.py — produce a small test font for visual verification.
 
 This is a thin driver around the existing `wing-font.py` pipeline that:
   * Loads a deliberately tiny mapping (test_mapping.csv) chosen to exercise
-    every GSUB rule type — default reading, word-context calt, digit-trigger
-    liga, and the Chinese-numeral fallback.
+    every GSUB rule type — default reading, word-context ccmp, digit-trigger
+    liga, and the Chinese-numeral fallback. (Our chain-context rules are
+    registered under ccmp rather than calt; see chain_context_handler.py
+    for why.)
   * Writes the resulting TTF and WOFF into tests/output/.
   * Inspects the produced GSUB and prints a short report so a human can
     confirm the right number of lookups were added without opening ttx.
@@ -109,8 +111,11 @@ def _inspect_output(ttf_path: Path) -> dict:
       * `liga_default_rules`     — `(char, '0')` identity rules
       * `liga_variant_rules`     — `(char, digit)` variant-pick rules (digit != 0)
       * `liga_trigger_rules`     — 3-component `(char, 丅, numeral)` fallback rules
-      * `calt_rule_count`        — number of context substitution rules our calt
-                                   lookup contains (excludes source-font rules)
+      * `ccmp_rule_count`        — number of chain-context substitution rules
+                                   our ccmp lookup contains. We isolate it via
+                                   the ccmp FeatureRecord's LookupListIndex,
+                                   so the count excludes any source-font
+                                   lookups that happen to share a Type number.
 
     These counts let the viewer assert e.g. "test 4 should work because the
     font has N>0 trigger rules" rather than relying purely on visual diff.
@@ -162,18 +167,41 @@ def _inspect_output(ttf_path: Path) -> dict:
                     ):
                         liga_trigger += 1
 
-    # For calt rules, count the rules in our context substitution lookups.
-    # Source-font calt is Type 6 (chain context); ours is the simpler
-    # Type 5 because we don't use prefix/suffix.
-    calt_rules = 0
-    for lookup in gsub.LookupList.Lookup:
-        if lookup.LookupType != 5:
+    # Count the rules in our chain-context substitution lookups. To
+    # avoid mis-attributing the source font's own chain-context lookups
+    # (Chiron has its own `calt` Type 6 lookups), we resolve OUR lookups
+    # via the `ccmp` FeatureRecord — that's where wing-font registers
+    # its chain-context rules now. Then handle all three OpenType
+    # ChainContextSubst subtable formats:
+    #   Format 1 — ChainSubRuleSet/ChainSubRule (per-glyph groupings)
+    #   Format 2 — ChainSubClassSet/ChainSubClassRule (class-based)
+    #   Format 3 — InputCoverage (single coverage-based pattern per subtable)
+    # fontTools' ChainContextSubstBuilder auto-picks the most compact
+    # format, so all three may appear in the same lookup.
+    ccmp_lookup_indexes: set[int] = set()
+    for record in gsub.FeatureList.FeatureRecord:
+        if record.FeatureTag == "ccmp":
+            ccmp_lookup_indexes.update(record.Feature.LookupListIndex)
+
+    ccmp_rules = 0
+    for idx in ccmp_lookup_indexes:
+        if idx >= len(gsub.LookupList.Lookup):
+            continue
+        lookup = gsub.LookupList.Lookup[idx]
+        if lookup.LookupType != 6:
             continue
         for st in lookup.SubTable:
-            if hasattr(st, "SubRuleSet") and st.SubRuleSet:
-                for rs in st.SubRuleSet:
-                    if rs and rs.SubRule:
-                        calt_rules += len(rs.SubRule)
+            if hasattr(st, "ChainSubRuleSet") and st.ChainSubRuleSet:
+                for rs in st.ChainSubRuleSet:
+                    if rs and getattr(rs, "ChainSubRule", None):
+                        ccmp_rules += len(rs.ChainSubRule)
+            elif hasattr(st, "ChainSubClassSet") and st.ChainSubClassSet:
+                for rs in st.ChainSubClassSet:
+                    if rs and getattr(rs, "ChainSubClassRule", None):
+                        ccmp_rules += len(rs.ChainSubClassRule)
+            elif hasattr(st, "InputCoverage"):
+                # Format 3: one pattern per subtable.
+                ccmp_rules += 1
 
     # Spot-check the polyphonic chars we deliberately put in the mapping
     # are still encoded in the output cmap. If subsetting drops them, the
@@ -191,12 +219,12 @@ def _inspect_output(ttf_path: Path) -> dict:
         "gsub_feature_count": gsub.FeatureList.FeatureCount,
         "feature_tags_present": sorted(feature_counts.keys()),
         "lookup_types": {str(k): v for k, v in sorted(lookup_types.items())},
-        "has_calt": "calt" in feature_counts,
+        "has_ccmp": "ccmp" in feature_counts,
         "has_liga": "liga" in feature_counts,
         "liga_default_rules": liga_default,
         "liga_variant_rules": liga_variant,
         "liga_trigger_rules": liga_trigger,
-        "calt_rule_count": calt_rules,
+        "ccmp_rule_count": ccmp_rules,
         "polyphonic_chars_present": polyphonic_present,
     }
 

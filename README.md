@@ -18,7 +18,7 @@ wing-font/
   ([`python/wing-font.py`](python/wing-font.py)) reads a base TTF + an
   annotation TTF + a CSV mapping characters to romanizations, and emits
   a new TTF + WOFF whose glyphs have the annotations baked in. The GSUB
-  layer adds two OpenType features (`calt`, `liga`) so polyphonic
+  layer adds two OpenType features (`ccmp`, `liga`) so polyphonic
   characters disambiguate automatically in context, and the user can
   manually pick a variant by typing `字1` / `字2` / `字丅一`. CI in
   [`.github/workflows/build-fonts.yml`](.github/workflows/build-fonts.yml)

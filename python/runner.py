@@ -241,6 +241,8 @@ def generate(
     invert: bool = False,
     optimize: bool = True,
     use_trim_cache: bool = False,
+    base_axis_location: dict | None = None,
+    anno_axis_location: dict | None = None,
     progress_cb=None,
 ):
     """
@@ -375,6 +377,8 @@ def generate(
                 base_scale=base_scale,
                 anno_scale=anno_scale,
                 anno_spacing=anno_spacing,
+                base_axis_location=base_axis_location,
+                anno_axis_location=anno_axis_location,
                 upper_y_offset_ratio=upper_y_offset_ratio,
                 invert=invert,
                 optimize=optimize,

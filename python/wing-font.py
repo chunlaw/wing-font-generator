@@ -48,19 +48,71 @@ def main(
     invert=False,
     optimize=False,
     skip_woff=False,
+    base_axis_location=None,
+    anno_axis_location=None,
 ):
     # Load the fonts and mapping.
     base_font = TTFont(base_font_file)
     anno_font = TTFont(anno_font_file)
     output_font = TTFont(base_font_file)
-    # Keep the raw annotation-font bytes so we can hand them to
-    # HarfBuzz inside generate_annotated_glyphs. HarfBuzz needs the
-    # original file blob (it builds its own font object via
-    # hb.Face(blob)); we can't reconstruct an equivalent blob from
-    # the fontTools TTFont without re-serialising, which would be
-    # wasteful for every glyph composition.
-    with open(anno_font_file, "rb") as _f:
-        anno_font_bytes = _f.read()
+
+    # ── Tier 2: variable-font axis instancing ───────────────────────
+    # When the caller picked an axis location for a VARIABLE font,
+    # bake the chosen instance into the glyf table NOW and drop
+    # fvar/gvar/HVAR/etc. Why upfront, not lazily inside
+    # build_glyph?
+    #
+    # The composition pipeline writes new outlines into
+    # output_font["glyf"][name] for every annotated variant glyph.
+    # If output_font still has its original gvar table, the
+    # subsetter later walks gvar lazily and tries to decompile delta
+    # blocks whose point counts no longer match what's in glyf —
+    # crashes with IndexError inside TupleVariation.decompileDeltas_.
+    # Instancing destroys gvar entirely, which sidesteps the whole
+    # class of "static glyf, variable gvar, inconsistent" bugs.
+    #
+    # Also: instancing the base/output fonts means the downstream
+    # `getGlyphSet(location=...)` calls become no-ops — the font is
+    # already at the right location. We keep the kwargs anyway as
+    # belt-and-braces (and to spare a wider refactor).
+    if base_axis_location and "fvar" in base_font:
+        from fontTools.varLib.instancer import instantiateVariableFont
+        base_font = instantiateVariableFont(
+            base_font, base_axis_location, inplace=True
+        )
+        # output_font was opened from the same file, so it carries
+        # the same variations. Instance it to the same location so
+        # the un-annotated glyphs (kept via scale_glyphs) match the
+        # weight we picked.
+        output_font = instantiateVariableFont(
+            output_font, base_axis_location, inplace=True
+        )
+
+    if anno_axis_location and "fvar" in anno_font:
+        from fontTools.varLib.instancer import instantiateVariableFont
+        anno_font = instantiateVariableFont(
+            anno_font, anno_axis_location, inplace=True
+        )
+
+    # Raw annotation-font bytes for HarfBuzz. Two paths:
+    #   • If the anno font was instanced, the on-disk bytes are
+    #     STILL the variable-font master and don't match the static
+    #     anno_font TTFont we now hold. Re-serialise so HB sees the
+    #     same weight as fontTools does — keeps shaping output
+    #     consistent with what the composition pipeline draws.
+    #   • Otherwise, just slurp the file. Cheaper than serialising
+    #     a 10+ MB CJK font when nothing changed.
+    if anno_axis_location and "fvar" not in anno_font:
+        # `not in` is true post-instancing (instantiateVariableFont
+        # removes fvar). Serialise the in-memory static font.
+        import io as _io
+        _buf = _io.BytesIO()
+        anno_font.save(_buf)
+        anno_font_bytes = _buf.getvalue()
+    else:
+        with open(anno_font_file, "rb") as _f:
+            anno_font_bytes = _f.read()
+
     word_mapping, char_mapping = load_mapping(base_font, mapping)
 
     if new_family_name is not None:
@@ -85,6 +137,8 @@ def main(
         anno_spacing=anno_spacing,
         upper_y_offset_ratio=upper_y_offset_ratio,
         invert=invert,
+        base_axis_location=base_axis_location,
+        anno_axis_location=anno_axis_location,
     )
 
     # --- Phase 2: build GSUB rules ---------------------------------------
@@ -140,6 +194,7 @@ def main(
             valid_glyphs_to_keep,
             base_scale,
             skip_glyph_names=processed,
+            base_axis_location=base_axis_location,
         )
 
         # Now apply the actual subset. The set of glyphs surviving might
@@ -162,6 +217,7 @@ def main(
             base_font.getGlyphOrder(),
             base_scale,
             skip_glyph_names=processed,
+            base_axis_location=base_axis_location,
         )
 
     # --- Phase 4: save ---------------------------------------------------

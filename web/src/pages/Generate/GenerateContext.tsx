@@ -16,6 +16,7 @@
  *     programmatically after a successful generation.
  */
 import Papa from "papaparse";
+import opentype from "opentype.js";
 import {
   createContext,
   ReactNode,
@@ -40,6 +41,8 @@ import {
   DEFAULT_MAPPING_PRESET,
 } from "../../utils/wingfontPresets";
 import {
+  AxisLocation,
+  FontAxis,
   GenerateParams,
   GenerateResult,
   MappingRow,
@@ -57,6 +60,72 @@ interface FontSlot {
   /** Key of the built-in preset currently selected, or null when
    *  the user has uploaded a custom file. */
   presetKey: string | null;
+  /** Variable-font axes declared by this font's `fvar` table.
+   *  Undefined for non-variable fonts. Populated from opentype.js
+   *  when bytes are loaded. */
+  axes?: FontAxis[];
+  /** Currently-chosen axis values (tag → value). Defaults to each
+   *  axis's `default` when bytes are first loaded; user can change
+   *  via the Step 1 sliders. Undefined for non-variable fonts. */
+  axisLocation?: AxisLocation;
+}
+
+/**
+ * Parse a font's `fvar` table via opentype.js and return its axis
+ * definitions. Returns undefined for non-variable fonts or when
+ * parsing fails — callers should treat that as "no variable axes,
+ * render no slider, send no location to the pipeline".
+ */
+function extractAxes(bytes: ArrayBuffer): FontAxis[] | undefined {
+  try {
+    // opentype.parse copies the bytes, so the caller's buffer isn't
+    // detached even if it gets transferred to a worker later.
+    const f = opentype.parse(bytes.slice(0));
+    // The fvar table is opentype.js-typed somewhat loosely; the
+    // axes array has tag/minValue/defaultValue/maxValue/name fields
+    // per axis. Name can be a localised string map or a plain
+    // string depending on the font; we prefer the English name
+    // when available, otherwise fall back to the tag (which is
+    // always a 4-char ASCII string like "wght").
+    const fvar = (f.tables as { fvar?: { axes?: unknown[] } }).fvar;
+    if (!fvar?.axes?.length) return undefined;
+    return fvar.axes.map((rawAxis) => {
+      const a = rawAxis as {
+        tag: string;
+        minValue: number;
+        defaultValue: number;
+        maxValue: number;
+        name?: string | Record<string, string>;
+      };
+      let name: string = a.tag;
+      if (typeof a.name === "string") {
+        name = a.name;
+      } else if (a.name && typeof a.name === "object") {
+        name = a.name.en ?? Object.values(a.name)[0] ?? a.tag;
+      }
+      return {
+        tag: a.tag,
+        name,
+        min: a.minValue,
+        default: a.defaultValue,
+        max: a.maxValue,
+      };
+    });
+  } catch {
+    return undefined;
+  }
+}
+
+/**
+ * Build the default axis-location object for a list of axes.
+ * Each axis's `default` becomes the initial value. Returns
+ * undefined when there are no axes (non-variable font).
+ */
+function defaultAxisLocation(
+  axes: FontAxis[] | undefined,
+): AxisLocation | undefined {
+  if (!axes || axes.length === 0) return undefined;
+  return Object.fromEntries(axes.map((a) => [a.tag, a.default]));
 }
 
 interface GenerateContextValue {
@@ -65,6 +134,11 @@ interface GenerateContextValue {
   annoFont: FontSlot;
   setBaseFont: (bytes: ArrayBuffer, name: string) => void;
   setAnnoFont: (bytes: ArrayBuffer, name: string) => void;
+  /** Update one axis value on the base / anno font slot. No-op when
+   *  the slot's font isn't variable. Used by the Step 1 axis
+   *  sliders. */
+  setBaseFontAxisValue: (tag: string, value: number) => void;
+  setAnnoFontAxisValue: (tag: string, value: number) => void;
   loadDefaultBaseFont: () => Promise<void>;
   loadDefaultAnnoFont: () => Promise<void>;
   /** Load a built-in font preset (one of BUILT_IN_BASE_FONTS) into
@@ -245,6 +319,8 @@ export const GenerateProvider = ({ children }: { children: ReactNode }) => {
     name: `${DEFAULT_BASE_FONT_PRESET.filename} (preset)`,
     isDefault: true,
     presetKey: DEFAULT_BASE_FONT_PRESET.key,
+    // Axes are populated lazily when the bytes actually arrive
+    // (either via the preset loader or a user upload).
   });
   const [annoFont, setAnnoFontState] = useState<FontSlot>({
     bytes: null,
@@ -255,13 +331,55 @@ export const GenerateProvider = ({ children }: { children: ReactNode }) => {
 
   // User-uploaded files always reset presetKey to null so the
   // dropdown shows the "Custom upload" option (or whichever
-  // placeholder we render for that state).
+  // placeholder we render for that state). We also parse axes
+  // immediately so the Step 1 UI can show variable-font sliders
+  // for the just-uploaded file.
   const setBaseFont = useCallback((bytes: ArrayBuffer, name: string) => {
-    setBaseFontState({ bytes, name, isDefault: false, presetKey: null });
+    const axes = extractAxes(bytes);
+    setBaseFontState({
+      bytes,
+      name,
+      isDefault: false,
+      presetKey: null,
+      axes,
+      axisLocation: defaultAxisLocation(axes),
+    });
   }, []);
   const setAnnoFont = useCallback((bytes: ArrayBuffer, name: string) => {
-    setAnnoFontState({ bytes, name, isDefault: false, presetKey: null });
+    const axes = extractAxes(bytes);
+    setAnnoFontState({
+      bytes,
+      name,
+      isDefault: false,
+      presetKey: null,
+      axes,
+      axisLocation: defaultAxisLocation(axes),
+    });
   }, []);
+
+  // Update one axis value within a font slot. Used by the Step 1
+  // sliders when the user drags an axis (e.g. weight 400 → 700).
+  // Leaves the rest of the slot (bytes, presetKey, axes, …)
+  // untouched so re-running through the pipeline picks up the new
+  // value without re-parsing the font.
+  const setBaseFontAxisValue = useCallback(
+    (tag: string, value: number) => {
+      setBaseFontState((prev) => ({
+        ...prev,
+        axisLocation: { ...(prev.axisLocation ?? {}), [tag]: value },
+      }));
+    },
+    [],
+  );
+  const setAnnoFontAxisValue = useCallback(
+    (tag: string, value: number) => {
+      setAnnoFontState((prev) => ({
+        ...prev,
+        axisLocation: { ...(prev.axisLocation ?? {}), [tag]: value },
+      }));
+    },
+    [],
+  );
 
   // Generalised preset loader. Used by both the convenience
   // "loadDefault*" methods (kept for backward compat with callers
@@ -297,12 +415,17 @@ export const GenerateProvider = ({ children }: { children: ReactNode }) => {
         );
       }
       const bytes = await res.arrayBuffer();
+      // Parse the variable-font axes here too so picking a preset
+      // surfaces the same sliders as an upload would.
+      const axes = extractAxes(bytes);
       setter({
         bytes,
         name: `${preset.filename} (preset)`,
         isDefault: preset.key === DEFAULT_BASE_FONT_PRESET.key ||
           preset.key === DEFAULT_ANNO_FONT_PRESET.key,
         presetKey: preset.key,
+        axes,
+        axisLocation: defaultAxisLocation(axes),
       });
     },
     [],
@@ -502,6 +625,8 @@ export const GenerateProvider = ({ children }: { children: ReactNode }) => {
         upperYOffsetRatio: params.yOffsetRatio,
         invert: params.invert,
         optimize: params.optimize,
+        baseAxisLocation: baseFont.axisLocation,
+        annoAxisLocation: annoFont.axisLocation,
         onProgress: (msg) => {
           // Parse step boundaries to drive the determinate progress
           // bar. "Processing X..." marks a step start; "Processing X...
@@ -719,6 +844,8 @@ export const GenerateProvider = ({ children }: { children: ReactNode }) => {
         annoSpacing: ps.annoSpacing,
         upperYOffsetRatio: ps.yOffsetRatio,
         invert: ps.invert,
+        baseAxisLocation: bf.axisLocation,
+        annoAxisLocation: af.axisLocation,
         // Subsetting on a single-mapping run has nothing to drop, so
         // it costs the same regardless. Honour the user's choice for
         // consistency with the full run they'll trigger later.
@@ -1011,6 +1138,8 @@ export const GenerateProvider = ({ children }: { children: ReactNode }) => {
       annoFont,
       setBaseFont,
       setAnnoFont,
+      setBaseFontAxisValue,
+      setAnnoFontAxisValue,
       loadDefaultBaseFont,
       loadDefaultAnnoFont,
       loadBuiltInBaseFont,
@@ -1052,6 +1181,8 @@ export const GenerateProvider = ({ children }: { children: ReactNode }) => {
       annoFont,
       setBaseFont,
       setAnnoFont,
+      setBaseFontAxisValue,
+      setAnnoFontAxisValue,
       loadDefaultBaseFont,
       loadDefaultAnnoFont,
       loadBuiltInBaseFont,

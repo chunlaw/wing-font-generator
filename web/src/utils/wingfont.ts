@@ -33,6 +33,11 @@ export interface GenerateParams {
   upperYOffsetRatio?: number;
   invert?: boolean;
   optimize?: boolean;
+  /** Variable-font axis location for the base font (tag → value).
+   *  Null/undefined = use the font's default instance. */
+  baseAxisLocation?: Record<string, number> | null;
+  /** Variable-font axis location for the annotation font. */
+  annoAxisLocation?: Record<string, number> | null;
   /**
    * If true, ask the runner to swap in pre-trimmed font bytes
    * (populated by an earlier `preparePreviewFonts()` call) before
@@ -232,6 +237,8 @@ export async function generateFont(params: GenerateParams): Promise<GenerateResu
           invert: params.invert,
           optimize: params.optimize,
           useTrimCache: params.useTrimCache,
+          baseAxisLocation: params.baseAxisLocation,
+          annoAxisLocation: params.annoAxisLocation,
         },
       },
       transfer,

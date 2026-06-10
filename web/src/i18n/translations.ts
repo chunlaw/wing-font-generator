@@ -102,6 +102,7 @@ export type TranslationKey =
   | "step1.upload"
   | "step1.useDefault"
   | "step1.presetLabel"
+  | "step1.variableAxes"
   | "step1.preview.title"
   | "step1.preview.hint"
   | "step1.preview.notLoaded"
@@ -206,7 +207,7 @@ export const TRANSLATIONS: Record<Language, Record<TranslationKey, string>> = {
       "標注直接刻入字形本身，無需 HTML <ruby> 標記。複製字到任何位置都會帶住標注一齊出現。",
     "home.features.f2.title": "字詞自動切換",
     "home.features.f2.body":
-      "「銀行 / 行人」中的「行」會自動切換不同讀音，源自 OpenType 的 calt 字體上下文替換規則。",
+      "「銀行 / 行人」中的「行」會自動切換不同讀音，源自 OpenType 的 ccmp 字體上下文替換規則。",
     "home.features.f3.title": "手動選擇變體",
     "home.features.f3.body":
       "鍵入「字1」、「字2」可手動指定多音字的標注，方便糾正自動判斷。",
@@ -257,7 +258,7 @@ export const TRANSLATIONS: Record<Language, Record<TranslationKey, string>> = {
     "generate.step1.label": "選擇字體",
     "generate.step2.label": "字符對應",
     "generate.step3.label": "參數設定",
-    "generate.step4.label": "執行記錄",
+    "generate.step4.label": "生成字型",
     "generate.step5.label": "預覽與下載",
     // Step 1
     "step1.title": "步驟 1：選擇字體",
@@ -270,6 +271,7 @@ export const TRANSLATIONS: Record<Language, Record<TranslationKey, string>> = {
     "step1.upload": "上載 TTF",
     "step1.useDefault": "使用預設",
     "step1.presetLabel": "預設字體",
+    "step1.variableAxes": "可變字體軸",
     "step1.preview.title": "字形預覽",
     "step1.preview.hint": "字體加載後，下面會顯示樣本字形",
     "step1.preview.notLoaded": "（未加載字體）",
@@ -324,8 +326,8 @@ export const TRANSLATIONS: Record<Language, Record<TranslationKey, string>> = {
     "step3.previewText.placeholder": "留空 = 自動揀字詞",
     "step3.previewText.helper": "輸入想預覽嘅文字，會根據對應嘅字詞配對顯示。",
     // Step 4
-    "step4.title": "步驟 4：執行記錄",
-    "step4.description": "字型生成過程的即時輸出。",
+    "step4.title": "步驟 4：生成字型",
+    "step4.description": "按「開始生成」啟動。下方會即時顯示處理進度與每個步驟的詳細記錄。",
     "step4.empty": "尚未執行。請按下方按鈕開始生成。",
     "step4.run.idle": "開始生成",
     "step4.run.running": "生成中",
@@ -377,7 +379,7 @@ export const TRANSLATIONS: Record<Language, Record<TranslationKey, string>> = {
       "Romanization is baked into the glyph itself — no HTML <ruby> markup needed. Copy the text anywhere and the annotations travel with it.",
     "home.features.f2.title": "Context-aware",
     "home.features.f2.body":
-      "Polyphonic characters auto-switch based on the surrounding word — e.g. 銀行 vs 行人 — via the OpenType `calt` Chain Contextual Substitution feature.",
+      "Polyphonic characters auto-switch based on the surrounding word — e.g. 銀行 vs 行人 — via an OpenType Chain Contextual Substitution under the `ccmp` feature.",
     "home.features.f3.title": "Manual variant picker",
     "home.features.f3.body":
       "Type `字1`, `字2`, etc. to manually choose a specific reading when the context isn't enough.",
@@ -429,7 +431,7 @@ export const TRANSLATIONS: Record<Language, Record<TranslationKey, string>> = {
     "generate.step1.label": "Fonts",
     "generate.step2.label": "Mappings",
     "generate.step3.label": "Parameters",
-    "generate.step4.label": "Log",
+    "generate.step4.label": "Generate",
     "generate.step5.label": "Preview & download",
     // Step 1
     "step1.title": "Step 1: Choose fonts",
@@ -442,6 +444,7 @@ export const TRANSLATIONS: Record<Language, Record<TranslationKey, string>> = {
     "step1.upload": "Upload TTF",
     "step1.useDefault": "Use default",
     "step1.presetLabel": "Built-in font",
+    "step1.variableAxes": "Variable font axes",
     "step1.preview.title": "Glyph preview",
     "step1.preview.hint": "Sample glyphs appear here once a font is loaded.",
     "step1.preview.notLoaded": "(no font loaded)",
@@ -500,8 +503,8 @@ export const TRANSLATIONS: Record<Language, Record<TranslationKey, string>> = {
     "step3.previewText.helper":
       "Type the text you want to preview — uses whichever mappings cover it.",
     // Step 4
-    "step4.title": "Step 4: Generation log",
-    "step4.description": "Live output from the font-generation pipeline.",
+    "step4.title": "Step 4: Generate font",
+    "step4.description": "Press Generate to start. The progress feed below shows each step of the pipeline in real time.",
     "step4.empty": "Not started. Click the button below to generate.",
     "step4.run.idle": "Generate",
     "step4.run.running": "Generating",

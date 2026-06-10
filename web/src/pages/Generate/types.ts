@@ -14,6 +14,26 @@ export interface MappingRow {
   weight?: number;
 }
 
+/**
+ * One axis declared by a font's `fvar` table. We extract this on the
+ * JS side (via opentype.js) when the user picks / uploads a variable
+ * font, then surface a slider per axis in Step 1 so the user can
+ * choose an instance of the variation space.
+ */
+export interface FontAxis {
+  /** 4-character OpenType tag, e.g. "wght", "wdth", "ital", "opsz". */
+  tag: string;
+  /** Human-readable axis name as declared in the font (e.g. "Weight").
+   *  Falls back to the tag when the font doesn't include a name. */
+  name: string;
+  min: number;
+  default: number;
+  max: number;
+}
+
+/** Map of axis tag → chosen value, e.g. { wght: 700, ital: 1 }. */
+export type AxisLocation = Record<string, number>;
+
 /** Parameters that go straight into the runner. */
 export interface GenerateParams {
   baseScale: number;

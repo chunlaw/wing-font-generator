@@ -22,12 +22,15 @@ character outline is scaled down and placed at the bottom, the romanization
 glyphs are scaled smaller and laid out above it. Because the annotation is
 inside the glyph itself, it survives copy-paste into a `<textarea>`, a Word
 doc, an email — anywhere plain text goes. Polyphonic characters are
-disambiguated through two OpenType GSUB layers: `calt` (Chain Contextual
-Substitution) automatically picks the right reading when the character
-appears in a known word (e.g. `銀行` → `行/hong4`, `行人` → `行/hang4`),
-and `liga` (Ligature Substitution) lets the user manually pick a variant by
-typing `字1` / `字2` / … or the IME-friendly `字丅一` / `字丅二`
-fallback.
+disambiguated through two OpenType GSUB layers: `ccmp` (Glyph
+Composition / Decomposition) automatically picks the right reading when
+the character appears in a known word (e.g. `銀行` → `行/hong4`,
+`行人` → `行/hang4`), and `liga` (Ligature Substitution) lets the user
+manually pick a variant by typing `字1` / `字2` / … or the IME-friendly
+`字丅一` / `字丅二` fallback. (We use `ccmp` for the chain-context
+rules rather than `calt` because Apple's iWork typesetter — Pages,
+Keynote, Numbers — silently suppresses `calt` on CJK text runs. See the
+`chain_context_handler.py` deep-dive below.)
 
 ---
 
@@ -38,7 +41,7 @@ python/
 ├── wing-font.py                # CLI entry point — argparse + main()
 ├── runner.py                   # Pyodide wrapper (called from the web app)
 ├── build_glyph.py              # Pen-based glyph composition (base + anno)
-├── chain_context_handler.py    # Builds the `calt` GSUB rules
+├── chain_context_handler.py    # Builds the `ccmp` GSUB rules
 ├── liga_handler.py             # Builds the `liga` GSUB rules
 ├── utils.py                    # cmap lookup + GSUB feature registration helper
 ├── mappings/                   # CSVs that map char → romanization (+csv_parser)
@@ -121,9 +124,9 @@ This regenerates a tiny test font from
 [`tests/test_mapping.csv`](tests/test_mapping.csv) and serves
 [`tests/viewer.html`](tests/viewer.html) on
 <http://127.0.0.1:8765/viewer.html>. The viewer renders four panels —
-default reading, calt word context, liga digit trigger, and the 丅
-fallback — each comparing the system font (left) against the generated
-font (right). Visual differences prove the GSUB rules fired.
+default reading, word context (`ccmp`), digit trigger (`liga`), and the
+丅 fallback — each comparing the system font (left) against the
+generated font (right). Visual differences prove the GSUB rules fired.
 
 See [`tests/README.md`](tests/README.md) for the per-panel pass/fail
 guide and the JSON report schema written to `tests/output/report.json`.
@@ -178,7 +181,7 @@ the output font's `glyf` table.
 Un-annotated glyphs (most of the font) are scaled down with the same
 `base_scale` so the whole font is visually consistent.
 
-### `chain_context_handler.py` — `calt` builder
+### `chain_context_handler.py` — `ccmp` builder (was `calt`)
 
 Uses `fontTools.otlLib.builder.ChainContextSubstBuilder` to build a
 Chain Contextual Substitution lookup. For each multi-character word in
@@ -191,7 +194,22 @@ The lookup is **appended** to the font's existing GSUB
 (`gsub.LookupList.Lookup.append(...)`) so the source font's 80+ existing
 lookups (`vert`, `vrt2`, `locl`, `ss01..ss20`, the source's own `calt`)
 all survive. Then `utils.register_feature_lookup` wires the new lookup
-into the `calt` `FeatureRecord` on every script/langsys.
+into the `ccmp` `FeatureRecord` on every script/langsys.
+
+**Why `ccmp` and not `calt`?** This used to be a `calt` (Contextual
+Alternates) lookup, which is what the OT spec was written for. It
+works in browsers (HarfBuzz) and TextEdit (CoreText via Cocoa text).
+But Apple's iWork typesetter — Pages, Keynote, Numbers — silently
+suppresses `calt` on CJK text runs even when the user has "Contextual
+Alternates" toggled on; PDF export from those apps also embeds the
+unsubstituted glyphs. Tagging the run as Traditional Chinese in Pages
+didn't help, ruling out a language-system selection problem. `ccmp`
+(Glyph Composition/Decomposition) is required-by-spec — shapers MUST
+apply it and there's no user-facing toggle — so the rules now land
+under `ccmp` and apply universally. Lookup body is identical; only the
+feature tag changed. Trade-off: users can no longer disable the
+annotations via an app's "Contextual Alternates" toggle. See the
+docstring in `chain_context_handler.py` for the full rationale.
 
 A defensive `add_subtable_break()` is inserted every 50 rules so no
 single subtable approaches the OpenType 64 KB offset limit — fontTools'
@@ -218,7 +236,10 @@ breaks after the first.
 
 Tiny helper that exists because the chain and liga handlers used to
 duplicate ~40 lines each of script/langsys walking. Now both just call
-`register_feature_lookup(gsub, 'calt', lookup_index)`.
+`register_feature_lookup(gsub, 'ccmp', lookup_index)` (or `'liga'`).
+The helper also force-creates `hani` / `latn` / `kana` / `hang` /
+`bopo` script records if missing, so CoreText finds the feature under
+whichever script tag it picks for the text run.
 
 ### Subsetting
 

@@ -229,6 +229,12 @@ interface GeneratePayload {
   upperYOffsetRatio?: number;
   invert?: boolean;
   optimize?: boolean;
+  /** Variable-font axis locations (one entry per axis tag). Forwarded
+   *  to fontTools' `getGlyphSet(location=...)` and HarfBuzz's
+   *  `set_variations(...)`. Null / undefined means "use the font's
+   *  default instance" (the existing non-variable behaviour). */
+  baseAxisLocation?: Record<string, number> | null;
+  annoAxisLocation?: Record<string, number> | null;
   /**
    * If true, ask the runner to swap in pre-trimmed font bytes from
    * the in-Pyodide cache (populated by `prepare-preview-fonts`).
@@ -269,6 +275,8 @@ async function handleGenerate(id: string, payload: GeneratePayload): Promise<voi
     invert: payload.invert ?? false,
     optimize: payload.optimize ?? true,
     use_trim_cache: payload.useTrimCache ?? false,
+    base_axis_location: payload.baseAxisLocation ?? null,
+    anno_axis_location: payload.annoAxisLocation ?? null,
   };
   pyodide.globals.set("_params", pyodide.toPy(params));
 

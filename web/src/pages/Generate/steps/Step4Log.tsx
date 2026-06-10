@@ -1,10 +1,13 @@
 /**
- * Step 4 — generation log + Generate button.
+ * Step 4 — Generate the font.
  *
- * Shows the streaming output from the Pyodide pipeline. The Generate
- * button lives here (not in the stepper footer) because the action
- * naturally belongs to the log step: "press this to start, watch
- * output appear here." On success the context auto-advances to Step 5.
+ * The primary action of this step is pressing the Generate button to
+ * kick off the Pyodide pipeline. The streaming progress feed below
+ * the button is the secondary visual element — feedback about what
+ * the pipeline is doing, not the step's purpose. (Earlier the step
+ * was titled "Log" after the feed, but that undersold the action;
+ * the other steps are named after what you DO in them and this one
+ * follows suit.) On success the context auto-advances to Step 5.
  */
 import {
   Alert,

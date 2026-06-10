@@ -140,22 +140,88 @@ def _build_default_langsys():
     return ls
 
 
-def register_feature_lookup(gsub, feature_tag: str, lookup_index: int) -> None:
+# Default set of OpenType script tags we GUARANTEE the feature lookup
+# is registered under. The motivating bug: CoreText (the shaper used
+# by Pages / InDesign on macOS) selects an OT script tag based on the
+# Unicode script of the text run, then looks features up only under
+# THAT tag — it does NOT fall back to DFLT when the script-specific
+# script record doesn't declare the feature. HarfBuzz (browsers,
+# Chrome / Firefox / Safari outside of Pages) DOES fall back to DFLT,
+# which is why the same font shows contextual annotations correctly
+# in a browser but renders flat in Pages.
+#
+# By creating ScriptRecords for the common CJK + Latin tags whenever
+# the source font's GSUB doesn't already declare them, we ensure the
+# ccmp / liga lookups we add are found regardless of which script
+# CoreText decides the text run is. (We registered chain context
+# rules under `calt` originally; that's been moved to `ccmp` —
+# see chain_context_handler.py docstring — but the same script-
+# net argument applies.)
+#
+#   DFLT  — the catch-all every font already has
+#   hani  — Han characters (Chinese / Japanese kanji)
+#   latn  — Latin (for the romanization parts and any Latin-only runs)
+#   kana  — Hiragana + Katakana
+#   hang  — Hangul
+#   bopo  — Bopomofo (Taiwanese phonetics)
+#
+# Adding scripts a font doesn't need is harmless: shapers only consult
+# the script that matches the text run, so an unused ScriptRecord is
+# never touched.
+_DEFAULT_FEATURE_SCRIPTS: tuple[str, ...] = (
+    "DFLT",
+    "hani",
+    "latn",
+    "kana",
+    "hang",
+    "bopo",
+)
+
+
+def register_feature_lookup(
+    gsub,
+    feature_tag: str,
+    lookup_index: int,
+    *,
+    ensure_scripts: tuple[str, ...] = _DEFAULT_FEATURE_SCRIPTS,
+) -> None:
     """
     Make a newly-appended lookup discoverable under ``feature_tag``.
 
-    Behaviour matches what the old chain_context_handler / liga_handler did
-    inline:
-      * If a FeatureRecord with this tag already exists, append our lookup
-        index to its LookupListIndex (de-duplicated).
+    Behaviour:
+      * Ensure every tag in ``ensure_scripts`` exists in
+        ``gsub.ScriptList.ScriptRecord``, creating a fresh
+        ScriptRecord with an empty DefaultLangSys if not.
+      * If a FeatureRecord with this tag already exists, append our
+        lookup index to its LookupListIndex (de-duplicated).
       * Otherwise create a new FeatureRecord and register it on every
-        script's DefaultLangSys (and any named LangSys siblings), creating
-        a DefaultLangSys if the source font didn't provide one.
+        script's DefaultLangSys (and any named LangSys siblings),
+        creating a DefaultLangSys if the source font didn't provide one.
 
-    This function only mutates ``gsub`` — the caller is responsible for
-    having already appended the built ``Lookup`` to ``gsub.LookupList`` so
-    that ``lookup_index`` is valid.
+    This function only mutates ``gsub`` — the caller is responsible
+    for having already appended the built ``Lookup`` to
+    ``gsub.LookupList`` so that ``lookup_index`` is valid.
+
+    See ``_DEFAULT_FEATURE_SCRIPTS`` for why we cast a wide net on the
+    script tags (short version: CoreText doesn't fall back to DFLT).
     """
+    # Ensure every requested script exists. Adding here BEFORE we walk
+    # ScriptList.ScriptRecord below means the new feature gets
+    # registered into the freshly-created scripts too.
+    existing_tags = {sr.ScriptTag for sr in gsub.ScriptList.ScriptRecord}
+    for tag in ensure_scripts:
+        if tag in existing_tags:
+            continue
+        sr = otTables.ScriptRecord()
+        sr.ScriptTag = tag
+        sr.Script = otTables.Script()
+        sr.Script.DefaultLangSys = _build_default_langsys()
+        sr.Script.LangSysRecord = []
+        sr.Script.LangSysCount = 0
+        gsub.ScriptList.ScriptRecord.append(sr)
+        existing_tags.add(tag)
+    gsub.ScriptList.ScriptCount = len(gsub.ScriptList.ScriptRecord)
+
     feature_indexes = [
         i
         for i, record in enumerate(gsub.FeatureList.FeatureRecord)
@@ -170,6 +236,19 @@ def register_feature_lookup(gsub, feature_tag: str, lookup_index: int) -> None:
             if lookup_index not in feature.LookupListIndex:
                 feature.LookupListIndex.append(lookup_index)
                 feature.LookupCount = len(feature.LookupListIndex)
+        # Even if the feature record exists, we may have just created
+        # new ScriptRecords above whose DefaultLangSys doesn't yet
+        # reference this feature. Wire it in for them too.
+        for idx in feature_indexes:
+            for script_record in gsub.ScriptList.ScriptRecord:
+                script = script_record.Script
+                if script.DefaultLangSys is None:
+                    script.DefaultLangSys = _build_default_langsys()
+                if idx not in script.DefaultLangSys.FeatureIndex:
+                    script.DefaultLangSys.FeatureIndex.append(idx)
+                    script.DefaultLangSys.FeatureCount = len(
+                        script.DefaultLangSys.FeatureIndex
+                    )
         return
 
     # Create a fresh FeatureRecord for this tag.

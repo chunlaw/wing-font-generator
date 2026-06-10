@@ -10,12 +10,14 @@ import {
   Alert,
   Box,
   Button,
+  Divider,
   FormControl,
   InputLabel,
   MenuItem,
   Paper,
   Select,
   SelectChangeEvent,
+  Slider,
   Stack,
   Typography,
 } from "@mui/material";
@@ -27,6 +29,7 @@ import {
   BUILT_IN_BASE_FONTS,
   BuiltInPreset,
 } from "../../../utils/wingfontPresets";
+import { AxisLocation, FontAxis } from "../types";
 import GlyphPreview from "../GlyphPreview";
 
 // Sample characters chosen to exercise both fonts in their intended use:
@@ -44,6 +47,8 @@ const Step1Fonts = () => {
     annoFont,
     setBaseFont,
     setAnnoFont,
+    setBaseFontAxisValue,
+    setAnnoFontAxisValue,
     loadBuiltInBaseFont,
     loadBuiltInAnnoFont,
   } = useGenerate();
@@ -106,6 +111,10 @@ const Step1Fonts = () => {
           uploadLabel={t("step1.upload")}
           presetLabel={t("step1.presetLabel")}
           previewTitle={t("step1.preview.title")}
+          axes={baseFont.axes}
+          axisLocation={baseFont.axisLocation}
+          onAxisChange={setBaseFontAxisValue}
+          axesLabel={t("step1.variableAxes")}
         />
         <FontSlotCard
           label={t("step1.anno.label")}
@@ -133,6 +142,10 @@ const Step1Fonts = () => {
           uploadLabel={t("step1.upload")}
           presetLabel={t("step1.presetLabel")}
           previewTitle={t("step1.preview.title")}
+          axes={annoFont.axes}
+          axisLocation={annoFont.axisLocation}
+          onAxisChange={setAnnoFontAxisValue}
+          axesLabel={t("step1.variableAxes")}
         />
       </Stack>
     </Box>
@@ -167,6 +180,19 @@ interface FontSlotCardProps {
   presetLabel?: string;
   onUseDefault?: () => Promise<void>;
   useDefaultLabel?: string;
+  /**
+   * Variable-font axes declared by the loaded font. Undefined for
+   * non-variable fonts, in which case the axis sliders are not
+   * rendered at all (no clutter for the common case).
+   */
+  axes?: FontAxis[];
+  /** Current axis values keyed by tag. Used to drive the slider
+   *  positions. */
+  axisLocation?: AxisLocation;
+  /** Called when the user drags one of the axis sliders. */
+  onAxisChange?: (tag: string, value: number) => void;
+  /** Heading shown above the axis sliders. */
+  axesLabel?: string;
 }
 
 const FontSlotCard = ({
@@ -186,6 +212,10 @@ const FontSlotCard = ({
   presetLabel,
   onUseDefault,
   useDefaultLabel,
+  axes,
+  axisLocation,
+  onAxisChange,
+  axesLabel,
 }: FontSlotCardProps) => {
   const handlePresetChange = (event: SelectChangeEvent<string>) => {
     if (!presetOptions || !onPresetChange) return;
@@ -291,8 +321,87 @@ const FontSlotCard = ({
         <Typography variant="caption" color="text.secondary" sx={{ display: "block", mb: 1 }}>
           {previewTitle}
         </Typography>
-        <GlyphPreview bytes={bytes} sampleChars={sampleChars} glyphSize={glyphSize} />
+        {/* Forwarding axisLocation here is what makes the preview
+            glyphs respond live to the variable-font axis sliders
+            below. The browser interpolates outlines per the
+            font-variation-settings CSS we set inside GlyphPreview. */}
+        <GlyphPreview
+          bytes={bytes}
+          sampleChars={sampleChars}
+          glyphSize={glyphSize}
+          axisLocation={axisLocation}
+        />
       </Box>
+
+      {/*
+        Variable-font axis sliders — only rendered when the loaded
+        font actually has an fvar table with axes. Non-variable
+        fonts (the common case) get no UI clutter here.
+      */}
+      {axes && axes.length > 0 && (
+        <Box mt={2}>
+          <Divider sx={{ mb: 1.5 }} />
+          <Typography
+            variant="caption"
+            color="text.secondary"
+            sx={{ display: "block", mb: 1, fontWeight: 600 }}
+          >
+            {axesLabel ?? "Axes"}
+          </Typography>
+          <Stack spacing={1.5}>
+            {axes.map((axis) => {
+              const value = axisLocation?.[axis.tag] ?? axis.default;
+              // Pick a slider step that gives reasonable
+              // granularity without being absurdly fine. Range
+              // 0–1 (ital/slnt) gets step 0.01; integer ranges
+              // (wght 100–900 etc.) get step 1; anything else
+              // uses ~1/100 of the range.
+              const range = axis.max - axis.min;
+              const step =
+                range <= 1
+                  ? 0.01
+                  : Number.isInteger(axis.min) &&
+                      Number.isInteger(axis.max) &&
+                      range >= 100
+                    ? 1
+                    : Math.max(0.1, Math.round((range / 100) * 100) / 100);
+              return (
+                <Box key={axis.tag}>
+                  <Typography
+                    variant="caption"
+                    color="text.secondary"
+                    sx={{ display: "block" }}
+                  >
+                    {axis.name} ({axis.tag}): {value}
+                  </Typography>
+                  <Slider
+                    size="small"
+                    value={value}
+                    min={axis.min}
+                    max={axis.max}
+                    step={step}
+                    onChange={(_, v) =>
+                      onAxisChange?.(
+                        axis.tag,
+                        Array.isArray(v) ? v[0] : v,
+                      )
+                    }
+                    valueLabelDisplay="auto"
+                    marks={[
+                      { value: axis.min, label: String(axis.min) },
+                      {
+                        value: axis.default,
+                        label: `${axis.default}`,
+                      },
+                      { value: axis.max, label: String(axis.max) },
+                    ]}
+                  />
+                </Box>
+              );
+            })}
+          </Stack>
+        </Box>
+      )}
     </Paper>
   );
 };

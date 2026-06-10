@@ -663,7 +663,7 @@ const AddDialog = ({ open, onClose, onAdd }: AddDialogProps) => {
             // Subtle nudge so users know the column actually matters —
             // most readers see "Weight" and assume metadata, but it
             // drives the default-reading pick + variant truncation +
-            // calt rule order downstream in csv_parser.py.
+            // ccmp rule order downstream in csv_parser.py.
             helperText={t("step2.add.weightHint")}
           />
         </Stack>

@@ -1,7 +1,32 @@
 """
-chain_context_handler — build the `calt` Chain Contextual Substitution
+chain_context_handler — build the `ccmp` Chain Contextual Substitution
 that selects the correct variant glyph for each character based on the
 surrounding word.
+
+Why `ccmp`, not `calt`
+----------------------
+
+We originally registered this lookup under `calt` (Contextual
+Alternates), which works in browsers (HarfBuzz) and in TextEdit
+(CoreText via Cocoa's text engine). But Apple's iWork typesetter —
+used by Pages, Keynote, and Numbers — silently suppresses `calt`
+on CJK text runs even when the user toggles "Contextual Alternates"
+on. Concretely: `畫畫` rendered as `waa2 waa2` (both default
+readings) instead of the intended `waak6 waa2`. Tagging the run as
+Traditional Chinese in Pages didn't help, ruling out a langsys-
+selection problem; PDF export also showed the wrong glyphs, ruling
+out a Pages-display-only quirk. TextEdit shaping the same font
+correctly proved the GSUB itself is fine — iWork is overriding
+feature selection above the font level.
+
+`ccmp` (Glyph Composition/Decomposition) is specified as required —
+shapers MUST apply it, there is no user-facing toggle, and there is
+no script-suppression list. Its semantic intent ("convert character
+sequences to glyph sequences in a manner dependent on context")
+matches what we're doing; the spec doesn't restrict `ccmp` to any
+particular GSUB lookup type, so a Chain Context Substitution
+under `ccmp` is valid. Moving the rules from `calt` → `ccmp` gets
+them applied universally without changing what they do.
 
 Implementation note
 -------------------
@@ -68,14 +93,15 @@ RULES_PER_SUBTABLE = 500
 
 def buildChainSub(output_font, word_mapping, char_mapping):
     """
-    Add a `calt` Chain Contextual Substitution that, when the user types
+    Add a `ccmp` Chain Contextual Substitution that, when the user types
     a known multi-character word, swaps each character glyph for the
-    correct variant.
+    correct variant. See the module docstring for why `ccmp` and not
+    `calt`.
 
     Args:
         output_font: TTFont being mutated.
         word_mapping: Ordered dict of ``word -> [annotation_per_char]``.
-            Order determines rule priority (earlier rules win in calt).
+            Order determines rule priority (earlier rules win).
         char_mapping: ``char -> {annotation_str: (glyph_name, variant_index)}``.
     """
     # All progress / timing handled by step_timer — it emits the
@@ -114,8 +140,8 @@ def buildChainSub(output_font, word_mapping, char_mapping):
         # preserve that priority when emitting rules.
         for word, anno_strs in word_mapping.items():
             if len(word) <= 1:
-                # calt is for *multi*-glyph context. Single characters
-                # are handled by the liga (digit-triggered) path.
+                # Chain context is for *multi*-glyph words. Single-character
+                # variants are handled by the liga (digit-triggered) path.
                 continue
 
             input_glyphs = []
@@ -155,7 +181,7 @@ def buildChainSub(output_font, word_mapping, char_mapping):
             #
             # Variant 0 always means "use the default reading" and the
             # default reading IS the original glyph (no substitution).
-            # A calt rule whose positions are ALL variant-0-or-None is
+            # A rule whose positions are ALL variant-0-or-None is
             # therefore a pure no-op — it matches the word and then
             # substitutes nothing. Emitting it pollutes GSUB, makes the
             # build / serialize / subset steps proportionally slower,
@@ -225,5 +251,8 @@ def buildChainSub(output_font, word_mapping, char_mapping):
         gsub.LookupList.Lookup.append(chain_lookup)
         gsub.LookupList.LookupCount = len(gsub.LookupList.Lookup)
 
-        register_feature_lookup(gsub, "calt", chain_index)
+        # ccmp instead of calt — see module docstring "Why `ccmp`, not
+        # `calt`" for the iWork-suppression rationale. Same lookup body,
+        # different feature tag.
+        register_feature_lookup(gsub, "ccmp", chain_index)
         timer.note(f"{len(chain_builder.rules)} rules")
