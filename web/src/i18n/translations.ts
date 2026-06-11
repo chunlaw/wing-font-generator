@@ -43,6 +43,7 @@ export type TranslationKey =
   | "ack.taigi.body"
   | "ack.taigi.piauim"
   | "ack.taigi.rimetlpa"
+  | "ack.taigi.taigivs"
   | "ack.teochew.title"
   | "ack.teochew.body"
   | "ack.teochew.learnteochew"
@@ -266,6 +267,8 @@ export const TRANSLATIONS: Record<Language, Record<TranslationKey, string>> = {
       "漢字標音資料庫（Ho_Lok_Ue.db 之「漢字庫」、聲母／韻母／聲調對照表）同調符標注邏輯（mod_帶調符音標.py）。",
     "ack.taigi.rimetlpa":
       "台語音標（TLPA）RIME 輸入方案及字庫，提供另一套漢字讀音對照。",
+    "ack.taigi.taigivs":
+      "方音符號（注音）同台灣語假名嘅轉寫資料（Apache-2.0），字音源自教育部臺灣台語常用詞辭典。",
     "ack.teochew.title": "潮州話　字音資料",
     "ack.teochew.body":
       "潮州話嘅漢字同詞語讀音（廣東拼音）源自 learn-teochew 項目嘅開源字音資料，再用 parsetc 解析器轉換成潮拼／潮羅／白話字等唔同拼音方案。",
@@ -534,6 +537,8 @@ export const TRANSLATIONS: Record<Language, Record<TranslationKey, string>> = {
       "Character-reading database — the 漢字庫 table of Ho_Lok_Ue.db plus the initial / final / tone conversion tables — and the tone-mark logic (mod_帶調符音標.py).",
     "ack.taigi.rimetlpa":
       "The TLPA RIME input schema and dictionaries, a second source of character readings.",
+    "ack.taigi.taigivs":
+      "Transcription data for 方音符號 (Taiwanese Phonetic Symbols) and 台灣語假名 (Taiwanese kana) (Apache-2.0); readings sourced from the MOE Taiwanese dictionary.",
     "ack.teochew.title": "Teochew — reading data",
     "ack.teochew.body":
       "The Teochew character and word readings (Geng'dang Pêng'im) come from the open learn-teochew project, then converted into Peng'im / Tie-lo / Pe̍h-ūe-jī and other schemes with the parsetc parser.",

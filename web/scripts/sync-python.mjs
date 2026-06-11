@@ -85,6 +85,12 @@ const MANIFEST = [
   ["mappings/taigi-poj.csv", "mappings/taigi-poj.csv"],
   ["mappings/taigi-tlpa.csv", "mappings/taigi-tlpa.csv"],
   ["mappings/taigi-bp.csv", "mappings/taigi-bp.csv"],
+  // Non-Latin Taiwanese annotation: 方音符號 (TPS, bopomofo-extended —
+  // pair with a Bopomofo-covering CJK font like Noto Sans TC) and
+  // 台灣語假名 (Taiwanese kana — pair with Noto Sans JP). Derived from
+  // ButTaiwan/taigivs (Apache-2.0; readings from MOE 教典).
+  ["mappings/taigi-tps.csv", "mappings/taigi-tps.csv"],
+  ["mappings/taigi-kana.csv", "mappings/taigi-kana.csv"],
   // Teochew / Min Nan (潮州話) mappings — surfaced as Step 2 presets for
   // the Noto Sans TC + Huninn pairing. Two diacritic schemes (tlo,
   // duffus) plus four numeric-tone schemes (gdpi, ggnn, dieghv, sinwz).

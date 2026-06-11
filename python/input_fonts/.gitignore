@@ -1,0 +1,13 @@
+# Wing Font's input TTFs are no longer tracked here — they live in a
+# separate gh-pages-served repo and are fetched into this directory
+# at build time by `python init_fonts.py`. Ignoring everything except
+# this .gitignore prevents an accidental `git add python/input_fonts/`
+# from re-committing the binaries (which would defeat the whole
+# point of the migration).
+
+# Ignore everything by default …
+*
+
+# … except this .gitignore itself, so the directory exists in git
+# even when empty.
+!.gitignore

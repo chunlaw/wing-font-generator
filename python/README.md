@@ -58,6 +58,8 @@ python/
 ├── utils.py                    # cmap lookup + GSUB feature registration helper
 ├── mappings/                   # CSVs that map char → romanization (+csv_parser)
 ├── input_fonts/                # Source TTFs (Chiron, NotoSerif, NotoSansTC, …)
+│                               #   — populated by `python init_fonts.py`
+├── init_fonts.py               # Fetch source TTFs from the input-fonts CDN
 ├── tests/                      # Local test rig — small font + HTML viewer
 ├── requirements.txt            # Pinned: fontTools, Brotli, unicodedata2
 └── README.md
@@ -91,7 +93,20 @@ pip install uharfbuzz
 
 ## Quick start
 
-Generate one font from a Cantonese-LSHK mapping:
+First, fetch the input TTFs into `input_fonts/`. They live in a
+separate gh-pages-served repo (default
+`https://chunlaw.github.io/wing-font-inputs`) so this repo's clone
+stays small:
+
+```sh
+python init_fonts.py
+```
+
+Idempotent: TTFs already present at the expected size are skipped.
+Re-run after pulling changes that bump the `FONT_FILES` list inside
+the script.
+
+Then generate one font from a Cantonese-LSHK mapping:
 
 ```sh
 python wing-font.py \
@@ -360,6 +375,21 @@ tone-mark placement come from the same project's conversion tables and
 
 The romanization is set in [Huninn (jf-openhuninn)](https://github.com/justfont/open-huninn-font),
 which carries the full Tâi-lô / POJ combining tone marks.
+
+The two non-Latin Taiwanese annotation systems — `taigi-tps.csv`
+(方音符號 / Taiwanese Phonetic Symbols) and `taigi-kana.csv`
+(台灣語假名 / Taiwanese kana) — are derived from
+[ButTaiwan/taigivs](https://github.com/ButTaiwan/taigivs) (Apache-2.0;
+character readings from the MOE 教育部臺灣台語常用詞辭典). Each
+character's primary reading follows taigivs's 教典-sourced ordering.
+TPS is emitted as standard Unicode (Bopomofo + Bopomofo Extended + tone
+marks) — pair it with a Bopomofo-covering CJK font such as Noto Sans TC.
+The Taiwanese-kana column is a standard-Unicode approximation (katakana
++ tone digit), since the authentic tone diacritics are taigivs's custom
+font glyphs rather than encoded characters; pair it with Noto Sans JP.
+
+1. [ButTaiwan/taigivs](https://github.com/ButTaiwan/taigivs) — 方音符號 / 台灣語假名 transcriptions (Apache-2.0)
+2. [教育部臺灣台語常用詞辭典](https://sutian.moe.edu.tw/) — upstream character readings
 
 ### Mandarin (普通話 / 國語)
 

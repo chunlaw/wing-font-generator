@@ -70,6 +70,14 @@ jobs:
         uses: actions/checkout@v4
       - name: Compute fonts cache key
         id: key
+        # The cache key folds in everything Python-side plus this
+        # workflow. Input-font binaries are NOT tracked in git
+        # anymore (see python/init_fonts.py), so their content
+        # doesn't contribute here — but the init_fonts.py file does,
+        # and bumping the font list / CDN URL in that file
+        # invalidates the cache correctly. If you ever want
+        # binary-content-level invalidation, fold a per-font hash
+        # file into the input-fonts repo and hash it here too.
         run: echo "key=fonts-${{ hashFiles('python/**', '.github/workflows/deploy-pages.yml') }}" >> "$GITHUB_OUTPUT"
       - name: Probe fonts cache
         id: probe
@@ -153,6 +161,12 @@ jobs:
           - { name: NotoSansTC-Huninn-tailo,               args: "-opt -i input_fonts/NotoSansTC-VariableFont_wght.ttf -a input_fonts/Huninn-Regular.ttf -m mappings/taigi-tl-toned.csv -as 0.25" }
           - { name: NotoSansTC-Huninn-poj,                 args: "-opt -i input_fonts/NotoSansTC-VariableFont_wght.ttf -a input_fonts/Huninn-Regular.ttf -m mappings/taigi-poj-toned.csv -as 0.25" }
           - { name: NotoSansTC-Huninn-hero-tailo,          args: "-opt -i input_fonts/NotoSansTC-VariableFont_wght.ttf -a input_fonts/Huninn-Regular.ttf -m mappings/hero-taigi.csv -as 0.25" }
+          # Non-Latin Taiwanese annotation (data from ButTaiwan/taigivs).
+          # 方音符號 (TPS): annotation font must cover Bopomofo + Bopomofo
+          # Extended — Noto Sans TC does (serves as both base and anno).
+          # 台灣語假名 (kana): pair the TC base with Noto Sans JP for katakana.
+          - { name: NotoSansTC-tps,                        args: "-opt -i input_fonts/NotoSansTC-VariableFont_wght.ttf -a input_fonts/NotoSansTC-VariableFont_wght.ttf -m mappings/taigi-tps.csv -as 0.25" }
+          - { name: NotoSansTC-NotoJP-kana,                args: "-opt -i input_fonts/NotoSansTC-VariableFont_wght.ttf -a input_fonts/NotoSansJP-VariableFont_wght.ttf -m mappings/taigi-kana.csv -as 0.25" }
           # === Teochew / Min Nan (潮州話) showcase ==================
           - { name: NotoSansTC-Huninn-teochew-pengim,      args: "-opt -i input_fonts/NotoSansTC-VariableFont_wght.ttf -a input_fonts/Huninn-Regular.ttf -m mappings/teochew-gdpi.csv -as 0.25" }
           - { name: NotoSansTC-Huninn-teochew-puj,         args: "-opt -i input_fonts/NotoSansTC-VariableFont_wght.ttf -a input_fonts/Huninn-Regular.ttf -m mappings/teochew-duffus.csv -as 0.25" }
@@ -178,6 +192,25 @@ jobs:
         run: |
           python -m pip install --upgrade pip
           pip install -r ./requirements.txt
+      - name: Cache input fonts
+        # Input fonts live in a separate gh-pages-served repo (see
+        # init_fonts.py). The download is ~250 MB across 15 files, so
+        # caching saves ~30-60 s per matrix slot AND saves bandwidth
+        # on the input-fonts repo. Cache key folds in init_fonts.py's
+        # content — bumping the font list or CDN URL invalidates the
+        # cache; bumping a font's bytes upstream WITHOUT touching
+        # init_fonts.py would not invalidate (acceptable risk: input
+        # fonts rarely change in ways we'd want to silently pick up
+        # on the same matrix run, and a manual cache-bust line in
+        # init_fonts.py covers the override case).
+        id: cache-input-fonts
+        uses: actions/cache@v4
+        with:
+          path: python/input_fonts
+          key: input-fonts-${{ hashFiles('python/init_fonts.py') }}
+      - name: Fetch input fonts (if cache miss)
+        if: steps.cache-input-fonts.outputs.cache-hit != 'true'
+        run: python init_fonts.py
       - name: Build font
         run: |
           mkdir -p outputs
@@ -227,6 +260,29 @@ jobs:
     steps:
       - name: Check out repository code
         uses: actions/checkout@v4
+      - name: Setup Python (for init_fonts.py)
+        # Plain stdlib script — Python 3.10+ suffices, no
+        # requirements.txt install needed in this job.
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+          architecture: 'x64'
+      - name: Cache input fonts
+        # Shared with the build-fonts matrix above; same key shape so
+        # the two jobs hit the same cache entry on warm runs.
+        id: cache-input-fonts
+        uses: actions/cache@v4
+        with:
+          path: python/input_fonts
+          key: input-fonts-${{ hashFiles('python/init_fonts.py') }}
+      - name: Fetch input fonts (if cache miss)
+        # `yarn build` runs `yarn sync` first, which copies
+        # python/input_fonts/*.ttf into public/wingfont/ for the
+        # in-browser Pyodide worker. The fonts have to physically
+        # exist before sync runs; that's what this step ensures.
+        if: steps.cache-input-fonts.outputs.cache-hit != 'true'
+        working-directory: python
+        run: python init_fonts.py
       - name: Setup Node
         uses: actions/setup-node@v4
         with:

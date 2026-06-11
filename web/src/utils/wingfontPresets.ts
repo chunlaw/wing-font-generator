@@ -364,6 +364,23 @@ export const BUILT_IN_MAPPINGS: BuiltInPreset[] = [
     filename: "taigi-bp.csv",
     group: "台語 (Taiwanese / Southern Min)",
   },
+  // Non-Latin Taiwanese annotation systems (from ButTaiwan/taigivs).
+  // 方音符號 needs a Bopomofo-covering CJK annotation font (Noto Sans
+  // TC / ChironSung); 台灣語假名 needs a katakana font (Noto Sans JP).
+  {
+    key: "taigi-tps",
+    label: "方音符號 (TPS / 注音)",
+    url: "/wingfont/mappings/taigi-tps.csv",
+    filename: "taigi-tps.csv",
+    group: "台語 (Taiwanese / Southern Min)",
+  },
+  {
+    key: "taigi-kana",
+    label: "台灣語假名 (Taiwanese kana)",
+    url: "/wingfont/mappings/taigi-kana.csv",
+    filename: "taigi-kana.csv",
+    group: "台語 (Taiwanese / Southern Min)",
+  },
   // Teochew / Min Nan (潮州話) — pair these with the Noto Sans TC base
   // and the Huninn annotation font (Huninn carries every combining
   // tone mark used by the Tie-lo and Pe̍h-ūe-jī diacritic schemes,

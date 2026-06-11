@@ -46,6 +46,11 @@ const TAIGI_SOURCES: Source[] = [
     url: "https://github.com/AlanJui/rime-tlpa",
     descKey: "ack.taigi.rimetlpa",
   },
+  {
+    name: "ButTaiwan / taigivs",
+    url: "https://github.com/ButTaiwan/taigivs",
+    descKey: "ack.taigi.taigivs",
+  },
 ];
 
 const TEOCHEW_SOURCES: Source[] = [
