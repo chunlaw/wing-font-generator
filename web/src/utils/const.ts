@@ -52,7 +52,7 @@ export type FontSet = Record<
  * Showcase curation:
  *
  * The CI workflow (.github/workflows/build-fonts.yml) builds ~30 font
- * variants and deploys them all to wing-fonts.chunlaw.io/fonts/. The
+ * variants and deploys them all to wing-font.chunlaw.io/fonts/. The
  * showcase page surfaces only a CURATED SUBSET of those builds — 6
  * entries chosen to demonstrate maximally-distinct concepts rather
  * than visually-similar romanization variants.

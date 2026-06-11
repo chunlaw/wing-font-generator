@@ -122,7 +122,7 @@ export default AppContext;
  * FontOption object — including a `source: "url(https://...)"` string
  * that was baked in at the time of the previous visit. If we ever
  * change the font CDN URL (e.g. moving from fonts.chunlaw.io →
- * wing-fonts.chunlaw.io/fonts), users who visited before the change
+ * wing-font.chunlaw.io/fonts), users who visited before the change
  * would otherwise load fonts from a domain that no longer serves them.
  *
  * Strategy: match each saved entry by `name` (the stable identifier)

@@ -70,7 +70,7 @@ button:focus-visible {
  */
 @font-face {
   font-family: "ChironSungHK-hero-sample";
-  src: url("https://wing-fonts.chunlaw.io/fonts/ChironSungHK-hero-sample.woff")
+  src: url("https://wing-font.chunlaw.io/fonts/ChironSungHK-hero-sample.woff")
     format("woff");
   font-display: swap;
 }
@@ -86,7 +86,7 @@ button:focus-visible {
  */
 @font-face {
   font-family: "NotoSansTC-Huninn-hero-tailo";
-  src: url("https://wing-fonts.chunlaw.io/fonts/NotoSansTC-Huninn-hero-tailo.woff")
+  src: url("https://wing-font.chunlaw.io/fonts/NotoSansTC-Huninn-hero-tailo.woff")
     format("woff");
   font-display: swap;
 }
@@ -102,7 +102,7 @@ button:focus-visible {
  */
 @font-face {
   font-family: "NotoSansTC-Huninn-hero-pengim";
-  src: url("https://wing-fonts.chunlaw.io/fonts/NotoSansTC-Huninn-hero-pengim.woff")
+  src: url("https://wing-font.chunlaw.io/fonts/NotoSansTC-Huninn-hero-pengim.woff")
     format("woff");
   font-display: swap;
 }

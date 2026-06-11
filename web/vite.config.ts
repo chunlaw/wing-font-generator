@@ -92,7 +92,7 @@ export default defineConfig(({ mode }: ConfigEnv) => {
                   // `0` covers opaque (no-CORS) cross-origin
                   // responses, `200` covers regular OK responses.
                   // Both apply here because fonts may be served
-                  // same-origin (wing-fonts.chunlaw.io) or
+                  // same-origin (wing-font.chunlaw.io) or
                   // cross-origin without CORS headers.
                   statuses: [0, 200],
                 },

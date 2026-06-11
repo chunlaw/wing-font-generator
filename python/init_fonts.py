@@ -50,7 +50,7 @@ from pathlib import Path
 
 # Default base URL for the input-fonts CDN. Override via env var
 # `WING_FONT_INPUTS_URL` for staging / fork mirrors.
-DEFAULT_BASE_URL = "https://chunlaw.github.io/wing-font-hub"
+DEFAULT_BASE_URL = "https://wing-font-hub.chunlaw.io"
 
 # Single source of truth for which TTFs the pipeline needs. Keep in
 # sync with sync-python.mjs's MANIFEST (any `input_fonts/` entry there

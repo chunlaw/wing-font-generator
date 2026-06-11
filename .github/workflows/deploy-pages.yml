@@ -1,6 +1,6 @@
 name: Deploy to GitHub Pages
 
-# Single source of truth for publishing https://wing-fonts.chunlaw.io.
+# Single source of truth for publishing https://wing-font.chunlaw.io.
 #
 # Why this replaced the old branch-based deploy
 # ----------------------------------------------
@@ -334,7 +334,7 @@ jobs:
           # moments ago; on the cache-hit path it was already warm.
           fail-on-cache-miss: true
       - name: Place fonts under the site at /fonts/
-        # VITE_FONT_URL = https://wing-fonts.chunlaw.io/fonts, so the
+        # VITE_FONT_URL = https://wing-font.chunlaw.io/fonts, so the
         # fonts must live at the served path /fonts/.
         run: |
           mkdir -p site/fonts
@@ -345,7 +345,7 @@ jobs:
         # .nojekyll is kept as belt-and-braces for the _-prefixed Python
         # package files mirrored into wingfont/.
         run: |
-          echo "wing-fonts.chunlaw.io" > site/CNAME
+          echo "wing-font.chunlaw.io" > site/CNAME
           touch site/.nojekyll
       - name: Show what will be published
         run: |
