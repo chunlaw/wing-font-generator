@@ -11,7 +11,11 @@ import {
 import { useContext, useEffect, useRef, useState } from "react";
 import AppContext from "../AppContext";
 import { useNavigate, useSearchParams } from "react-router-dom";
-import { useSharedTick, useTemplateRotation } from "../utils/hooks";
+import {
+  useDocumentMeta,
+  useSharedTick,
+  useTemplateRotation,
+} from "../utils/hooks";
 import { FontHeader } from "../components/components/FonttHeader";
 import FontPicker from "../components/main/FontPicker";
 import { useTranslation } from "../i18n/LanguageContext";
@@ -32,6 +36,13 @@ const Main = () => {
     useContext(AppContext);
   const { t, lang } = useTranslation();
   const [searchParams, setSearchParams] = useSearchParams();
+
+  // SEO meta. canonicalPath omits the `?fonts=...` query string —
+  // every picked-fonts permutation collapses to the same canonical
+  // URL so Google doesn't treat each share link as a separate page.
+  useDocumentMeta(t("meta.showcase.title"), t("meta.showcase.description"), {
+    canonicalPath: "/showcase",
+  });
   // ── Unified template-rotation cadence ─────────────────────────────
   // Single 5 s tick counter owned by Main; every FontShowcaseCard
   // below threads this into its own `useTemplateRotation(msg,

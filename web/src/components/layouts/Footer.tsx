@@ -91,6 +91,26 @@ const Footer = () => {
             >
               {t("footer.links.source")}
             </Link>
+            {/*
+              Direct link into python/README.md — the canonical
+              CLI / install reference. Saves the advanced user one
+              click vs. navigating the repo root. Kept here (in the
+              Links column, after Source) rather than building a
+              dedicated /cli docs page on the site: the README is the
+              single source of truth and most readers of these
+              instructions are comfortable on GitHub.
+            */}
+            <Link
+              href="https://github.com/chunlaw/wing-font-generator/tree/main/python#readme"
+              target="_blank"
+              rel="noopener noreferrer"
+              variant="body2"
+              underline="hover"
+              color="text.secondary"
+              sx={{ "&:hover": { color: "primary.main" } }}
+            >
+              {t("footer.links.cli")}
+            </Link>
             <Link
               href="/credits"
               variant="body2"

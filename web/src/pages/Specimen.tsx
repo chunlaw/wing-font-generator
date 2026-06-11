@@ -10,7 +10,7 @@ import {
 import { useContext, useEffect, useMemo, useState } from "react";
 import AppContext from "../AppContext";
 import { useParams } from "react-router-dom";
-import { useTemplateRotation } from "../utils/hooks";
+import { useDocumentMeta, useTemplateRotation } from "../utils/hooks";
 import {
   AVAILABLE_FONTS,
   FontOption,
@@ -61,6 +61,18 @@ const Specimen = () => {
     : undefined;
 
   const isLoading = Boolean(loadingFonts[fontOption.name]);
+
+  // SEO meta — interpolate the font's displayName into the
+  // i18n template (`meta.specimen.title` / `meta.specimen.description`
+  // contain a {name} placeholder). canonicalPath includes the
+  // family name so each specimen page has its own canonical URL,
+  // letting Google index all 28 specimen variants as distinct
+  // resources for long-tail "[font name] download" queries.
+  useDocumentMeta(
+    t("meta.specimen.title").replace("{name}", fontOption.displayName),
+    t("meta.specimen.description").replace("{name}", fontOption.displayName),
+    { canonicalPath: `/specimen/${fontOption.name}` },
+  );
 
   // Pick a rotating template from the dialect-matched pool. Specimen
   // is a single-font page so we don't share a tick with anything

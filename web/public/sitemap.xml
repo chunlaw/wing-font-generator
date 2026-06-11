@@ -1,0 +1,110 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  Wing Font sitemap.
+
+  Hand-maintained — kept in sync with:
+    * web/src/App.tsx               (main routes)
+    * web/src/utils/const.ts        (AVAILABLE_FONTS → /specimen/:family)
+    * .github/workflows/deploy-pages.yml
+
+  When a new top-level route is added, append a <url> entry here.
+  When a new font lands in AVAILABLE_FONTS, append a /specimen/<name>
+  entry. The specimen list is restricted to fonts that are actually
+  surfaced in the showcase / specimen page — hero subset fonts
+  (Xiaolai-Huninn-hero-*) and dialect variants not present in
+  AVAILABLE_FONTS aren't visitable, so they're excluded.
+
+  `lastmod` reflects the date the sitemap itself was last edited
+  rather than per-URL freshness, which keeps maintenance simple
+  at the scale of this site (35 URLs total).
+
+  priority is a soft signal to crawlers:
+    1.0 — homepage
+    0.9 — primary product pages (/showcase, /generate)
+    0.7 — secondary informational pages (/about, /credits)
+    0.4 — per-font specimen detail pages
+    0.3 — legal pages
+
+  Reference: https://www.sitemaps.org/protocol.html
+-->
+<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
+  <!-- ── Main routes ────────────────────────────────────────────── -->
+  <url>
+    <loc>https://wing-font.chunlaw.io/</loc>
+    <lastmod>2026-06-11</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>1.0</priority>
+  </url>
+  <url>
+    <loc>https://wing-font.chunlaw.io/showcase</loc>
+    <lastmod>2026-06-11</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.9</priority>
+  </url>
+  <url>
+    <loc>https://wing-font.chunlaw.io/generate</loc>
+    <lastmod>2026-06-11</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.9</priority>
+  </url>
+  <url>
+    <loc>https://wing-font.chunlaw.io/about</loc>
+    <lastmod>2026-06-11</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.7</priority>
+  </url>
+  <url>
+    <loc>https://wing-font.chunlaw.io/credits</loc>
+    <lastmod>2026-06-11</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.7</priority>
+  </url>
+  <url>
+    <loc>https://wing-font.chunlaw.io/terms</loc>
+    <lastmod>2026-06-11</lastmod>
+    <changefreq>yearly</changefreq>
+    <priority>0.3</priority>
+  </url>
+  <url>
+    <loc>https://wing-font.chunlaw.io/privacy</loc>
+    <lastmod>2026-06-11</lastmod>
+    <changefreq>yearly</changefreq>
+    <priority>0.3</priority>
+  </url>
+
+  <!-- ── Cantonese (廣東話) specimens ───────────────────────────── -->
+  <url><loc>https://wing-font.chunlaw.io/specimen/NotoSansHK-Noto-lshk</loc><lastmod>2026-06-11</lastmod><priority>0.4</priority></url>
+  <url><loc>https://wing-font.chunlaw.io/specimen/NotoSansHK-Noto-yale</loc><lastmod>2026-06-11</lastmod><priority>0.4</priority></url>
+  <url><loc>https://wing-font.chunlaw.io/specimen/NotoSansHK-cangjie</loc><lastmod>2026-06-11</lastmod><priority>0.4</priority></url>
+  <url><loc>https://wing-font.chunlaw.io/specimen/NotoSansHK-Google-thai</loc><lastmod>2026-06-11</lastmod><priority>0.4</priority></url>
+  <url><loc>https://wing-font.chunlaw.io/specimen/NotoSansHK-NotoJP-katakana</loc><lastmod>2026-06-11</lastmod><priority>0.4</priority></url>
+  <url><loc>https://wing-font.chunlaw.io/specimen/NotoSansHK-NotoKR-korean</loc><lastmod>2026-06-11</lastmod><priority>0.4</priority></url>
+  <url><loc>https://wing-font.chunlaw.io/specimen/ChironSungHK-Noto-lshk</loc><lastmod>2026-06-11</lastmod><priority>0.4</priority></url>
+  <url><loc>https://wing-font.chunlaw.io/specimen/ChironSungHK-Noto-yale</loc><lastmod>2026-06-11</lastmod><priority>0.4</priority></url>
+  <url><loc>https://wing-font.chunlaw.io/specimen/ChironSungHK-cangjie</loc><lastmod>2026-06-11</lastmod><priority>0.4</priority></url>
+  <url><loc>https://wing-font.chunlaw.io/specimen/ChironSungHK-Google-thai</loc><lastmod>2026-06-11</lastmod><priority>0.4</priority></url>
+  <url><loc>https://wing-font.chunlaw.io/specimen/ChironSungHK-NotoJP-katakana</loc><lastmod>2026-06-11</lastmod><priority>0.4</priority></url>
+  <url><loc>https://wing-font.chunlaw.io/specimen/ChironSungHK-NotoKR-korean</loc><lastmod>2026-06-11</lastmod><priority>0.4</priority></url>
+  <url><loc>https://wing-font.chunlaw.io/specimen/Xiaolai-Huninn-lshk</loc><lastmod>2026-06-11</lastmod><priority>0.4</priority></url>
+  <url><loc>https://wing-font.chunlaw.io/specimen/Xiaolai-Huninn-yale</loc><lastmod>2026-06-11</lastmod><priority>0.4</priority></url>
+  <url><loc>https://wing-font.chunlaw.io/specimen/Xiaolai-Huninn-lau</loc><lastmod>2026-06-11</lastmod><priority>0.4</priority></url>
+  <url><loc>https://wing-font.chunlaw.io/specimen/Xiaolai-Huninn-guangdong</loc><lastmod>2026-06-11</lastmod><priority>0.4</priority></url>
+  <url><loc>https://wing-font.chunlaw.io/specimen/Xiaolai-Huninn-chishima</loc><lastmod>2026-06-11</lastmod><priority>0.4</priority></url>
+
+  <!-- ── Taiwanese / Southern Min (臺語) specimens ──────────────── -->
+  <url><loc>https://wing-font.chunlaw.io/specimen/NotoSansTC-Huninn-tailo</loc><lastmod>2026-06-11</lastmod><priority>0.4</priority></url>
+  <url><loc>https://wing-font.chunlaw.io/specimen/NotoSansTC-Huninn-poj</loc><lastmod>2026-06-11</lastmod><priority>0.4</priority></url>
+  <url><loc>https://wing-font.chunlaw.io/specimen/Xiaolai-Huninn-tailo</loc><lastmod>2026-06-11</lastmod><priority>0.4</priority></url>
+  <url><loc>https://wing-font.chunlaw.io/specimen/Xiaolai-Huninn-poj</loc><lastmod>2026-06-11</lastmod><priority>0.4</priority></url>
+
+  <!-- ── Teochew / Min Nan (潮州話) specimens ───────────────────── -->
+  <url><loc>https://wing-font.chunlaw.io/specimen/NotoSansTC-Huninn-teochew-pengim</loc><lastmod>2026-06-11</lastmod><priority>0.4</priority></url>
+  <url><loc>https://wing-font.chunlaw.io/specimen/NotoSansTC-Huninn-teochew-puj</loc><lastmod>2026-06-11</lastmod><priority>0.4</priority></url>
+  <url><loc>https://wing-font.chunlaw.io/specimen/Xiaolai-Huninn-teochew-pengim</loc><lastmod>2026-06-11</lastmod><priority>0.4</priority></url>
+  <url><loc>https://wing-font.chunlaw.io/specimen/Xiaolai-Huninn-teochew-puj</loc><lastmod>2026-06-11</lastmod><priority>0.4</priority></url>
+
+  <!-- ── Mandarin (普通話 / 國語) specimens ─────────────────────── -->
+  <url><loc>https://wing-font.chunlaw.io/specimen/SourceHanSerif-Mplus-mandarin</loc><lastmod>2026-06-11</lastmod><priority>0.4</priority></url>
+  <url><loc>https://wing-font.chunlaw.io/specimen/Xiaolai-MplusRounded-mandarin</loc><lastmod>2026-06-11</lastmod><priority>0.4</priority></url>
+  <url><loc>https://wing-font.chunlaw.io/specimen/Xiaolai-Huninn-mandarin</loc><lastmod>2026-06-11</lastmod><priority>0.4</priority></url>
+</urlset>

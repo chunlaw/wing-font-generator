@@ -21,6 +21,7 @@ import {
 import { OpenInNew } from "@mui/icons-material";
 import { useNavigate } from "react-router-dom";
 import { useTranslation } from "../i18n/LanguageContext";
+import { useDocumentMeta } from "../utils/hooks";
 import type { TranslationKey } from "../i18n/translations";
 
 interface Source {
@@ -187,6 +188,10 @@ const MANDARIN_SOURCES: Source[] = [
 const Acknowledgements = () => {
   const { t } = useTranslation();
   const navigate = useNavigate();
+
+  useDocumentMeta(t("meta.credits.title"), t("meta.credits.description"), {
+    canonicalPath: "/credits",
+  });
 
   return (
     <Box

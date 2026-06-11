@@ -12,6 +12,7 @@
 import { Box, Typography } from "@mui/material";
 import Markdown from "../components/Markdown";
 import { useTranslation } from "../i18n/LanguageContext";
+import { useDocumentMeta } from "../utils/hooks";
 import { TERMS_EN, TERMS_ZH, TERMS_EFFECTIVE_DATE } from "./legal/terms";
 
 const Terms = () => {
@@ -19,6 +20,10 @@ const Terms = () => {
   // Pick the body matching the user's current locale. Fall back to en
   // for any future locale that gets added without a Terms translation.
   const body = lang === "zh" ? TERMS_ZH : TERMS_EN;
+
+  useDocumentMeta(t("meta.terms.title"), t("meta.terms.description"), {
+    canonicalPath: "/terms",
+  });
 
   return (
     <Box

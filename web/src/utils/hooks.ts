@@ -103,3 +103,126 @@ export const useSharedTick = (intervalMs: number = 5000): number => {
   }, [intervalMs]);
   return tick;
 };
+
+// Absolute base for canonical / og:url. Hard-coded because the SPA
+// is single-host (wing-font.chunlaw.io) — there's no preview-URL
+// case where we'd want a different base, and pulling from
+// window.location would emit chunlaw.github.io URLs while a Cloudflare
+// preview is up, which is exactly the SEO mistake canonical exists
+// to prevent.
+const SITE_URL = "https://wing-font.chunlaw.io";
+
+/**
+ * Find or create a `<meta name="X">` tag and set its `content`. The
+ * "or create" branch is important — index.html ships with a meta
+ * description but not, say, an og:url, and pages calling
+ * useDocumentMeta should be able to set whatever they need without
+ * us pre-declaring every variant in index.html.
+ */
+function upsertMetaName(name: string, content: string): void {
+  let el = document.head.querySelector<HTMLMetaElement>(
+    `meta[name="${name}"]`,
+  );
+  if (!el) {
+    el = document.createElement("meta");
+    el.setAttribute("name", name);
+    document.head.appendChild(el);
+  }
+  el.setAttribute("content", content);
+}
+
+/**
+ * Same as upsertMetaName but for `<meta property="X">` tags. Open
+ * Graph uses the `property` attribute instead of `name`; conflating
+ * the two makes Facebook's debugger throw "missing property" errors.
+ */
+function upsertMetaProperty(property: string, content: string): void {
+  let el = document.head.querySelector<HTMLMetaElement>(
+    `meta[property="${property}"]`,
+  );
+  if (!el) {
+    el = document.createElement("meta");
+    el.setAttribute("property", property);
+    document.head.appendChild(el);
+  }
+  el.setAttribute("content", content);
+}
+
+/** Find or create `<link rel="canonical">` and set its href. */
+function upsertCanonical(href: string): void {
+  let el = document.head.querySelector<HTMLLinkElement>(
+    'link[rel="canonical"]',
+  );
+  if (!el) {
+    el = document.createElement("link");
+    el.setAttribute("rel", "canonical");
+    document.head.appendChild(el);
+  }
+  el.setAttribute("href", href);
+}
+
+interface DocumentMetaOptions {
+  /**
+   * Path component for canonical / og:url. Should start with "/".
+   * Examples: "/", "/about", "/specimen/NotoSansHK-Noto-lshk".
+   *
+   * Routes with query strings (e.g. /showcase?fonts=A,B) should pass
+   * the BARE path here ("/showcase") — canonical URLs deliberately
+   * collapse query variants onto the same resource so search engines
+   * don't see every ?fonts= permutation as a duplicate page.
+   */
+  canonicalPath?: string;
+}
+
+/**
+ * Per-route SEO meta hook. Updates `document.title`, the meta
+ * description, Open Graph / Twitter Card title + description + url,
+ * and the canonical link tag whenever its arguments change.
+ *
+ * Why per-route meta at all on a client-rendered SPA: Google's
+ * crawler DOES execute JS and reads what we set here. Other crawlers
+ * (social unfurlers — Slack / X / Discord / Telegram / iMessage /
+ * Facebook / LinkedIn) only see the static HTML in index.html. So:
+ *   - index.html ships sensible defaults (the brand title + intro
+ *     description + og:image) that cover every unfurled link.
+ *   - This hook adds the per-route nuance Google indexes once it
+ *     renders the page — so each route shows a distinct title and
+ *     snippet in search results instead of every URL inheriting the
+ *     same homepage title.
+ *
+ * Usage:
+ *
+ *   useDocumentMeta(
+ *     t("meta.showcase.title"),
+ *     t("meta.showcase.description"),
+ *     { canonicalPath: "/showcase" },
+ *   );
+ *
+ * For dynamic pages (e.g. /specimen/:family), interpolate via
+ * `.replace("{name}", value)` in the call site — keeps the i18n
+ * strings translatable while letting the page inject specifics.
+ */
+export const useDocumentMeta = (
+  title: string,
+  description: string,
+  options: DocumentMetaOptions = {},
+): void => {
+  const { canonicalPath } = options;
+  useEffect(() => {
+    if (title) {
+      document.title = title;
+      upsertMetaProperty("og:title", title);
+      upsertMetaName("twitter:title", title);
+    }
+    if (description) {
+      upsertMetaName("description", description);
+      upsertMetaProperty("og:description", description);
+      upsertMetaName("twitter:description", description);
+    }
+    if (canonicalPath !== undefined) {
+      const fullUrl = `${SITE_URL}${canonicalPath}`;
+      upsertCanonical(fullUrl);
+      upsertMetaProperty("og:url", fullUrl);
+    }
+  }, [title, description, canonicalPath]);
+};

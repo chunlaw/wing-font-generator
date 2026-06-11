@@ -2,11 +2,97 @@
 <html lang="en">
   <head>
     <meta charset="UTF-8" />
-    <link rel="icon" type="image/svg+xml" href="/favicon.ico" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <meta property="og:image" content="/share.png">
+    <meta name="theme-color" content="#1f7a8c" />
 
-    <title>Wing Font Generator Demo</title>
+    <!--
+      ── SEO baseline ───────────────────────────────────────────────
+      The title + description here are what search engines AND social
+      unfurlers (Slack / X / Discord / iMessage / WhatsApp / Telegram)
+      see before any per-route JS executes. Even if we later wire up
+      per-route document.title updates inside React, social unfurlers
+      don't run page JS at all — what's in this file is what they
+      consume.
+
+      Keep `<title>` under ~60 chars for clean Google result rendering
+      (everything past that gets truncated with an ellipsis). Lead
+      with the brand + the search keywords users actually type:
+      "Cantonese romanization font", "Jyutping font", "Pinyin font",
+      "Tâi-lô font". Avoid the word "Demo" — this is the production
+      site, not a sample.
+     -->
+    <title>Wing Font — Chinese fonts with pronunciation annotations (Jyutping, Pinyin, Tâi-lô)</title>
+    <meta
+      name="description"
+      content="Free, open-source Chinese fonts with romanization baked into the glyphs. Cantonese, Mandarin, Taiwanese, Teochew. Works in Word, Pages, Canva, Adobe, browsers."
+    />
+
+    <!--
+      Canonical points at the homepage on the production domain.
+      Keeps wing-font.chunlaw.io authoritative even if the same
+      content gets accessed via chunlaw.github.io or a Cloudflare
+      preview URL.
+     -->
+    <link rel="canonical" href="https://wing-font.chunlaw.io/" />
+
+    <link rel="icon" type="image/svg+xml" href="/favicon.ico" />
+
+    <!--
+      ── Open Graph + Twitter Card ──────────────────────────────────
+      Used by Facebook / LinkedIn / Slack / Discord / iMessage /
+      WhatsApp / Telegram unfurlers. `og:image` MUST be an absolute
+      URL — relative paths silently break in many unfurlers.
+      1200×630 is Facebook's recommended share-card aspect ratio and
+      what most platforms scale from.
+
+      `twitter:*` prefixes are the wire format the platform now
+      called X still consumes — keep the tag namespace even after
+      the rebrand. `summary_large_image` makes the image dominant
+      on the card rather than a small thumbnail next to title.
+     -->
+    <meta property="og:type" content="website" />
+    <meta property="og:site_name" content="Wing Font" />
+    <meta property="og:url" content="https://wing-font.chunlaw.io/" />
+    <meta
+      property="og:title"
+      content="Wing Font — Chinese fonts with pronunciation annotations"
+    />
+    <meta
+      property="og:description"
+      content="Free, open-source Chinese fonts with romanization baked into the glyphs. Cantonese, Mandarin, Taiwanese, Teochew. Works in Word, Pages, Canva, Adobe, browsers."
+    />
+    <meta property="og:image" content="https://wing-font.chunlaw.io/share.png" />
+    <meta property="og:image:width" content="1200" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:locale" content="en" />
+    <meta property="og:locale:alternate" content="zh_HK" />
+
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta
+      name="twitter:title"
+      content="Wing Font — Chinese fonts with pronunciation annotations"
+    />
+    <meta
+      name="twitter:description"
+      content="Free, open-source Chinese fonts with romanization baked into the glyphs. Cantonese, Mandarin, Taiwanese, Teochew."
+    />
+    <meta
+      name="twitter:image"
+      content="https://wing-font.chunlaw.io/share.png"
+    />
+
+    <!--
+      NOTE: Google Tag Manager was previously loaded here. It was
+      removed because the Privacy Policy explicitly promises "no
+      Google Analytics, Meta Pixel, Hotjar, or any third-party
+      analytics tool" — keeping GTM in the page contradicted that
+      promise (GTM contacts googletagmanager.com on every visit and
+      surfaces the visitor's IP to Google regardless of whether
+      individual tags were configured). The container ID
+      GTM-MCMQQX3 is recorded here in case someone wants to recover
+      git history.
+     -->
+
     <!-- Start Single Page Apps for GitHub Pages -->
     <script>
       // Single Page Apps for GitHub Pages
@@ -37,13 +123,6 @@
       })(window.location);
     </script>
     <!-- End Single Page Apps for GitHub Pages -->
-    <!-- Google Tag Manager -->
-    <script>(function(w,d,s,l,i){w[l]=w[l]||[];w[l].push({'gtm.start':
-      new Date().getTime(),event:'gtm.js'});var f=d.getElementsByTagName(s)[0],
-      j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
-      'https://www.googletagmanager.com/gtm.js?id='+i+dl;f.parentNode.insertBefore(j,f);
-      })(window,document,'script','dataLayer','GTM-MCMQQX3');</script>
-    <!-- End Google Tag Manager -->
   </head>
   <body>
     <div id="root"></div>

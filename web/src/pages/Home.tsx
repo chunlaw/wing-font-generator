@@ -37,6 +37,7 @@ import type { SvgIconComponent } from "@mui/icons-material";
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useTranslation } from "../i18n/LanguageContext";
+import { useDocumentMeta } from "../utils/hooks";
 import Markdown from "../components/Markdown";
 
 /*
@@ -99,6 +100,15 @@ const HERO_SAMPLES: { lines: [string, string]; fontFamily: string }[] = [
 const Home = () => {
   const { t } = useTranslation();
   const navigate = useNavigate();
+
+  // Per-route SEO meta — overrides the index.html defaults with the
+  // homepage-specific title + description. canonicalPath="/" so the
+  // canonical URL points at the bare domain (search engines collapse
+  // any "/" / "/index.html" / trailing-slash variants onto a single
+  // page).
+  useDocumentMeta(t("meta.home.title"), t("meta.home.description"), {
+    canonicalPath: "/",
+  });
 
   // Rotate the hero sample with a crossfade transition.
   //

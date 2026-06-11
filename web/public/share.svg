@@ -1,0 +1,213 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  Wing Font — Open Graph share card source.
+
+  Authored as SVG so the type lives in version control as text (easy
+  to tweak phrasing, colours, layout) and re-renders to PNG on demand
+  rather than getting hand-edited in a binary editor.
+
+  ── How to regenerate public/share.png ───────────────────────────
+  Pick whichever is easier:
+
+  1. Browser screenshot (no tooling required)
+     a. Open this file in Chrome / Edge: `open public/share.svg`
+        (or just navigate to http://localhost:5173/share.svg with
+        the dev server running).
+     b. Open DevTools → ⋮ menu → "Capture node screenshot" on the
+        root <svg> element. Saves a PNG at exactly 1200×630.
+     c. Move the saved file to web/public/share.png, overwriting.
+
+  2. CLI with rsvg-convert (macOS: `brew install librsvg`):
+        rsvg-convert -w 1200 -h 630 public/share.svg > public/share.png
+
+  3. CLI with Inkscape (cross-platform): pass `‑‑export-type=png`,
+     `‑‑export-filename=public/share.png`, and `-w 1200 -h 630`
+     to the `inkscape` binary. (Flag names are shown with
+     non-breaking hyphens here because XML comments cannot contain
+     a literal two-hyphen sequence — copy the flags from your shell
+     history or Inkscape's own docs.)
+
+  Either way, the @font-face below pulls the actual product font
+  (Xiaolai-Huninn-hero-sample.woff) at render time. That woff is the
+  ~25 KB hero subset that already powers the home-page hero — the
+  characters 各 有 唱 自 己 歌 找 我 each carry their LSHK Jyutping
+  annotation baked into the glyph outline. So rendering the bare
+  Chinese text in this SVG produces the stacked-annotation look that
+  is Wing Font's signature.
+
+  ── Design rationale ─────────────────────────────────────────────
+  * Aspect 1200×630 — Facebook / Twitter / Slack / Discord standard.
+  * Off-white background (#fcfaf7) — warmer than #fff, less harsh
+    in dark-mode unfurl previews where pure white blasts.
+  * Single hero phrase, two lines, large — readable at 200 px in a
+    feed thumbnail. Show, don't tell: the image IS a demonstration
+    of the product.
+  * Masthead "Wing Font · 標注字型" — bilingual brand+purpose. 標注
+    (annotation) is the right umbrella term across all dialects /
+    schemes the product supports, matching the site's own UI
+    vocabulary.
+  * English tagline at bottom — picks up the half of the audience
+    that doesn't read CJK; the URL underneath is the call-to-arrive.
+-->
+<svg xmlns="http://www.w3.org/2000/svg"
+     viewBox="0 0 1200 630"
+     width="1200"
+     height="630"
+     role="img"
+     aria-label="Wing Font — Chinese fonts with pronunciation annotations">
+  <defs>
+    <!--
+      Background gradient. Top warmer white #fdfcf9 → bottom toasted
+      cream #f4eee3 over the full 630 px. Subtle enough to read as
+      "warm paper" rather than as a gradient, but distinctive enough
+      to keep the card from disappearing into white feed walls on
+      light-mode Slack / Discord / X. Both stops are within the
+      same warm-neutral hue family, so the gradient direction is
+      tonal, not colour-shift — the type contrast against either
+      stop stays consistent.
+    -->
+    <linearGradient id="bg-gradient" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#fdfcf9" />
+      <stop offset="100%" stop-color="#f4eee3" />
+    </linearGradient>
+
+    <style>
+      /*
+        @font-face inside SVG works in browsers and in librsvg /
+        Inkscape's modern renderers. font-display: block is critical
+        here — without it a fast screenshot tool may snapshot the
+        system-fallback rendering before the font arrives, capturing
+        plain CJK characters without the annotation stack we ship.
+      */
+      @font-face {
+        font-family: "Xiaolai-Huninn-hero-sample";
+        src: url("https://wing-font.chunlaw.io/fonts/Xiaolai-Huninn-hero-sample.woff") format("woff");
+        font-display: block;
+      }
+
+      .brand {
+        font-family: -apple-system, BlinkMacSystemFont, "Segoe UI",
+          "Helvetica Neue", Helvetica, Arial, sans-serif;
+        font-size: 30px;
+        font-weight: 600;
+        fill: #1a2332;
+        letter-spacing: 0.01em;
+      }
+      .brand-bullet { fill: #1f7a8c; }
+
+      .hairline {
+        stroke: #1a2332;
+        stroke-width: 1.5;
+        opacity: 0.18;
+      }
+
+      /*
+        Hero phrase. Falls back to Kaiti / 標楷體 (handwritten 楷書)
+        so a snapshot taken before the woff arrives still renders
+        in a visually-similar style rather than snapping to a
+        default Songti and looking entirely different from the
+        finished image.
+
+        letter-spacing kept tiny (0.02em) because CJK characters
+        already render with full-em advance widths; large
+        letter-spacing on top of that reads as awkward.
+      */
+      .hero {
+        font-family: "Xiaolai-Huninn-hero-sample",
+          "Kaiti TC", "標楷體", "DFKai-SB", "STKaiti", serif;
+        font-size: 120px;
+        fill: #1a2332;
+        text-anchor: middle;
+        letter-spacing: 0.02em;
+      }
+
+      /*
+        Two-line tagline pairing:
+          .tagline-main: the primary message — "Chinese fonts with
+                         pronunciation baked in." Slightly darker
+                         + heavier than the supporting line so the
+                         eye lands on it first.
+          .tagline-sub:  the reassurance — "Works everywhere fonts do."
+                         Smaller and muted so it reads as a
+                         clarifying afterthought rather than a
+                         competing claim.
+        Together they form a "what" + "so what" beat.
+      */
+      .tagline-main {
+        font-family: -apple-system, BlinkMacSystemFont, "Segoe UI",
+          "Helvetica Neue", Helvetica, Arial, sans-serif;
+        font-size: 26px;
+        font-weight: 500;
+        fill: #2a2a2a;
+        text-anchor: middle;
+      }
+      .tagline-sub {
+        font-family: -apple-system, BlinkMacSystemFont, "Segoe UI",
+          "Helvetica Neue", Helvetica, Arial, sans-serif;
+        font-size: 20px;
+        font-weight: 400;
+        fill: #6a6a6a;
+        text-anchor: middle;
+        font-style: italic;
+      }
+
+      .url {
+        font-family: -apple-system, BlinkMacSystemFont, "Segoe UI",
+          "Helvetica Neue", Helvetica, Arial, sans-serif;
+        font-size: 20px;
+        font-weight: 500;
+        fill: #1f7a8c;
+        text-anchor: end;
+        letter-spacing: 0.02em;
+      }
+    </style>
+  </defs>
+
+  <!-- Warm vertical gradient — the canvas the type sits on. -->
+  <rect width="1200" height="630" fill="url(#bg-gradient)" />
+
+  <!--
+    Masthead: brand wordmark + Chinese descriptor, joined by a
+    tinted middle-dot to break the two registers apart.
+  -->
+  <text x="60" y="75" class="brand">
+    Wing Font<tspan class="brand-bullet">  ·  </tspan>標注字型
+  </text>
+
+  <!-- Subtle hairline anchoring the masthead to the rest of the card. -->
+  <line class="hairline" x1="60" y1="100" x2="420" y2="100" />
+
+  <!--
+    Hero phrase, two lines centred on x=600. Each <text> renders
+    one line using the product font; the Jyutping annotations are
+    baked into the glyph outlines so we don't write them by hand —
+    we just type the bare Chinese characters and the rendering
+    produces them stacked above.
+
+    Baseline positions chosen so:
+      * line 1 visual top is ~150 px (clear of the masthead),
+      * line gap of 160 px lets the annotation of line 2 not
+        collide with the descenders of line 1,
+      * line 2 visual bottom is ~480 px (clear of the tagline).
+  -->
+  <text x="600" y="305" class="hero">各有各唱自己歌</text>
+  <text x="600" y="465" class="hero">各找自我</text>
+
+  <!--
+    English tagline + subtitle. Two separate <text> nodes rather
+    than a wrapped paragraph because SVG has no native line-wrap;
+    laying them out explicitly is cheaper than playing tspan
+    games. Vertical rhythm: main → sub gap of 30 px, sub → URL
+    gap of 32 px, all within the bottom 100 px reserved zone so
+    nothing collides with the hero phrase above.
+  -->
+  <text x="600" y="540" class="tagline-main">
+    Chinese fonts with pronunciation baked in.
+  </text>
+  <text x="600" y="572" class="tagline-sub">
+    Works everywhere fonts do.
+  </text>
+
+  <!-- URL bottom-right, primary-accent colour so it reads as the CTA. -->
+  <text x="1140" y="608" class="url">wing-font.chunlaw.io</text>
+</svg>

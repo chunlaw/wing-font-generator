@@ -35,6 +35,7 @@ export type TranslationKey =
   | "footer.links.showcase"
   | "footer.links.source"
   | "footer.links.credits"
+  | "footer.links.cli"
   | "footer.links.terms"
   | "footer.links.privacy"
   | "footer.credit"
@@ -42,6 +43,27 @@ export type TranslationKey =
   | "legal.terms.title"
   | "legal.privacy.title"
   | "legal.effectiveDate"
+  // Per-route SEO meta — consumed by useDocumentMeta. Keep titles
+  // under ~60 chars so Google search results don't truncate them.
+  // Descriptions are 140-160 chars (the Google snippet width). The
+  // {name} placeholder in specimen.* gets interpolated with the
+  // font's displayName by the page component.
+  | "meta.home.title"
+  | "meta.home.description"
+  | "meta.showcase.title"
+  | "meta.showcase.description"
+  | "meta.specimen.title"
+  | "meta.specimen.description"
+  | "meta.generate.title"
+  | "meta.generate.description"
+  | "meta.about.title"
+  | "meta.about.description"
+  | "meta.credits.title"
+  | "meta.credits.description"
+  | "meta.terms.title"
+  | "meta.terms.description"
+  | "meta.privacy.title"
+  | "meta.privacy.description"
   | "ack.hero.title"
   | "ack.hero.tagline"
   | "ack.intro"
@@ -273,12 +295,38 @@ export const TRANSLATIONS: Record<Language, Record<TranslationKey, string>> = {
     "footer.links.showcase": "字體展示",
     "footer.links.source": "原始碼（GitHub）",
     "footer.links.credits": "鳴謝",
+    "footer.links.cli": "命令列版本",
     "footer.links.terms": "使用條款",
     "footer.links.privacy": "私隱政策",
     "footer.credit": "由 chunlaw 設計與開發",
     "legal.terms.title": "使用條款",
     "legal.privacy.title": "私隱政策",
     "legal.effectiveDate": "生效日期：{date}",
+    "meta.home.title":
+      "Wing Font — 拼音、注音、語言學會羅馬拼音字型",
+    "meta.home.description":
+      "免費開源中文字型，將拼音、注音、各種羅馬拼音直接印喺字形之上。支援廣東話、普通話、台語、潮州話 —— Word、Pages、Canva、Adobe、瀏覽器全部都得。",
+    "meta.showcase.title": "字型陳列館 | Wing Font",
+    "meta.showcase.description":
+      "瀏覽並下載已預先生成嘅中文標注字型 —— 廣東話、普通話、台語、潮州話，多種羅馬拼音方案隨意揀，即時下載免費使用。",
+    "meta.specimen.title": "{name} | Wing Font",
+    "meta.specimen.description":
+      "預覽並下載 {name} —— 帶內建拼音標注嘅中文字型。免費開源，依 SIL OFL 1.1 授權發佈。",
+    "meta.generate.title": "字型生成器 | Wing Font",
+    "meta.generate.description":
+      "揀一隻底字、一份對應表、調好參數，即時喺瀏覽器內生成你專屬嘅標注字型。免註冊、免安裝、所有運算喺本機完成。",
+    "meta.about.title": "關於 | Wing Font",
+    "meta.about.description":
+      "Wing Font 係一個免費開源項目，將粵語、台語、潮州話、普通話等羅馬拼音直接合成入中文字型嘅字形之中。",
+    "meta.credits.title": "鳴謝 | Wing Font",
+    "meta.credits.description":
+      "Wing Font 所依賴嘅開源資料同字型 —— 思源黑體、昭源宋體、小賴、開蕓、TypeDuck、mozillazg pinyin-data 等。",
+    "meta.terms.title": "使用條款 | Wing Font",
+    "meta.terms.description":
+      "Wing Font 使用條款 —— 免費開源中文標注字型生成工具嘅授權與責任範圍。",
+    "meta.privacy.title": "私隱政策 | Wing Font",
+    "meta.privacy.description":
+      "Wing Font 私隱政策 —— 所有字型生成完全於你瀏覽器內進行；無賬戶、無追蹤、無第三方分析工具。",
     // Acknowledgements page
     "ack.hero.title": "鳴謝",
     "ack.hero.tagline": "Wing Font 站喺好多開源資料庫同字型嘅肩膊上。",
@@ -407,7 +455,7 @@ export const TRANSLATIONS: Record<Language, Record<TranslationKey, string>> = {
       "中文字可以加語言學會拼音，可以用反切，會唔會可以用平假名添？推而廣之，圍頭話、潮州話、台語、福建話、上海話都可以做埋。我們已經做到 WOFF 字體畀網頁使用 —— 普羅大眾只需要用瀏覽器打開 IT 友做的網站，就睇到。睇歌詞可以跟著唱，睇詩可以一齊讀；教倉頡打字、教移民港孩，亦方便啲啲。",
     "about.opensource.title": "點解免費又開源？",
     "about.opensource.body":
-      "若我能說萬國的方言，但時間有限 —— 一齊參與，一齊為語言為文字努力，社會一定會更好。開源亦讓設計師可以用自己鍾意的字體合成屬於自己的版本：很多字體本身有版權，我們無辦法拎來合成畀大家用，但你可以自己搞，開開心心。",
+      "若我能說萬國的方言，但時間有限 —— 一齊參與，一齊為語言為文字努力，社會一定會更好。開源亦讓設計師可以用自己鍾意的字體合成屬於自己的版本：很多字體本身有版權，我們無辦法拎來合成畀大家用，但你可以自己搞，開開心心。同一套生成流水線亦以 [Python 命令列工具](https://github.com/chunlaw/wing-font-generator/tree/main/python#readme) 形式發佈，方便批量生成、整合自己嘅工作流，或者喺完全離線環境下運行。",
     "about.dialects.title": "唔止廣東話",
     "about.dialects.body":
       "Wing Font 由廣東話開始，但設計上一直想支援更多漢語方言。最新加入嘅係臺語（河洛話）：用思源黑體（Noto Sans TC）做底字，配搭 Huninn（粉圓）標注台羅（Tâi-lô）同白話字（POJ）嘅聲調符號，字音資料源自 AlanJui 嘅 Piau-Im 同 rime-tlpa 開源字庫。喺首頁可以睇到「家己的歌，家己唱；家己的字，家己選。」嘅台羅示範，亦可以喺製作頁揀台語拼音方案，自己整一套。歡迎更多方言加入。",
@@ -573,12 +621,38 @@ export const TRANSLATIONS: Record<Language, Record<TranslationKey, string>> = {
     "footer.links.showcase": "Showcase",
     "footer.links.source": "Source (GitHub)",
     "footer.links.credits": "Acknowledgements",
+    "footer.links.cli": "Command-line version",
     "footer.links.terms": "Terms",
     "footer.links.privacy": "Privacy",
     "footer.credit": "Designed and built by chunlaw",
     "legal.terms.title": "Terms & Conditions",
     "legal.privacy.title": "Privacy Policy",
     "legal.effectiveDate": "Effective date: {date}",
+    "meta.home.title":
+      "Wing Font — Chinese fonts with pronunciation annotations",
+    "meta.home.description":
+      "Free, open-source Chinese fonts with romanization baked into the glyphs. Cantonese, Mandarin, Taiwanese, Teochew. Works in Word, Pages, Canva, Adobe, browsers.",
+    "meta.showcase.title": "Font showcase | Wing Font",
+    "meta.showcase.description":
+      "Browse and download pre-built Chinese fonts with Jyutping, Pinyin, Tâi-lô, and Peng'im annotations baked into the glyphs. Free, instant download.",
+    "meta.specimen.title": "{name} | Wing Font",
+    "meta.specimen.description":
+      "Preview and download {name} — a Chinese font with built-in romanization annotations. Free, open-source, SIL OFL 1.1 licensed.",
+    "meta.generate.title": "Generate a font | Wing Font",
+    "meta.generate.description":
+      "Pick a base font, a romanization mapping, and parameters — generate a custom annotated Chinese font in your browser. No install, no signup.",
+    "meta.about.title": "About | Wing Font",
+    "meta.about.description":
+      "Wing Font is a free, open-source project that bakes Cantonese, Mandarin, Taiwanese, and Teochew romanization directly into Chinese fonts.",
+    "meta.credits.title": "Acknowledgements | Wing Font",
+    "meta.credits.description":
+      "Open-source data and fonts that Wing Font is built on — Noto Sans, ChironSung, Xiaolai, Huninn, TypeDuck, mozillazg pinyin-data, and more.",
+    "meta.terms.title": "Terms & Conditions | Wing Font",
+    "meta.terms.description":
+      "Terms of use for Wing Font — a free, open-source tool for generating annotated Chinese fonts.",
+    "meta.privacy.title": "Privacy Policy | Wing Font",
+    "meta.privacy.description":
+      "Wing Font's privacy policy — all font generation runs in your browser. No accounts, no tracking, no third-party analytics.",
     // Acknowledgements page
     "ack.hero.title": "Acknowledgements",
     "ack.hero.tagline":
@@ -710,7 +784,7 @@ export const TRANSLATIONS: Record<Language, Record<TranslationKey, string>> = {
       "Chinese characters can be annotated with LSHK Jyutping, with fanqie, even with hiragana. By extension: Wei Tau, Teochew, Taiwanese, Hokkien, Shanghainese — all of them deserve the same treatment. Wing Font ships these as WOFF fonts the browser can load directly. The general reader doesn't need to install anything: they open a page built by a developer who used the font, and the annotations are just there. Singing along to lyrics, reading classical poetry out loud, teaching Cangjie input to a child returning to Hong Kong — all become a little less effortful.",
     "about.opensource.title": "Why free and open source?",
     "about.opensource.body":
-      "If I were to speak in all the tongues of men, time would still be finite — but together we can push language and writing forward. Open source also lets designers compose annotated variants of their own typefaces. Many fonts are under restrictive licences and we can't redistribute the derived output ourselves; but a designer with their own font and the source code can build their version and ship it themselves.",
+      "If I were to speak in all the tongues of men, time would still be finite — but together we can push language and writing forward. Open source also lets designers compose annotated variants of their own typefaces. Many fonts are under restrictive licences and we can't redistribute the derived output ourselves; but a designer with their own font and the source code can build their version and ship it themselves. To that end, the same generation pipeline also ships as a [Python command-line tool](https://github.com/chunlaw/wing-font-generator/tree/main/python#readme) — handy for batch jobs, integrating into your own workflow, or running fully offline.",
     "about.dialects.title": "Beyond Cantonese",
     "about.dialects.body":
       "Wing Font began with Cantonese, but it was always meant to carry more Sinitic topolects. The newest addition is Taiwanese / Southern Min (Hō-ló): Noto Sans TC as the base character font, with Huninn (jf-openhuninn) setting the Tâi-lô and Pe̍h-ōe-jī (POJ) tone marks. The reading data comes from AlanJui's open Piau-Im and rime-tlpa dictionaries. You can see the Tâi-lô sample 「家己的歌，家己唱；家己的字，家己選。」 on the home page, and pick a Taiwanese romanization scheme in the generator to build your own. More dialects are welcome.",

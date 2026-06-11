@@ -1,2 +1,13 @@
+# Wing Font — robots.txt
+#
+# All search engines welcome. The site is a static React SPA hosted
+# on GitHub Pages; there's no admin surface, no user-generated
+# content, no rate-limited endpoints — nothing that needs gating.
+#
+# The Sitemap directive points crawlers at the explicit URL list in
+# public/sitemap.xml. Including this makes Google Search Console
+# pick up the sitemap automatically the first time it crawls.
 User-agent: *
 Allow: /
+
+Sitemap: https://wing-font.chunlaw.io/sitemap.xml

@@ -9,11 +9,16 @@
 import { Box, Typography } from "@mui/material";
 import Markdown from "../components/Markdown";
 import { useTranslation } from "../i18n/LanguageContext";
+import { useDocumentMeta } from "../utils/hooks";
 import { PRIVACY_EN, PRIVACY_ZH, PRIVACY_EFFECTIVE_DATE } from "./legal/privacy";
 
 const Privacy = () => {
   const { t, lang } = useTranslation();
   const body = lang === "zh" ? PRIVACY_ZH : PRIVACY_EN;
+
+  useDocumentMeta(t("meta.privacy.title"), t("meta.privacy.description"), {
+    canonicalPath: "/privacy",
+  });
 
   return (
     <Box

@@ -28,6 +28,7 @@ import {
 } from "@mui/material";
 import { GenerateProvider, useGenerate } from "./Generate/GenerateContext";
 import { useTranslation } from "../i18n/LanguageContext";
+import { useDocumentMeta } from "../utils/hooks";
 import Step1Fonts from "./Generate/steps/Step1Fonts";
 import Step2Mappings from "./Generate/steps/Step2Mappings";
 import Step3Parameters from "./Generate/steps/Step3Parameters";
@@ -47,6 +48,10 @@ const GenerateInner = () => {
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down("md"));
   const { currentStep, setCurrentStep } = useGenerate();
+
+  useDocumentMeta(t("meta.generate.title"), t("meta.generate.description"), {
+    canonicalPath: "/generate",
+  });
 
   // Step labels are i18n keys; bodies are React components. Keeping
   // them in one array lets the desktop AND mobile renderers stay in

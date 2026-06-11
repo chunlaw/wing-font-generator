@@ -3,7 +3,19 @@
   <head>
     <meta charset="utf-8" />
     <link rel="icon" href="/favicon.ico" />
-    <title>Vite + React + TS</title>
+    <title>Wing Font — Redirecting…</title>
+    <!--
+      noindex: this file isn't a real 404 page — it's the SPA-redirect
+      shim that GitHub Pages serves for any unknown URL under the
+      domain. The script below rewrites the URL into a `/?/path/...`
+      form, then redirects to `/`, where the twin script in
+      index.html decodes it back into the original route and hands
+      it to React Router. From the user's perspective there's no
+      flash of "not found" — they land directly on the target page.
+      We tell search engines not to index this shell because the
+      destination route is where real content lives.
+     -->
+    <meta name="robots" content="noindex" />
     <script type="text/javascript">
       // Single Page Apps for GitHub Pages
       // MIT License

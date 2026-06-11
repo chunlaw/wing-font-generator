@@ -23,11 +23,16 @@ import {
 import { GitHub, Telegram } from "@mui/icons-material";
 import { useNavigate } from "react-router-dom";
 import { useTranslation } from "../i18n/LanguageContext";
+import { useDocumentMeta } from "../utils/hooks";
 import Markdown from "../components/Markdown";
 
 const About = () => {
   const { t } = useTranslation();
   const navigate = useNavigate();
+
+  useDocumentMeta(t("meta.about.title"), t("meta.about.description"), {
+    canonicalPath: "/about",
+  });
 
   // Each card in the "Contributing" section has its own title +
   // body translation keys. Kept as a typed const tuple so a typo

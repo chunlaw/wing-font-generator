@@ -1,49 +1,63 @@
-# Wing Font
+<h1 align="center">Wing Font</h1>
 
-Wing Font generates **OpenType fonts that show pronunciation annotations
-stacked above Chinese characters in plain text** — no HTML `<ruby>`
-markup, no separate text layers, no special apps. Type a character, the
-romanization appears above it. Try it live at
-<https://wing-fonts.chunlaw.io/>.
+<p align="center">
+  <em>Bake pronunciation annotations directly into Chinese fonts — Cantonese Jyutping, Mandarin Pinyin, Taiwanese Tâi-lô, and more — so they render in plain text anywhere a custom font goes.</em>
+</p>
 
-This is a monorepo with two halves:
+<div align="center">
+
+[![License: MIT](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
+[![Deploy to GitHub Pages](https://github.com/chunlaw/wing-font-generator/actions/workflows/deploy-pages.yml/badge.svg)](https://github.com/chunlaw/wing-font-generator/actions/workflows/deploy-pages.yml)
+[![Demo Build](https://github.com/chunlaw/wing-font-generator/actions/workflows/build-demo.yml/badge.svg)](https://github.com/chunlaw/wing-font-generator/actions/workflows/build-demo.yml)
+[![Live site](https://img.shields.io/badge/site-wing--font.chunlaw.io-1f7a8c.svg)](https://wing-font.chunlaw.io)
+[![GitHub Sponsors](https://img.shields.io/github/sponsors/chunlaw?label=Sponsor&logo=github)](https://github.com/sponsors/chunlaw)
+
+</div>
+
+[Wing Font](https://wing-font.chunlaw.io) generates OpenType fonts whose glyphs **carry their own romanization above them**. Type 行 and `hang4` appears above it; type 銀行 and the same character renders with `hong4` because the word-context disambiguation rides on OpenType `ccmp`. No HTML `<ruby>` markup, no separate text layers, no special apps — Word, Pages, Canva, Adobe Creative Cloud, Chrome / Firefox / Safari all just work.
+
+The pipeline is a small Python program that adds GSUB rules to a base CJK font. The same code runs in the browser via Pyodide, so non-developers can compose their own variants without installing anything.
+
+## Documentation
+
+The [live site](https://wing-font.chunlaw.io) hosts the showcase, the in-browser generator, and per-platform install instructions for non-developers.
+
+For development docs:
+
+- **[`python/README.md`](python/README.md)** — CLI reference, GSUB pipeline architecture, mapping data sources, local test rig.
+- **[`web/README.md`](web/README.md)** — React + Vite app, Pyodide worker, sync-python script, deployment notes.
+
+## Pre-built fonts
+
+CI builds **59 font variants** on every push and publishes them to <https://wing-font.chunlaw.io/fonts/>. Browse and download from the [showcase page](https://wing-font.chunlaw.io/showcase), or use a direct URL like:
 
 ```
-wing-font/
-├── python/    # The font-generation pipeline (CLI + library code)
-└── web/       # React + Vite app that runs the pipeline in-browser via Pyodide
+https://wing-font.chunlaw.io/fonts/NotoSansHK-Noto-lshk.woff
+https://wing-font.chunlaw.io/fonts/NotoSansTC-Huninn-tailo.ttf
 ```
 
-* **[`python/`](python/)** is the source of truth. A small Python program
-  ([`python/wing-font.py`](python/wing-font.py)) reads a base TTF + an
-  annotation TTF + a CSV mapping characters to romanizations, and emits
-  a new TTF + WOFF whose glyphs have the annotations baked in. The GSUB
-  layer adds two OpenType features (`ccmp`, `liga`) so polyphonic
-  characters disambiguate automatically in context, and the user can
-  manually pick a variant by typing `字1` / `字2` / `字丅一`. CI in
-  [`.github/workflows/build-fonts.yml`](.github/workflows/build-fonts.yml)
-  builds all 25 production fonts and publishes them to
-  <https://wing-fonts.chunlaw.io/>.
+Coverage spans:
 
-* **[`web/`](web/)** is a React + Vite site that ships the same Python
-  pipeline as WebAssembly. A Web Worker boots Pyodide on demand, fetches
-  the Python sources, and runs the generator entirely in the user's
-  browser. The `/generate` page lets anyone upload their own fonts +
-  CSV, click Generate, and download the resulting WOFF. The sources
-  under `web/public/wingfont/` are **generated from `python/`** by
-  [`web/scripts/sync-python.mjs`](web/scripts/sync-python.mjs) on every
-  build — `python/` is the single source of truth.
+- **Cantonese (廣東話)** — LSHK Jyutping, Yale, Cangjie, Lau, Guangdong, Chishima; cross-romanization into Katakana / Hangul / Thai script.
+- **Taiwanese / Southern Min (台語 / 河洛話)** — Tâi-lô, POJ, Bopomofo (TPS), Taiwanese Kana.
+- **Teochew / Min Nan (潮州話)** — Peng'im (GDPI), Pe̍h-ūe-jī.
+- **Mandarin (普通話 / 國語)** — Hanyu Pinyin with phrase-level disambiguation across the full CJK Unified Ideograph range.
 
----
+Pairings include ChironSung HK, ChironHei HK, Noto Sans HK / TC / SC, Source Han Serif, Xiaolai, and others. See [Acknowledgements](#acknowledgements) for upstream data + font sources.
 
 ## Quick start
 
-### Generate a font from the CLI (Python)
+### Web (no install needed)
+
+Visit [wing-font.chunlaw.io/generate](https://wing-font.chunlaw.io/generate), pick a base font + annotation font + mapping CSV (or upload your own), click Generate, and download the resulting `.woff` / `.ttf`. First generation takes ~10-15 s for Pyodide to boot; subsequent runs are warm.
+
+### CLI
 
 ```sh
 cd python
 python -m venv .venv && source .venv/bin/activate
 pip install -r requirements.txt
+
 python wing-font.py \
   -i input_fonts/ChironSungHK-R.ttf \
   -a input_fonts/NotoSerif-Regular.ttf \
@@ -52,10 +66,9 @@ python wing-font.py \
   -opt -as 0.13
 ```
 
-See [`python/README.md`](python/README.md) for the full CLI reference,
-the test rig, and the architecture deep-dive.
+Input fonts aren't tracked in this repo — [`python/init_fonts.py`](python/init_fonts.py) fetches them from the [wing-font-hub](https://github.com/chunlaw/wing-font-hub) CDN. See [`python/README.md`](python/README.md) for the full CLI reference and pipeline walkthrough.
 
-### Run the in-browser version locally
+### Web dev
 
 ```sh
 cd web
@@ -63,114 +76,71 @@ yarn install
 yarn dev
 ```
 
-The `yarn dev` script runs `node scripts/sync-python.mjs` first (which
-copies the Python sources from `../python/` into
-`web/public/wingfont/`), then starts Vite. Open the URL it prints and
-navigate to `/generate`. First generation takes ~10–15 s for Pyodide to
-boot; subsequent generations are warm.
+`yarn dev` first runs `scripts/sync-python.mjs` to copy the Python sources from `../python/` into `web/public/wingfont/`, then starts Vite.
 
-See [`web/README.md`](web/README.md) for the worker architecture, sync
-script details, and deployment notes.
-
----
-
-## Why a monorepo
-
-Until this restructuring, the Python sources lived in `wing-font-generator`
-and the React site lived in `wing-font-demo`, with the Python files
-duplicated into `wing-font-demo/public/wingfont/`. Every time we changed
-a handler module, the two copies could drift silently. The new layout
-makes `python/` the single source of truth and treats the web app's
-bundled copies as build artifacts produced by `web/scripts/sync-python.mjs`.
-
-Two GitHub Actions handle the two halves independently. They publish to
-**different paths on the same `gh-pages` branch**, so they don't
-overwrite each other:
-
-| Workflow | Trigger | What it publishes |
-| --- | --- | --- |
-| `build-fonts.yml` | push to `python/**` (auto) or `workflow_dispatch` (manual) | Runs `wing-font.py` 25× → deploys outputs to `gh-pages` `/fonts/` subfolder (served at <https://wing-fonts.chunlaw.io/fonts/X.woff>) + uploads a `wing-fonts` artifact for inspection |
-| `build-demo.yml` | push to `web/**` or `python/**` | `yarn build` (which includes the sync step), uploads the dist as a `web-dist` artifact (validation only, no deploy) |
-
-### Publishing the React app
-
-`cd web && yarn deploy`. It runs `yarn build` then `gh-pages -d dist --add`
-to push `web/dist/` to the gh-pages ROOT. The `--add` flag is important:
-it adds/updates files without wiping the `/fonts/` subfolder that the
-fonts workflow placed there. CNAME (`wing-fonts.chunlaw.io`) comes from
-`web/public/CNAME` which Vite copies into `dist/`.
-
-### Publishing fonts
-
-Automatic on every push that touches `python/**`. The workflow
-generates the 25 fonts, force-with-lease-pushes them into the
-`/fonts/` subfolder of `gh-pages`, and uploads a copy as a workflow
-artifact for inspection. To trigger manually (e.g. after re-running
-the test rig and confirming output): Actions tab → "Fonts Generation"
-→ "Run workflow".
-
-### How the two writers coexist
-
-- `build-fonts.yml` uses `target-folder: fonts` + `clean: true`. The
-  `clean: true` is **scoped to the target folder** — it wipes only
-  `/fonts/`, never the React app at the branch root.
-- `yarn deploy` uses `gh-pages -d dist --add`. The `--add` flag adds and
-  updates files without wiping anything else — so `/fonts/` survives
-  every web deploy.
-- A `concurrency: gh-pages-fonts` group in `build-fonts.yml` serialises
-  CI runs (so two simultaneous font deploys can't fight). For the
-  much rarer case of `yarn deploy` colliding with an in-progress CI
-  push, the gh-pages action uses force-with-lease and will retry on
-  non-fast-forward.
-
----
-
-## Directory map
+## Repository layout
 
 ```
-wing-font/
-├── .github/workflows/
-│   ├── build-fonts.yml         # CI for python/ → publishes fonts to gh-pages
-│   └── build-demo.yml          # CI for web/ → uploads dist artifact
-├── python/                     # ← Python pipeline (read its README)
-│   ├── wing-font.py            # CLI entry point
-│   ├── runner.py               # Pyodide wrapper (consumed by web/)
-│   ├── build_glyph.py
-│   ├── chain_context_handler.py
-│   ├── liga_handler.py
-│   ├── utils.py
-│   ├── mappings/               # Romanization CSVs + parser
-│   ├── input_fonts/            # Source TTFs
-│   ├── tests/                  # Local visual test rig
-│   ├── requirements.txt
-│   └── README.md
-├── web/                        # ← React + Vite app (read its README)
-│   ├── src/
-│   │   ├── pages/Generate.tsx  # UI for the in-browser font generator
-│   │   ├── workers/wingfontWorker.ts   # Boots Pyodide, runs runner.py
-│   │   └── utils/wingfont.ts   # Main-thread client for the worker
-│   ├── public/
-│   │   └── wingfont/           # AUTO-GENERATED from python/ — do not edit
-│   ├── scripts/sync-python.mjs # Populates public/wingfont/ before vite
-│   ├── package.json
-│   ├── vite.config.ts
-│   └── README.md
-├── CNAME                       # Custom domain for the gh-pages font CDN
-├── LICENSE
-└── README.md                   # ← you are here
+wing-font-generator/
+├── python/        # Source of truth — font-generation pipeline (CLI + library)
+├── web/           # React + Vite app that runs the pipeline in-browser via Pyodide
+└── .github/workflows/
+    ├── deploy-pages.yml   # Matrix builds 59 fonts + web app, publishes to gh-pages
+    └── build-demo.yml     # Validation-only web build on pushes
 ```
 
----
+`python/` is the single source of truth. The Python files under `web/public/wingfont/` are **generated** by `web/scripts/sync-python.mjs` on every web build — don't edit them directly.
 
-## Mapping sources
+A sibling repo, [`chunlaw/wing-font-hub`](https://github.com/chunlaw/wing-font-hub), hosts the source `.ttf` files used as input by the pipeline (Noto Sans HK, ChironSung HK, Huninn, Source Han Serif, etc.). Keeping them out of this repo keeps clones lightweight and avoids LFS quota concerns.
 
-See [`python/README.md#mapping-sources`](python/README.md#mapping-sources)
-for the upstream data sources behind each CSV in `python/mappings/`.
+## Examples
+
+- **[Showcase](https://wing-font.chunlaw.io/showcase)** — every pre-built font with a rotating sample of dialect-appropriate lyrics, plus direct `.ttf` / `.woff` download buttons. Shareable URLs via `?fonts=` query string.
+- **[Specimen pages](https://wing-font.chunlaw.io/specimen/NotoSansHK-Noto-lshk)** — single-font large-size preview with a custom-text field.
+- **[Generate](https://wing-font.chunlaw.io/generate)** — the 5-step in-browser pipeline (fonts → mappings → parameters → generate → download + CSS snippet).
+
+## Contributing
+
+Wing Font is never finished. Three areas where help has the highest impact:
+
+- **Code** — bug reports, fixes, and improvements via [GitHub issues](https://github.com/chunlaw/wing-font-generator/issues) and pull requests.
+- **Design** — annotation placement, font choices, proportions. Conversations happen in the [Telegram group](https://t.me/wingfont).
+- **Data** — additional dialect mappings, or improvements to default readings for polyphonic characters. Telegram group is the right place to start.
+
+The [About page](https://wing-font.chunlaw.io/about) on the live site explains each contribution area in more detail.
+
+## Changelog
+
+Notable changes ship via [GitHub Releases](https://github.com/chunlaw/wing-font-generator/releases) and the commit history on `main`.
+
+## License
+
+This project is licensed under the terms of the **MIT license** — see [`LICENSE`](LICENSE).
+
+Input fonts and mapping data carry their own licenses (the fonts are mostly **SIL OFL 1.1**). See [`LICENSES.md`](LICENSES.md) and the [Acknowledgements page](https://wing-font.chunlaw.io/credits) for per-font and per-dataset attribution.
+
+## Acknowledgements
+
+Wing Font stands on the shoulders of excellent open-source data and fonts. Full credits live at <https://wing-font.chunlaw.io/credits>; the headline contributions:
+
+### Fonts
+
+- [Noto Sans HK / TC / SC / JP / KR](https://fonts.google.com/noto) — Google
+- [ChironSung HK / ChironHei HK](https://github.com/chiron-fonts) — chiron-fonts
+- [Huninn (jf-openhuninn)](https://github.com/justfont/open-huninn-font) — justfont
+- [Source Han Serif](https://github.com/adobe-fonts/source-han-serif) — Adobe
+- [Xiaolai SC](https://github.com/lxgw/Xiaolai-Sansserif) — lxgw
+- [Noto Serif](https://fonts.google.com/noto/specimen/Noto+Serif) — Google
+- [M PLUS 1m / Rounded 1c](https://github.com/coz-m/mplus_outline_fonts) — Coji Morishita
+- [Google Sans Thai](https://github.com/itfoundry/google-sans-thai) — Cadson Demak / IT Foundry
+
+### Romanization data
+
+- **Cantonese** — [TypeDuck](https://github.com/TypeDuck-HK/TypeDuck-Mac), [粵語審音配詞字庫 (CUHK)](https://humanum.arts.cuhk.edu.hk/Lexis/lexi-can/), [Cantonese Romanization Converter (Kodensha)](https://www.kodensha.jp/webapp/cantonese/can_converter_e.html)
+- **Taiwanese / Southern Min** — AlanJui's [Piau-Im](https://github.com/AlanJui/Piau-Im) + [rime-tlpa](https://github.com/AlanJui/rime-tlpa); ButTaiwan's [taigivs](https://github.com/ButTaiwan/taigivs)
+- **Teochew** — [learn-teochew](https://github.com/learn-teochew/learn-teochew.github.io), [parsetc](https://github.com/learn-teochew/parsetc)
+- **Mandarin** — mozillazg's [pinyin-data](https://github.com/mozillazg/pinyin-data) + [phrase-pinyin-data](https://github.com/mozillazg/phrase-pinyin-data); [Unicode Han Database (Unihan)](https://www.unicode.org/charts/unihan.html)
 
 ## Contact
 
 [Instagram](https://instagram.com/wingfont) · [Telegram](https://t.me/wingfont) · [Sponsor on GitHub](https://github.com/sponsors/chunlaw)
-
-## License
-
-MIT — see [`LICENSE`](LICENSE).
