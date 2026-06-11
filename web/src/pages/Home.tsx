@@ -96,12 +96,12 @@ const HERO_SAMPLES: { lines: [string, string]; fontFamily: string }[] = [
       '"ChironSungHK-hero-sample", "Noto Serif TC", "Songti TC", serif',
   },
   {
-    lines: ["家己的歌，家己唱；", "家己的字，家己選。"],
+    lines: ["家己的歌家己唱", "家己的字家己選"],
     fontFamily:
       '"NotoSansTC-Huninn-hero-tailo", "Noto Sans TC", "PingFang TC", sans-serif',
   },
   {
-    lines: ["家己个歌，家己唱；", "家己个字，家己揀。"],
+    lines: ["家己个歌家己唱", "家己个字家己揀"],
     fontFamily:
       '"NotoSansTC-Huninn-hero-pengim", "Noto Sans TC", "PingFang TC", sans-serif',
   },
