@@ -7,6 +7,19 @@ import { AVAILABLE_FONTS, FontOption } from "./utils/const";
 interface AppContextState {
   msg: string;
   pickedFonts: FontOption[],
+  /**
+   * Set of font NAMES currently being fetched / parsed by the
+   * browser's FontFace API. Used by /showcase to render a spinner
+   * next to each font card whose `.woff` hasn't finished loading
+   * yet. Entries are added the moment `loadFont` begins and
+   * removed in its `.finally` — so a stalled / failed network
+   * fetch ALSO clears the flag, avoiding a stuck-loading state.
+   *
+   * Stored as a plain object (not a JS Set) so React's
+   * shallow-compare in the consumers correctly re-renders when
+   * the keys change.
+   */
+  loadingFonts: Record<string, boolean>;
 }
 
 interface AppContextValue extends AppContextState {
@@ -18,6 +31,18 @@ interface AppContextValue extends AppContextState {
   loadFont: (fonts: FontOption) => void;
   addPickedFont: (lang: string, fontName: string) => void;
   removePickedFont: (idx: number) => void;
+  /**
+   * Replace the entire pickedFonts list in one shot. Used by
+   * /showcase to apply the `?fonts=…` query-string state on
+   * first load — calling addPickedFont in a loop would re-trigger
+   * the localStorage-sync effect once per item and pollute the
+   * URL with intermediate states.
+   *
+   * Names that aren't in AVAILABLE_FONTS are silently dropped
+   * (matches the localStorage-restore behaviour). Returns nothing —
+   * fire-and-forget.
+   */
+  setPickedFonts: (names: string[]) => void;
 }
 
 const AppContext = React.createContext({} as AppContextValue);
@@ -73,9 +98,30 @@ export const AppContextProvider = ({ children }: { children: ReactNode }) => {
     setState((prev) => ({ ...prev, msg: msg }));
   }, []);
 
-  const loadFont = useCallback((font: FontOption) => {
-    if ( loadedFonts.current[font.name] ) return Promise.resolve();
-    return loadFontToDocument(font.name, font.source)
+  const loadFont = useCallback(async (font: FontOption) => {
+    if (loadedFonts.current[font.name]) return;
+    // Mark as loading BEFORE the fetch so the UI can show a spinner
+    // while the FontFace promise is pending. Browsers don't expose
+    // a "is this @font-face currently fetching?" API, so we keep
+    // our own bookkeeping.
+    setState((prev) => ({
+      ...prev,
+      loadingFonts: { ...prev.loadingFonts, [font.name]: true },
+    }));
+    try {
+      await loadFontToDocument(font.name, font.source);
+      loadedFonts.current[font.name] = true;
+    } finally {
+      // Clear the loading flag regardless of success/failure. A
+      // stuck spinner on a 404 / network error would be worse
+      // than the silent fallback the browser already does to a
+      // system font.
+      setState((prev) => {
+        const next = { ...prev.loadingFonts };
+        delete next[font.name];
+        return { ...prev, loadingFonts: next };
+      });
+    }
   }, []);
 
   const addPickedFont = useCallback((lang: string, fontName: string) => {
@@ -92,6 +138,29 @@ export const AppContextProvider = ({ children }: { children: ReactNode }) => {
     }))
   }, [])
 
+  const setPickedFonts = useCallback((names: string[]) => {
+    // Build a flat lookup across all dialect groups so we can resolve
+    // each name in O(1). Same pattern as the localStorage restore
+    // path — keep them aligned so any catalog rename / removal is
+    // handled identically.
+    const catalog: Record<string, FontOption> = {}
+    for (const group of Object.values(AVAILABLE_FONTS)) {
+      for (const [name, opt] of Object.entries(group.fonts)) {
+        catalog[name] = opt
+      }
+    }
+    const resolved: FontOption[] = []
+    for (const n of names) {
+      const opt = catalog[n]
+      if (opt) resolved.push(opt)
+      // else: name no longer in catalog — drop silently. The user
+      // is sharing a link from before that font was renamed/removed;
+      // the URL is the source of truth and we just truncate to what
+      // still works.
+    }
+    setState(prev => ({ ...prev, pickedFonts: resolved }))
+  }, [])
+
   useEffect(() => {
     state.pickedFonts.map(pickedFont => loadFont(pickedFont))
     localStorage.setItem('pickedFonts', JSON.stringify(state.pickedFonts))
@@ -106,6 +175,7 @@ export const AppContextProvider = ({ children }: { children: ReactNode }) => {
         loadFont,
         addPickedFont,
         removePickedFont,
+        setPickedFonts,
       }}
     >
       {children}
@@ -170,4 +240,5 @@ function loadPickedFontsWithFreshUrls(): FontOption[] {
 const DEFAULT_STATE: AppContextState = {
   msg: "",
   pickedFonts: loadPickedFontsWithFreshUrls(),
+  loadingFonts: {},
 };

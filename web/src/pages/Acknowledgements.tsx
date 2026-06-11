@@ -66,16 +66,85 @@ const TEOCHEW_SOURCES: Source[] = [
   },
 ];
 
+// Every input TTF Wing Font's pipeline can use, with its upstream and
+// a one-line role-and-license note. All 15 fonts are SIL OFL 1.1 —
+// we say so in each description rather than relying on a footer note
+// so a reader scanning the page sees the licence next to every font.
+// Source-of-truth list lives in LICENSES.md at the repo root and in
+// chunlaw/wing-font-hub (the CDN that hosts the binaries).
 const FONT_SOURCES: Source[] = [
+  // CJK base — sans-serif (Noto Sans family)
   {
     name: "Noto Sans TC — Google",
     url: "https://fonts.google.com/noto/specimen/Noto+Sans+TC",
     descKey: "ack.fonts.notosanstc",
   },
   {
+    name: "Noto Sans SC — Google",
+    url: "https://fonts.google.com/noto/specimen/Noto+Sans+SC",
+    descKey: "ack.fonts.notosanssc",
+  },
+  {
+    name: "Noto Sans HK — Google",
+    url: "https://fonts.google.com/noto/specimen/Noto+Sans+HK",
+    descKey: "ack.fonts.notosanshk",
+  },
+  {
+    name: "Noto Sans JP — Google",
+    url: "https://fonts.google.com/noto/specimen/Noto+Sans+JP",
+    descKey: "ack.fonts.notosansjp",
+  },
+  {
+    name: "Noto Sans KR — Google",
+    url: "https://fonts.google.com/noto/specimen/Noto+Sans+KR",
+    descKey: "ack.fonts.notosanskr",
+  },
+  // CJK base — serif
+  {
+    name: "ChironSung HK — chiron-fonts",
+    url: "https://github.com/chiron-fonts/chiron-sung-hk",
+    descKey: "ack.fonts.chironsung",
+  },
+  {
+    name: "ChironHei HK — chiron-fonts",
+    url: "https://github.com/chiron-fonts/chiron-hei-hk",
+    descKey: "ack.fonts.chironhei",
+  },
+  {
+    name: "Source Han Serif — Adobe",
+    url: "https://github.com/adobe-fonts/source-han-serif",
+    descKey: "ack.fonts.sourcehanserif",
+  },
+  {
+    name: "Xiaolai SC — lxgw",
+    url: "https://github.com/lxgw/Xiaolai-Sansserif",
+    descKey: "ack.fonts.xiaolai",
+  },
+  // Annotation fonts
+  {
     name: "Huninn (jf-openhuninn) — justfont",
     url: "https://github.com/justfont/open-huninn-font",
     descKey: "ack.fonts.huninn",
+  },
+  {
+    name: "Noto Serif — Google",
+    url: "https://fonts.google.com/noto/specimen/Noto+Serif",
+    descKey: "ack.fonts.notoserif",
+  },
+  {
+    name: "M PLUS 1m — Coji Morishita",
+    url: "https://github.com/coz-m/mplus_outline_fonts",
+    descKey: "ack.fonts.mplus1m",
+  },
+  {
+    name: "M PLUS Rounded 1c — Coji Morishita",
+    url: "https://github.com/coz-m/mplus_outline_fonts",
+    descKey: "ack.fonts.mplusrounded",
+  },
+  {
+    name: "Google Sans Thai — Cadson Demak / IT Foundry",
+    url: "https://github.com/itfoundry/google-sans-thai",
+    descKey: "ack.fonts.googlesansthai",
   },
 ];
 
@@ -168,8 +237,14 @@ const Acknowledgements = () => {
         sources={TEOCHEW_SOURCES}
       />
 
-      {/* Fonts */}
-      <CreditSection title={t("ack.fonts.title")} sources={FONT_SOURCES} />
+      {/* Fonts — preamble explains every entry below is OFL-1.1; the
+          per-font descKey just adds role + the license name in line
+          with each card so a casual scanner sees licence next to font. */}
+      <CreditSection
+        title={t("ack.fonts.title")}
+        body={t("ack.fonts.body")}
+        sources={FONT_SOURCES}
+      />
 
       {/* Cantonese */}
       <CreditSection title={t("ack.canto.title")} sources={CANTO_SOURCES} />

@@ -1,38 +1,114 @@
-export const TEMPLATES: string[] = [
-  "勒到呼吸困難才知變扯線木偶",
-  "拳頭若放開　可擁抱四周",
-  "活著自活著 萬象在逝水中暢泳",
-  "如果心聲真有療效　誰怕暴露更多",
-  "回望最初　當喪失是得著可不可",
-  "立志助世人脫貧以為　便偉大到像多麼有為",
-  "誰能憑愛意要富士山私有",
-  "惟有我聽過你對我哭訴",
-  "各有各唱自己歌　各找自我",
-  "寂寞在流動　某些真的假的夢",
-  "如海嘯衝擊我　使我向下沉",
-  "我會在旁　開心玩　四處捐",
-  "我為你偷偷心動　感覺神情凝重",
-  "旋轉兜圈的感覺太逼真",
-  "我這樣討厭　他完美如此　能共你好好地相處",
-  "曳搖共對輕舟飄　互傳誓約慶春曉",
-  "甜蜜地與愛人　風裏飛奔",
-  "願一生中苦痛快樂也體驗",
-  "想不想也日夜懷念　連甜夢也不夠甜",
-  "遲了悔改　只好講抵你離開",
-  "荒誕像這一切也變成往常",
-  "別要我洗去　我的雙腳泥濘",
-  "留在彼此的身邊　牽著手再繼續飛",
-  "永遠有一個吻未嘗",
-  "望著他雙眼想別人　人留下了留不低那片心",
+/**
+ * Lyric / phrase pool that the /showcase page rotates through when
+ * the user hasn't typed their own sample text. Grouped by dialect so
+ * `useTemplateRotation(msg, dialectKey)` can pick a pool that
+ * matches whichever font card is being rendered — a Cantonese font
+ * card cycles only through Cantonese lyrics, a Mandarin card cycles
+ * only through Mandarin lyrics, etc.
+ *
+ * Dialect keys here MUST match the keys in `AVAILABLE_FONTS` below
+ * (cantonese / taiwanese / teochew / mandarin) so the per-card
+ * lookup in Main.tsx can route correctly via `findDialectKey()`.
+ *
+ * The flat `TEMPLATES` export underneath is preserved for the
+ * Specimen page, which renders one font in isolation and doesn't
+ * have a notion of "which dialect am I" — it rotates through the
+ * full pool.
+ */
+export const TEMPLATES_BY_DIALECT: Record<string, string[]> = {
+  cantonese: [
+    "勒到呼吸困難才知變扯線木偶",
+    "拳頭若放開　可擁抱四周",
+    "活著自活著 萬象在逝水中暢泳",
+    "如果心聲真有療效　誰怕暴露更多",
+    "回望最初　當喪失是得著可不可",
+    "立志助世人脫貧以為　便偉大到像多麼有為",
+    "誰能憑愛意要富士山私有",
+    "惟有我聽過你對我哭訴",
+    "各有各唱自己歌　各找自我",
+    "寂寞在流動　某些真的假的夢",
+    "如海嘯衝擊我　使我向下沉",
+    "我會在旁　開心玩　四處捐",
+    "我為你偷偷心動　感覺神情凝重",
+    "旋轉兜圈的感覺太逼真",
+    "我這樣討厭　他完美如此　能共你好好地相處",
+    "曳搖共對輕舟飄　互傳誓約慶春曉",
+    "甜蜜地與愛人　風裏飛奔",
+    "願一生中苦痛快樂也體驗",
+    "想不想也日夜懷念　連甜夢也不夠甜",
+    "遲了悔改　只好講抵你離開",
+    "荒誕像這一切也變成往常",
+    "別要我洗去　我的雙腳泥濘",
+    "留在彼此的身邊　牽著手再繼續飛",
+    "永遠有一個吻未嘗",
+    "望著他雙眼想別人　人留下了留不低那片心",
+  ],
   // Taiwanese / Southern Min samples — render with the 思源黑體（台羅）
   // or （白話字）showcase fonts to see Tâi-lô / POJ tone marks above.
-  "天烏烏　欲落雨",
-  "思念故鄉的月光　風吹過稻田",
+  // Mix of pre-war Taiwanese folk (鄧雨賢's 雨夜花 / 望春風), 50s-60s
+  // 文夏 era classics, and modern 蔡振南 / 江蕙 / 葉啟田 / 林淑容
+  // works — chosen for one-line memorability and broad recognition
+  // across HK / TW / overseas Hō-ló communities.
+  taiwanese: [
+    "天烏烏　欲落雨",
+    "思念故鄉的月光　風吹過稻田",
+    "雨夜花　雨夜花",
+    "望春風　夜半三更",
+    "天頂的月娘　知影我的心",
+    "一支小雨傘　雙人來行",
+    "酒矸倘賣無",
+    "愛拼才會贏",
+    "阮若打開心內的門窗",
+    "孤女的願望",
+    "思慕的人　啊　怎樣會這呢無情",
+    "六月的炎天引阮牽掛可愛的薄情郎",
+  ],
   // Teochew (潮州話) samples — render with the 思源黑體（潮拼）or
   // （潮州白話字）showcase fonts to see Peng'im / PUJ above the chars.
-  "家己人講家己話",
-  "潮州人講潮州話",
-];
+  // Lyric + proverb mix sourced from 潮州歌仔 / 潮州歌冊 traditions plus
+  // modern Teochew compositions. Falls back to 童謠 / 諺語 for lines
+  // pop catalogues don't cover well.
+  teochew: [
+    "家己人講家己話",
+    "潮州人講潮州話",
+    "家己人　毋免講外話",
+    "日頭赤焰焰　風吹田過番",
+    "阿弟仔　食工夫茶",
+    "潮州人　在他鄉",
+    "來去呷茶　慢慢仔講",
+    "故鄉的溪水　日日流",
+    "阿姆煮飯　飯擔香",
+    "潮州歌仔　唱不完",
+    "親情如歌　永遠唱",
+    "落雨大　水浸街",
+  ],
+  // Mandarin (普通話 / 國語) samples — render with the Mandarin
+  // showcase fonts (思源宋體 拼音 / 小賴字體 拼音) to see Hanyu Pinyin
+  // stacked above each character via the full-Unihan mandarin.csv
+  // mapping. Mix of 鄧麗君 / 王菲 / 羅大佑 / 周華健 / 五月天 / 朴樹
+  // / 周深 — broad coverage across 70s–2010s 國語 pop so a reader
+  // of any generation lands on something familiar.
+  mandarin: [
+    "夜空中最亮的星　能否聽清",
+    "月亮代表我的心",
+    "甜蜜蜜　你笑得甜蜜蜜",
+    "童年的紙飛機　現在飛回我手裡",
+    "光陰似箭　一寸光陰一寸金",
+    "我願意為你　被放逐天際",
+    "當愛已成往事",
+    "明天會更好",
+    "朋友一生一起走",
+    "我看到满片花儿的开放　隐隐约约有声歌唱",
+  ],
+};
+
+/**
+ * Flat union of every per-dialect template list. Used by callers
+ * that don't know which dialect the user picked — currently just
+ * the Specimen page, which renders a single font and doesn't have
+ * a dialect filter to apply.
+ */
+export const TEMPLATES: string[] = Object.values(TEMPLATES_BY_DIALECT).flat();
 
 export interface FontOption {
   name: string;
@@ -83,8 +159,61 @@ export const AVAILABLE_FONTS: FontSet = {
   cantonese: {
     lang: {
       zh: "廣東話",
+      en: "Cantonese",
     },
+    // Cantonese showcase defaults switched from ChironSungHK to
+    // Noto Sans HK in June 2026. Reasons (in order of importance):
+    //   * Roughly halves the WOFF size per font (~700-900 KB →
+    //     ~350-450 KB), so the 6-font /showcase loads in ~half the
+    //     time on a slow connection.
+    //   * Noto Sans HK uses Hong-Kong-locale glyph forms (字 / 為 /
+    //     起 / 緣 / 緊 etc.), which is more authentic for HK
+    //     readers than ChironSung's font but also more authentic
+    //     than Noto Sans TC's Taiwan-locale forms.
+    //   * Variable weight axis exposes the Step 1 weight slider.
+    // The ChironSungHK-* fonts are still built by the CI matrix and
+    // downloadable via direct URL — only the showcase default
+    // changed. External bookmarks to ChironSungHK-Noto-lshk.woff
+    // (etc.) keep working.
     fonts: {
+      "NotoSansHK-Noto-lshk": {
+        displayName: "思源黑體 香港（香港語言學會）",
+        name: "NotoSansHK-Noto-lshk",
+        source: `url(${import.meta.env.VITE_FONT_URL}/NotoSansHK-Noto-lshk.woff) format('woff')`,
+      },
+      "NotoSansHK-Noto-yale": {
+        displayName: "思源黑體 香港（耶魯拼音）",
+        name: "NotoSansHK-Noto-yale",
+        source: `url(${import.meta.env.VITE_FONT_URL}/NotoSansHK-Noto-yale.woff) format('woff')`,
+      },
+      "NotoSansHK-cangjie": {
+        displayName: "思源黑體 香港（倉頡）",
+        name: "NotoSansHK-cangjie",
+        source: `url(${import.meta.env.VITE_FONT_URL}/NotoSansHK-cangjie.woff) format('woff')`,
+      },
+      "NotoSansHK-Google-thai": {
+        displayName: "思源黑體 香港（泰文標注）",
+        name: "NotoSansHK-Google-thai",
+        source: `url(${import.meta.env.VITE_FONT_URL}/NotoSansHK-Google-thai.woff) format('woff')`,
+      },
+      "NotoSansHK-NotoJP-katakana": {
+        displayName: "思源黑體 香港（片假名標注）",
+        name: "NotoSansHK-NotoJP-katakana",
+        source: `url(${import.meta.env.VITE_FONT_URL}/NotoSansHK-NotoJP-katakana.woff) format('woff')`,
+      },
+      "NotoSansHK-NotoKR-korean": {
+        displayName: "思源黑體 香港（諺文標注）",
+        name: "NotoSansHK-NotoKR-korean",
+        source: `url(${import.meta.env.VITE_FONT_URL}/NotoSansHK-NotoKR-korean.woff) format('woff')`,
+      },
+      // ─ ChironSung Heavyweight Edition ────────────────────────────
+      // The original (HK-serif) Cantonese showcase set. Heavier
+      // outlines = ~2× the file size of the NotoSansHK equivalents
+      // above, but with the traditional serif aesthetic many HK
+      // readers prefer for body text. Users who pick these accept
+      // the longer download in exchange for the typographic style.
+      // The FontPicker dropdown surfaces both — HK Sans first (as
+      // the default), Chiron Sung after.
       "ChironSungHK-Noto-lshk": {
         displayName: "昭源宋體（香港語言學會）",
         name: "ChironSungHK-Noto-lshk",
@@ -126,6 +255,7 @@ export const AVAILABLE_FONTS: FontSet = {
   taiwanese: {
     lang: {
       zh: "臺語",
+      en: "Taiwanese / Southern Min",
     },
     fonts: {
       "NotoSansTC-Huninn-tailo": {
@@ -153,6 +283,7 @@ export const AVAILABLE_FONTS: FontSet = {
   teochew: {
     lang: {
       zh: "潮州話",
+      en: "Teochew / Min Nan",
     },
     fonts: {
       "NotoSansTC-Huninn-teochew-pengim": {
@@ -179,6 +310,7 @@ export const AVAILABLE_FONTS: FontSet = {
   mandarin: {
     lang: {
       zh: "普通話",
+      en: "Mandarin",
     },
     fonts: {
       "SourceHanSerif-Mplus-mandarin": {
@@ -194,3 +326,36 @@ export const AVAILABLE_FONTS: FontSet = {
     },
   },
 };
+
+/**
+ * Reverse-lookup: given a font's machine name (e.g.
+ * "NotoSansTC-Huninn-tailo"), return which dialect group it belongs
+ * to (e.g. "taiwanese"). Returns undefined when the name isn't in
+ * AVAILABLE_FONTS — happens transiently when a stale entry sits in
+ * localStorage after we remove a font from the showcase. Callers
+ * should treat undefined as "skip the dialect chip", not as an
+ * error.
+ *
+ * O(n) over the dialect groups, but n is small (~5) and call sites
+ * only run during render, so the cost is negligible.
+ */
+export function findDialectKey(fontName: string): string | undefined {
+  for (const [dialectKey, group] of Object.entries(AVAILABLE_FONTS)) {
+    if (fontName in group.fonts) return dialectKey;
+  }
+  return undefined;
+}
+
+/**
+ * Localised display label for a dialect key. Falls back to the zh
+ * label when the requested locale doesn't have an entry (none of
+ * our dialects ship `en` blank, but the type allows it).
+ */
+export function getDialectLabel(
+  dialectKey: string,
+  locale: "zh" | "en",
+): string {
+  const group = AVAILABLE_FONTS[dialectKey];
+  if (!group) return dialectKey;
+  return group.lang[locale] ?? group.lang.zh ?? dialectKey;
+}

@@ -49,8 +49,21 @@ export type TranslationKey =
   | "ack.teochew.learnteochew"
   | "ack.teochew.parsetc"
   | "ack.fonts.title"
+  | "ack.fonts.body"
   | "ack.fonts.notosanstc"
+  | "ack.fonts.notosanssc"
+  | "ack.fonts.notosanshk"
+  | "ack.fonts.notosansjp"
+  | "ack.fonts.notosanskr"
+  | "ack.fonts.chironsung"
+  | "ack.fonts.chironhei"
+  | "ack.fonts.sourcehanserif"
+  | "ack.fonts.xiaolai"
   | "ack.fonts.huninn"
+  | "ack.fonts.notoserif"
+  | "ack.fonts.mplus1m"
+  | "ack.fonts.mplusrounded"
+  | "ack.fonts.googlesansthai"
   | "ack.canto.title"
   | "ack.canto.typeduck"
   | "ack.canto.cuhk"
@@ -277,10 +290,36 @@ export const TRANSLATIONS: Record<Language, Record<TranslationKey, string>> = {
     "ack.teochew.parsetc":
       "潮州話拼音解析及轉換工具，將廣東拼音讀音轉成潮羅、白話字、潮語、家己儂拼音、新文字等方案。",
     "ack.fonts.title": "字型",
+    "ack.fonts.body":
+      "Wing Font 所用嘅字型，全部都係 SIL Open Font License 1.1（OFL-1.1）授權。OFL 嘅原文同每隻字型嘅版權聲明、保留字型名稱（Reserved Font Name），統一收錄喺 wing-font-hub 嘅 LICENSES/ 目錄。下面係字型一覽，按用途分組。",
     "ack.fonts.notosanstc":
-      "臺語示範字體嘅漢字底字，採用 Google 開源嘅思源黑體（Noto Sans TC，SIL Open Font License）。",
+      "繁體中文漢字底字（變數字重）。SIL Open Font License 1.1。",
+    "ack.fonts.notosanssc":
+      "簡體中文漢字底字（變數字重），用於普通話拼音示範字體。SIL Open Font License 1.1。",
+    "ack.fonts.notosanshk":
+      "繁體中文（香港字形）漢字底字（變數字重），為廣東話示範字體嘅預設底字。SIL Open Font License 1.1。",
+    "ack.fonts.notosansjp":
+      "片仮名標注用字型（變數字重）。SIL Open Font License 1.1。",
+    "ack.fonts.notosanskr":
+      "諺文（한글）標注用字型（變數字重）。SIL Open Font License 1.1。",
+    "ack.fonts.chironsung":
+      "繁體中文宋體底字，內含 Regular 同 Italic。SIL Open Font License 1.1。",
+    "ack.fonts.chironhei":
+      "繁體中文黑體底字，內含 Regular 同 Bold。SIL Open Font License 1.1。",
+    "ack.fonts.sourcehanserif":
+      "由 Adobe 發布嘅泛 CJK 思源宋體。SIL Open Font License 1.1。",
+    "ack.fonts.xiaolai":
+      "簡體中文手寫風格底字（小米同 lxgw 整理嘅 Xiaolai SC）。SIL Open Font License 1.1。",
     "ack.fonts.huninn":
-      "標注用字型，由 justfont 開源嘅 Huninn（粉圓）提供，完整支援台羅／白話字嘅聲調符號。",
+      "標注用字型，由 justfont 開源嘅 Huninn（粉圓）提供，完整支援台羅／白話字嘅聲調符號。SIL Open Font License 1.1。",
+    "ack.fonts.notoserif":
+      "拉丁字母標注（粵拼、Yale 等）所用嘅羅馬字字型。SIL Open Font License 1.1。",
+    "ack.fonts.mplus1m":
+      "日文 M+ 1m 等寬字型，配 Source Han Serif 用於普通話示範。SIL Open Font License 1.1。",
+    "ack.fonts.mplusrounded":
+      "日文 M+ Rounded 1c 圓體，配 Xiaolai SC 用於手寫風普通話示範。SIL Open Font License 1.1。",
+    "ack.fonts.googlesansthai":
+      "粵語讀音轉成泰文嘅標注用字型，由 IT Foundry／Cadson Demak 設計。SIL Open Font License 1.1。「Google Sans」係 Google LLC 嘅商標。",
     "ack.canto.title": "廣東話　字音資料",
     "ack.canto.typeduck": "粵拼（LSHK）字音資料。",
     "ack.canto.cuhk": "香港中文大學「粵語審音配詞字庫」。",
@@ -547,10 +586,36 @@ export const TRANSLATIONS: Record<Language, Record<TranslationKey, string>> = {
     "ack.teochew.parsetc":
       "Teochew romanization parser and converter — turns the Peng'im readings into Tie-lo, Pe̍h-ūe-jī, Dieghv, Gaginang and Sinwenz.",
     "ack.fonts.title": "Fonts",
+    "ack.fonts.body":
+      "Every TTF Wing Font ships with is licensed under the SIL Open Font License 1.1 (OFL-1.1). The canonical OFL text and each font's copyright statement + Reserved Font Name are bundled together in the wing-font-hub repo's LICENSES/ folder. The list below groups fonts by role.",
     "ack.fonts.notosanstc":
-      "Base CJK font for the Taiwanese showcase — Google's open-source Noto Sans TC (SIL Open Font License).",
+      "Traditional-Chinese CJK base font, variable weight. SIL Open Font License 1.1.",
+    "ack.fonts.notosanssc":
+      "Simplified-Chinese CJK base font, variable weight — pairs with the Mandarin pinyin showcase. SIL Open Font License 1.1.",
+    "ack.fonts.notosanshk":
+      "Hong-Kong-locale CJK base font, variable weight — default base for the Cantonese showcase fonts. Glyph forms follow HK conventions (different stroke shapes for chars like 字 / 為 / 起 / 緣 / 緊 vs the Taiwan-locale Noto Sans TC). SIL Open Font License 1.1.",
+    "ack.fonts.notosansjp":
+      "Annotation font for the Cantonese-katakana mapping (variable weight). SIL Open Font License 1.1.",
+    "ack.fonts.notosanskr":
+      "Annotation font for the Cantonese-Hangul mapping (variable weight). SIL Open Font License 1.1.",
+    "ack.fonts.chironsung":
+      "Traditional-Chinese serif (Sung) base font; ships in Regular and Italic. SIL Open Font License 1.1.",
+    "ack.fonts.chironhei":
+      "Traditional-Chinese sans-serif (Hei) base font; ships in Regular and Bold. SIL Open Font License 1.1.",
+    "ack.fonts.sourcehanserif":
+      "Pan-CJK serif, Adobe's Source Han Serif — paired with the M+ 1m annotation in one of the Mandarin showcase combinations. SIL Open Font License 1.1.",
+    "ack.fonts.xiaolai":
+      "Simplified-Chinese handwriting-style base font (lxgw's Xiaolai SC) — paired with M+ Rounded 1c for a softer Mandarin pinyin showcase. SIL Open Font License 1.1.",
     "ack.fonts.huninn":
-      "Annotation font — justfont's open-source Huninn (jf-openhuninn), which fully supports the Tâi-lô / POJ tone marks.",
+      "Annotation font — justfont's open-source Huninn (jf-openhuninn). Carries every Tâi-lô / POJ combining tone mark plus the nasal ⁿ and the o͘ dot. SIL Open Font License 1.1.",
+    "ack.fonts.notoserif":
+      "Latin annotation font used for the Cantonese romanizations (LSHK, Yale, Lau, Guangdong, Chishima). SIL Open Font License 1.1.",
+    "ack.fonts.mplus1m":
+      "Japanese fixed-width annotation font, paired with Source Han Serif for one of the Mandarin showcase combinations. SIL Open Font License 1.1.",
+    "ack.fonts.mplusrounded":
+      "Japanese rounded annotation font, paired with Xiaolai SC for the handwriting-style Mandarin showcase. SIL Open Font License 1.1.",
+    "ack.fonts.googlesansthai":
+      "Annotation font for the Cantonese-Thai mapping (variable weight), designed by Cadson Demak / IT Foundry. SIL Open Font License 1.1. \"Google Sans\" is a trademark of Google LLC.",
     "ack.canto.title": "Cantonese — reading data",
     "ack.canto.typeduck": "Jyutping (LSHK) reading data.",
     "ack.canto.cuhk":

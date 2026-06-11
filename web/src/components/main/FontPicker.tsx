@@ -1,8 +1,9 @@
 import { Box, IconButton, MenuItem, TextField } from "@mui/material"
 import { useCallback, useContext, useState } from "react"
 import AppContext from "../../AppContext"
-import { AVAILABLE_FONTS } from "../../utils/const"
+import { AVAILABLE_FONTS, getDialectLabel } from "../../utils/const"
 import { AddCircleOutline } from "@mui/icons-material"
+import { useTranslation } from "../../i18n/LanguageContext"
 
 interface FontPickerState {
   lang: string,
@@ -11,7 +12,8 @@ interface FontPickerState {
 
 const FontPicker = () => {
   const { addPickedFont } = useContext(AppContext)
-  
+  const { lang } = useTranslation()
+
   const [state, setState] = useState<FontPickerState>(DEFAULT_STATE)
 
   const handleLangChange = useCallback((value: string) => {
@@ -41,9 +43,9 @@ const FontPicker = () => {
         onChange={({target: {value}}) => handleLangChange(value)}
         fullWidth
       >
-        {Object.entries(AVAILABLE_FONTS).map(([key, {lang}]) => 
+        {Object.keys(AVAILABLE_FONTS).map((key) =>
           <MenuItem key={`${key}-option`} value={key}>
-            {lang["zh"]}
+            {getDialectLabel(key, lang)}
           </MenuItem>
         )}
       </TextField>

@@ -79,6 +79,18 @@ export const BUILT_IN_BASE_FONTS: BuiltInPreset[] = [
     url: "/wingfont/NotoSansTC-VariableFont_wght.ttf",
     filename: "NotoSansTC-VariableFont_wght.ttf",
   },
+  // Hong-Kong-locale variant of Noto Sans CJK. Same `wght` variable
+  // axis, same auto-instance-to-400. Glyph forms follow HK
+  // conventions (字 / 為 / 起 / 緣 / 緊 differ subtly from the
+  // Taiwan-locale TC variant). The default /showcase Cantonese
+  // builds use this base; surface it here so users generating their
+  // own fonts can match the showcase aesthetic.
+  {
+    key: "notosanshk",
+    label: "思源黑體 香港 (Noto Sans HK)",
+    url: "/wingfont/NotoSansHK-VariableFont_wght.ttf",
+    filename: "NotoSansHK-VariableFont_wght.ttf",
+  },
   // Simplified-Chinese sibling of Noto Sans TC. Same `wght` variable
   // axis, same auto-instance-to-400 behaviour from wing-font.py; ship
   // it so users targeting Mandarin readers / Simplified-Chinese
