@@ -82,6 +82,20 @@ FONT_FILES: list[str] = [
 # (the same failure mode `wing-font.py`'s input-size guard catches).
 _MIN_FONT_BYTES = 1024
 
+# Custom user-agent for download requests. urllib's default UA is
+# literally "Python-urllib/3.X", which Cloudflare's default bot-
+# mitigation managed rules block with a 403 — even though the same
+# URL serves 200 to curl, browsers, etc. The chunlaw.io apex is
+# behind Cloudflare, so we hit that rule on every fetch unless we
+# identify as something less automated-sounding. Picking a UA
+# string that names this tool gives any future Cloudflare operator
+# (or upstream-font-repo maintainer) a clear signal about who's
+# pulling files.
+_USER_AGENT = (
+    "wing-font-generator-init-fonts "
+    "(+https://github.com/chunlaw/wing-font-generator)"
+)
+
 
 def _input_fonts_dir() -> Path:
     """`python/input_fonts/` resolved from this script's location."""
@@ -105,7 +119,12 @@ def _fetch_one(url: str, dest: Path) -> None:
     """
     tmp = dest.with_suffix(dest.suffix + ".partial")
     try:
-        with urllib.request.urlopen(url) as resp:
+        # Build an explicit Request rather than passing the URL
+        # string directly — `urlopen(str)` sends urllib's default
+        # `Python-urllib/X.Y` user-agent, which Cloudflare blocks
+        # on chunlaw.io with a 403. See _USER_AGENT comment.
+        req = urllib.request.Request(url, headers={"User-Agent": _USER_AGENT})
+        with urllib.request.urlopen(req) as resp:
             tmp.write_bytes(resp.read())
         # Sanity-check the freshly-downloaded file before renaming so
         # the atomic swap only commits real fonts. Anything smaller
