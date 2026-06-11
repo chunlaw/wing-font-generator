@@ -34,7 +34,33 @@ export type TranslationKey =
   | "footer.links.generate"
   | "footer.links.showcase"
   | "footer.links.source"
+  | "footer.links.credits"
   | "footer.credit"
+  | "ack.hero.title"
+  | "ack.hero.tagline"
+  | "ack.intro"
+  | "ack.taigi.title"
+  | "ack.taigi.body"
+  | "ack.taigi.piauim"
+  | "ack.taigi.rimetlpa"
+  | "ack.teochew.title"
+  | "ack.teochew.body"
+  | "ack.teochew.learnteochew"
+  | "ack.teochew.parsetc"
+  | "ack.fonts.title"
+  | "ack.fonts.notosanstc"
+  | "ack.fonts.huninn"
+  | "ack.canto.title"
+  | "ack.canto.typeduck"
+  | "ack.canto.cuhk"
+  | "ack.canto.kodensha"
+  | "ack.mandarin.title"
+  | "ack.mandarin.body"
+  | "ack.mandarin.pinyindata"
+  | "ack.mandarin.phrasepinyindata"
+  | "ack.mandarin.unihan"
+  | "ack.license"
+  | "ack.cta.showcase"
   // Home
   | "home.hero.title"
   | "home.hero.tagline"
@@ -226,7 +252,45 @@ export const TRANSLATIONS: Record<Language, Record<TranslationKey, string>> = {
     "footer.links.generate": "自製字體",
     "footer.links.showcase": "字體展示",
     "footer.links.source": "原始碼（GitHub）",
+    "footer.links.credits": "鳴謝",
     "footer.credit": "由 chunlaw 設計與開發",
+    // Acknowledgements page
+    "ack.hero.title": "鳴謝",
+    "ack.hero.tagline": "Wing Font 站喺好多開源資料庫同字型嘅肩膊上。",
+    "ack.intro":
+      "以下係令到 Wing Font 各種方言標注得以實現嘅開源資料庫同字型。多謝佢哋嘅無私分享。",
+    "ack.taigi.title": "臺語／河洛話　字音資料",
+    "ack.taigi.body":
+      "臺語（河洛話）嘅漢字讀音、台羅／白話字／閩拼之間嘅轉換對照表，以及聲調符號標注嘅規則，全部源自 AlanJui 嘅開源項目。",
+    "ack.taigi.piauim":
+      "漢字標音資料庫（Ho_Lok_Ue.db 之「漢字庫」、聲母／韻母／聲調對照表）同調符標注邏輯（mod_帶調符音標.py）。",
+    "ack.taigi.rimetlpa":
+      "台語音標（TLPA）RIME 輸入方案及字庫，提供另一套漢字讀音對照。",
+    "ack.teochew.title": "潮州話　字音資料",
+    "ack.teochew.body":
+      "潮州話嘅漢字同詞語讀音（廣東拼音）源自 learn-teochew 項目嘅開源字音資料，再用 parsetc 解析器轉換成潮拼／潮羅／白話字等唔同拼音方案。",
+    "ack.teochew.learnteochew":
+      "潮州話漢字／詞語讀音字庫（teochew_scrape.json，廣東拼音），亦係首頁「家己个歌，家己唱；家己个字，家己揀。」示範句嘅出處。",
+    "ack.teochew.parsetc":
+      "潮州話拼音解析及轉換工具，將廣東拼音讀音轉成潮羅、白話字、潮語、家己儂拼音、新文字等方案。",
+    "ack.fonts.title": "字型",
+    "ack.fonts.notosanstc":
+      "臺語示範字體嘅漢字底字，採用 Google 開源嘅思源黑體（Noto Sans TC，SIL Open Font License）。",
+    "ack.fonts.huninn":
+      "標注用字型，由 justfont 開源嘅 Huninn（粉圓）提供，完整支援台羅／白話字嘅聲調符號。",
+    "ack.canto.title": "廣東話　字音資料",
+    "ack.canto.typeduck": "粵拼（LSHK）字音資料。",
+    "ack.canto.cuhk": "香港中文大學「粵語審音配詞字庫」。",
+    "ack.canto.kodensha": "粵語羅馬拼音轉換工具。",
+    "ack.mandarin.title": "普通話／國語　字音資料",
+    "ack.mandarin.body":
+      "普通話字音資料全部取自 mozillazg 採用 MIT 授權嘅開源資料，並非來自任何 OFL 字型項目。每字嘅預設讀音依照 Unicode Unihan 資料庫嘅 kMandarin 欄。將拼音直接造入字形、再按上下文自動切換多音字嘅做法，最早由 Mengshen 拼音字型（OFL-1.1）開創；Wing Font 並無使用佢嘅資料檔案，但謹此鳴謝佢嘅啟發。",
+    "ack.mandarin.pinyindata": "逐字讀音資料（MIT；源自 Unihan）。",
+    "ack.mandarin.phrasepinyindata": "詞語讀音資料，用嚟做多音字上下文判斷（MIT）。",
+    "ack.mandarin.unihan": "Unicode 漢字資料庫（Unihan）— 上游讀音資料。",
+    "ack.license":
+      "各項資料與字型均依其原有授權條款使用；如需轉載或再發佈，請先參閱各來源之授權。",
+    "ack.cta.showcase": "睇睇成品字體",
     // Home
     "home.hero.title": "Wing Font",
     "home.hero.tagline":
@@ -243,15 +307,15 @@ export const TRANSLATIONS: Record<Language, Record<TranslationKey, string>> = {
     "home.platforms.learnMoreSubtitle":
       "選擇你常用的軟件或作業系統，查看安裝與設定步驟。",
     "home.platforms.tabs.canva":
-      "開啟設計，點擊文字元素。\n在字型選單按「上載字型」，選擇下載的 .ttf 檔案。\n到文字效果面板開啟「Ligatures（連字）」選項——沒有它，「字1」這類數字標注不會生效。\n免費帳戶可能需升級至 Canva Pro 方能上載字型。",
+      "開啟設計，點擊文字元素。\n在字型選單按「上載字型」，選擇下載的 .ttf 檔案。\n字型的詞語對應與「字1」、「字丅一」等標注切換無需任何設定即可運作（基於 OpenType `ccmp` 必定啟用功能）。\n免費帳戶可能需升級至 Canva Pro 方能上載字型。",
     "home.platforms.tabs.affinity":
       "先在作業系統安裝字型（見 Windows / macOS / Linux 分頁）。\n關閉並重新開啟 Affinity Designer / Photo / Publisher。\n字型隨即出現在所有字型選單。預設已啟用連字，毋須額外設定。",
     "home.platforms.tabs.adobe":
-      "先在作業系統安裝字型。\n關閉並重新開啟 Adobe Illustrator / Photoshop / InDesign。\n字型會以家族名稱出現在字型選單。\n在 Illustrator 與 InDesign 中，開啟「字元」面板並確認「連字」選項已開啟——數字標注（如「字1」）才能正常運作。",
+      "先在作業系統安裝字型。\n關閉並重新開啟 Adobe Illustrator / Photoshop / InDesign。\n字型會以家族名稱出現在字型選單。\n所有標注功能（詞語對應、「字1」、「字丅一」）無需任何設定即可運作——本字型已將規則放在 OpenType `ccmp` 功能（必定啟用），無需開啟「連字」選項。",
     "home.platforms.tabs.word":
-      "先在作業系統安裝字型。\n關閉並重啟 Word。\n在「常用 > 字型」選單中找到字型。\n如需啟用數字標注：「格式 > 字型 > 進階 > OpenType 功能 > 連字」設為「僅限標準」或更高。",
+      "先在作業系統安裝字型。\n關閉並重啟 Word。\n在「常用 > 字型」選單中找到字型。\n所有標注功能無需任何設定即可運作——本字型已將規則放在 OpenType `ccmp` 功能（必定啟用），無需在「格式 > 字型 > 進階 > OpenType 功能」中啟用連字。",
     "home.platforms.tabs.iwork":
-      "先用 macOS 字體簿安裝字型（見 macOS 分頁）。\n開啟 Pages 或 Keynote，字型會以家族名稱出現在「格式 > 字型」選單。\n啟用數字標注：選取文字後，「格式 > 字型 > 顯示字體」，於排版面板開啟「連字（Ligatures）」。\nPages 與 Keynote 預設會抑制 CJK 文字的部分 OpenType 功能，但我們已將詞語對應規則放到 ccmp（強制啟用），因此「銀行 → ngan4 hong4」這類自動上下文判定無需設定即可運作。",
+      "先用 macOS 字體簿安裝字型（見 macOS 分頁）。\n開啟 Pages 或 Keynote，字型會以家族名稱出現在「格式 > 字型」選單。\n所有標注功能（詞語對應、數字標注、丅+中文數字）無需任何設定即可運作——本字型已將規則放在 OpenType `ccmp` 功能。\nPages 與 Keynote 預設會抑制 CJK 文字的部分 OpenType 功能（包括 `liga`），但 `ccmp` 屬於強制啟用層級，不會受到抑制。",
     "home.platforms.tabs.web":
       "將下載的 .woff 與 .ttf 上傳至你的伺服器（或任何 CSS 能存取的位置）。\n在 CSS 中加入 @font-face 宣告（生成器 Step 5 對話框提供可複製的範本）。\n套用字型：`font-family: '你的字型家族名稱'`。\n毋須額外設定——`liga` 在所有現代瀏覽器預設啟用，`ccmp` 依 OpenType 規格屬於強制執行，Chrome、Firefox、Safari 均自動套用。",
     "home.platforms.tabs.windows":
@@ -435,7 +499,7 @@ export const TRANSLATIONS: Record<Language, Record<TranslationKey, string>> = {
     "step5.cssSnippet.close": "關閉",
     "step5.cssSnippet.designAppTitle": "於設計工具中使用",
     "step5.cssSnippet.designAppHint":
-      "在 Canva、InDesign、Word 等工具，需在文字設定開啟「連字（Ligatures）」選項，數字標注（如「字1」、「字丅一」）才會生效。詞語對應（如「銀行」、「行人」）則無需任何設定即可自動運作。",
+      "字型的詞語對應與「字1」、「字丅一」等數字標注切換無需任何設定即可運作（基於 OpenType `ccmp` 必定啟用功能）。Canva、InDesign、Word、Pages、Keynote 等工具均能直接使用。",
   },
   en: {
     // Header
@@ -455,7 +519,48 @@ export const TRANSLATIONS: Record<Language, Record<TranslationKey, string>> = {
     "footer.links.generate": "Make your font",
     "footer.links.showcase": "Showcase",
     "footer.links.source": "Source (GitHub)",
+    "footer.links.credits": "Acknowledgements",
     "footer.credit": "Designed and built by chunlaw",
+    // Acknowledgements page
+    "ack.hero.title": "Acknowledgements",
+    "ack.hero.tagline":
+      "Wing Font stands on the shoulders of open-source data and type.",
+    "ack.intro":
+      "These open dictionaries and fonts make Wing Font's dialect annotations possible. Thank you to everyone who shared their work.",
+    "ack.taigi.title": "Taiwanese / Southern Min — reading data",
+    "ack.taigi.body":
+      "The Taiwanese (Hō-ló) character readings, the cross-scheme conversion tables (Tâi-lô / POJ / 閩拼) and the tone-mark placement logic all come from AlanJui's open-source projects.",
+    "ack.taigi.piauim":
+      "Character-reading database — the 漢字庫 table of Ho_Lok_Ue.db plus the initial / final / tone conversion tables — and the tone-mark logic (mod_帶調符音標.py).",
+    "ack.taigi.rimetlpa":
+      "The TLPA RIME input schema and dictionaries, a second source of character readings.",
+    "ack.teochew.title": "Teochew — reading data",
+    "ack.teochew.body":
+      "The Teochew character and word readings (Geng'dang Pêng'im) come from the open learn-teochew project, then converted into Peng'im / Tie-lo / Pe̍h-ūe-jī and other schemes with the parsetc parser.",
+    "ack.teochew.learnteochew":
+      "The Teochew character / word reading dictionary (teochew_scrape.json, Geng'dang Pêng'im) — also the source of the home-page sample line 「家己个歌，家己唱；家己个字，家己揀。」.",
+    "ack.teochew.parsetc":
+      "Teochew romanization parser and converter — turns the Peng'im readings into Tie-lo, Pe̍h-ūe-jī, Dieghv, Gaginang and Sinwenz.",
+    "ack.fonts.title": "Fonts",
+    "ack.fonts.notosanstc":
+      "Base CJK font for the Taiwanese showcase — Google's open-source Noto Sans TC (SIL Open Font License).",
+    "ack.fonts.huninn":
+      "Annotation font — justfont's open-source Huninn (jf-openhuninn), which fully supports the Tâi-lô / POJ tone marks.",
+    "ack.canto.title": "Cantonese — reading data",
+    "ack.canto.typeduck": "Jyutping (LSHK) reading data.",
+    "ack.canto.cuhk":
+      "CUHK's 粵語審音配詞字庫 (Chinese Character Database with Cantonese readings).",
+    "ack.canto.kodensha": "Cantonese Romanization Converter.",
+    "ack.mandarin.title": "Mandarin (普通話 / 國語) — reading data",
+    "ack.mandarin.body":
+      "The Mandarin reading data is built entirely from mozillazg's MIT-licensed datasets — taken from their permissive upstream, not from any OFL-licensed font project. Each character's default reading follows the Unicode Unihan database's kMandarin field. The technique of baking pinyin into the glyphs with contextual homograph disambiguation was pioneered by Mengshen-pinyin-font (OFL-1.1); Wing Font reuses none of its data files but gratefully acknowledges it as inspiration.",
+    "ack.mandarin.pinyindata": "Per-character readings (MIT; derived from Unihan).",
+    "ack.mandarin.phrasepinyindata":
+      "Word/phrase readings that drive contextual homograph disambiguation (MIT).",
+    "ack.mandarin.unihan": "Unicode Han Database (Unihan) — upstream reading data.",
+    "ack.license":
+      "Each dataset and font is used under its own licence — check the upstream source before redistributing.",
+    "ack.cta.showcase": "Browse the fonts",
     // Home
     "home.hero.title": "Wing Font",
     "home.hero.tagline":
@@ -472,15 +577,15 @@ export const TRANSLATIONS: Record<Language, Record<TranslationKey, string>> = {
     "home.platforms.learnMoreSubtitle":
       "Pick the app or operating system you use most and see what to do.",
     "home.platforms.tabs.canva":
-      "Open a design and click any text element.\nIn the font picker, choose “Upload a font” and select the .ttf you downloaded.\nEnable “Ligatures” in the text effects panel — without it, digit overrides like “字1” won't fire.\nFree accounts may need a Canva Pro upgrade to upload custom fonts.",
+      "Open a design and click any text element.\nIn the font picker, choose “Upload a font” and select the .ttf you downloaded.\nWord-context substitution and digit overrides (`字1`, `字丅一`) work without any text-setting toggles — they ride on OpenType `ccmp`, which is mandatory.\nFree accounts may need a Canva Pro upgrade to upload custom fonts.",
     "home.platforms.tabs.affinity":
       "Install the font through your operating system (see the Windows / macOS / Linux tabs).\nQuit and reopen Affinity Designer / Photo / Publisher.\nThe font now appears in every font picker. Ligatures are enabled by default — no app-side setup needed.",
     "home.platforms.tabs.adobe":
-      "Install the font through your operating system.\nQuit and restart Illustrator / Photoshop / InDesign.\nThe font appears in the font menu under its family name.\nIn Illustrator and InDesign, open the Character panel and verify “Ligatures” is enabled — required for the digit-override path (字1) to fire.",
+      "Install the font through your operating system.\nQuit and restart Illustrator / Photoshop / InDesign.\nThe font appears in the font menu under its family name.\nAll override paths (word-context, `字1`, `字丅一`) work without any settings — the font's rules ride on OpenType `ccmp`, which is mandatory. The Character panel's “Ligatures” toggle is no longer needed for this font.",
     "home.platforms.tabs.word":
-      "Install the font through your operating system.\nQuit and restart Word.\nFind the font under Home > Font.\nTo enable digit overrides: Format > Font > Advanced > OpenType Features > Ligatures → set to “Standard Only” or higher.",
+      "Install the font through your operating system.\nQuit and restart Word.\nFind the font under Home > Font.\nAll override paths work without any settings — the font's rules ride on OpenType `ccmp`, which is mandatory. The Format > Font > Advanced > OpenType Features → Ligatures setting is no longer required.",
     "home.platforms.tabs.iwork":
-      "Install the font via macOS Font Book (see the macOS tab).\nOpen Pages or Keynote; the font appears in Format > Font under its family name.\nTo enable digit overrides: select the text, open Format > Font > Show Fonts, then in the Typography panel enable “Ligatures.”\nPages and Keynote suppress some OpenType features on CJK runs by default — our pipeline routes word-context disambiguation through `ccmp` (always on), so auto-context like “銀行 → ngan4 hong4” works without any toggle.",
+      "Install the font via macOS Font Book (see the macOS tab).\nOpen Pages or Keynote; the font appears in Format > Font under its family name.\nAll override paths work without any settings — the font's rules ride on OpenType `ccmp` (required-by-spec). Pages and Keynote suppress `liga` on CJK runs, so we deliberately route everything through `ccmp` instead; nothing for you to enable.",
     "home.platforms.tabs.web":
       "Upload the .woff and .ttf to your server (or anywhere your CSS can reach them).\nAdd the @font-face snippet from the generator's Step 5 dialog to your stylesheet.\nUse the font like any other: `font-family: 'YourFamilyName'`.\nNo extra setup needed — `liga` is default-on in all modern browsers and `ccmp` is mandatory per OpenType spec, so both fire automatically in Chrome, Firefox, and Safari.",
     "home.platforms.tabs.windows":
@@ -671,6 +776,6 @@ export const TRANSLATIONS: Record<Language, Record<TranslationKey, string>> = {
     "step5.cssSnippet.close": "Close",
     "step5.cssSnippet.designAppTitle": "Using it in a design app",
     "step5.cssSnippet.designAppHint":
-      "In Canva, InDesign, Word, and similar tools, enable the \"Ligatures\" option in the text settings so the digit-override feature (e.g. 字1, 字丅一) fires. Word-context disambiguation (e.g. 銀行, 行人) works automatically without any setting.",
+      "All override paths (word-context like 銀行/行人, digit-suffix like 字1, and trigger+numeral like 字丅一) work automatically with no text-setting toggles. The font's rules ride on OpenType `ccmp`, which is mandatory — Canva, InDesign, Word, Pages, and Keynote all apply them out of the box.",
   },
 };

@@ -3,10 +3,12 @@ generate_test_font.py — produce a small test font for visual verification.
 
 This is a thin driver around the existing `wing-font.py` pipeline that:
   * Loads a deliberately tiny mapping (test_mapping.csv) chosen to exercise
-    every GSUB rule type — default reading, word-context ccmp, digit-trigger
-    liga, and the Chinese-numeral fallback. (Our chain-context rules are
-    registered under ccmp rather than calt; see chain_context_handler.py
-    for why.)
+    every variant-selection path — default reading, word-context chain
+    substitution, digit-trigger ligature, the Chinese-numeral
+    fallback, and the cmap format-14 IVS supplement. The first four
+    register lookups under the OpenType `ccmp` feature; the IVS path
+    lives in cmap. See chain_context_handler.py, liga_handler.py, and
+    ivs_handler.py for why each path is implemented as it is.
   * Writes the resulting TTF and WOFF into tests/output/.
   * Inspects the produced GSUB and prints a short report so a human can
     confirm the right number of lookups were added without opening ttx.
@@ -81,7 +83,9 @@ def main() -> int:
         mapping=str(MAPPING_CSV),
         new_family_name="WingFontTest",
         base_scale=0.75,
-        anno_scale=0.13,
+        # UPM-independent now (see build_glyph.py). 0.27 with the
+        # 2048-UPM NotoSerif annotation matches the production Latin look.
+        anno_scale=0.27,
         upper_y_offset_ratio=0.8,
         invert=False,
         optimize=True,  # subset so the output WOFF is small enough to serve quickly
@@ -108,14 +112,22 @@ def _inspect_output(ttf_path: Path) -> dict:
     Breaks down the rule counts per category so the viewer can show
     concrete pass/fail evidence for each test panel:
 
-      * `liga_default_rules`     — `(char, '0')` identity rules
-      * `liga_variant_rules`     — `(char, digit)` variant-pick rules (digit != 0)
-      * `liga_trigger_rules`     — 3-component `(char, 丅, numeral)` fallback rules
-      * `ccmp_rule_count`        — number of chain-context substitution rules
-                                   our ccmp lookup contains. We isolate it via
-                                   the ccmp FeatureRecord's LookupListIndex,
-                                   so the count excludes any source-font
-                                   lookups that happen to share a Type number.
+      * `lig_default_rules`      — `(char, '0')` identity rules (Type 4 ligature)
+      * `lig_variant_rules`      — `(char, digit)` variant-pick rules (Type 4)
+      * `lig_trigger_rules`      — 3-component `(char, 丅, numeral)` fallback (Type 4)
+      * `ccmp_chain_rule_count`  — number of chain-context substitution rules
+                                   (Type 6) in our ccmp lookups.
+      * `ivs_entry_count`        — total `(base, VS)` entries in the cmap
+                                   format-14 subtable.
+      * `ivs_vs_slots`           — distinct Variation Selectors used (e.g.
+                                   one slot per "variant index" across the
+                                   whole mapping).
+
+    The four GSUB families ride under the same `ccmp` feature tag (lookup
+    *types* differ — 4 vs 6); we isolate "our" lookups via the ccmp
+    FeatureRecord's LookupListIndex so counts exclude any source-font
+    lookups that happen to share a Type number. The IVS path is
+    separate — it lives in cmap, not GSUB.
 
     These counts let the viewer assert e.g. "test 4 should work because the
     font has N>0 trigger rules" rather than relying purely on visual diff.
@@ -134,74 +146,73 @@ def _inspect_output(ttf_path: Path) -> dict:
     for lookup in gsub.LookupList.Lookup:
         lookup_types[lookup.LookupType] = lookup_types.get(lookup.LookupType, 0) + 1
 
-    # Walk the liga lookups our handler added (Type 4 with flag=0) and
-    # bucket each rule by its component count. The source font also has
-    # Type-4 ligas (English f-i / f-l) — those have non-digit, non-numeral
-    # components, so we exclude them by checking that the second component
-    # is one of the digits/numerals we keep.
+    # Both rule families (chain-context substitution AND ligature
+    # substitution for the digit/numeral overrides) now register their
+    # lookups under the `ccmp` FeatureRecord. We resolve "our" lookups via
+    # that FeatureRecord's LookupListIndex so we don't mis-attribute the
+    # source font's own Type-4 ligatures (Chiron has English f-i / f-l
+    # ligas under `liga`) or its own Type-6 chain lookups under `calt`.
     digit_glyph_set = {cmap.get(ord(d)) for d in "0123456789"} - {None}
     numeral_glyph_set = {cmap.get(ord(d)) for d in "零一二三四五六七八九"} - {None}
     trigger_glyph = cmap.get(0x4E05)  # 丅
-
-    liga_default = 0
-    liga_variant = 0
-    liga_trigger = 0
     digit_zero_glyph = cmap.get(ord("0"))
 
-    for lookup in gsub.LookupList.Lookup:
-        if lookup.LookupType != 4:
-            continue
-        for st in lookup.SubTable:
-            for cov_glyph, ligs in st.ligatures.items():
-                for lig in ligs:
-                    components = list(lig.Component)
-                    if len(components) == 1 and components[0] in digit_glyph_set:
-                        if components[0] == digit_zero_glyph:
-                            liga_default += 1
-                        else:
-                            liga_variant += 1
-                    elif (
-                        len(components) == 2
-                        and components[0] == trigger_glyph
-                        and components[1] in numeral_glyph_set
-                    ):
-                        liga_trigger += 1
-
-    # Count the rules in our chain-context substitution lookups. To
-    # avoid mis-attributing the source font's own chain-context lookups
-    # (Chiron has its own `calt` Type 6 lookups), we resolve OUR lookups
-    # via the `ccmp` FeatureRecord — that's where wing-font registers
-    # its chain-context rules now. Then handle all three OpenType
-    # ChainContextSubst subtable formats:
-    #   Format 1 — ChainSubRuleSet/ChainSubRule (per-glyph groupings)
-    #   Format 2 — ChainSubClassSet/ChainSubClassRule (class-based)
-    #   Format 3 — InputCoverage (single coverage-based pattern per subtable)
-    # fontTools' ChainContextSubstBuilder auto-picks the most compact
-    # format, so all three may appear in the same lookup.
     ccmp_lookup_indexes: set[int] = set()
     for record in gsub.FeatureList.FeatureRecord:
         if record.FeatureTag == "ccmp":
             ccmp_lookup_indexes.update(record.Feature.LookupListIndex)
 
-    ccmp_rules = 0
+    lig_default = 0
+    lig_variant = 0
+    lig_trigger = 0
+    ccmp_chain_rules = 0
+
     for idx in ccmp_lookup_indexes:
         if idx >= len(gsub.LookupList.Lookup):
             continue
         lookup = gsub.LookupList.Lookup[idx]
-        if lookup.LookupType != 6:
+
+        # Type 4 — Ligature Substitution (our digit + 丅+numeral overrides).
+        # Component shape disambiguates the three buckets even though all
+        # rules live under the same `ccmp` lookup family now.
+        if lookup.LookupType == 4:
+            for st in lookup.SubTable:
+                for _cov_glyph, ligs in st.ligatures.items():
+                    for lig in ligs:
+                        components = list(lig.Component)
+                        if len(components) == 1 and components[0] in digit_glyph_set:
+                            if components[0] == digit_zero_glyph:
+                                lig_default += 1
+                            else:
+                                lig_variant += 1
+                        elif (
+                            len(components) == 2
+                            and components[0] == trigger_glyph
+                            and components[1] in numeral_glyph_set
+                        ):
+                            lig_trigger += 1
             continue
-        for st in lookup.SubTable:
-            if hasattr(st, "ChainSubRuleSet") and st.ChainSubRuleSet:
-                for rs in st.ChainSubRuleSet:
-                    if rs and getattr(rs, "ChainSubRule", None):
-                        ccmp_rules += len(rs.ChainSubRule)
-            elif hasattr(st, "ChainSubClassSet") and st.ChainSubClassSet:
-                for rs in st.ChainSubClassSet:
-                    if rs and getattr(rs, "ChainSubClassRule", None):
-                        ccmp_rules += len(rs.ChainSubClassRule)
-            elif hasattr(st, "InputCoverage"):
-                # Format 3: one pattern per subtable.
-                ccmp_rules += 1
+
+        # Type 6 — Chain Context Substitution (our word-context rules).
+        # Handle all three OpenType subtable formats; fontTools'
+        # ChainContextSubstBuilder picks the most compact one, so any may
+        # appear in the same lookup.
+        #   Format 1 — ChainSubRuleSet/ChainSubRule (per-glyph groupings)
+        #   Format 2 — ChainSubClassSet/ChainSubClassRule (class-based)
+        #   Format 3 — InputCoverage (single coverage-based pattern per subtable)
+        if lookup.LookupType == 6:
+            for st in lookup.SubTable:
+                if hasattr(st, "ChainSubRuleSet") and st.ChainSubRuleSet:
+                    for rs in st.ChainSubRuleSet:
+                        if rs and getattr(rs, "ChainSubRule", None):
+                            ccmp_chain_rules += len(rs.ChainSubRule)
+                elif hasattr(st, "ChainSubClassSet") and st.ChainSubClassSet:
+                    for rs in st.ChainSubClassSet:
+                        if rs and getattr(rs, "ChainSubClassRule", None):
+                            ccmp_chain_rules += len(rs.ChainSubClassRule)
+                elif hasattr(st, "InputCoverage"):
+                    # Format 3: one pattern per subtable.
+                    ccmp_chain_rules += 1
 
     # Spot-check the polyphonic chars we deliberately put in the mapping
     # are still encoded in the output cmap. If subsetting drops them, the
@@ -213,6 +224,44 @@ def _inspect_output(ttf_path: Path) -> dict:
         "一 (numeral)": cmap.get(0x4E00) is not None,
     }
 
+    # Probe the cmap format-14 (IVS) subtable for our supplement.
+    # fontTools represents it as a CmapSubtable with `.format == 14`
+    # and a `.uvsDict` mapping VS codepoint → [(base, glyphName)].
+    ivs_entries = 0
+    ivs_vs_slots = 0
+    for sub in font["cmap"].tables:
+        if getattr(sub, "format", None) == 14:
+            uvs = getattr(sub, "uvsDict", None) or {}
+            ivs_vs_slots = len(uvs)
+            for entries in uvs.values():
+                ivs_entries += len(entries)
+            break
+
+    # Sanity probe — did anything still register annotation ligatures
+    # under `liga`? The source font has its own `liga` for English f-i /
+    # f-l, so the feature tag alone isn't proof of regression; we look
+    # specifically for ligatures whose second component is one of our
+    # trigger glyphs (digits or 丅+numerals).
+    liga_lookup_indexes: set[int] = set()
+    for record in gsub.FeatureList.FeatureRecord:
+        if record.FeatureTag == "liga":
+            liga_lookup_indexes.update(record.Feature.LookupListIndex)
+    our_rules_in_liga = 0
+    for idx in liga_lookup_indexes:
+        if idx >= len(gsub.LookupList.Lookup):
+            continue
+        lookup = gsub.LookupList.Lookup[idx]
+        if lookup.LookupType != 4:
+            continue
+        for st in lookup.SubTable:
+            for _cov, ligs in st.ligatures.items():
+                for lig in ligs:
+                    comps = list(lig.Component)
+                    if comps and (
+                        comps[0] in digit_glyph_set or comps[0] == trigger_glyph
+                    ):
+                        our_rules_in_liga += 1
+
     return {
         "total_glyphs": len(font.getGlyphOrder()),
         "gsub_lookup_count": gsub.LookupList.LookupCount,
@@ -220,11 +269,13 @@ def _inspect_output(ttf_path: Path) -> dict:
         "feature_tags_present": sorted(feature_counts.keys()),
         "lookup_types": {str(k): v for k, v in sorted(lookup_types.items())},
         "has_ccmp": "ccmp" in feature_counts,
-        "has_liga": "liga" in feature_counts,
-        "liga_default_rules": liga_default,
-        "liga_variant_rules": liga_variant,
-        "liga_trigger_rules": liga_trigger,
-        "ccmp_rule_count": ccmp_rules,
+        "annotation_rules_still_under_liga": our_rules_in_liga,
+        "lig_default_rules": lig_default,
+        "lig_variant_rules": lig_variant,
+        "lig_trigger_rules": lig_trigger,
+        "ccmp_chain_rule_count": ccmp_chain_rules,
+        "ivs_entry_count": ivs_entries,
+        "ivs_vs_slots": ivs_vs_slots,
         "polyphonic_chars_present": polyphonic_present,
     }
 

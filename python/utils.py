@@ -152,11 +152,11 @@ def _build_default_langsys():
 #
 # By creating ScriptRecords for the common CJK + Latin tags whenever
 # the source font's GSUB doesn't already declare them, we ensure the
-# ccmp / liga lookups we add are found regardless of which script
-# CoreText decides the text run is. (We registered chain context
-# rules under `calt` originally; that's been moved to `ccmp` —
-# see chain_context_handler.py docstring — but the same script-
-# net argument applies.)
+# ccmp lookups we add are found regardless of which script CoreText
+# decides the text run is. (Historically we used `calt` for chain
+# context and `liga` for ligatures; both have been consolidated under
+# `ccmp` — see chain_context_handler.py and liga_handler.py docstrings
+# for why — but the same script-net argument applies.)
 #
 #   DFLT  — the catch-all every font already has
 #   hani  — Han characters (Chinese / Japanese kanji)

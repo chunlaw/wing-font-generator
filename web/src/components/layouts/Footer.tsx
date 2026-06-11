@@ -91,6 +91,15 @@ const Footer = () => {
             >
               {t("footer.links.source")}
             </Link>
+            <Link
+              href="/credits"
+              variant="body2"
+              underline="hover"
+              color="text.secondary"
+              sx={{ "&:hover": { color: "primary.main" } }}
+            >
+              {t("footer.links.credits")}
+            </Link>
           </Stack>
         </Box>
 

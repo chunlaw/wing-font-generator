@@ -277,7 +277,8 @@ async function handleGenerate(id: string, payload: GeneratePayload): Promise<voi
   const params = {
     new_family_name: payload.newFamilyName ?? null,
     base_scale: payload.baseScale ?? 0.75,
-    anno_scale: payload.annoScale ?? 0.15,
+    // UPM-independent fraction of the output em (see build_glyph.py).
+    anno_scale: payload.annoScale ?? 0.25,
     anno_spacing: payload.annoSpacing ?? 0.0,
     upper_y_offset_ratio: payload.upperYOffsetRatio ?? 0.8,
     invert: payload.invert ?? false,

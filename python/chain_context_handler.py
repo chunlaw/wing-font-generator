@@ -141,7 +141,9 @@ def buildChainSub(output_font, word_mapping, char_mapping):
         for word, anno_strs in word_mapping.items():
             if len(word) <= 1:
                 # Chain context is for *multi*-glyph words. Single-character
-                # variants are handled by the liga (digit-triggered) path.
+                # variants are handled by the ligature substitution path
+                # (digit-triggered or 丅+numeral); both lookup families
+                # register under `ccmp` now — see liga_handler.py docstring.
                 continue
 
             input_glyphs = []

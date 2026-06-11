@@ -13,6 +13,7 @@ import {
   Divider,
   FormControl,
   InputLabel,
+  LinearProgress,
   MenuItem,
   Paper,
   Select,
@@ -51,6 +52,8 @@ const Step1Fonts = () => {
     setAnnoFontAxisValue,
     loadBuiltInBaseFont,
     loadBuiltInAnnoFont,
+    baseFontLoading,
+    annoFontLoading,
   } = useGenerate();
   const [loadError, setLoadError] = useState<string | null>(null);
 
@@ -105,6 +108,7 @@ const Step1Fonts = () => {
               setLoadError(err instanceof Error ? err.message : String(err));
             }
           }}
+          isLoading={baseFontLoading}
           bytes={baseFont.bytes}
           sampleChars={BASE_SAMPLES}
           glyphSize={56}
@@ -122,6 +126,7 @@ const Step1Fonts = () => {
           fileName={annoFont.name}
           isDefault={annoFont.isDefault && annoFont.bytes === null}
           onUpload={(e) => handleUpload(e, "anno")}
+          isLoading={annoFontLoading}
           // Annotation slot now has multiple presets (Latin Noto
           // Serif + CJK Chiron variants) because cangjie-style
           // mappings annotate with CJK radical characters instead
@@ -193,6 +198,15 @@ interface FontSlotCardProps {
   onAxisChange?: (tag: string, value: number) => void;
   /** Heading shown above the axis sliders. */
   axesLabel?: string;
+  /**
+   * True while a preset is being fetched into this slot. Drives an
+   * indeterminate <LinearProgress /> bar at the top of the card and
+   * disables the preset Select so the user can't fire a second
+   * (overlapping) fetch before the first lands. Optional because
+   * the prop is forward-compatible with cards rendered outside the
+   * Step 1 context.
+   */
+  isLoading?: boolean;
 }
 
 const FontSlotCard = ({
@@ -216,6 +230,7 @@ const FontSlotCard = ({
   axisLocation,
   onAxisChange,
   axesLabel,
+  isLoading = false,
 }: FontSlotCardProps) => {
   const handlePresetChange = (event: SelectChangeEvent<string>) => {
     if (!presetOptions || !onPresetChange) return;
@@ -224,7 +239,37 @@ const FontSlotCard = ({
   };
 
   return (
-    <Paper variant="outlined" sx={{ p: 2, flex: 1, minWidth: 0 }}>
+    <Paper
+      variant="outlined"
+      sx={{
+        p: 2,
+        flex: 1,
+        minWidth: 0,
+        // `position: relative` + `overflow: hidden` makes the
+        // absolutely-positioned LinearProgress below sit flush against
+        // the top edge without poking past the rounded corners.
+        position: "relative",
+        overflow: "hidden",
+      }}
+    >
+      {isLoading && (
+        // Indeterminate bar — we don't have real download-byte
+        // progress (`res.arrayBuffer()` doesn't surface it). Switch to
+        // a determinate variant only if we ever migrate to a streamed
+        // ReadableStream reader (see Path B in the design discussion
+        // around this feature).
+        <LinearProgress
+          sx={{
+            position: "absolute",
+            top: 0,
+            left: 0,
+            right: 0,
+            // Slight height bump over the default 4px so the affordance
+            // reads clearly without overpowering the card content.
+            height: 3,
+          }}
+        />
+      )}
       <Typography variant="subtitle1" sx={{ fontWeight: 600 }}>
         {label}
       </Typography>
@@ -252,6 +297,10 @@ const FontSlotCard = ({
           component="label"
           size="small"
           sx={{ flex: 1, minWidth: 0 }}
+          // Disable the upload during a fetch so the user can't kick
+          // off a local-file load while a preset download is still
+          // in flight — the slot can only hold one pair of bytes.
+          disabled={isLoading}
         >
           {uploadLabel}
           <input hidden type="file" accept=".ttf,.otf,font/ttf" onChange={onUpload} />
@@ -260,6 +309,11 @@ const FontSlotCard = ({
           <FormControl
             size="small"
             sx={{ flexShrink: 0, minWidth: 180, maxWidth: "60%" }}
+            // Cascades down to the inner Select. While a preset is
+            // downloading we don't want a second pick to fire (the
+            // latest-wins guard in GenerateContext.loadPresetIntoSlot
+            // would silently drop it, but UI feedback is cleaner).
+            disabled={isLoading}
           >
             {/*
               `shrink` + `notched` are mandatory when using
@@ -302,6 +356,7 @@ const FontSlotCard = ({
             variant="text"
             size="small"
             onClick={onUseDefault}
+            disabled={isLoading}
             sx={{ flexShrink: 0, whiteSpace: "nowrap" }}
           >
             {useDefaultLabel}

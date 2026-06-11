@@ -3,6 +3,7 @@
 from fontTools.ttLib import TTFont
 from mappings.csv_parser import load_mapping
 from chain_context_handler import buildChainSub
+from ivs_handler import buildIvs
 from liga_handler import buildLiga, DEFAULT_TRIGGER_CHAR
 from build_glyph import generate_annotated_glyphs, scale_glyphs
 import sys
@@ -42,7 +43,7 @@ def main(
     mapping,
     new_family_name,
     base_scale=0.75,
-    anno_scale=0.15,
+    anno_scale=0.25,
     anno_spacing=0.0,
     upper_y_offset_ratio=0.8,
     invert=False,
@@ -182,9 +183,22 @@ def main(
         anno_axis_location=anno_axis_location,
     )
 
-    # --- Phase 2: build GSUB rules ---------------------------------------
+    # --- Phase 2: build GSUB rules + IVS cmap supplement -----------------
+    # GSUB rules first: chain context for word-level disambiguation,
+    # then per-character ligature substitution under `ccmp`. Both
+    # families build into the same `ccmp` lookup family — see the
+    # docstrings in chain_context_handler.py / liga_handler.py for why.
+    #
+    # IVS last: cmap format-14 lives outside GSUB entirely, so it can't
+    # interfere with the ccmp lookups we just built. It supplements
+    # them with a zero-width `<base> + <VS17+N>` path for users on
+    # IMEs that expose Variation Selectors (Japanese IMEs, macOS
+    # Character Viewer, Adobe Glyphs panel). The existing
+    # digit-suffix and 丅+numeral paths in liga_handler stay as
+    # human-readable fallbacks for users without VS input.
     buildChainSub(output_font, word_mapping, char_mapping)
     buildLiga(output_font, char_mapping, trigger_char=trigger_char)
+    buildIvs(output_font, char_mapping)
 
     # --- Phase 3: subset + scale (the perf-critical reordering) ----------
     #
@@ -291,7 +305,7 @@ if __name__ == "__main__":
     parser.add_argument('-f', '--family-name', help="Replace with the new family name")
     parser.add_argument('-y', '--upper_y_offset_ratio', type=float, default=0.8, help="Y offset in (percentage) for the upper string")
     parser.add_argument('-bs', '--base-scale', type=float, default=0.75, help="The scaling factor for the base font")
-    parser.add_argument('-as', '--anno-scale', type=float, default=0.15, help="The scaling factor for the base font")
+    parser.add_argument('-as', '--anno-scale', type=float, default=0.25, help="The scaling factor for the annotation glyphs, as a fraction of the output em (UPM-independent: same visual size regardless of the annotation font's unitsPerEm)")
     parser.add_argument('-v', '--invert', action='store_true', help='Invert the annotation and base glyph')
     parser.add_argument('-opt', '--optimize', action="store_true", help="Optimizing size by subsetting annotated glyph only")
     parser.add_argument(
@@ -311,9 +325,9 @@ if __name__ == "__main__":
         parser.print_help()
         exit()
     main(
-        base_font_file = options.base_font_file, 
-        anno_font_file = options.anno_font_file, 
-        output_prefix = options.output_prefix, 
+        base_font_file = options.base_font_file,
+        anno_font_file = options.anno_font_file,
+        output_prefix = options.output_prefix,
         mapping = options.mapping,
         new_family_name = options.family_name,
         base_scale=options.base_scale,

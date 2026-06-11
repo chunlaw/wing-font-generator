@@ -5,7 +5,7 @@
  *
  *     const result = await generateFont({
  *       baseFontBytes, annoFontBytes, mappingCsvText,
- *       baseScale: 0.75, annoScale: 0.15, ...
+ *       baseScale: 0.75, annoScale: 0.25, ...
  *       onProgress: (msg) => setStatus(msg),
  *     });
  *     // result.ttfBlob, result.woffBlob, result.stdout

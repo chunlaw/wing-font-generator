@@ -42,6 +42,7 @@ const MANIFEST = [
   ["wing-font.py", "wingfont_main.py"], // hyphen → underscore, see header comment
   ["build_glyph.py", "build_glyph.py"],
   ["chain_context_handler.py", "chain_context_handler.py"],
+  ["ivs_handler.py", "ivs_handler.py"],
   ["liga_handler.py", "liga_handler.py"],
   ["utils.py", "utils.py"],
   ["runner.py", "runner.py"],
@@ -61,6 +62,13 @@ const MANIFEST = [
   ["mappings/canto-korean.csv", "mappings/canto-korean.csv"],
   ["mappings/canto-katakana.csv", "mappings/canto-katakana.csv"],
   ["mappings/cangjie.csv", "mappings/cangjie.csv"],
+  // Mandarin (普通話 / 國語) — Hanyu Pinyin in numeric-tone form
+  // (e.g. `ling2`, `yuan2`). The file is large (~95k rows, ~3 MB)
+  // because it covers the full Unihan CJK ideograph range; the
+  // in-browser pipeline will surface every entry that matches a glyph
+  // in the user's selected base font. Pair naturally with Noto Sans
+  // SC (or any other base font) + Noto Serif / Huninn annotation.
+  ["mappings/mandarin.csv", "mappings/mandarin.csv"],
   // Taiwanese / Southern Min (河洛話) mappings — surfaced as Step 2
   // presets for the Noto Sans TC + Huninn pairing. Two diacritic
   // ("-toned") schemes plus four numeric-tone schemes.
@@ -87,15 +95,11 @@ const MANIFEST = [
   // weigh 5–25 MB each — they're the dominant chunk of public/ — but
   // the curated set is intentional for a good first-run UX.
   //
-  // 方正楷体.ttf is renamed to FZKaiti.ttf in the bundle because the
-  // worker fetches via origin-absolute URL and non-ASCII filenames
-  // need URL encoding which we'd rather not have to round-trip.
   ["input_fonts/NotoSerif-Regular.ttf", "NotoSerif-Regular.ttf"],
   ["input_fonts/ChironSungHK-R.ttf", "ChironSungHK-R.ttf"],
   ["input_fonts/ChironSungHK-R-It.ttf", "ChironSungHK-R-It.ttf"],
   ["input_fonts/ChironHeiHK-R.ttf", "ChironHeiHK-R.ttf"],
   ["input_fonts/ChironHeiHK-B.ttf", "ChironHeiHK-B.ttf"],
-  ["input_fonts/方正楷体.ttf", "FZKaiti.ttf"],
   // Script-specific annotation fonts paired with the canto-thai /
   // canto-katakana / canto-korean mappings above. Renamed for URL
   // cleanliness: Google Sans's source filename has commas in it
@@ -120,6 +124,12 @@ const MANIFEST = [
   [
     "input_fonts/NotoSansTC-VariableFont_wght.ttf",
     "NotoSansTC-VariableFont_wght.ttf",
+  ],
+  // Simplified-Chinese sibling of Noto Sans TC. Same `wght` variable
+  // axis; ship the variable file so the Step 1 weight slider works.
+  [
+    "input_fonts/NotoSansSC-VariableFont_wght.ttf",
+    "NotoSansSC-VariableFont_wght.ttf",
   ],
   ["input_fonts/Huninn-Regular.ttf", "Huninn-Regular.ttf"],
 

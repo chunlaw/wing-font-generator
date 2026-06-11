@@ -235,7 +235,7 @@ def generate(
     *,
     new_family_name: str | None = None,
     base_scale: float = 0.75,
-    anno_scale: float = 0.15,
+    anno_scale: float = 0.25,
     anno_spacing: float = 0.0,
     upper_y_offset_ratio: float = 0.8,
     invert: bool = False,

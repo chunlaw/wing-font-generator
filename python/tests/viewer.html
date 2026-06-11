@@ -241,7 +241,7 @@
 </section>
 
 <section class="test">
-  <h2>3. Digit trigger — <code>liga</code> Ligature Substitution</h2>
+  <h2>3. Digit trigger — Ligature Substitution under <code>ccmp</code></h2>
   <p class="what">
     Typing a character followed by an ASCII digit forms a ligature that picks
     a specific variant. <code>0</code> resets to default; <code>1..9</code> select
@@ -275,7 +275,7 @@
 </section>
 
 <section class="test">
-  <h2>4. Chinese-numeral fallback — <code>liga</code> 丅 trigger</h2>
+  <h2>4. Chinese-numeral fallback — 丅 trigger ligature under <code>ccmp</code></h2>
   <p class="what">
     For IMEs that make ASCII digits inconvenient, an alternative form
     <code>字 + 丅 + 中文數字</code> selects the same variants. 丅 (U+4E05)
@@ -302,11 +302,36 @@
 </section>
 
 <section class="test">
-  <h2>5. Free input</h2>
+  <h2>5. IVS — cmap format-14 Variation Sequence</h2>
+  <p class="what">
+    A polyphonic character followed by a Variation Selector
+    (U+E0100 = VS17 for variant 1, U+E0101 = VS18 for variant 2, …)
+    picks a specific variant at cmap-lookup time, before any GSUB
+    runs. The VS itself is zero-width, so this path is invisible
+    without the font installed — that's the trade-off for getting a
+    universal shaper path that needs no feature toggle.
+  </p>
+  <div class="row">
+    <div class="label">行 + VS17</div>
+    <div class="baseline">&#x884C;&#xE0100;</div>
+    <div class="styled">&#x884C;&#xE0100;</div>
+    <div class="expect">expect: 行 with variant-1 reading (hong4); VS17 is zero-width</div>
+  </div>
+  <div class="row">
+    <div class="label">畫 + VS17</div>
+    <div class="baseline">&#x756B;&#xE0100;</div>
+    <div class="styled">&#x756B;&#xE0100;</div>
+    <div class="expect">expect: 畫 with variant-1 reading (waak6); VS17 is zero-width</div>
+  </div>
+</section>
+
+<section class="test">
+  <h2>6. Free input</h2>
   <p class="what">
     Type anything from the mapping (你 好 人 中 國 文 語 言 銀 家 行 朋 友 心 工
     作 時 間 畫 書 五 日 月 水 火). Try combining with digits, 丅+numeral
-    triggers, or words like 你好 / 中文 / 銀行 / 畫畫.
+    triggers, words like 你好 / 中文 / 銀行 / 畫畫, or paste a base
+    char followed by U+E0100 (VS17) to exercise the IVS path.
   </p>
   <textarea
     id="freeInput"
@@ -398,11 +423,18 @@
         ["GSUB lookups", data.gsub_lookup_count],
         ["GSUB features", data.gsub_feature_count],
         ["ccmp present?", data.has_ccmp ? "yes" : "NO"],
-        ["liga present?", data.has_liga ? "yes" : "NO"],
-        ["ccmp rules (ours)", data.ccmp_rule_count ?? "—"],
-        ["liga default (×0)", data.liga_default_rules ?? "—"],
-        ["liga variant (×N)", data.liga_variant_rules ?? "—"],
-        ["liga 丅+numeral", data.liga_trigger_rules ?? "—"],
+        ["ccmp chain rules", data.ccmp_chain_rule_count ?? "—"],
+        ["ccmp lig default (×0)", data.lig_default_rules ?? "—"],
+        ["ccmp lig variant (×N)", data.lig_variant_rules ?? "—"],
+        ["ccmp lig 丅+numeral", data.lig_trigger_rules ?? "—"],
+        ["IVS entries (cmap fmt 14)", data.ivs_entry_count ?? "—"],
+        ["IVS VS slots used", data.ivs_vs_slots ?? "—"],
+        [
+          "Stray rules under liga?",
+          (data.annotation_rules_still_under_liga ?? 0) === 0
+            ? "no (expected)"
+            : `YES (${data.annotation_rules_still_under_liga})`,
+        ],
         [
           "Lookup types",
           Object.entries(data.lookup_types)

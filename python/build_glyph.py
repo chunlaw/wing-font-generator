@@ -35,7 +35,7 @@ def generate_annotated_glyphs(
     output_font,
     mapping,
     *,
-    anno_scale: float = 0.15,
+    anno_scale: float = 0.25,
     anno_spacing: float = 0.0,
     base_scale: float = 0.75,
     upper_y_offset_ratio: float = 0.8,
@@ -49,6 +49,13 @@ def generate_annotated_glyphs(
     For each char in `mapping`, draws the base outline scaled by
     `base_scale` plus its annotation glyphs scaled by `anno_scale`,
     centred horizontally above (or below if `invert`) the base.
+
+    `anno_scale` is UPM-independent: it is interpreted as a fraction of
+    the OUTPUT em and internally rescaled by `output_upm / anno_upm`
+    before being applied to the annotation outlines (see the
+    normalization note in the body). This means one `anno_scale` value
+    renders at the same visual size no matter what unitsPerEm the
+    annotation font uses.
     The first annotation per char re-uses the original glyph name; later
     variants get fresh `wingfontNNNNNN` names appended to the font.
 
@@ -135,6 +142,24 @@ def generate_annotated_glyphs(
         anno_glyph_order_set = set(anno_glyph_order)
 
         units_per_em = base_font["head"].unitsPerEm
+
+        # ── UPM normalization for the annotation scale ──────────────────
+        # Annotation outlines are drawn from the ANNOTATION font in its
+        # own design units, then placed into the output font (which
+        # inherits the BASE font's unitsPerEm). The TransformPen does not
+        # reconcile the two coordinate systems, so a raw `anno_scale`
+        # renders at a size proportional to the annotation font's UPM:
+        # NotoSerif (UPM 2048) came out ~2x larger than GoogleSans /
+        # Noto Sans JP·KR (UPM 1000) or Huninn (UPM 1024) at the SAME
+        # `anno_scale`. Multiplying by output_upm / anno_upm makes
+        # `anno_scale` mean "fraction of the OUTPUT em" regardless of the
+        # annotation font's internal UPM, so one value renders at a
+        # consistent visual size across every annotation font. (For an
+        # annotation font whose UPM already equals the output UPM this is
+        # a no-op, i.e. anno_scale_eff == anno_scale.)
+        anno_units_per_em = anno_font["head"].unitsPerEm
+        anno_scale_eff = anno_scale * units_per_em / anno_units_per_em
+
         if not invert:
             base_y_offset = 0
             anno_y_offset = round(units_per_em * upper_y_offset_ratio)
@@ -253,7 +278,7 @@ def generate_annotated_glyphs(
                 n_anno = len(shaped)
                 inter_glyph_padding = max(0, n_anno - 1) * anno_spacing_units
                 anno_len = (
-                    sum(round(adv * anno_scale) for _, _, _, adv in shaped)
+                    sum(round(adv * anno_scale_eff) for _, _, _, adv in shaped)
                     + inter_glyph_padding
                 )
                 x_position = (base_advance_width * base_scale - anno_len) / 2
@@ -273,12 +298,12 @@ def generate_annotated_glyphs(
                             TransformPen(
                                 pen,
                                 (
-                                    anno_scale,
+                                    anno_scale_eff,
                                     0,
                                     0,
-                                    anno_scale,
-                                    x_position + xoff * anno_scale,
-                                    anno_y_offset + yoff * anno_scale,
+                                    anno_scale_eff,
+                                    x_position + xoff * anno_scale_eff,
+                                    anno_y_offset + yoff * anno_scale_eff,
                                 ),
                             )
                         )
@@ -286,7 +311,7 @@ def generate_annotated_glyphs(
                         # naive hmtx advance — they differ when GPOS
                         # adjusts spacing or GSUB has substituted in
                         # a glyph with a different metric).
-                        x_position += round(xadv * anno_scale)
+                        x_position += round(xadv * anno_scale_eff)
                         # Add the inter-glyph gap after every glyph
                         # except the last — keeps the block flush at
                         # the right edge.
@@ -412,7 +437,7 @@ def generate_glyphs(
     anno_font_bytes,
     output_font,
     mapping,
-    anno_scale: float = 0.15,
+    anno_scale: float = 0.25,
     base_scale: float = 0.75,
     upper_y_offset_ratio: float = 0.8,
     invert: bool = False,

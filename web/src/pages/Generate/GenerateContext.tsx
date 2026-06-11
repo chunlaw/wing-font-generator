@@ -223,6 +223,11 @@ interface GenerateContextValue {
   loadBuiltInBaseFont: (preset: BuiltInPreset) => Promise<void>;
   /** Load a built-in font preset into the annotation slot. */
   loadBuiltInAnnoFont: (preset: BuiltInPreset) => Promise<void>;
+  /** True while a base / anno font preset download is in flight.
+   *  Wired into FontSlotCard so Step 1 can show a progress indicator
+   *  and disable the preset picker until the fetch completes. */
+  baseFontLoading: boolean;
+  annoFontLoading: boolean;
 
   // --- Step 2: mappings ---
   mappings: MappingRow[];
@@ -406,6 +411,31 @@ export const GenerateProvider = ({ children }: { children: ReactNode }) => {
     presetKey: DEFAULT_ANNO_FONT_PRESET.key,
   });
 
+  // ── Font-download progress + race guard ────────────────────────
+  //
+  // `*FontLoading` drives the indeterminate <LinearProgress /> bar
+  // that Step 1's FontSlotCard renders while a preset is being
+  // fetched (the in-browser pipeline fonts are 12-24 MB each, which
+  // is several seconds on a slow connection — without a UI signal
+  // the page looks frozen).
+  //
+  // `*LoadTokenRef` is a per-slot in-flight token that fixes a
+  // race: if the user picks preset A, then picks preset B before
+  // A's fetch finishes, the old behaviour would let A's late
+  // `setter()` overwrite B's freshly-loaded state — the dropdown
+  // would say "B" but the slot would actually be A's bytes. We
+  // increment the token at the START of every load and check it
+  // again before any state write; a stale load (whose token no
+  // longer matches the latest) silently drops its result. The
+  // loading flag is also gated on the token so the loader that
+  // started LAST owns the flag — if A's load arrives first and
+  // tries to clear `loading`, the check fails and B's still-
+  // in-flight load keeps the spinner up.
+  const [baseFontLoading, setBaseFontLoading] = useState(false);
+  const [annoFontLoading, setAnnoFontLoading] = useState(false);
+  const baseLoadTokenRef = useRef(0);
+  const annoLoadTokenRef = useRef(0);
+
   // User-uploaded files always reset presetKey to null so the
   // dropdown shows the "Custom upload" option (or whichever
   // placeholder we render for that state). We also parse axes
@@ -477,56 +507,100 @@ export const GenerateProvider = ({ children }: { children: ReactNode }) => {
       preset: BuiltInPreset,
       setter: (next: FontSlot) => void,
       slotName: string,
+      setLoading: (loading: boolean) => void,
+      tokenRef: React.MutableRefObject<number>,
     ) => {
-      const res = await fetch(preset.url);
-      if (!res.ok) {
-        throw new Error(
-          `Failed to load ${slotName} preset "${preset.label}" (${res.status}). ` +
-            "If you just added this preset, run `yarn sync` to copy the file into public/wingfont/.",
-        );
+      // Mint a token for THIS load. Any later load on the same slot
+      // will increment past this value; we check the token before
+      // every state write to drop stale results.
+      const myToken = ++tokenRef.current;
+      setLoading(true);
+      try {
+        const res = await fetch(preset.url);
+        if (!res.ok) {
+          throw new Error(
+            `Failed to load ${slotName} preset "${preset.label}" (${res.status}). ` +
+              "If you just added this preset, run `yarn sync` to copy the file into public/wingfont/.",
+          );
+        }
+        const contentType = res.headers.get("content-type") ?? "";
+        if (contentType.includes("text/html")) {
+          throw new Error(
+            `Got HTML when fetching ${preset.url} — the file isn't in ` +
+              "public/wingfont/. Run `yarn sync` (or restart `yarn dev`) " +
+              "to copy the built-in fonts and mappings into place.",
+          );
+        }
+        const bytes = await res.arrayBuffer();
+        // Latest-wins: bail without setter() if a newer load on the
+        // same slot has started while we were waiting on bytes.
+        if (tokenRef.current !== myToken) return;
+        // Parse the variable-font axes here too so picking a preset
+        // surfaces the same sliders as an upload would.
+        const axes = extractAxes(bytes);
+        setter({
+          bytes,
+          name: `${preset.filename} (preset)`,
+          isDefault: preset.key === DEFAULT_BASE_FONT_PRESET.key ||
+            preset.key === DEFAULT_ANNO_FONT_PRESET.key,
+          presetKey: preset.key,
+          axes,
+          axisLocation: defaultAxisLocation(axes),
+          glyphCoverage: extractGlyphCoverage(bytes),
+        });
+      } finally {
+        // Only clear the loading flag if we're still the latest
+        // load. If a newer one is in flight, it now owns the flag
+        // and will clear it when it completes (or its own race
+        // guard fires).
+        if (tokenRef.current === myToken) setLoading(false);
       }
-      const contentType = res.headers.get("content-type") ?? "";
-      if (contentType.includes("text/html")) {
-        throw new Error(
-          `Got HTML when fetching ${preset.url} — the file isn't in ` +
-            "public/wingfont/. Run `yarn sync` (or restart `yarn dev`) " +
-            "to copy the built-in fonts and mappings into place.",
-        );
-      }
-      const bytes = await res.arrayBuffer();
-      // Parse the variable-font axes here too so picking a preset
-      // surfaces the same sliders as an upload would.
-      const axes = extractAxes(bytes);
-      setter({
-        bytes,
-        name: `${preset.filename} (preset)`,
-        isDefault: preset.key === DEFAULT_BASE_FONT_PRESET.key ||
-          preset.key === DEFAULT_ANNO_FONT_PRESET.key,
-        presetKey: preset.key,
-        axes,
-        axisLocation: defaultAxisLocation(axes),
-        glyphCoverage: extractGlyphCoverage(bytes),
-      });
     },
     [],
   );
 
   const loadDefaultBaseFont = useCallback(
-    () => loadPresetIntoSlot(DEFAULT_BASE_FONT_PRESET, setBaseFontState, "base font"),
+    () =>
+      loadPresetIntoSlot(
+        DEFAULT_BASE_FONT_PRESET,
+        setBaseFontState,
+        "base font",
+        setBaseFontLoading,
+        baseLoadTokenRef,
+      ),
     [loadPresetIntoSlot],
   );
   const loadDefaultAnnoFont = useCallback(
-    () => loadPresetIntoSlot(DEFAULT_ANNO_FONT_PRESET, setAnnoFontState, "annotation font"),
+    () =>
+      loadPresetIntoSlot(
+        DEFAULT_ANNO_FONT_PRESET,
+        setAnnoFontState,
+        "annotation font",
+        setAnnoFontLoading,
+        annoLoadTokenRef,
+      ),
     [loadPresetIntoSlot],
   );
   const loadBuiltInBaseFont = useCallback(
     (preset: BuiltInPreset) =>
-      loadPresetIntoSlot(preset, setBaseFontState, "base font"),
+      loadPresetIntoSlot(
+        preset,
+        setBaseFontState,
+        "base font",
+        setBaseFontLoading,
+        baseLoadTokenRef,
+      ),
     [loadPresetIntoSlot],
   );
   const loadBuiltInAnnoFont = useCallback(
     (preset: BuiltInPreset) =>
-      loadPresetIntoSlot(preset, setAnnoFontState, "annotation font"),
+      loadPresetIntoSlot(
+        preset,
+        setAnnoFontState,
+        "annotation font",
+        setAnnoFontLoading,
+        annoLoadTokenRef,
+      ),
     [loadPresetIntoSlot],
   );
 
@@ -618,7 +692,10 @@ export const GenerateProvider = ({ children }: { children: ReactNode }) => {
   // --- Step 3: parameters ----------------------------------------------
   const [params, setParams] = useState<GenerateParams>({
     baseScale: 0.75,
-    annoScale: 0.13,
+    // UPM-independent (normalized in build_glyph.py): a fraction of the
+    // output em, so this renders at a consistent size for any annotation
+    // font (NotoSerif 2048-UPM, Huninn 1024, Google/Noto 1000, …).
+    annoScale: 0.25,
     annoSpacing: 0,
     yOffsetRatio: 0.8,
     invert: false,
@@ -1232,6 +1309,8 @@ export const GenerateProvider = ({ children }: { children: ReactNode }) => {
       loadDefaultAnnoFont,
       loadBuiltInBaseFont,
       loadBuiltInAnnoFont,
+      baseFontLoading,
+      annoFontLoading,
       mappings,
       setMappings: setMappingsAndUntag,
       addMapping,
@@ -1275,6 +1354,8 @@ export const GenerateProvider = ({ children }: { children: ReactNode }) => {
       loadDefaultAnnoFont,
       loadBuiltInBaseFont,
       loadBuiltInAnnoFont,
+      baseFontLoading,
+      annoFontLoading,
       mappings,
       setMappingsAndUntag,
       addMapping,

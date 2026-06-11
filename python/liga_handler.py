@@ -1,14 +1,38 @@
 """
-liga_handler — emit the `liga` Ligature Substitution lookup that lets the
-user manually pick a variant by typing ``<char><digit>`` (or, as a fallback
+liga_handler — emit Ligature Substitution lookups that let the user
+manually pick a variant by typing ``<char><digit>`` (or, as a fallback
 for IMEs that don't easily type Latin digits, ``<char>丅<chinese-numeral>``).
 
+Filename keeps the historical "liga_handler" prefix because the LOOKUP
+TYPE is still GSUB Type 4 (Ligature Substitution) — that part hasn't
+changed. What changed is which FEATURE those lookups are registered
+under: it used to be the OpenType ``liga`` feature, and is now ``ccmp``.
+
+Why `ccmp`, not `liga`
+----------------------
+
+Same reason ``chain_context_handler.py`` is under ``ccmp``: Apple's
+iWork typesetter (Pages, Keynote, Numbers) silently suppresses
+``liga`` on CJK text runs even when the user has toggled "Ligatures"
+on in the text settings. Concretely, ``行丅一`` would render as
+``行 丅 一`` (three separate glyphs, no annotation override applied)
+in Pages no matter what the user did. Other apps had a different but
+related problem: ``liga`` is "default on but user-toggleable," so
+users in Canva / Microsoft Word had to find the ligature toggle to
+make the digit-trigger overrides work.
+
+Moving these rules to ``ccmp`` solves both — ``ccmp`` is
+required-by-spec, applied universally by every shaper with no
+user-facing toggle and no script-suppression list. Trade-off: users
+lose the ability to disable annotation overrides via app settings.
+For an annotation font that's a feature, not a bug.
+
+The lookup body is unchanged — same ``LigatureSubstBuilder``, same
+2-component (char+digit) and 3-component (char+trigger+numeral)
+rules. Only the feature registration changed.
+
 This file no longer manages the OpenType ScriptList/LangSys plumbing
-inline — that's centralised in ``utils.register_feature_lookup``. The
-ligature construction itself was already using
-``fontTools.otlLib.builder.LigatureSubstBuilder`` so the only structural
-change is dropping the chunking workaround (``chunk_size``) — the builder
-handles subtable splitting internally via subtable breaks.
+inline — that's centralised in ``utils.register_feature_lookup``.
 """
 
 from typing import Dict, Tuple
@@ -47,7 +71,9 @@ def buildLiga(
     trigger_char: str = DEFAULT_TRIGGER_CHAR,
 ) -> None:
     """
-    Build the `liga` lookup with per-character variant-selection rules.
+    Build the per-character variant-selection ligature lookup and
+    register it under the ``ccmp`` feature. See module docstring for
+    why ``ccmp`` and not ``liga``.
 
     For each character with N annotations the builder emits:
       - ``(any-variant, '0')   -> default glyph``
@@ -159,7 +185,11 @@ def buildLiga(
         gsub.LookupList.Lookup.append(lookup)
         gsub.LookupList.LookupCount = len(gsub.LookupList.Lookup)
 
-        register_feature_lookup(gsub, "liga", lookup_index)
+        # Registered under ccmp, NOT liga — see module docstring "Why
+        # `ccmp`, not `liga`" for the iWork-suppression rationale.
+        # Same lookup body (GSUB Type 4 Ligature Substitution),
+        # different feature tag.
+        register_feature_lookup(gsub, "ccmp", lookup_index)
         timer.note(
             f"{real_rule_count} rules in {lookup.SubTableCount} subtable(s)"
         )

@@ -34,22 +34,63 @@ export interface BuiltInPreset {
    *  "(preset)" by the loader so it's clear this isn't a user
    *  upload. */
   filename: string;
+  /**
+   * Optional group label used to render <ListSubheader>s in the
+   * Step 2 mapping picker. Presets sharing the same `group` value
+   * are emitted under one header in array order; when the value
+   * changes, a new subheader is rendered before the next item.
+   *
+   * Leave undefined for fonts/mappings that don't need grouping
+   * (Step 1's font pickers are short enough to render flat).
+   */
+  group?: string;
 }
 
 // ---------- Base CJK fonts (the "底字" slot in Step 1) -------------
 //
 // The list is intentionally curated, not every font under
-// python/input_fonts/. Picks cover the four main styles a user
-// would want for a Cantonese annotation font:
+// python/input_fonts/. Picks cover the main styles a user would want
+// for a Cantonese / CJK annotation font:
+//   • Sans-serif (Noto Sans TC + SC), variable weight
 //   • Sung (serif), Regular and Italic
 //   • Hei (sans), Regular and Bold
 //   • Kaiti (calligraphic)
 //
-// Skipped from input_fonts/: NotoSansTC, FZSJXINKTLWJ — Noto Sans
-// TC overlaps stylistically with ChironHei, and FZSJ is an
-// uncommon brush font. Add either here + to the sync MANIFEST if
-// you want them surfaced.
+// First-entry convention: BUILT_IN_BASE_FONTS[0] is the DEFAULT base
+// font (consumed by DEFAULT_BASE_FONT_PRESET below). Noto Sans TC
+// holds that slot for a bandwidth reason — its variable-weight file
+// is ~12 MB, roughly half the ~24 MB ChironSungHK Regular. Since the
+// Step 1 picker auto-downloads the default on page load, picking the
+// lighter file shaves several seconds off the cold-start experience
+// for users on slower connections without changing what's possible
+// at runtime (any other entry below is a one-click swap).
+//
+// Skipped from input_fonts/: FZSJXINKTLWJ (uncommon brush font).
+// Add it here + to the sync MANIFEST if you want it surfaced.
 export const BUILT_IN_BASE_FONTS: BuiltInPreset[] = [
+  // Default base font — see comment block above for the bandwidth
+  // rationale. This is the VARIABLE font, so the Step 1 picker
+  // exposes its weight slider; the default lands on Regular (400)
+  // via defaultAxisLocation in GenerateContext, and wing-font.py
+  // auto-instances it to a static master before composition.
+  {
+    key: "notosanstc",
+    label: "思源黑體 (Noto Sans TC)",
+    url: "/wingfont/NotoSansTC-VariableFont_wght.ttf",
+    filename: "NotoSansTC-VariableFont_wght.ttf",
+  },
+  // Simplified-Chinese sibling of Noto Sans TC. Same `wght` variable
+  // axis, same auto-instance-to-400 behaviour from wing-font.py; ship
+  // it so users targeting Mandarin readers / Simplified-Chinese
+  // mappings (pinyin and similar) don't have to upload their own
+  // base font. Family-name-distinct from TC, so the two coexist
+  // cleanly in the OS font menu after install.
+  {
+    key: "notosanssc",
+    label: "思源黑体 简体 (Noto Sans SC)",
+    url: "/wingfont/NotoSansSC-VariableFont_wght.ttf",
+    filename: "NotoSansSC-VariableFont_wght.ttf",
+  },
   {
     key: "chironsung-r",
     label: "ChironSung Regular",
@@ -73,24 +114,6 @@ export const BUILT_IN_BASE_FONTS: BuiltInPreset[] = [
     label: "ChironHei Bold",
     url: "/wingfont/ChironHeiHK-B.ttf",
     filename: "ChironHeiHK-B.ttf",
-  },
-  {
-    key: "fzkaiti",
-    label: "方正楷体 (FZ Kaiti)",
-    url: "/wingfont/FZKaiti.ttf",
-    filename: "FZKaiti.ttf",
-  },
-  // Sans-serif CJK base — the natural pairing for the Taiwanese /
-  // Southern Min showcase fonts. Also a good general-purpose base.
-  // This is the VARIABLE font, so the Step 1 picker exposes its
-  // weight slider; the default lands on Regular (400) via
-  // defaultAxisLocation in GenerateContext, and wing-font.py
-  // auto-instances it to a static master before composition.
-  {
-    key: "notosanstc",
-    label: "思源黑體 (Noto Sans TC)",
-    url: "/wingfont/NotoSansTC-VariableFont_wght.ttf",
-    filename: "NotoSansTC-VariableFont_wght.ttf",
   },
 ];
 
@@ -183,64 +206,75 @@ export const BUILT_IN_ANNO_FONTS: BuiltInPreset[] = [
 
 // ---------- Mapping dictionaries (the Step 2 picker) ---------------
 //
-// All five mainstream Cantonese romanizations plus Cangjie. Skipped:
-// canto-lshk-all.csv — it's ~10 MB (multi-pronunciation variants of
-// canto-lshk), useful for advanced users but a chunky default. Add
-// it back if you want to expose it.
+// 20+ mapping presets — too many to read as a flat list. Each entry
+// declares a `group` value that the Step 2 dropdown reads to insert
+// <ListSubheader>s between sections. The array ORDER also matters:
+// presets are emitted in declaration order and the renderer emits a
+// new header every time it sees a different `group` value, so keep
+// group runs contiguous in this file.
+//
+// Skipped (intentionally not in this list):
+//   • canto-lshk-all.csv — ~10 MB multi-pronunciation variants of
+//     canto-lshk. Useful for advanced users but too chunky to be a
+//     default option.
 export const BUILT_IN_MAPPINGS: BuiltInPreset[] = [
+  // ─ Cantonese romanizations (5) ───────────────────────────────────
   {
     key: "canto-lshk",
     label: "粵拼 (LSHK Jyutping)",
     url: "/wingfont/mappings/canto-lshk.csv",
     filename: "canto-lshk.csv",
+    group: "粵語拼音 (Cantonese romanization)",
   },
   {
     key: "canto-yale",
     label: "耶魯 (Yale)",
     url: "/wingfont/mappings/canto-yale.csv",
     filename: "canto-yale.csv",
+    group: "粵語拼音 (Cantonese romanization)",
   },
   {
     key: "canto-lau",
     label: "劉錫祥 (Lau)",
     url: "/wingfont/mappings/canto-lau.csv",
     filename: "canto-lau.csv",
+    group: "粵語拼音 (Cantonese romanization)",
   },
   {
     key: "canto-guangdong",
     label: "廣州 (Guangdong)",
     url: "/wingfont/mappings/canto-guangdong.csv",
     filename: "canto-guangdong.csv",
+    group: "粵語拼音 (Cantonese romanization)",
   },
   {
     key: "canto-chishima",
     label: "千島式 (Chishima)",
     url: "/wingfont/mappings/canto-chishima.csv",
     filename: "canto-chishima.csv",
+    group: "粵語拼音 (Cantonese romanization)",
   },
+  // ─ Cantonese transliterated into non-Latin scripts (3) ───────────
   {
     key: "canto-thai",
     label: "泰文 (Thai script)",
     url: "/wingfont/mappings/canto-thai.csv",
     filename: "canto-thai.csv",
+    group: "粵語拼寫 (Cantonese, other scripts)",
   },
   {
     key: "canto-korean",
     label: "諺文 (Hangul)",
     url: "/wingfont/mappings/canto-korean.csv",
     filename: "canto-korean.csv",
+    group: "粵語拼寫 (Cantonese, other scripts)",
   },
   {
     key: "canto-katakana",
     label: "片仮名 (Katakana)",
     url: "/wingfont/mappings/canto-katakana.csv",
     filename: "canto-katakana.csv",
-  },
-  {
-    key: "cangjie",
-    label: "倉頡",
-    url: "/wingfont/mappings/cangjie.csv",
-    filename: "cangjie.csv",
+    group: "粵語拼寫 (Cantonese, other scripts)",
   },
   // Taiwanese / Southern Min (河洛話) — pair these with the Noto Sans
   // TC base and the Huninn annotation font. The two "-toned" CSVs use
@@ -252,36 +286,42 @@ export const BUILT_IN_MAPPINGS: BuiltInPreset[] = [
     label: "台羅 (Tâi-lô, 調符)",
     url: "/wingfont/mappings/taigi-tl-toned.csv",
     filename: "taigi-tl-toned.csv",
+    group: "台語 (Taiwanese / Southern Min)",
   },
   {
     key: "taigi-poj-toned",
     label: "白話字 (POJ, 調符)",
     url: "/wingfont/mappings/taigi-poj-toned.csv",
     filename: "taigi-poj-toned.csv",
+    group: "台語 (Taiwanese / Southern Min)",
   },
   {
     key: "taigi-tl",
     label: "台羅 (Tâi-lô, 調號)",
     url: "/wingfont/mappings/taigi-tl.csv",
     filename: "taigi-tl.csv",
+    group: "台語 (Taiwanese / Southern Min)",
   },
   {
     key: "taigi-poj",
     label: "白話字 (POJ, 調號)",
     url: "/wingfont/mappings/taigi-poj.csv",
     filename: "taigi-poj.csv",
+    group: "台語 (Taiwanese / Southern Min)",
   },
   {
     key: "taigi-tlpa",
     label: "台語音標 (TLPA, 調號)",
     url: "/wingfont/mappings/taigi-tlpa.csv",
     filename: "taigi-tlpa.csv",
+    group: "台語 (Taiwanese / Southern Min)",
   },
   {
     key: "taigi-bp",
     label: "閩拼方案 (BP, 調號)",
     url: "/wingfont/mappings/taigi-bp.csv",
     filename: "taigi-bp.csv",
+    group: "台語 (Taiwanese / Southern Min)",
   },
   // Teochew / Min Nan (潮州話) — pair these with the Noto Sans TC base
   // and the Huninn annotation font (Huninn carries every combining
@@ -297,36 +337,69 @@ export const BUILT_IN_MAPPINGS: BuiltInPreset[] = [
     label: "潮州話拼音 (Peng'im, 廣東拼音)",
     url: "/wingfont/mappings/teochew-gdpi.csv",
     filename: "teochew-gdpi.csv",
+    group: "潮州話 (Teochew / Min Nan)",
   },
   {
     key: "teochew-duffus",
     label: "潮州白話字 (Duffus / PUJ, 調符)",
     url: "/wingfont/mappings/teochew-duffus.csv",
     filename: "teochew-duffus.csv",
+    group: "潮州話 (Teochew / Min Nan)",
   },
   {
     key: "teochew-tlo",
     label: "潮羅 (Tie-lo, 調符)",
     url: "/wingfont/mappings/teochew-tlo.csv",
     filename: "teochew-tlo.csv",
+    group: "潮州話 (Teochew / Min Nan)",
   },
   {
     key: "teochew-ggnn",
     label: "家己儂拼音 (Gaginang, 調號)",
     url: "/wingfont/mappings/teochew-ggnn.csv",
     filename: "teochew-ggnn.csv",
+    group: "潮州話 (Teochew / Min Nan)",
   },
   {
     key: "teochew-dieghv",
     label: "潮語拼音 (Dieghv, 調號)",
     url: "/wingfont/mappings/teochew-dieghv.csv",
     filename: "teochew-dieghv.csv",
+    group: "潮州話 (Teochew / Min Nan)",
   },
   {
     key: "teochew-sinwz",
     label: "潮州新文字 (Sinwenz)",
     url: "/wingfont/mappings/teochew-sinwz.csv",
     filename: "teochew-sinwz.csv",
+    group: "潮州話 (Teochew / Min Nan)",
+  },
+  // always keep cangjie and mandarin to the bottom
+  // ─ Chinese input methods (1) ─────────────────────────────────────
+  {
+    key: "cangjie",
+    label: "倉頡",
+    url: "/wingfont/mappings/cangjie.csv",
+    filename: "cangjie.csv",
+    group: "輸入法 (Chinese input)",
+  },
+  // ─ Mandarin (1) ──────────────────────────────────────────────────
+  // Hanyu Pinyin in numeric-tone form (ling2, yuan2, xing1). The
+  // CSV is large (~95k rows, ~3 MB) because it covers the full
+  // Unihan CJK ideograph range, not a curated subset like the
+  // Cantonese / Taiwanese / Teochew CSVs. The in-browser pipeline
+  // will still produce a reasonable output font because the
+  // subsetter trims to characters actually present in the base
+  // font's cmap, but expect a noticeably larger output WOFF than
+  // the other showcase mappings. Pairs naturally with Noto Sans SC
+  // as the base; any annotation font with Latin + digit coverage
+  // works (Huninn, Noto Serif, ChironHei/Sung all fine).
+  {
+    key: "mandarin",
+    label: "拼音 (Hanyu Pinyin, 數字調)",
+    url: "/wingfont/mappings/mandarin.csv",
+    filename: "mandarin.csv",
+    group: "普通話 (Mandarin)",
   },
 ];
 

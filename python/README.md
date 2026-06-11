@@ -22,15 +22,26 @@ character outline is scaled down and placed at the bottom, the romanization
 glyphs are scaled smaller and laid out above it. Because the annotation is
 inside the glyph itself, it survives copy-paste into a `<textarea>`, a Word
 doc, an email — anywhere plain text goes. Polyphonic characters are
-disambiguated through two OpenType GSUB layers: `ccmp` (Glyph
-Composition / Decomposition) automatically picks the right reading when
-the character appears in a known word (e.g. `銀行` → `行/hong4`,
-`行人` → `行/hang4`), and `liga` (Ligature Substitution) lets the user
-manually pick a variant by typing `字1` / `字2` / … or the IME-friendly
-`字丅一` / `字丅二` fallback. (We use `ccmp` for the chain-context
-rules rather than `calt` because Apple's iWork typesetter — Pages,
-Keynote, Numbers — silently suppresses `calt` on CJK text runs. See the
-`chain_context_handler.py` deep-dive below.)
+disambiguated through two layers of OpenType GSUB rules, both registered
+under the `ccmp` (Glyph Composition / Decomposition) feature: chain-context
+substitution picks the right reading when the character appears in a known
+word (e.g. `銀行` → `行/hong4`, `行人` → `行/hang4`), and ligature
+substitution lets the user manually pick a variant by typing `字1` / `字2`
+/ … or the IME-friendly `字丅一` / `字丅二` fallback. The lookup _types_
+differ (Type 6 ChainContextSubst vs Type 4 LigatureSubst), but the feature
+_tag_ is the same — `ccmp`, not `calt` or `liga`. We pick `ccmp` because
+it's required-by-spec (every shaper applies it, no user toggle) and because
+Apple's iWork typesetter — Pages, Keynote, Numbers — silently suppresses
+`calt` and `liga` on CJK text runs. See the `chain_context_handler.py` and
+`liga_handler.py` deep-dives below.
+
+A third path lives outside GSUB entirely: `ivs_handler.py` writes a cmap
+format-14 (Unicode Variation Sequences) subtable, so users on VS-capable
+IMEs can pick a variant by typing `<base> + <VS17+N>` (e.g.
+`行 + U+E0100` → variant 1). IVS is zero-width and universally supported
+across shapers, but the chosen variant becomes invisible without the font
+installed; we ship it as a supplement to the human-readable ligature
+paths, not a replacement. See the `ivs_handler.py` deep-dive below.
 
 ---
 
@@ -42,7 +53,8 @@ python/
 ├── runner.py                   # Pyodide wrapper (called from the web app)
 ├── build_glyph.py              # Pen-based glyph composition (base + anno)
 ├── chain_context_handler.py    # Builds the `ccmp` GSUB rules
-├── liga_handler.py             # Builds the `liga` GSUB rules
+├── liga_handler.py             # Builds the `ccmp` ligature-substitution rules
+├── ivs_handler.py              # Builds the cmap format-14 IVS supplement
 ├── utils.py                    # cmap lookup + GSUB feature registration helper
 ├── mappings/                   # CSVs that map char → romanization (+csv_parser)
 ├── input_fonts/                # Source TTFs (Chiron, NotoSerif, NotoSansTC, …)
@@ -87,7 +99,7 @@ python wing-font.py \
   -a input_fonts/NotoSerif-Regular.ttf \
   -m mappings/canto-lshk.csv \
   -o ChironSungHK-Noto-lshk \
-  -opt -as 0.13
+  -opt -as 0.27
 ```
 
 This writes `ChironSungHK-Noto-lshk.ttf` and `ChironSungHK-Noto-lshk.woff`
@@ -105,7 +117,7 @@ mapped characters will render with romanization stacked above.
 | `-m` | `--mapping` | required | CSV mapping characters/words to romanizations |
 | `-f` | `--family-name` | source name | Overwrites `name` table family entries |
 | `-bs` | `--base-scale` | `0.75` | How much to shrink the base character (vertical room for anno) |
-| `-as` | `--anno-scale` | `0.15` | How much to shrink the annotation glyphs |
+| `-as` | `--anno-scale` | `0.25` | How much to shrink the annotation glyphs, as a fraction of the output em. UPM-independent: the same value renders at the same visual size regardless of the annotation font's unitsPerEm (so e.g. NotoSerif at 2048 UPM and Huninn at 1024 no longer need different numbers). |
 | `-y` | `--upper_y_offset_ratio` | `0.8` | Where to put the annotation (fraction of em) |
 | `-v` | `--invert` | off | Swap positions: annotation below, base above |
 | `-opt` | `--optimize` | off | Subset the output to just glyphs we actually use (drops it from ~30 MB to ~200–500 KB per font) |
@@ -124,9 +136,10 @@ This regenerates a tiny test font from
 [`tests/test_mapping.csv`](tests/test_mapping.csv) and serves
 [`tests/viewer.html`](tests/viewer.html) on
 <http://127.0.0.1:8765/viewer.html>. The viewer renders four panels —
-default reading, word context (`ccmp`), digit trigger (`liga`), and the
-丅 fallback — each comparing the system font (left) against the
-generated font (right). Visual differences prove the GSUB rules fired.
+default reading, word context (chain-context under `ccmp`), digit
+trigger (ligature substitution under `ccmp`), and the 丅 fallback —
+each comparing the system font (left) against the generated font
+(right). Visual differences prove the GSUB rules fired.
 
 See [`tests/README.md`](tests/README.md) for the per-panel pass/fail
 guide and the JSON report schema written to `tests/output/report.json`.
@@ -217,7 +230,7 @@ own auto-splitter has bugs (`AttributeError` on
 `OTTableWriter.repeatIndex`, `UnboundLocalError` on `newLen`) that this
 sidesteps.
 
-### `liga_handler.py` — `liga` builder
+### `liga_handler.py` — ligature substitution under `ccmp`
 
 Uses `LigatureSubstBuilder` to emit two kinds of rules per polyphonic
 character:
@@ -226,20 +239,57 @@ character:
 * `(any_variant, '丅', '零/一/二/…')` → same mapping via the
   IME-friendly trigger.
 
+The module is named `liga_handler` because the lookup *type* is still
+GSUB Type 4 (Ligature Substitution) — that hasn't changed. What changed
+is the feature *tag* the lookup is registered under: it used to be the
+OpenType `liga` feature, and is now `ccmp`. Reason: Apple's iWork
+typesetter silently suppresses `liga` on CJK runs even when the user
+toggles "Ligatures" on, so `行丅一` would render as three separate
+glyphs in Pages no matter what. Moving these rules to `ccmp`
+(required-by-spec, applied universally) makes the digit-override and
+trigger-fallback paths fire everywhere with no app-side toggle. The
+trade-off — users lose the ability to disable annotation overrides via
+an app setting — is acceptable for an annotation font.
+
 Same `add_subtable_break()` chunking as the chain handler, with the
 slight wrinkle that `LigatureSubstBuilder` keys its sentinel by
 `(SUBTABLE_BREAK_, location)` so we pass a monotonically-increasing
 counter to avoid dict-key collisions that would silently drop all
 breaks after the first.
 
+### `ivs_handler.py` — cmap format-14 (IVS) supplement
+
+For each polyphonic character with N annotations, emits N-1 entries in
+the cmap format-14 subtable: `(base, U+E0100)` → variant 1,
+`(base, U+E0101)` → variant 2, etc. Variant 0 needs no entry because
+the bare base codepoint already maps to the default-reading glyph
+through cmap format-4/12.
+
+IVS lives entirely outside GSUB, so it can't interfere with the ccmp
+chain-context and ligature lookups above. Every modern shaper
+(HarfBuzz, CoreText, DirectWrite) honours format-14 at cmap-lookup
+time, no feature toggle, no script suppression — making this the
+cleanest possible technical path. The catch is human-facing: a
+Variation Selector is zero-width, so an `行 + U+E0100` sequence is
+indistinguishable from a bare `行` in any font without our IVS table.
+The existing ligature paths in `liga_handler.py` stay
+copy-paste-portable as a fallback, so we ship IVS as a SUPPLEMENT
+rather than a replacement.
+
+Practical caveat on input: typing a VS without IME help is awkward.
+Power users on Japanese IMEs (which expose IVS for kanji shape
+variants), macOS Character Viewer, or Adobe's Glyphs panel get this
+path for free; most other users will still reach for the ligature
+paths.
+
 ### `utils.register_feature_lookup`
 
 Tiny helper that exists because the chain and liga handlers used to
 duplicate ~40 lines each of script/langsys walking. Now both just call
-`register_feature_lookup(gsub, 'ccmp', lookup_index)` (or `'liga'`).
-The helper also force-creates `hani` / `latn` / `kana` / `hang` /
-`bopo` script records if missing, so CoreText finds the feature under
-whichever script tag it picks for the text run.
+`register_feature_lookup(gsub, 'ccmp', lookup_index)`. The helper also
+force-creates `hani` / `latn` / `kana` / `hang` / `bopo` script records
+if missing, so CoreText finds the feature under whichever script tag it
+picks for the text run.
 
 ### Subsetting
 
@@ -310,6 +360,27 @@ tone-mark placement come from the same project's conversion tables and
 
 The romanization is set in [Huninn (jf-openhuninn)](https://github.com/justfont/open-huninn-font),
 which carries the full Tâi-lô / POJ combining tone marks.
+
+### Mandarin (普通話 / 國語)
+
+The `mandarin.csv` mapping is built entirely from mozillazg's
+MIT-licensed data, taken from its permissive upstream rather than from
+any OFL-licensed font project. Per-character readings come from
+`pinyin-data` (derived from the Unicode **Unihan** database —
+`kTGHZ2013` / `kHanyuPinyin` / `kXHC1983` / `kMandarin` — under the
+Unicode license); each character's default reading follows Unihan's
+`kMandarin` field. The word/phrase readings that drive contextual
+homograph (多音字) disambiguation come from `phrase-pinyin-data`.
+
+1. [mozillazg/pinyin-data](https://github.com/mozillazg/pinyin-data) — per-character readings (MIT; from Unihan)
+2. [mozillazg/phrase-pinyin-data](https://github.com/mozillazg/phrase-pinyin-data) — word/phrase readings (MIT)
+3. [Unicode Han Database (Unihan)](https://www.unicode.org/charts/unihan.html) — upstream reading data
+
+The idea of baking pinyin annotations into the glyphs with contextual
+disambiguation was pioneered by
+[MaruTama/Mengshen-pinyin-font](https://github.com/MaruTama/Mengshen-pinyin-font)
+(OFL-1.1); Wing Font does not reuse its data files, but gratefully
+acknowledges it as inspiration.
 
 ---
 

@@ -34,18 +34,29 @@ python tests/serve.py --no-regen
 1. **Default reading** — every char in the mapping shows its primary
    romanization. This proves `build_glyph.py` produces the variant-0
    glyphs and the cmap remap works.
-2. **Word context (`ccmp`)** — types `銀行` / `行家` and the same char
-   `行` switches between `hong4` and `hang4` depending on the word.
-   This proves the new `ChainContextSubstBuilder` rules are wired
-   correctly and the source font's existing `calt` lookups didn't get
-   overwritten. (Our chain-context rules are registered under `ccmp`
-   rather than `calt` — see `chain_context_handler.py` for why.)
-3. **Digit trigger (`liga`)** — types `行1` and the `1` disappears
-   while `行` switches to its variant-1 reading. Proves the
-   `LigatureSubstBuilder` rules and `utils.register_feature_lookup`
-   correctly added our lookup to the existing `liga` feature.
+2. **Word context (`ccmp` chain substitution)** — types `銀行` / `行家`
+   and the same char `行` switches between `hong4` and `hang4` depending
+   on the word. This proves the new `ChainContextSubstBuilder` rules
+   (Type 6) are wired correctly. We register them under `ccmp` rather
+   than `calt` because iWork (Pages/Keynote/Numbers) silently suppresses
+   `calt` on CJK runs — see `chain_context_handler.py` for the full
+   rationale.
+3. **Digit trigger (`ccmp` ligature)** — types `行1` and the `1`
+   disappears while `行` switches to its variant-1 reading. Proves the
+   `LigatureSubstBuilder` rules (Type 4) and
+   `utils.register_feature_lookup` correctly added our lookup. The
+   lookup is registered under `ccmp` (NOT `liga`) for the same iWork
+   reason — see `liga_handler.py` for the full rationale.
 4. **Chinese-numeral fallback** — types `行丅一` and the same
-   substitution happens via the three-glyph ligature path.
+   substitution happens via the three-glyph ligature path (also under
+   `ccmp`).
+5. **IVS (cmap format-14)** — `行` followed by U+E0100 (VS17) picks
+   variant 1 at cmap-lookup time, before GSUB runs. The Variation
+   Selector itself is zero-width, so an `行+VS17` sequence renders
+   as bare `行` in any font that lacks our IVS supplement — a
+   trade-off the GSUB ligature paths in panels 3/4 don't have. See
+   `ivs_handler.py` for the rationale on shipping IVS alongside,
+   not instead of, the ligature paths.
 
 If the **right column looks identical to the left column** in any panel,
 the font failed to load (check the status banner at the top of the page)

@@ -23,6 +23,7 @@ import {
   FormControl,
   IconButton,
   InputLabel,
+  ListSubheader,
   MenuItem,
   Paper,
   Select,
@@ -529,11 +530,52 @@ const Step2Mappings = () => {
               return opt?.label ?? selected;
             }}
           >
-            {BUILT_IN_MAPPINGS.map((preset) => (
-              <MenuItem key={preset.key} value={preset.key}>
-                {preset.label}
-              </MenuItem>
-            ))}
+            {/*
+              Render mapping presets with <ListSubheader>s inserted at
+              `group` boundaries.
+
+              The grouping is "look at the previous element's group" —
+              every time the current preset's group differs from the
+              previous one, emit a subheader first, then the menu item.
+              Since BUILT_IN_MAPPINGS is declared in group order, this
+              produces one header per group with the items below it.
+
+              ListSubheader is the canonical MUI primitive for this —
+              it renders non-selectable inside a Select / List and
+              picks up the theme's group-header typography. We pass
+              `sx={{ pointerEvents: 'none' }}` to belt-and-braces
+              prevent the user from clicking the header (Select would
+              otherwise swallow the click).
+            */}
+            {BUILT_IN_MAPPINGS.flatMap((preset, idx, arr) => {
+              const prevGroup = idx > 0 ? arr[idx - 1].group : undefined;
+              const headerNeeded =
+                preset.group !== undefined && preset.group !== prevGroup;
+              return [
+                ...(headerNeeded
+                  ? [
+                      <ListSubheader
+                        key={`group-${preset.group}`}
+                        sx={{ pointerEvents: "none", lineHeight: 2.2 }}
+                      >
+                        {preset.group}
+                      </ListSubheader>,
+                    ]
+                  : []),
+                // Indent items relative to the group header so the
+                // visual hierarchy reads as "header — child — child".
+                // `pl` is overriden (not added) by MUI's default
+                // MenuItem padding, hence the explicit value; the
+                // theme default is roughly pl: 2.
+                <MenuItem
+                  key={preset.key}
+                  value={preset.key}
+                  sx={preset.group ? { pl: 4 } : undefined}
+                >
+                  {preset.label}
+                </MenuItem>,
+              ];
+            })}
           </Select>
         </FormControl>
         <Button

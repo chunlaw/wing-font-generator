@@ -1,70 +1,233 @@
 name: Fonts Generation
 
-# Builds the 25 production fonts and publishes them to the `fonts/`
-# subfolder of the `gh-pages` branch — i.e. served at
+# Builds the production fonts (46 entries as of the SC + Mandarin
+# addition) in parallel via a matrix strategy, then deploys them to
+# the `fonts/` subfolder of the `gh-pages` branch — i.e. served at
 # https://wing-fonts.chunlaw.io/fonts/X.{ttf,woff}.
+#
+# Architecture
+# ------------
+# Job 1 (Build) — strategy.matrix with one entry per font. Each slot
+#   is its own runner: checkout + pip-install (cached) + one
+#   `python wing-font.py …` invocation + upload-artifact. With 46
+#   entries the matrix runs ~20 in parallel on GitHub-hosted runners
+#   (free-tier concurrency cap), so wall-clock per workflow is
+#   ~ceil(46 / 20) × per-font-build ≈ 3-5 minutes vs the old single-
+#   job ~25-40 minutes.
+#
+# Job 2 (Deploy) — depends on Build, runs once. Downloads every
+#   `font-*` artifact into a flat `fonts/` directory and force-pushes
+#   that directory into gh-pages /fonts/ via JamesIves.
+#
+# `fail-fast: false` is set on the Build matrix so one font's failure
+# never cancels the other 45. The Deploy job has `if: ${{ ! failure() }}`
+# so a partial set still ships when a single font breaks — preferable
+# to a fully-stale /fonts/ when most fonts built fine.
 #
 # Coexistence with `yarn deploy`
 # ------------------------------
-# `yarn deploy` (from web/) writes to the gh-pages branch ROOT — index.html,
-# /assets/, /favicon.ico, etc. This workflow writes to gh-pages /fonts/
-# only (via `target-folder: fonts`). Different paths, no collision.
+# `yarn deploy` (from web/) writes to the gh-pages branch ROOT —
+# index.html, /assets/, /favicon.ico, etc. This workflow writes to
+# gh-pages /fonts/ only (via `target-folder: fonts`). Different
+# paths, no collision.
 #
 # Both writers force-push a SINGLE COMMIT per deploy so the gh-pages
-# branch tree stays at "current snapshot" size — no history accumulation,
-# no stale-hashed-asset bloat, fast checkout for GitHub's auto
-# pages-build-deployment workflow:
+# branch tree stays at "current snapshot" size — no history
+# accumulation, no stale-hashed-asset bloat, fast checkout for
+# GitHub's auto pages-build-deployment workflow:
 #
-#   * `single-commit: true` here resets gh-pages history to one commit
-#     containing the current state after JamesIves cleans+copies /fonts/.
+#   * `single-commit: true` here resets gh-pages history to one
+#     commit containing the current state after JamesIves
+#     cleans+copies /fonts/.
 #   * `yarn deploy` runs `gh-pages --no-history --remove '{assets,wingfont}/**'`
-#     which does the equivalent on the web side: clean replace of the two
-#     subdirs the React build owns, leave /fonts/ alone, force-push one
-#     commit.
+#     which does the equivalent on the web side: clean replace of the
+#     two subdirs the React build owns, leave /fonts/ alone,
+#     force-push one commit.
 #
 # Coexistence safety:
-#   * `clean: true` here is scoped to `target-folder` (`fonts/`), so this
-#     workflow never touches the React app at the root.
-#   * `yarn deploy`'s `--remove "{assets,wingfont}/**"` (not the default
-#     `--remove '.'`) means it never wipes /fonts/.
+#   * `clean: true` here is scoped to `target-folder` (`fonts/`), so
+#     this workflow never touches the React app at the root.
+#   * `yarn deploy`'s `--remove "{assets,wingfont}/**"` (not the
+#     default `--remove '.'`) means it never wipes /fonts/.
 #
 # The remaining race window — both workflows pushing within the same
-# few seconds — is mitigated by the `concurrency` group below
-# (serialises CI pushes) and by the actions retrying on
-# non-fast-forward. In practice manual yarn deploys and CI auto-runs
-# don't usually collide. With single-commit on both sides, the retry
-# logic re-fetches the latest state before the force-push, so the worst
-# case is "second push waits briefly and tries again".
+# few seconds — is mitigated by the workflow-level `concurrency`
+# group below (serialises CI pushes of THIS workflow) and by the
+# actions retrying on non-fast-forward. With single-commit on both
+# sides, the retry logic re-fetches the latest state before the
+# force-push, so the worst case is "second push waits briefly and
+# tries again".
 
 on:
   push:
-    # Avoid spending CI minutes on web-only changes — fonts only need to
-    # rebuild when the Python pipeline or a mapping CSV moves.
+    # Avoid spending CI minutes on web-only changes — fonts only need
+    # to rebuild when the Python pipeline or a mapping CSV moves.
     paths:
       - 'python/**'
       - '.github/workflows/build-fonts.yml'
   workflow_dispatch:
 
 permissions:
-  # Needed for the gh-pages push.
+  # Needed for the gh-pages push (Deploy job only, but applies to all
+  # jobs in this workflow).
   contents: write
 
-# Serialise concurrent CI runs to the same target so two pushes never
-# race each other. `cancel-in-progress: false` means a newer run waits
-# for the older one rather than interrupting it — important because we
-# don't want a half-uploaded /fonts/ on the live branch.
+# Serialise concurrent workflow runs so two pushes never race each
+# other on gh-pages. `cancel-in-progress: false` means a newer run
+# waits for the older one rather than interrupting it — important
+# because we don't want a half-uploaded /fonts/ on the live branch.
+# Matrix entries WITHIN a single run still parallelise; this only
+# serialises runs of the workflow against each other.
 concurrency:
   group: gh-pages-fonts
   cancel-in-progress: false
 
 jobs:
-  Generate-Fonts:
+  Build:
+    # Display name includes the font so each matrix slot shows as
+    # e.g. "Build (ChironSungHK-Noto-lshk)" in the Actions UI —
+    # makes the 46-row workflow run easy to scan for failures.
+    name: Build (${{ matrix.font.name }})
     runs-on: ubuntu-latest
-    # Run every step inside python/ so the existing commands keep using
-    # plain relative paths like `input_fonts/...` and `mappings/...`.
     defaults:
       run:
         working-directory: python
+    strategy:
+      # See top-of-file comment for the fail-fast rationale.
+      fail-fast: false
+      # `max-parallel: 20` matches GitHub's free-tier concurrency cap
+      # and documents the intent. Higher accounts (Pro/Team/Enterprise)
+      # can raise this; lower this if you ever want to be polite about
+      # CI-minute consumption on a public org.
+      max-parallel: 20
+      matrix:
+        # Each entry: name (used for -f / -o / artifact name) and the
+        # rest of the `wing-font.py` flags as a single `args` string.
+        # Sections preserve the original groupings from the
+        # sequential script — same naming convention, same `-as` per
+        # script, same `-v -y 0.3` for inverted variants, same
+        # `-opt` everywhere except cangjie (which would self-subset
+        # since its annotation IS the base font).
+        #
+        # ─ Naming convention (applies to every entry below) ───────
+        #
+        # Output font names follow `<Base>-<Anno>-<mapping>[-It][-Invert]`:
+        #   • <Base>     ChironSungHK or ChironHeiHK (+ -B for Bold),
+        #                or NotoSansTC / NotoSansSC for the showcase
+        #                pairings.
+        #   • <Anno>     Noto (for NotoSerif Latin annotation),
+        #                Google (for Google Sans Thai),
+        #                NotoJP / NotoKR (for the JP / KR Noto Sans),
+        #                Huninn (for Tâi-lô / POJ / Teochew / Mandarin).
+        #                Cangjie has no <Anno> segment because the
+        #                annotation is the base font itself.
+        #   • <mapping>  Lowercase mapping suffix matching the CSV
+        #                filename: lshk / yale / chishima / guangdong /
+        #                lau / cangjie / thai / katakana / korean /
+        #                tailo / poj / teochew-pengim / teochew-puj /
+        #                mandarin.
+        #   • -It        Capitalised, present iff the base font is
+        #                the italic Chiron Sung.
+        #   • -Invert    Capitalised, present iff `-v` (annotation
+        #                below base) is set. The `-f` family name
+        #                MUST include this suffix or the inverted
+        #                build collides at OS-level with its
+        #                non-inverted twin.
+        #
+        # ─ Annotation scale (`-as`) convention ────────────────────
+        #
+        # `-as` is UPM-INDEPENDENT (normalized in build_glyph.py):
+        # the value is a fraction of the OUTPUT em, so the SAME
+        # number renders at the SAME visual size no matter what
+        # unitsPerEm the annotation font uses.
+        #   • 0.27 — Latin (NotoSerif): caps fill the band above the
+        #            base (~0.19 em cap-height).
+        #   • 0.25 — Cangjie (CJK radicals fill the em, so slightly
+        #            smaller); Huninn for Tâi-lô / POJ / Teochew /
+        #            Mandarin (Latin letters + combining tone marks).
+        #   • 0.24 — Katakana / Korean.
+        #   • 0.22 — Thai (held smaller to leave headroom for vowel
+        #            + tone-mark stacks).
+        font:
+          # === Inverted variants — ChironHei + LSHK ================
+          - { name: ChironHeiHK-Noto-lshk-B-Invert,        args: "-v -y 0.3 -opt -i input_fonts/ChironHeiHK-B.ttf  -a input_fonts/NotoSerif-Regular.ttf -m mappings/canto-lshk.csv -as 0.27" }
+          - { name: ChironHeiHK-Noto-lshk-Invert,          args: "-v -y 0.3 -opt -i input_fonts/ChironHeiHK-R.ttf  -a input_fonts/NotoSerif-Regular.ttf -m mappings/canto-lshk.csv -as 0.27" }
+          # === Inverted variants — ChironSung Regular + each Cantonese romanization
+          - { name: ChironSungHK-Noto-lshk-Invert,         args: "-v -y 0.3 -opt -i input_fonts/ChironSungHK-R.ttf -a input_fonts/NotoSerif-Regular.ttf -m mappings/canto-lshk.csv -as 0.27" }
+          - { name: ChironSungHK-Noto-yale-Invert,         args: "-v -y 0.3 -opt -i input_fonts/ChironSungHK-R.ttf -a input_fonts/NotoSerif-Regular.ttf -m mappings/canto-yale.csv -as 0.27" }
+          - { name: ChironSungHK-Noto-chishima-Invert,     args: "-v -y 0.3 -opt -i input_fonts/ChironSungHK-R.ttf -a input_fonts/NotoSerif-Regular.ttf -m mappings/canto-chishima.csv -as 0.27" }
+          - { name: ChironSungHK-Noto-guangdong-Invert,    args: "-v -y 0.3 -opt -i input_fonts/ChironSungHK-R.ttf -a input_fonts/NotoSerif-Regular.ttf -m mappings/canto-guangdong.csv -as 0.27" }
+          - { name: ChironSungHK-Noto-lau-Invert,          args: "-v -y 0.3 -opt -i input_fonts/ChironSungHK-R.ttf -a input_fonts/NotoSerif-Regular.ttf -m mappings/canto-lau.csv -as 0.27" }
+          # Cangjie skips -opt: annotation IS the base font, subsetting would break the self-reference.
+          - { name: ChironSungHK-cangjie-Invert,           args: "-v -y 0.3 -i input_fonts/ChironSungHK-R.ttf -a input_fonts/ChironSungHK-R.ttf -m mappings/cangjie.csv -as 0.25" }
+          # === Inverted variants — ChironSung Italic + each Cantonese romanization
+          - { name: ChironSungHK-Noto-lshk-It-Invert,      args: "-v -y 0.3 -opt -i input_fonts/ChironSungHK-R-It.ttf -a input_fonts/NotoSerif-Regular.ttf -m mappings/canto-lshk.csv -as 0.27" }
+          - { name: ChironSungHK-Noto-yale-It-Invert,      args: "-v -y 0.3 -opt -i input_fonts/ChironSungHK-R-It.ttf -a input_fonts/NotoSerif-Regular.ttf -m mappings/canto-yale.csv -as 0.27" }
+          - { name: ChironSungHK-Noto-chishima-It-Invert,  args: "-v -y 0.3 -opt -i input_fonts/ChironSungHK-R-It.ttf -a input_fonts/NotoSerif-Regular.ttf -m mappings/canto-chishima.csv -as 0.27" }
+          - { name: ChironSungHK-Noto-guangdong-It-Invert, args: "-v -y 0.3 -opt -i input_fonts/ChironSungHK-R-It.ttf -a input_fonts/NotoSerif-Regular.ttf -m mappings/canto-guangdong.csv -as 0.27" }
+          - { name: ChironSungHK-Noto-lau-It-Invert,       args: "-v -y 0.3 -opt -i input_fonts/ChironSungHK-R-It.ttf -a input_fonts/NotoSerif-Regular.ttf -m mappings/canto-lau.csv -as 0.27" }
+          - { name: ChironSungHK-cangjie-It-Invert,        args: "-v -y 0.3 -i input_fonts/ChironSungHK-R-It.ttf -a input_fonts/ChironSungHK-R-It.ttf -m mappings/cangjie.csv -as 0.25" }
+          # === Standard variants — ChironSung Regular ===============
+          - { name: ChironSungHK-Noto-lshk,                args: "-opt -i input_fonts/ChironSungHK-R.ttf -a input_fonts/NotoSerif-Regular.ttf -m mappings/canto-lshk.csv -as 0.27" }
+          - { name: ChironSungHK-Noto-yale,                args: "-opt -i input_fonts/ChironSungHK-R.ttf -a input_fonts/NotoSerif-Regular.ttf -m mappings/canto-yale.csv -as 0.27" }
+          - { name: ChironSungHK-Noto-chishima,            args: "-opt -i input_fonts/ChironSungHK-R.ttf -a input_fonts/NotoSerif-Regular.ttf -m mappings/canto-chishima.csv -as 0.27" }
+          - { name: ChironSungHK-Noto-guangdong,           args: "-opt -i input_fonts/ChironSungHK-R.ttf -a input_fonts/NotoSerif-Regular.ttf -m mappings/canto-guangdong.csv -as 0.27" }
+          - { name: ChironSungHK-Noto-lau,                 args: "-opt -i input_fonts/ChironSungHK-R.ttf -a input_fonts/NotoSerif-Regular.ttf -m mappings/canto-lau.csv -as 0.27" }
+          - { name: ChironSungHK-cangjie,                  args: "-i input_fonts/ChironSungHK-R.ttf -a input_fonts/ChironSungHK-R.ttf -m mappings/cangjie.csv -as 0.25" }
+          # === Standard variants — ChironSung Italic ================
+          - { name: ChironSungHK-Noto-lshk-It,             args: "-opt -i input_fonts/ChironSungHK-R-It.ttf -a input_fonts/NotoSerif-Regular.ttf -m mappings/canto-lshk.csv -as 0.27" }
+          - { name: ChironSungHK-Noto-yale-It,             args: "-opt -i input_fonts/ChironSungHK-R-It.ttf -a input_fonts/NotoSerif-Regular.ttf -m mappings/canto-yale.csv -as 0.27" }
+          - { name: ChironSungHK-Noto-chishima-It,         args: "-opt -i input_fonts/ChironSungHK-R-It.ttf -a input_fonts/NotoSerif-Regular.ttf -m mappings/canto-chishima.csv -as 0.27" }
+          - { name: ChironSungHK-Noto-guangdong-It,        args: "-opt -i input_fonts/ChironSungHK-R-It.ttf -a input_fonts/NotoSerif-Regular.ttf -m mappings/canto-guangdong.csv -as 0.27" }
+          - { name: ChironSungHK-Noto-lau-It,              args: "-opt -i input_fonts/ChironSungHK-R-It.ttf -a input_fonts/NotoSerif-Regular.ttf -m mappings/canto-lau.csv -as 0.27" }
+          - { name: ChironSungHK-cangjie-It,               args: "-i input_fonts/ChironSungHK-R-It.ttf -a input_fonts/ChironSungHK-R-It.ttf -m mappings/cangjie.csv -as 0.25" }
+          # === Script-specific annotation variants =================
+          # Inverted, ChironSung Regular:
+          - { name: ChironSungHK-Google-thai-Invert,       args: "-v -y 0.3 -opt -i input_fonts/ChironSungHK-R.ttf -a 'input_fonts/GoogleSans-VariableFont_GRAD,opsz,wght.ttf' -m mappings/canto-thai.csv -as 0.22" }
+          - { name: ChironSungHK-NotoJP-katakana-Invert,   args: "-v -y 0.3 -opt -i input_fonts/ChironSungHK-R.ttf -a input_fonts/NotoSansJP-VariableFont_wght.ttf -m mappings/canto-katakana.csv -as 0.24" }
+          - { name: ChironSungHK-NotoKR-korean-Invert,     args: "-v -y 0.3 -opt -i input_fonts/ChironSungHK-R.ttf -a input_fonts/NotoSansKR-VariableFont_wght.ttf -m mappings/canto-korean.csv -as 0.24" }
+          # Inverted, ChironSung Italic:
+          - { name: ChironSungHK-Google-thai-It-Invert,    args: "-v -y 0.3 -opt -i input_fonts/ChironSungHK-R-It.ttf -a 'input_fonts/GoogleSans-VariableFont_GRAD,opsz,wght.ttf' -m mappings/canto-thai.csv -as 0.22" }
+          - { name: ChironSungHK-NotoJP-katakana-It-Invert, args: "-v -y 0.3 -opt -i input_fonts/ChironSungHK-R-It.ttf -a input_fonts/NotoSansJP-VariableFont_wght.ttf -m mappings/canto-katakana.csv -as 0.24" }
+          - { name: ChironSungHK-NotoKR-korean-It-Invert,  args: "-v -y 0.3 -opt -i input_fonts/ChironSungHK-R-It.ttf -a input_fonts/NotoSansKR-VariableFont_wght.ttf -m mappings/canto-korean.csv -as 0.24" }
+          # Standard, ChironSung Regular:
+          - { name: ChironSungHK-Google-thai,              args: "-opt -i input_fonts/ChironSungHK-R.ttf -a 'input_fonts/GoogleSans-VariableFont_GRAD,opsz,wght.ttf' -m mappings/canto-thai.csv -as 0.22" }
+          - { name: ChironSungHK-NotoJP-katakana,          args: "-opt -i input_fonts/ChironSungHK-R.ttf -a input_fonts/NotoSansJP-VariableFont_wght.ttf -m mappings/canto-katakana.csv -as 0.24" }
+          - { name: ChironSungHK-NotoKR-korean,            args: "-opt -i input_fonts/ChironSungHK-R.ttf -a input_fonts/NotoSansKR-VariableFont_wght.ttf -m mappings/canto-korean.csv -as 0.24" }
+          # Standard, ChironSung Italic:
+          - { name: ChironSungHK-Google-thai-It,           args: "-opt -i input_fonts/ChironSungHK-R-It.ttf -a 'input_fonts/GoogleSans-VariableFont_GRAD,opsz,wght.ttf' -m mappings/canto-thai.csv -as 0.22" }
+          - { name: ChironSungHK-NotoJP-katakana-It,       args: "-opt -i input_fonts/ChironSungHK-R-It.ttf -a input_fonts/NotoSansJP-VariableFont_wght.ttf -m mappings/canto-katakana.csv -as 0.24" }
+          - { name: ChironSungHK-NotoKR-korean-It,         args: "-opt -i input_fonts/ChironSungHK-R-It.ttf -a input_fonts/NotoSansKR-VariableFont_wght.ttf -m mappings/canto-korean.csv -as 0.24" }
+          # === Hero sample font ====================================
+          # Tiny ~25KB font used to render the home-page hero text.
+          # Mapping CSV contains only the chars of the hero phrase.
+          # @font-face referenced from web/src/index.css as
+          # `ChironSungHK-hero-sample`. Edit mappings/hero-sample.csv
+          # when the hero text changes.
+          - { name: ChironSungHK-hero-sample,              args: "-opt -i input_fonts/ChironSungHK-R.ttf -a input_fonts/NotoSerif-Regular.ttf -m mappings/hero-sample.csv -as 0.27" }
+          # === Taiwanese / Southern Min (河洛話) showcase ===========
+          # Noto Sans TC base + Huninn (carries every Tâi-lô / POJ
+          # combining tone mark + nasal ⁿ + POJ o͘ dot). Two
+          # tone-marked schemes (tailo, poj) + hero-tailo.
+          # Data source: AlanJui/Piau-Im + AlanJui/rime-tlpa.
+          - { name: NotoSansTC-Huninn-tailo,               args: "-opt -i input_fonts/NotoSansTC-VariableFont_wght.ttf -a input_fonts/Huninn-Regular.ttf -m mappings/taigi-tl-toned.csv -as 0.25" }
+          - { name: NotoSansTC-Huninn-poj,                 args: "-opt -i input_fonts/NotoSansTC-VariableFont_wght.ttf -a input_fonts/Huninn-Regular.ttf -m mappings/taigi-poj-toned.csv -as 0.25" }
+          - { name: NotoSansTC-Huninn-hero-tailo,          args: "-opt -i input_fonts/NotoSansTC-VariableFont_wght.ttf -a input_fonts/Huninn-Regular.ttf -m mappings/hero-taigi.csv -as 0.25" }
+          # === Teochew / Min Nan (潮州話) showcase ==================
+          # Reuses the Noto Sans TC + Huninn pairing. Two schemes
+          # (pengim numeric-tone, puj diacritic-tone) + hero-pengim.
+          # Data source: learn-teochew + parsetc.
+          - { name: NotoSansTC-Huninn-teochew-pengim,      args: "-opt -i input_fonts/NotoSansTC-VariableFont_wght.ttf -a input_fonts/Huninn-Regular.ttf -m mappings/teochew-gdpi.csv -as 0.25" }
+          - { name: NotoSansTC-Huninn-teochew-puj,         args: "-opt -i input_fonts/NotoSansTC-VariableFont_wght.ttf -a input_fonts/Huninn-Regular.ttf -m mappings/teochew-duffus.csv -as 0.25" }
+          - { name: NotoSansTC-Huninn-hero-pengim,         args: "-opt -i input_fonts/NotoSansTC-VariableFont_wght.ttf -a input_fonts/Huninn-Regular.ttf -m mappings/hero-teochew.csv -as 0.25" }
+          # === Mandarin (普通話 / 國語) showcase ====================
+          # Noto Sans SC base + Huninn anno + numeric-tone Hanyu Pinyin.
+          # The mapping is ~95k rows (full CJK ideograph range), so
+          # this single entry takes longer to build than any other
+          # font in the matrix — but in parallel that's irrelevant
+          # for wall-clock since other entries finish concurrently.
+          # Data source: Unihan kMandarin + CC-CEDICT.
+          - { name: NotoSansSC-Huninn-mandarin,            args: "-opt -i input_fonts/NotoSansSC-VariableFont_wght.ttf -a input_fonts/Huninn-Regular.ttf -m mappings/mandarin.csv -as 0.25" }
 
     steps:
       - name: Check out repository code
@@ -80,189 +243,57 @@ jobs:
         run: |
           python -m pip install --upgrade pip
           pip install -r ./requirements.txt
-      - name: Generate Fonts
+      - name: Build font
+        # `${{ matrix.font.args }}` expands at YAML render time, so the
+        # bash command sees the literal flag string. Single quotes
+        # inside args (around the GoogleSans filename with commas)
+        # survive the substitution because they're already inside a
+        # double-quoted YAML string. `set -o xtrace` echoes the
+        # resolved command into the log for debuggability.
         run: |
           mkdir -p outputs
           set -o xtrace
-          # ─ Naming convention (applies to every line below) ────────
-          #
-          # Output font names follow `<Base>-<Anno>-<mapping>[-It][-Invert]`:
-          #   • <Base>     ChironSungHK or ChironHeiHK (+ -B for Bold)
-          #   • <Anno>     Noto (for NotoSerif Latin annotation),
-          #                Google (for Google Sans Thai),
-          #                NotoJP / NotoKR (for the JP / KR Noto Sans).
-          #                Cangjie has no <Anno> segment because the
-          #                annotation is the base font itself.
-          #   • <mapping>  Lowercase mapping suffix: lshk / yale /
-          #                chishima / guangdong / lau / cangjie /
-          #                thai / katakana / korean. Lowercase by
-          #                convention because mapping CSV filenames
-          #                are lowercase.
-          #   • -It        Capitalised, present iff the base font is
-          #                the italic Chiron Sung. Style suffixes are
-          #                title-cased for legibility.
-          #   • -Invert    Capitalised, present iff `-v` (annotation
-          #                below base) is set. The `-f` family name
-          #                MUST include this suffix or the inverted
-          #                build collides at OS-level with its
-          #                non-inverted twin (same family + subfamily
-          #                = the OS keeps one and silently drops the
-          #                other from Font Book / Word / Pages).
-          #
-          # Output FILENAMES mirror the family name exactly (no
-          # `.invert` period separator) so the file and the font
-          # identify themselves consistently.
-          #
-          # === Inverted variants (annotation below base) ============
-          # ChironHei + LSHK (only Hei combo we ship):
-          python wing-font.py -v -y 0.3 -opt -f ChironHeiHK-Noto-lshk-B-Invert -i input_fonts/ChironHeiHK-B.ttf -a input_fonts/NotoSerif-Regular.ttf -m mappings/canto-lshk.csv -o outputs/ChironHeiHK-Noto-lshk-B-Invert -as 0.13
-          python wing-font.py -v -y 0.3 -opt -f ChironHeiHK-Noto-lshk-Invert -i input_fonts/ChironHeiHK-R.ttf -a input_fonts/NotoSerif-Regular.ttf -m mappings/canto-lshk.csv -o outputs/ChironHeiHK-Noto-lshk-Invert -as 0.13
-          # ChironSung Regular + each Cantonese romanization:
-          python wing-font.py -v -y 0.3 -opt -f ChironSungHK-Noto-lshk-Invert -i input_fonts/ChironSungHK-R.ttf -a input_fonts/NotoSerif-Regular.ttf -m mappings/canto-lshk.csv -o outputs/ChironSungHK-Noto-lshk-Invert -as 0.13
-          python wing-font.py -v -y 0.3 -opt -f ChironSungHK-Noto-yale-Invert -i input_fonts/ChironSungHK-R.ttf -a input_fonts/NotoSerif-Regular.ttf -m mappings/canto-yale.csv -o outputs/ChironSungHK-Noto-yale-Invert -as 0.13
-          python wing-font.py -v -y 0.3 -opt -f ChironSungHK-Noto-chishima-Invert -i input_fonts/ChironSungHK-R.ttf -a input_fonts/NotoSerif-Regular.ttf -m mappings/canto-chishima.csv -o outputs/ChironSungHK-Noto-chishima-Invert -as 0.13
-          python wing-font.py -v -y 0.3 -opt -f ChironSungHK-Noto-guangdong-Invert -i input_fonts/ChironSungHK-R.ttf -a input_fonts/NotoSerif-Regular.ttf -m mappings/canto-guangdong.csv -o outputs/ChironSungHK-Noto-guangdong-Invert -as 0.13
-          python wing-font.py -v -y 0.3 -opt -f ChironSungHK-Noto-lau-Invert -i input_fonts/ChironSungHK-R.ttf -a input_fonts/NotoSerif-Regular.ttf -m mappings/canto-lau.csv -o outputs/ChironSungHK-Noto-lau-Invert -as 0.13
-          python wing-font.py -v -y 0.3 -f ChironSungHK-cangjie-Invert -i input_fonts/ChironSungHK-R.ttf -a input_fonts/ChironSungHK-R.ttf -m mappings/cangjie.csv -o outputs/ChironSungHK-cangjie-Invert -as 0.25
-          # ChironSung Italic + each Cantonese romanization:
-          python wing-font.py -v -y 0.3 -opt -f ChironSungHK-Noto-lshk-It-Invert -i input_fonts/ChironSungHK-R-It.ttf -a input_fonts/NotoSerif-Regular.ttf -m mappings/canto-lshk.csv -o outputs/ChironSungHK-Noto-lshk-It-Invert -as 0.13
-          python wing-font.py -v -y 0.3 -opt -f ChironSungHK-Noto-yale-It-Invert -i input_fonts/ChironSungHK-R-It.ttf -a input_fonts/NotoSerif-Regular.ttf -m mappings/canto-yale.csv -o outputs/ChironSungHK-Noto-yale-It-Invert -as 0.13
-          python wing-font.py -v -y 0.3 -opt -f ChironSungHK-Noto-chishima-It-Invert -i input_fonts/ChironSungHK-R-It.ttf -a input_fonts/NotoSerif-Regular.ttf -m mappings/canto-chishima.csv -o outputs/ChironSungHK-Noto-chishima-It-Invert -as 0.13
-          python wing-font.py -v -y 0.3 -opt -f ChironSungHK-Noto-guangdong-It-Invert -i input_fonts/ChironSungHK-R-It.ttf -a input_fonts/NotoSerif-Regular.ttf -m mappings/canto-guangdong.csv -o outputs/ChironSungHK-Noto-guangdong-It-Invert -as 0.13
-          python wing-font.py -v -y 0.3 -opt -f ChironSungHK-Noto-lau-It-Invert -i input_fonts/ChironSungHK-R-It.ttf -a input_fonts/NotoSerif-Regular.ttf -m mappings/canto-lau.csv -o outputs/ChironSungHK-Noto-lau-It-Invert -as 0.13
-          python wing-font.py -v -y 0.3 -f ChironSungHK-cangjie-It-Invert -i input_fonts/ChironSungHK-R-It.ttf -a input_fonts/ChironSungHK-R-It.ttf -m mappings/cangjie.csv -o outputs/ChironSungHK-cangjie-It-Invert -as 0.25
-          # === Standard variants (annotation above base) ============
-          python wing-font.py -opt -f ChironSungHK-Noto-lshk -i input_fonts/ChironSungHK-R.ttf -a input_fonts/NotoSerif-Regular.ttf -m mappings/canto-lshk.csv -o outputs/ChironSungHK-Noto-lshk -as 0.13
-          python wing-font.py -opt -f ChironSungHK-Noto-yale -i input_fonts/ChironSungHK-R.ttf -a input_fonts/NotoSerif-Regular.ttf -m mappings/canto-yale.csv -o outputs/ChironSungHK-Noto-yale -as 0.13
-          python wing-font.py -opt -f ChironSungHK-Noto-chishima -i input_fonts/ChironSungHK-R.ttf -a input_fonts/NotoSerif-Regular.ttf -m mappings/canto-chishima.csv -o outputs/ChironSungHK-Noto-chishima -as 0.13
-          python wing-font.py -opt -f ChironSungHK-Noto-guangdong -i input_fonts/ChironSungHK-R.ttf -a input_fonts/NotoSerif-Regular.ttf -m mappings/canto-guangdong.csv -o outputs/ChironSungHK-Noto-guangdong -as 0.13
-          python wing-font.py -opt -f ChironSungHK-Noto-lau -i input_fonts/ChironSungHK-R.ttf -a input_fonts/NotoSerif-Regular.ttf -m mappings/canto-lau.csv -o outputs/ChironSungHK-Noto-lau -as 0.13
-          python wing-font.py -f ChironSungHK-cangjie -i input_fonts/ChironSungHK-R.ttf -a input_fonts/ChironSungHK-R.ttf -m mappings/cangjie.csv -o outputs/ChironSungHK-cangjie -as 0.25
-          python wing-font.py -opt -f ChironSungHK-Noto-lshk-It -i input_fonts/ChironSungHK-R-It.ttf -a input_fonts/NotoSerif-Regular.ttf -m mappings/canto-lshk.csv -o outputs/ChironSungHK-Noto-lshk-It -as 0.13
-          python wing-font.py -opt -f ChironSungHK-Noto-yale-It -i input_fonts/ChironSungHK-R-It.ttf -a input_fonts/NotoSerif-Regular.ttf -m mappings/canto-yale.csv -o outputs/ChironSungHK-Noto-yale-It -as 0.13
-          python wing-font.py -opt -f ChironSungHK-Noto-chishima-It -i input_fonts/ChironSungHK-R-It.ttf -a input_fonts/NotoSerif-Regular.ttf -m mappings/canto-chishima.csv -o outputs/ChironSungHK-Noto-chishima-It -as 0.13
-          python wing-font.py -opt -f ChironSungHK-Noto-guangdong-It -i input_fonts/ChironSungHK-R-It.ttf -a input_fonts/NotoSerif-Regular.ttf -m mappings/canto-guangdong.csv -o outputs/ChironSungHK-Noto-guangdong-It -as 0.13
-          python wing-font.py -opt -f ChironSungHK-Noto-lau-It -i input_fonts/ChironSungHK-R-It.ttf -a input_fonts/NotoSerif-Regular.ttf -m mappings/canto-lau.csv -o outputs/ChironSungHK-Noto-lau-It -as 0.13
-          python wing-font.py -f ChironSungHK-cangjie-It -i input_fonts/ChironSungHK-R-It.ttf -a input_fonts/ChironSungHK-R-It.ttf -m mappings/cangjie.csv -o outputs/ChironSungHK-cangjie-It -as 0.25
-          # === Script-specific annotation variants ==================
-          #
-          # Cantonese phonetics transliterated into Thai / Katakana /
-          # Hangul, paired with the matching annotation font. The
-          # <Anno> segment is "Google" (for Google Sans Thai),
-          # "NotoJP" (Noto Sans JP), or "NotoKR" (Noto Sans KR) —
-          # NOT "Noto-" like the Latin variants, because the
-          # annotation font is no longer NotoSerif.
-          #
-          # Annotation strings are short (1-3 visible chars + tone
-          # digit), so `-as 0.13` from the canto-lshk block reads
-          # fine. Tune individually if any script needs more room.
-          #
-          # Inverted variants — ChironSung Regular:
-          python wing-font.py -v -y 0.3 -opt -f ChironSungHK-Google-thai-Invert -i input_fonts/ChironSungHK-R.ttf -a 'input_fonts/GoogleSans-VariableFont_GRAD,opsz,wght.ttf' -m mappings/canto-thai.csv -o outputs/ChironSungHK-Google-thai-Invert -as 0.22
-          python wing-font.py -v -y 0.3 -opt -f ChironSungHK-NotoJP-katakana-Invert -i input_fonts/ChironSungHK-R.ttf -a input_fonts/NotoSansJP-VariableFont_wght.ttf -m mappings/canto-katakana.csv -o outputs/ChironSungHK-NotoJP-katakana-Invert -as 0.24
-          python wing-font.py -v -y 0.3 -opt -f ChironSungHK-NotoKR-korean-Invert -i input_fonts/ChironSungHK-R.ttf -a input_fonts/NotoSansKR-VariableFont_wght.ttf -m mappings/canto-korean.csv -o outputs/ChironSungHK-NotoKR-korean-Invert -as 0.24
-          # Inverted variants — ChironSung Italic:
-          python wing-font.py -v -y 0.3 -opt -f ChironSungHK-Google-thai-It-Invert -i input_fonts/ChironSungHK-R-It.ttf -a 'input_fonts/GoogleSans-VariableFont_GRAD,opsz,wght.ttf' -m mappings/canto-thai.csv -o outputs/ChironSungHK-Google-thai-It-Invert -as 0.22
-          python wing-font.py -v -y 0.3 -opt -f ChironSungHK-NotoJP-katakana-It-Invert -i input_fonts/ChironSungHK-R-It.ttf -a input_fonts/NotoSansJP-VariableFont_wght.ttf -m mappings/canto-katakana.csv -o outputs/ChironSungHK-NotoJP-katakana-It-Invert -as 0.24
-          python wing-font.py -v -y 0.3 -opt -f ChironSungHK-NotoKR-korean-It-Invert -i input_fonts/ChironSungHK-R-It.ttf -a input_fonts/NotoSansKR-VariableFont_wght.ttf -m mappings/canto-korean.csv -o outputs/ChironSungHK-NotoKR-korean-It-Invert -as 0.24
-          # Standard variants — ChironSung Regular:
-          python wing-font.py -opt -f ChironSungHK-Google-thai -i input_fonts/ChironSungHK-R.ttf -a 'input_fonts/GoogleSans-VariableFont_GRAD,opsz,wght.ttf' -m mappings/canto-thai.csv -o outputs/ChironSungHK-Google-thai -as 0.22
-          python wing-font.py -opt -f ChironSungHK-NotoJP-katakana -i input_fonts/ChironSungHK-R.ttf -a input_fonts/NotoSansJP-VariableFont_wght.ttf -m mappings/canto-katakana.csv -o outputs/ChironSungHK-NotoJP-katakana -as 0.24
-          python wing-font.py -opt -f ChironSungHK-NotoKR-korean -i input_fonts/ChironSungHK-R.ttf -a input_fonts/NotoSansKR-VariableFont_wght.ttf -m mappings/canto-korean.csv -o outputs/ChironSungHK-NotoKR-korean -as 0.24
-          # Standard variants — ChironSung Italic:
-          python wing-font.py -opt -f ChironSungHK-Google-thai-It -i input_fonts/ChironSungHK-R-It.ttf -a 'input_fonts/GoogleSans-VariableFont_GRAD,opsz,wght.ttf' -m mappings/canto-thai.csv -o outputs/ChironSungHK-Google-thai-It -as 0.22
-          python wing-font.py -opt -f ChironSungHK-NotoJP-katakana-It -i input_fonts/ChironSungHK-R-It.ttf -a input_fonts/NotoSansJP-VariableFont_wght.ttf -m mappings/canto-katakana.csv -o outputs/ChironSungHK-NotoJP-katakana-It -as 0.24
-          python wing-font.py -opt -f ChironSungHK-NotoKR-korean-It -i input_fonts/ChironSungHK-R-It.ttf -a input_fonts/NotoSansKR-VariableFont_wght.ttf -m mappings/canto-korean.csv -o outputs/ChironSungHK-NotoKR-korean-It -as 0.24
-          # === Hero sample font =====================================
-          #
-          # Tiny 8-char font (~20-30 KB) used to render the home-page
-          # hero text. The mapping CSV contains only the characters
-          # of the chosen lyric line so the subsetter produces the
-          # smallest possible output; the @font-face referencing
-          # this file in web/src/pages/Home.tsx loads in well under
-          # 100ms on any connection, with no perceptible LCP hit.
-          #
-          # If the hero text changes, edit python/mappings/hero-sample.csv
-          # (add the new chars + LSHK annotations) and let the next CI
-          # run rebuild this file. The Home.tsx hero references it by
-          # the family name `ChironSungHK-hero-sample`.
-          python wing-font.py -opt -f ChironSungHK-hero-sample -i input_fonts/ChironSungHK-R.ttf -a input_fonts/NotoSerif-Regular.ttf -m mappings/hero-sample.csv -o outputs/ChironSungHK-hero-sample -as 0.13
-          # === Taiwanese / Southern Min (河洛話) showcase ===========
-          #
-          # The first non-Cantonese dialect surfaced on the site. Base
-          # CJK font is Noto Sans TC (the site's first sans-serif
-          # showcase base); the romanization is set in Huninn
-          # (jf-openhuninn), chosen because it carries every Tâi-lô /
-          # POJ combining tone mark plus the nasal ⁿ (U+207F) and the
-          # POJ o͘ dot (U+0358). The <Anno> segment is therefore
-          # "Huninn".
-          #
-          # Two tone-marked schemes are showcased, mirroring the
-          # LSHK / Yale pair on the Cantonese side:
-          #   • tailo — Tâi-lô   (台羅),  diacritic tones
-          #   • poj   — Pe̍h-ōe-jī (白話字), diacritic tones
-          # The numeric-tone CSVs (taigi-tl/tlpa/poj/bp) ship to the
-          # in-browser /generate flow via web/scripts/sync-python.mjs
-          # but aren't pre-built here.
-          # Data source: AlanJui/Piau-Im + AlanJui/rime-tlpa.
-          python wing-font.py -opt -f NotoSansTC-Huninn-tailo -i input_fonts/NotoSansTC-VariableFont_wght.ttf -a input_fonts/Huninn-Regular.ttf -m mappings/taigi-tl-toned.csv -o outputs/NotoSansTC-Huninn-tailo -as 0.24
-          python wing-font.py -opt -f NotoSansTC-Huninn-poj -i input_fonts/NotoSansTC-VariableFont_wght.ttf -a input_fonts/Huninn-Regular.ttf -m mappings/taigi-poj-toned.csv -o outputs/NotoSansTC-Huninn-poj -as 0.24
-          # Tiny hero-sample font (~17 KB) for the Taiwanese line that
-          # rotates into the home-page hero alongside the Cantonese one.
-          # Contains only the 7 unique chars of 「家己的歌，家己唱；家己的字，家己選。」
-          # with their Tâi-lô annotations; referenced by the @font-face
-          # `NotoSansTC-Huninn-hero-tailo` in web/src/index.css. If the
-          # hero line changes, edit python/mappings/hero-taigi.csv.
-          python wing-font.py -opt -f NotoSansTC-Huninn-hero-tailo -i input_fonts/NotoSansTC-VariableFont_wght.ttf -a input_fonts/Huninn-Regular.ttf -m mappings/hero-taigi.csv -o outputs/NotoSansTC-Huninn-hero-tailo -as 0.24
-          # === Teochew / Min Nan (潮州話) showcase ===================
-          #
-          # The second non-Cantonese dialect surfaced on the site, reusing
-          # the Taiwanese pairing: Noto Sans TC base + Huninn annotation
-          # font (Huninn carries the Pe̍h-ūe-jī diacritics — combining
-          # tilde U+0303, dot-above U+0307, diaeresis-below U+0324 — plus
-          # the nasal ⁿ U+207F). <Anno> segment is "Huninn".
-          #
-          # Two schemes are showcased, mirroring the LSHK / Yale pair on
-          # the Cantonese side and the tailo / poj pair on the Taiwanese
-          # side:
-          #   • pengim — Peng'im 廣東拼音 (gdpi), numeric tones — primary
-          #   • puj    — Pe̍h-ūe-jī / Duffus, diacritic tones — historical
-          # The other four schemes (ggnn / dieghv / tlo / sinwz) ship to
-          # the in-browser /generate flow via web/scripts/sync-python.mjs
-          # but aren't pre-built here.
-          # Data source: learn-teochew/learn-teochew.github.io
-          # (teochew_scrape.json) converted with the learn-teochew/parsetc
-          # parser. See python/mappings/teochew-README.md.
-          python wing-font.py -opt -f NotoSansTC-Huninn-teochew-pengim -i input_fonts/NotoSansTC-VariableFont_wght.ttf -a input_fonts/Huninn-Regular.ttf -m mappings/teochew-gdpi.csv -o outputs/NotoSansTC-Huninn-teochew-pengim -as 0.24
-          python wing-font.py -opt -f NotoSansTC-Huninn-teochew-puj -i input_fonts/NotoSansTC-VariableFont_wght.ttf -a input_fonts/Huninn-Regular.ttf -m mappings/teochew-duffus.csv -o outputs/NotoSansTC-Huninn-teochew-puj -as 0.24
-          # Tiny hero-sample font (~17 KB) for the Teochew line that
-          # rotates into the home-page hero alongside the Cantonese and
-          # Taiwanese ones. Contains only the 7 unique chars of
-          # 「家己个歌，家己唱；家己个字，家己揀。」 with their Peng'im
-          # annotations; referenced by the @font-face
-          # `NotoSansTC-Huninn-hero-pengim` in web/src/index.css. If the
-          # hero line changes, edit python/mappings/hero-teochew.csv.
-          python wing-font.py -opt -f NotoSansTC-Huninn-hero-pengim -i input_fonts/NotoSansTC-VariableFont_wght.ttf -a input_fonts/Huninn-Regular.ttf -m mappings/hero-teochew.csv -o outputs/NotoSansTC-Huninn-hero-pengim -as 0.24
+          python wing-font.py ${{ matrix.font.args }} -f ${{ matrix.font.name }} -o outputs/${{ matrix.font.name }}
+      - name: Upload font artifact
+        # One artifact per font so the Deploy job can download with
+        # `pattern: font-*` + `merge-multiple: true` and end up with a
+        # flat `fonts/` directory ready for gh-pages. Short retention
+        # because the Deploy job consumes these within minutes; the
+        # combined `wing-fonts` artifact in the Deploy job is the
+        # inspectable copy kept for 30 days.
+        uses: actions/upload-artifact@v4
+        with:
+          name: font-${{ matrix.font.name }}
+          path: |
+            python/outputs/${{ matrix.font.name }}.ttf
+            python/outputs/${{ matrix.font.name }}.woff
+          retention-days: 1
+          if-no-files-found: error
 
-      - name: Stage font outputs for deploy
-        # Collect just the .ttf/.woff files into a flat folder so the
-        # deploy action below has a clean tree to upload — no Python
-        # intermediates, no stale files from previous runs.
-        # We deliberately do NOT bundle CNAME here: the gh-pages root
-        # already owns the CNAME via web/public/CNAME shipped by
-        # `yarn deploy`, and dropping a competing CNAME inside /fonts/
-        # would be ignored anyway (GitHub Pages only honours the
-        # top-level CNAME file).
-        working-directory: .
-        run: |
-          mkdir -p fonts
-          cp python/outputs/*.ttf fonts/
-          cp python/outputs/*.woff fonts/
-          ls -lh fonts/
-      - name: Upload fonts as workflow artifact
-        # Kept as an inspectable artifact even though we now also
-        # deploy. Handy for verifying what was published and for
-        # local-side download if someone wants to grab a specific run.
+  Deploy:
+    name: Deploy /fonts/ to gh-pages
+    needs: Build
+    runs-on: ubuntu-latest
+    # Run even if some matrix entries failed — better to ship the
+    # surviving fonts than leave /fonts/ stale. `failure()` would
+    # block; `! failure()` allows partial-success + skip-on-cancel.
+    if: ${{ ! failure() }}
+    steps:
+      - name: Download all font artifacts
+        # `pattern: font-*` matches every per-font artifact uploaded
+        # by the Build matrix; `merge-multiple: true` flattens them
+        # into one directory so the deploy action sees a clean tree.
+        uses: actions/download-artifact@v4
+        with:
+          pattern: font-*
+          merge-multiple: true
+          path: fonts
+      - name: List fonts to be deployed
+        run: ls -lh fonts/
+      - name: Upload combined artifact
+        # Inspectable snapshot of the full /fonts/ tree, kept longer
+        # than the per-font artifacts in case someone wants to grab a
+        # specific run's output without re-pulling 46 individual ones.
         uses: actions/upload-artifact@v4
         with:
           name: wing-fonts
@@ -271,7 +302,7 @@ jobs:
       - name: Deploy fonts to gh-pages /fonts/
         uses: JamesIves/github-pages-deploy-action@v4
         with:
-          # Source folder we just staged.
+          # Source folder we just downloaded into.
           folder: fonts
           # Target SUBFOLDER on gh-pages — everything outside /fonts/
           # (i.e. the React app at the branch root) is untouched.
