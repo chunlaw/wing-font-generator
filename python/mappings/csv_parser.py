@@ -21,18 +21,62 @@ def get_tone(anno_str):
         return int(match.group(1))
     return 5 # 輕聲或無聲調，給予預設值以便排序
 
+def _find_problematic_entries(csv_file, cmap, char, discarded_annos_set):
+    """
+    Lazily re-scan the CSV to find which entries (single-char rows or
+    multi-char phrases) used the pronunciations being dropped for
+    ``char``. Replaces a full in-memory copy of every CSV row that we
+    used to maintain just to power this rare-branch diagnostic.
+
+    Returns ``dict[anno -> set[base_chars]]`` — the phrases / chars
+    whose annotation matches a discarded reading. Capped via the
+    caller's display logic, not here.
+    """
+    problematic = defaultdict(set)
+    try:
+        with open(csv_file, 'r', encoding='utf-8') as f:
+            for row in csv.reader(f):
+                if len(row) < 2:
+                    continue
+                base_chars = row[0]
+                anno_strs = row[1].split(' ')
+                if len(base_chars) != len(anno_strs):
+                    continue
+                # Same filter the main loop applies — skip rows with
+                # uncovered chars so the diagnostic matches what
+                # actually went into char_cnt.
+                if any(ord(c) not in cmap for c in base_chars):
+                    continue
+                for i, c in enumerate(base_chars):
+                    if c == char and anno_strs[i] in discarded_annos_set:
+                        problematic[anno_strs[i]].add(base_chars)
+    except OSError:
+        # Best-effort diagnostic: if re-opening the CSV fails we just
+        # produce an empty source attribution rather than crashing
+        # the whole pipeline.
+        pass
+    return problematic
+
+
 def load_mapping(font, csv_file):
     cmap = font.getBestCmap()
     word_mapping = {}
     char_cnt = defaultdict(lambda: defaultdict(int))
-    
+
     # raw_word_entries 用於生成最終的 "詞組" 映射 (word_mapping)
     raw_word_entries = []
-    
-    # --- [新增] ---
-    # all_csv_entries 用於追蹤所有條目(單字+詞組)，以便在丟棄註音時報告來源
-    all_csv_entries = []
-    
+
+    # NOTE: we used to also accumulate ``all_csv_entries`` here — a
+    # full list of every CSV row (~95k tuples for mandarin.csv) used
+    # only to power a rare diagnostic about which words drove a
+    # particular reading to be dropped. That cost ~5-10 MB of peak
+    # heap on the Mandarin run for a code path that fires maybe a
+    # dozen times across the whole pipeline. The diagnostic is now
+    # implemented by ``_find_problematic_entries`` above, which
+    # re-reads the CSV lazily only when a character actually exceeds
+    # MAX_CHAR_VARIANTS — a worthwhile trade for shaving allocations
+    # in Pyodide.
+
     with open(csv_file, 'r', encoding='utf-8') as f:
         reader = csv.reader(f)
         for row in reader:
@@ -41,18 +85,13 @@ def load_mapping(font, csv_file):
                 anno_str_raw = row[1]
                 anno_strs = anno_str_raw.split(' ')
                 # 詞條權重：如果第三欄是數字則取其值，否則默認為 1
-                weight = int(row[2]) if len(row) > 2 and row[2].isdigit() else 1 
+                weight = int(row[2]) if len(row) > 2 and row[2].isdigit() else 1
 
                 if True in [ord(char) not in cmap for char in base_chars]:
                     print(f"Skip {base_chars} as there is char not found in the font")
                     continue
-                
+
                 if len(base_chars) == len(anno_strs):
-                    
-                    # --- [修改] ---
-                    # 需求 1：收集所有 CSV 條目 (單字和詞組) 以便後續追蹤來源
-                    all_csv_entries.append((base_chars, anno_strs, weight))
-                    
                     if len(base_chars) > 1:
                         if len(base_chars) <= MAX_base_chars: # 只保留長度 <= MAX_base_chars 的詞組
                             MIN_WEIGHT = 1  # 可調整權重閾值
@@ -62,7 +101,7 @@ def load_mapping(font, csv_file):
                         else:
                             # 新增的列印信息：大於 MAX_base_chars 的詞組跳過
                             print(f"Skip, {len(base_chars)} is too long (>{MAX_base_chars})， word'{base_chars}'。")
-                
+
                     # 單字和字頻處理
                     for base_char, anno_str in zip(base_chars, anno_strs):
                         if anno_str != '':
@@ -82,21 +121,19 @@ def load_mapping(font, csv_file):
         if len(sorted_cnts) > MAX_CHAR_VARIANTS:
             kept_variants = sorted_cnts[:MAX_CHAR_VARIANTS]
             discarded_variants = sorted_cnts[MAX_CHAR_VARIANTS:]
-            
+
             kept_str = [f"{item[0]} (weight:{item[1]})" for item in kept_variants]
-            
-            # --- [修改] ---
+
             # 為了找出是哪些詞組 (或單字) 使用了這些被丟棄的發音
-            discarded_annos_set = {item[0] for item in discarded_variants} # 取得所有被丟棄的發音 (e.g., {'di2', 'di4'})
-            problematic_entries = defaultdict(set) # key: 被丟棄的發音, value: set(包含該發音的詞組或單字)
-            
-            # 需求 2：遍歷所有 CSV 條目 (all_csv_entries) 來查找來源，而不是只查詞組 (raw_word_entries)
-            for word, annos, _ in all_csv_entries: # <--- [核心修改]
-                for i, c in enumerate(word):
-                    if c == char and annos[i] in discarded_annos_set:
-                        # 這個詞 (word) 的第 i 個字 (c) 是當前處理的字 (char)
-                        # 且其發音 (annos[i]) 是被丟棄的發音之一
-                        problematic_entries[annos[i]].add(word)
+            # — re-scan the CSV lazily, only when this rare branch fires,
+            # rather than holding every row in memory through the whole
+            # pipeline. For mandarin.csv this branch fires ~10 times,
+            # so 10 sequential file reads is cheap relative to the
+            # memory we'd otherwise burn.
+            discarded_annos_set = {item[0] for item in discarded_variants}
+            problematic_entries = _find_problematic_entries(
+                csv_file, cmap, char, discarded_annos_set
+            )
 
             # 構建更詳細的 discarded_str
             discarded_str_detailed = []

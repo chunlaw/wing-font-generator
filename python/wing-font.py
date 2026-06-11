@@ -6,6 +6,7 @@ from chain_context_handler import buildChainSub
 from ivs_handler import buildIvs
 from liga_handler import buildLiga, DEFAULT_TRIGGER_CHAR
 from build_glyph import generate_annotated_glyphs, scale_glyphs
+import gc
 import sys
 import argparse
 from fontTools import subset
@@ -186,6 +187,14 @@ def main(
 
     word_mapping, char_mapping = load_mapping(base_font, mapping)
 
+    # ── Memory: drop CSV-parse transients before Phase 1 ─────────────
+    # load_mapping does four stable sorts in succession (each allocates
+    # a fresh list) plus builds char_cnt as a nested defaultdict that's
+    # not returned. Pyodide's GC won't reap those until something
+    # forces it; ~5-10 MB of transient state can be reclaimed before
+    # the heavy compose+build phases kick in.
+    gc.collect()
+
     if new_family_name is not None:
         # Set the new family name
         set_family_name(output_font, new_family_name)
@@ -211,6 +220,22 @@ def main(
         base_axis_location=base_axis_location,
         anno_axis_location=anno_axis_location,
     )
+
+    # ── Memory: release the annotation font ASAP ────────────────────
+    # After composition completes, anno_font + anno_font_bytes are
+    # dead weight. The GSUB build phase that follows (chain_context +
+    # liga + ivs) is the pipeline's peak-memory phase — every MB freed
+    # here is a MB the Pyodide tab doesn't have to fit alongside the
+    # in-progress GSUB tree. For a CJK annotation font that's ~10-20
+    # MB for the TTFont object + another ~10-20 MB for the raw bytes
+    # that HarfBuzz needed.
+    #
+    # `base_font` STAYS alive — Phase 3's scale_glyphs reads outlines
+    # from base_font['glyf'] to scale them down into output_font, so
+    # it's a hard dependency through the end of the pipeline.
+    anno_font.close()
+    del anno_font, anno_font_bytes
+    gc.collect()
 
     # --- Phase 2: build GSUB rules + IVS cmap supplement -----------------
     #
@@ -248,6 +273,20 @@ def main(
     buildChainSub(output_font, word_mapping, char_mapping)
     buildLiga(output_font, char_mapping, trigger_char=trigger_char)
     buildIvs(output_font, char_mapping)
+
+    # ── Memory: drop GSUB build transients before Phase 3 ───────────
+    # The Chain Context / Ligature builders allocate large intermediate
+    # rule dicts (~100k+ entries combined on Mandarin) that go out of
+    # scope when each build*() returns — but Pyodide's GC may not have
+    # collected them yet by the time scale_glyphs() starts allocating
+    # outline buffers. Forcing a sweep here keeps the two peaks from
+    # overlapping.
+    #
+    # word_mapping is also no longer needed after this point — Phase 3
+    # only reads from char_mapping. Drop the reference so the dict can
+    # be reclaimed. For mandarin.csv that's ~40k phrase entries.
+    del word_mapping
+    gc.collect()
 
     # --- Phase 3: subset + scale (the perf-critical reordering) ----------
     #
@@ -367,9 +406,11 @@ def main(
         with step_timer("WOFF save"):
             output_font.save(str(output_prefix + ".woff"))
 
-    # Close the font objects
+    # Close the font objects. `anno_font` was already closed + deleted
+    # right after Phase 1 (see the "release the annotation font ASAP"
+    # block) so it isn't repeated here — referring to it would raise
+    # NameError on every successful run.
     base_font.close()
-    anno_font.close()
     output_font.close()
 
 # 主程序入口部分保持不變
