@@ -178,8 +178,12 @@ def _find_or_create_uvs_subtable(cmap):
                 sub.uvsDict = {}
             return sub
 
-    sub = CmapSubtable.newSubtableClass(_UVS_FORMAT)()
-    sub.format = _UVS_FORMAT
+    # fontTools API note: `CmapSubtable.newSubtable(format)` constructs
+    # an instance of the right subclass and pre-sets `format` for us.
+    # Older versions of fontTools spelled this `newSubtableClass(fmt)()`
+    # — that method was renamed/removed in recent releases, so don't
+    # be tempted to bring back the old call.
+    sub = CmapSubtable.newSubtable(_UVS_FORMAT)
     sub.platformID = _UVS_PLATFORM_ID
     sub.platEncID = _UVS_PLAT_ENC_ID
     # Format-14 has no per-table language; the spec reserves the
