@@ -23,7 +23,7 @@
  *   conventional name while still being importable from JS.
  */
 
-import { copyFile, mkdir, rm, stat } from "node:fs/promises";
+import { copyFile, mkdir, rm, stat, writeFile } from "node:fs/promises";
 import { dirname, join, relative } from "node:path";
 import { fileURLToPath } from "node:url";
 
@@ -32,6 +32,13 @@ const WEB_DIR = join(HERE, "..");
 const REPO_ROOT = join(WEB_DIR, "..");
 const PYTHON_DIR = join(REPO_ROOT, "python");
 const TARGET = join(WEB_DIR, "public", "wingfont");
+// The Pyodide worker imports this JSON to know which Python modules
+// to copy into its virtual filesystem at boot. Single source of truth
+// = the MANIFEST below; this file is regenerated on every sync so the
+// worker and the manifest can never drift. Gitignored.
+const WORKER_MANIFEST_OUT = join(
+  WEB_DIR, "src", "workers", "pyodideFiles.generated.json"
+);
 
 // [source path under python/, dest path under public/wingfont/]
 //
@@ -132,6 +139,18 @@ const MANIFEST = [
     "NotoSansSC-VariableFont_wght.ttf",
   ],
   ["input_fonts/Huninn-Regular.ttf", "Huninn-Regular.ttf"],
+  // Mengshen-equivalent Mandarin pairing (普通話 pinyin). Source Han
+  // Serif + M+ 1m reproduces Mengshen's Serif product; Xiaolai + M+
+  // Rounded 1c reproduces its Handwritten product (M+ Rounded is an
+  // OFL stand-in for Mengshen's non-OFL SetoFontSP). All four are SIL
+  // OFL-1.1 and USER-SUPPLIED — drop the TTFs into python/input_fonts/
+  // under these names. sync warns "missing" and skips until they exist,
+  // so adding the rows here is safe ahead of the binaries landing.
+  // Keep in sync with BUILT_IN_BASE_FONTS / BUILT_IN_ANNO_FONTS.
+  ["input_fonts/SourceHanSerif-Regular.ttf", "SourceHanSerif-Regular.ttf"],
+  ["input_fonts/XiaolaiSC-Regular.ttf", "XiaolaiSC-Regular.ttf"],
+  ["input_fonts/mplus-1m-medium.ttf", "mplus-1m-medium.ttf"],
+  ["input_fonts/MPLUSRounded1c-Regular.ttf", "MPLUSRounded1c-Regular.ttf"],
 
   // Third-party wheels — emscripten/wasm Python packages that
   // micropip pulls in at worker boot. The filename here MUST match
@@ -196,6 +215,34 @@ async function main() {
       failed ? `, ${failed} missing/failed` : ""
     }`,
   );
+
+  // ── Worker manifest (generated) ──────────────────────────────────
+  //
+  // wingfontWorker.ts boots Pyodide and writes every entry in this
+  // list into its virtual filesystem at /home/pyodide/wingfont/.
+  // Anything that ends in .py is a module Python's import path needs
+  // to resolve; non-.py entries (font binaries, mapping CSVs,
+  // wheels) are fetched on demand later and don't belong here.
+  //
+  // We derive this list from the MANIFEST so adding a new Python
+  // module is a one-place edit. The worker imports the resulting
+  // JSON via TypeScript's `resolveJsonModule`, which type-checks the
+  // shape at build time. The file is regenerated on every sync run
+  // (npm `sync` script, invoked by both `dev` and `build`) so the
+  // worker can never see a stale list relative to public/wingfont/.
+  const pythonFiles = MANIFEST
+    .map(([, dest]) => dest)
+    .filter((dest) => dest.endsWith(".py"));
+  await mkdir(dirname(WORKER_MANIFEST_OUT), { recursive: true });
+  await writeFile(
+    WORKER_MANIFEST_OUT,
+    JSON.stringify(pythonFiles, null, 2) + "\n",
+  );
+  const relManifest = relative(WEB_DIR, WORKER_MANIFEST_OUT);
+  console.log(
+    `sync-python: wrote ${pythonFiles.length} Python module path(s) to ${relManifest}`,
+  );
+
   // Exit non-zero if anything failed so CI doesn't quietly ship a broken
   // bundle (e.g. a manifest entry that's been deleted from python/).
   if (failed > 0) process.exit(1);

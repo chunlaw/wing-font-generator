@@ -115,6 +115,27 @@ export const BUILT_IN_BASE_FONTS: BuiltInPreset[] = [
     url: "/wingfont/ChironHeiHK-B.ttf",
     filename: "ChironHeiHK-B.ttf",
   },
+  // ─ Mengshen-equivalent base fonts (普通話 pinyin) ────────────────
+  //
+  // The two base CJK fonts Mengshen-pinyin-font builds its Serif and
+  // Handwritten products on, offered here so a user can reproduce a
+  // Mengshen-style Mandarin font end-to-end. Both are SIL OFL-1.1.
+  // Pair with the matching M+ annotation font below + the Mandarin
+  // mapping (拼音) in Step 2. The TTFs are user-supplied — drop them in
+  // python/input_fonts/ under the filenames below (see the sync
+  // MANIFEST); until then these options 404, like any other preset.
+  {
+    key: "sourcehanserif-r",
+    label: "思源宋體 (Source Han Serif)",
+    url: "/wingfont/SourceHanSerif-Regular.ttf",
+    filename: "SourceHanSerif-Regular.ttf",
+  },
+  {
+    key: "xiaolai-sc",
+    label: "小賴字體 (Xiaolai)",
+    url: "/wingfont/XiaolaiSC-Regular.ttf",
+    filename: "XiaolaiSC-Regular.ttf",
+  },
 ];
 
 // ---------- Annotation fonts (the "標注字" slot in Step 1) --------
@@ -201,6 +222,26 @@ export const BUILT_IN_ANNO_FONTS: BuiltInPreset[] = [
     label: "Noto Sans KR (Hangul)",
     url: "/wingfont/NotoSansKR-VF.ttf",
     filename: "NotoSansKR-VF.ttf",
+  },
+  // ─ Mengshen-equivalent annotation fonts (普通話 pinyin Latin) ─────
+  //
+  // The pinyin (標注) faces for the two Mengshen-style products. M+ 1m
+  // is the exact font Mengshen sets its Serif product's pinyin in;
+  // pair it with Source Han Serif. M+ Rounded 1c is an OFL substitute
+  // for Mengshen's SetoFontSP (which is not OFL and not on GitHub) for
+  // the Handwritten product's pinyin; pair it with Xiaolai. Both are
+  // SIL OFL-1.1. User-supplied TTFs — see the sync MANIFEST.
+  {
+    key: "anno-mplus-1m",
+    label: "M+ 1m (拼音 Latin)",
+    url: "/wingfont/mplus-1m-medium.ttf",
+    filename: "mplus-1m-medium.ttf",
+  },
+  {
+    key: "anno-mplus-rounded",
+    label: "M+ Rounded 1c (拼音 Latin)",
+    url: "/wingfont/MPLUSRounded1c-Regular.ttf",
+    filename: "MPLUSRounded1c-Regular.ttf",
   },
 ];
 

@@ -130,6 +130,101 @@ def get_glyph_name_by_char(font, char):
     return None
 
 
+def clear_source_layout_lookups(output_font) -> int:
+    """
+    Strip the source font's existing GSUB lookups (and the feature records
+    that reference them) before our handlers append their own.
+
+    Status: AVAILABLE BUT NOT CALLED BY DEFAULT
+    -------------------------------------------
+
+    `wing-font.py` does NOT call this in its standard Phase-2 build.
+    Source-font GSUB lookups are preserved because they carry features
+    that benefit a wing-font output (see "What you would lose" below).
+
+    This function exists as an opt-in escape hatch for the rare case
+    where a source-font lookup actively interferes with annotation
+    rendering — e.g. a `locl` rule that swaps a base glyph our chain-
+    context expects, or a `liga` that consumes characters before our
+    digit-trigger ligatures can fire. If you hit such a case, call
+    this helper between Phase 1 (composition) and Phase 2 (GSUB
+    build) in `wing-font.py`. No conflict has been observed in the
+    shipped mappings so far.
+
+    Historical note
+    ---------------
+
+    An earlier version of `wing-font.py` called this unconditionally,
+    on the (incorrect) hypothesis that source GSUB lookups were
+    responsible for the "Don't know how to split GSUB lookup type 5"
+    crash on the Mandarin mapping. The actual root cause is hb.repack
+    downgrading our Type-6 chain context to Type-5 during compaction,
+    fixed independently by `USE_HARFBUZZ_REPACKER = False` at save
+    time. Empirically: clearing source GSUB alone did NOT prevent the
+    crash. Once the hb.repack disable was in place, clearing source
+    GSUB became unnecessary, so we stopped doing it.
+
+    What you would lose
+    -------------------
+
+    Source-font typography features — `aalt` (stylistic alternates),
+    `dlig` (discretionary ligatures), `liga` (e.g. English f-i / f-l),
+    `locl` (language-specific Han variants, useful for zh-Hans vs
+    zh-Hant tagged text), `ruby` (smaller variants for furigana),
+    `vert` / `vrt2` (vertical-text forms — required for CJK vertical
+    typesetting), `fwid` / `hwid` / `pwid` (width variants), `hist`
+    (historical forms). For an annotation font in horizontal Latin-
+    overlay use these mostly don't matter; for vertical CJK with
+    annotations they very much do.
+
+    What you would keep
+    -------------------
+
+    The GSUB table's structural shell — `ScriptList`, `LookupList`
+    (emptied), `FeatureList` (emptied). `register_feature_lookup`
+    expects to find a non-None ScriptList so it can append entries
+    under the appropriate script/langsys records; recreating it from
+    scratch would mean duplicating the script-net logic centralised
+    in that helper.
+
+    GPOS is left untouched — kerning, mark positioning, etc. live
+    there and are useful for the final output.
+
+    Returns the number of lookups removed, for the caller to log.
+    """
+    if "GSUB" not in output_font:
+        return 0
+    gsub = output_font["GSUB"].table
+    removed = gsub.LookupList.LookupCount if gsub.LookupList else 0
+
+    # Empty the LookupList in place (preserve the table object so our
+    # handlers can `append` to it without rebinding).
+    gsub.LookupList.Lookup = []
+    gsub.LookupList.LookupCount = 0
+
+    # Empty the FeatureList similarly. Our register_feature_lookup
+    # helper will re-create FeatureRecord entries for `ccmp` as needed.
+    gsub.FeatureList.FeatureRecord = []
+    gsub.FeatureList.FeatureCount = 0
+
+    # Detach every existing FeatureIndex pointer from each script's
+    # DefaultLangSys / LangSys records. Without this, the script-net
+    # walker in register_feature_lookup would happily re-attach our
+    # new feature record under a script whose LangSys still pointed
+    # at the OLD (now-deleted) feature indices, leaving dangling
+    # references that crash the serializer.
+    for script_record in gsub.ScriptList.ScriptRecord:
+        script = script_record.Script
+        if script.DefaultLangSys is not None:
+            script.DefaultLangSys.FeatureIndex = []
+            script.DefaultLangSys.FeatureCount = 0
+        for lang_sys_record in script.LangSysRecord:
+            lang_sys_record.LangSys.FeatureIndex = []
+            lang_sys_record.LangSys.FeatureCount = 0
+
+    return removed
+
+
 def _build_default_langsys():
     """Construct a minimal DefaultLangSys for scripts that don't have one."""
     ls = otTables.LangSys()

@@ -167,16 +167,30 @@ export const AVAILABLE_FONTS: FontSet = {
       },
     },
   },
-  // mandarin: {
-  //   lang: {
-  //     zh: '國語',
-  //   },
-  //   fonts: {
-  //     "Noto-Noto-bopomofo": {
-  //       displayName: "NotoSansTC (Bopomofo))",
-  //       name: "Noto-Noto-bopomofo",
-  //       source: `url(${import.meta.env.VITE_FONT_URL}/Noto-Noto-bopomofo.woff) format('woff')`,
-  //     }
-  //   },
-  // }
+  // Mandarin (普通話 / 國語) — the two Mengshen-equivalent products,
+  // built from the same source fonts Mengshen-pinyin-font uses (all
+  // SIL OFL-1.1): Source Han Serif + M+ 1m for the Serif face, and
+  // Xiaolai + M+ Rounded 1c for the Handwritten face (M+ Rounded is an
+  // OFL stand-in for Mengshen's non-OFL SetoFontSP). Hanyu Pinyin is
+  // the mandarin.csv mapping (full Unihan coverage, contextual 多音字
+  // disambiguation). Both .woff files are produced by the build matrix
+  // in .github/workflows/deploy-pages.yml — they go live once the
+  // source TTFs are added to python/input_fonts/ and CI rebuilds.
+  mandarin: {
+    lang: {
+      zh: "普通話",
+    },
+    fonts: {
+      "SourceHanSerif-Mplus-mandarin": {
+        displayName: "思源宋體（拼音）",
+        name: "SourceHanSerif-Mplus-mandarin",
+        source: `url(${import.meta.env.VITE_FONT_URL}/SourceHanSerif-Mplus-mandarin.woff) format('woff')`,
+      },
+      "Xiaolai-MplusRounded-mandarin": {
+        displayName: "小賴字體（拼音）",
+        name: "Xiaolai-MplusRounded-mandarin",
+        source: `url(${import.meta.env.VITE_FONT_URL}/Xiaolai-MplusRounded-mandarin.woff) format('woff')`,
+      },
+    },
+  },
 };

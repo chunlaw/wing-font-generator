@@ -159,6 +159,10 @@ jobs:
           - { name: NotoSansTC-Huninn-hero-pengim,         args: "-opt -i input_fonts/NotoSansTC-VariableFont_wght.ttf -a input_fonts/Huninn-Regular.ttf -m mappings/hero-teochew.csv -as 0.25" }
           # === Mandarin (普通話 / 國語) showcase ====================
           - { name: NotoSansSC-Huninn-mandarin,            args: "-opt -i input_fonts/NotoSansSC-VariableFont_wght.ttf -a input_fonts/Huninn-Regular.ttf -m mappings/mandarin.csv -as 0.25" }
+          # Mengshen-equivalent products (source fonts are SIL OFL-1.1, user-supplied in input_fonts/).
+          # Serif: Source Han Serif + M+ 1m. Handwritten: Xiaolai + M+ Rounded 1c (OFL stand-in for Mengshen's non-OFL SetoFontSP).
+          - { name: SourceHanSerif-Mplus-mandarin,         args: "-opt -i input_fonts/SourceHanSerif-Regular.ttf -a input_fonts/mplus-1m-medium.ttf -m mappings/mandarin.csv -as 0.25" }
+          - { name: Xiaolai-MplusRounded-mandarin,         args: "-opt -i input_fonts/XiaolaiSC-Regular.ttf -a input_fonts/MPLUSRounded1c-Regular.ttf -m mappings/mandarin.csv -as 0.25" }
 
     steps:
       - name: Check out repository code

@@ -64,6 +64,35 @@ def main(
     # (`行1`, `行2`, …) intact.
     trigger_char=DEFAULT_TRIGGER_CHAR,
 ):
+    # Sanity-check input font sizes before letting fontTools blow up
+    # with a cryptic "bad sfntVersion" error. A common failure mode
+    # is the input download silently returning an error page (e.g.
+    # `404: Not Found` saved with a .ttf extension), which TTFont
+    # would crash on at table-parse time with no hint that the file
+    # is just a tiny text blob. Any legitimate base/annotation font
+    # is >> 1 KiB; flagging anything smaller catches the
+    # download-broke-but-saved-anyway case cleanly.
+    import os as _os
+    for label, path in (("base font", base_font_file),
+                        ("annotation font", anno_font_file)):
+        try:
+            size = _os.path.getsize(path)
+        except OSError as e:
+            raise SystemExit(f"Cannot read {label} {path!r}: {e}") from e
+        if size < 1024:
+            head = ""
+            try:
+                with open(path, "rb") as f:
+                    head = f.read(64).decode("utf-8", errors="replace")
+            except OSError:
+                pass
+            raise SystemExit(
+                f"{label.capitalize()} {path!r} is only {size} byte(s) — "
+                f"this almost certainly isn't a real TTF. "
+                f"Did the download fail and save an error page? "
+                f"First bytes: {head!r}"
+            )
+
     # Load the fonts and mapping.
     base_font = TTFont(base_font_file)
     anno_font = TTFont(anno_font_file)
@@ -184,16 +213,36 @@ def main(
     )
 
     # --- Phase 2: build GSUB rules + IVS cmap supplement -----------------
-    # GSUB rules first: chain context for word-level disambiguation,
+    #
+    # We DELIBERATELY do NOT strip the source font's existing GSUB
+    # lookups before adding ours. They carry genuinely useful features
+    # — `locl` (language-specific Han variants for zh-Hans vs zh-Hant
+    # readers), `vert` / `vrt2` (vertical-text forms for CJK vertical
+    # typesetting), `ruby` (smaller variants used in furigana), `liga`
+    # (source's own typography ligatures) — and there is no good
+    # reason to drop them in our output. Earlier diagnoses suspected
+    # them of causing the "Don't know how to split GSUB lookup type 5"
+    # crash on the Mandarin mapping, but the root cause turned out to
+    # be hb.repack's Type 6 → Type 5 lookup downgrade (see Phase 4's
+    # `USE_HARFBUZZ_REPACKER = False`), not the source lookups at all.
+    #
+    # If a future user reports an actual lookup-interaction problem
+    # (e.g. source `locl` swapping a glyph our chain context expects),
+    # `utils.clear_source_layout_lookups` is available as an opt-in
+    # escape hatch — it preserves the GSUB structural shell so our
+    # handlers can still register into it cleanly. Not wired in by
+    # default because no such conflict has been observed.
+    #
+    # Step 2a — GSUB rules: chain context for word-level disambiguation,
     # then per-character ligature substitution under `ccmp`. Both
     # families build into the same `ccmp` lookup family — see the
     # docstrings in chain_context_handler.py / liga_handler.py for why.
     #
-    # IVS last: cmap format-14 lives outside GSUB entirely, so it can't
-    # interfere with the ccmp lookups we just built. It supplements
-    # them with a zero-width `<base> + <VS17+N>` path for users on
-    # IMEs that expose Variation Selectors (Japanese IMEs, macOS
-    # Character Viewer, Adobe Glyphs panel). The existing
+    # Step 2b — IVS: cmap format-14 lives outside GSUB entirely, so it
+    # can't interfere with the ccmp lookups we just built. It
+    # supplements them with a zero-width `<base> + <VS17+N>` path for
+    # users on IMEs that expose Variation Selectors (Japanese IMEs,
+    # macOS Character Viewer, Adobe Glyphs panel). The existing
     # digit-suffix and 丅+numeral paths in liga_handler stay as
     # human-readable fallbacks for users without VS input.
     buildChainSub(output_font, word_mapping, char_mapping)
@@ -283,6 +332,34 @@ def main(
     # zlib. CLI callers (.github/workflows/build-fonts.yml) keep the
     # default skip_woff=False so the workflow's downstream cp/deploy
     # steps still find a .woff next to the .ttf.
+    #
+    # ── Why disable hb.repack on save ───────────────────────────────
+    # fontTools' default serializer for GSUB/GPOS calls into HarfBuzz's
+    # repacker (uharfbuzz.repack) for compactness. For very large GSUB
+    # tables (Mandarin pinyin: ~40k chain context + ~140k ligature
+    # rules) hb.repack runs out of resolution moves and raises
+    # `RepackerError`. As part of its attempt, hb.repack DOWNGRADES some
+    # of our Type 6 (Chain Context Substitution) lookups to Type 5
+    # (Context Substitution) — valid because the rules have empty
+    # backtrack/lookahead, but a no-op-and-a-half: fontTools' fallback
+    # `splitOverflowingSubtable` doesn't implement Type-5 splitting and
+    # the recovery loop spins forever logging "Don't know how to split
+    # GSUB lookup type 5". The user has to Ctrl+C.
+    #
+    # Disabling hb.repack here forces fontTools' pure-Python serializer
+    # (`OTTableWriter.getAllData()`), which handles overflow by wrapping
+    # lookups in OpenType Extension format (Type 7 with 32-bit offsets)
+    # instead of by splitting or downgrading. Slower than hb.repack on
+    # paper (~10-20% over the whole save) but never trips the Type-5
+    # path. For small / medium mappings (Cantonese / Cangjie) it makes
+    # no observable difference; for the Mandarin mapping it's the
+    # difference between "saves in ~5 s" and "hangs forever."
+    #
+    # If a future fontTools release teaches the splitter how to handle
+    # Type 5, this can be removed without changing the rest of the
+    # pipeline.
+    from fontTools.ttLib.tables.otBase import USE_HARFBUZZ_REPACKER
+    output_font.cfg[USE_HARFBUZZ_REPACKER] = False
     with step_timer("TTF save"):
         output_font.save(str(output_prefix) + ".ttf")
     if not skip_woff:
