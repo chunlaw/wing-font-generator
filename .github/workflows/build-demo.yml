@@ -1,13 +1,8 @@
 name: Demo Build
+# PR-only validation gate. Pushes to main are built and published by
+# deploy-pages.yml, so building again here on push would be redundant.
+# This still catches build / sync-python / type errors before a PR merges.
 on:
-  push:
-    # Trigger on web-app changes or on Python changes (since the sync
-    # step bundles Python into the static asset directory and we want
-    # to catch incompatible refactors before they ship).
-    paths:
-      - 'web/**'
-      - 'python/**'
-      - '.github/workflows/build-demo.yml'
   pull_request:
     paths:
       - 'web/**'

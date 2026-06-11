@@ -1,153 +1,102 @@
-name: Fonts Generation
+name: Deploy to GitHub Pages
 
-# Builds the production fonts (46 entries as of the SC + Mandarin
-# addition) in parallel via a matrix strategy, then deploys them to
-# the `fonts/` subfolder of the `gh-pages` branch — i.e. served at
-# https://wing-fonts.chunlaw.io/fonts/X.{ttf,woff}.
+# Single source of truth for publishing https://wing-fonts.chunlaw.io.
 #
-# Architecture
-# ------------
-# Job 1 (Build) — strategy.matrix with one entry per font. Each slot
-#   is its own runner: checkout + pip-install (cached) + one
-#   `python wing-font.py …` invocation + upload-artifact. With 46
-#   entries the matrix runs ~20 in parallel on GitHub-hosted runners
-#   (free-tier concurrency cap), so wall-clock per workflow is
-#   ~ceil(46 / 20) × per-font-build ≈ 3-5 minutes vs the old single-
-#   job ~25-40 minutes.
+# Why this replaced the old branch-based deploy
+# ----------------------------------------------
+# Previously the site shipped in two places, both pushing to the
+# `gh-pages` BRANCH:
+#   * `yarn deploy` (web/)        -> gh-pages root  (React app)
+#   * build-fonts.yml            -> gh-pages /fonts/ (46 ttf+woff)
 #
-# Job 2 (Deploy) — depends on Build, runs once. Downloads every
-#   `font-*` artifact into a flat `fonts/` directory and force-pushes
-#   that directory into gh-pages /fonts/ via JamesIves.
+# A plain `git clone` fetches EVERY branch, so the ~150 MB of generated
+# fonts living on gh-pages landed in every contributor's `.git` — the
+# repo cloned far larger than its source warranted. `single-commit`
+# kept history flat but couldn't stop each clone pulling the current
+# snapshot.
 #
-# `fail-fast: false` is set on the Build matrix so one font's failure
-# never cancels the other 45. The Deploy job has `if: ${{ ! failure() }}`
-# so a partial set still ships when a single font breaks — preferable
-# to a fully-stale /fonts/ when most fonts built fine.
+# GitHub Pages' Actions deployment (actions/deploy-pages) serves an
+# uploaded ARTIFACT instead of a branch. The built site is never stored
+# as git objects, so once the gh-pages branch is deleted a clone
+# contains only source. That is the whole point of this migration.
 #
-# Coexistence with `yarn deploy`
-# ------------------------------
-# `yarn deploy` (from web/) writes to the gh-pages branch ROOT —
-# index.html, /assets/, /favicon.ico, etc. This workflow writes to
-# gh-pages /fonts/ only (via `target-folder: fonts`). Different
-# paths, no collision.
+# Trade-off it forces
+# -------------------
+# An artifact deploy replaces the ENTIRE site each run, so every deploy
+# must carry BOTH the React app and all 46 fonts — they can no longer
+# ship independently. To keep web-only pushes fast we CACHE the built
+# fonts keyed on a hash of their inputs (python/**). Fonts only rebuild
+# (via the same parallel matrix as before) when those inputs change;
+# otherwise they're restored from cache in seconds.
 #
-# Both writers force-push a SINGLE COMMIT per deploy so the gh-pages
-# branch tree stays at "current snapshot" size — no history
-# accumulation, no stale-hashed-asset bloat, fast checkout for
-# GitHub's auto pages-build-deployment workflow:
-#
-#   * `single-commit: true` here resets gh-pages history to one
-#     commit containing the current state after JamesIves
-#     cleans+copies /fonts/.
-#   * `yarn deploy` runs `gh-pages --no-history --remove '{assets,wingfont}/**'`
-#     which does the equivalent on the web side: clean replace of the
-#     two subdirs the React build owns, leave /fonts/ alone,
-#     force-push one commit.
-#
-# Coexistence safety:
-#   * `clean: true` here is scoped to `target-folder` (`fonts/`), so
-#     this workflow never touches the React app at the root.
-#   * `yarn deploy`'s `--remove "{assets,wingfont}/**"` (not the
-#     default `--remove '.'`) means it never wipes /fonts/.
-#
-# The remaining race window — both workflows pushing within the same
-# few seconds — is mitigated by the workflow-level `concurrency`
-# group below (serialises CI pushes of THIS workflow) and by the
-# actions retrying on non-fast-forward. With single-commit on both
-# sides, the retry logic re-fetches the latest state before the
-# force-push, so the worst case is "second push waits briefly and
-# tries again".
+# Job graph
+# ---------
+#   probe-font-cache  -> is the fonts cache already populated?
+#   build-fonts       -> [matrix] rebuild 46 fonts        (only on cache miss)
+#   collect-fonts     -> flatten + save cache             (only on cache miss)
+#   build-web         -> vite build (parallel to fonts)
+#   deploy            -> web dist + fonts/ -> Pages artifact -> deploy
 
 on:
   push:
-    # Avoid spending CI minutes on web-only changes — fonts only need
-    # to rebuild when the Python pipeline or a mapping CSV moves.
-    paths:
-      - 'python/**'
-      - '.github/workflows/build-fonts.yml'
+    branches: [main]
   workflow_dispatch:
 
+# Required by actions/deploy-pages: `pages: write` to publish and
+# `id-token: write` for the OIDC token the deploy step exchanges.
 permissions:
-  # Needed for the gh-pages push (Deploy job only, but applies to all
-  # jobs in this workflow).
-  contents: write
+  contents: read
+  pages: write
+  id-token: write
 
-# Serialise concurrent workflow runs so two pushes never race each
-# other on gh-pages. `cancel-in-progress: false` means a newer run
-# waits for the older one rather than interrupting it — important
-# because we don't want a half-uploaded /fonts/ on the live branch.
-# Matrix entries WITHIN a single run still parallelise; this only
-# serialises runs of the workflow against each other.
+# Standard Pages concurrency group. cancel-in-progress:false so a newer
+# push waits for an in-flight deploy rather than leaving Pages half-set.
 concurrency:
-  group: gh-pages-fonts
+  group: pages
   cancel-in-progress: false
 
 jobs:
-  Build:
-    # Display name includes the font so each matrix slot shows as
-    # e.g. "Build (ChironSungHK-Noto-lshk)" in the Actions UI —
-    # makes the 46-row workflow run easy to scan for failures.
+  # ── Decide whether the fonts need rebuilding ───────────────────────
+  # lookup-only restore: checks the cache WITHOUT downloading it, just
+  # to read cache-hit. The key folds in every font input plus this
+  # workflow file (so editing the matrix invalidates the cache).
+  probe-font-cache:
+    runs-on: ubuntu-latest
+    outputs:
+      cache-hit: ${{ steps.probe.outputs.cache-hit }}
+      key: ${{ steps.key.outputs.key }}
+    steps:
+      - name: Check out repository code
+        uses: actions/checkout@v4
+      - name: Compute fonts cache key
+        id: key
+        run: echo "key=fonts-${{ hashFiles('python/**', '.github/workflows/deploy-pages.yml') }}" >> "$GITHUB_OUTPUT"
+      - name: Probe fonts cache
+        id: probe
+        uses: actions/cache/restore@v4
+        with:
+          path: fonts
+          key: ${{ steps.key.outputs.key }}
+          lookup-only: true
+
+  # ── Build the 46 fonts (only when the cache is cold) ───────────────
+  # Identical matrix to the retired build-fonts.yml: one runner per
+  # font, fail-fast:false, max-parallel:20. Per-font artifacts are
+  # consumed by collect-fonts below.
+  build-fonts:
+    needs: probe-font-cache
+    if: needs.probe-font-cache.outputs.cache-hit != 'true'
     name: Build (${{ matrix.font.name }})
     runs-on: ubuntu-latest
     defaults:
       run:
         working-directory: python
     strategy:
-      # See top-of-file comment for the fail-fast rationale.
       fail-fast: false
-      # `max-parallel: 20` matches GitHub's free-tier concurrency cap
-      # and documents the intent. Higher accounts (Pro/Team/Enterprise)
-      # can raise this; lower this if you ever want to be polite about
-      # CI-minute consumption on a public org.
       max-parallel: 20
       matrix:
-        # Each entry: name (used for -f / -o / artifact name) and the
-        # rest of the `wing-font.py` flags as a single `args` string.
-        # Sections preserve the original groupings from the
-        # sequential script — same naming convention, same `-as` per
-        # script, same `-v -y 0.3` for inverted variants, same
-        # `-opt` everywhere except cangjie (which would self-subset
-        # since its annotation IS the base font).
-        #
-        # ─ Naming convention (applies to every entry below) ───────
-        #
-        # Output font names follow `<Base>-<Anno>-<mapping>[-It][-Invert]`:
-        #   • <Base>     ChironSungHK or ChironHeiHK (+ -B for Bold),
-        #                or NotoSansTC / NotoSansSC for the showcase
-        #                pairings.
-        #   • <Anno>     Noto (for NotoSerif Latin annotation),
-        #                Google (for Google Sans Thai),
-        #                NotoJP / NotoKR (for the JP / KR Noto Sans),
-        #                Huninn (for Tâi-lô / POJ / Teochew / Mandarin).
-        #                Cangjie has no <Anno> segment because the
-        #                annotation is the base font itself.
-        #   • <mapping>  Lowercase mapping suffix matching the CSV
-        #                filename: lshk / yale / chishima / guangdong /
-        #                lau / cangjie / thai / katakana / korean /
-        #                tailo / poj / teochew-pengim / teochew-puj /
-        #                mandarin.
-        #   • -It        Capitalised, present iff the base font is
-        #                the italic Chiron Sung.
-        #   • -Invert    Capitalised, present iff `-v` (annotation
-        #                below base) is set. The `-f` family name
-        #                MUST include this suffix or the inverted
-        #                build collides at OS-level with its
-        #                non-inverted twin.
-        #
-        # ─ Annotation scale (`-as`) convention ────────────────────
-        #
-        # `-as` is UPM-INDEPENDENT (normalized in build_glyph.py):
-        # the value is a fraction of the OUTPUT em, so the SAME
-        # number renders at the SAME visual size no matter what
-        # unitsPerEm the annotation font uses.
-        #   • 0.27 — Latin (NotoSerif): caps fill the band above the
-        #            base (~0.19 em cap-height).
-        #   • 0.25 — Cangjie (CJK radicals fill the em, so slightly
-        #            smaller); Huninn for Tâi-lô / POJ / Teochew /
-        #            Mandarin (Latin letters + combining tone marks).
-        #   • 0.24 — Katakana / Korean.
-        #   • 0.22 — Thai (held smaller to leave headroom for vowel
-        #            + tone-mark stacks).
+        # See the retired build-fonts.yml history for the full naming /
+        # -as / -opt conventions behind each entry.
         font:
           # === Inverted variants — ChironHei + LSHK ================
           - { name: ChironHeiHK-Noto-lshk-B-Invert,        args: "-v -y 0.3 -opt -i input_fonts/ChironHeiHK-B.ttf  -a input_fonts/NotoSerif-Regular.ttf -m mappings/canto-lshk.csv -as 0.27" }
@@ -199,34 +148,16 @@ jobs:
           - { name: ChironSungHK-NotoJP-katakana-It,       args: "-opt -i input_fonts/ChironSungHK-R-It.ttf -a input_fonts/NotoSansJP-VariableFont_wght.ttf -m mappings/canto-katakana.csv -as 0.24" }
           - { name: ChironSungHK-NotoKR-korean-It,         args: "-opt -i input_fonts/ChironSungHK-R-It.ttf -a input_fonts/NotoSansKR-VariableFont_wght.ttf -m mappings/canto-korean.csv -as 0.24" }
           # === Hero sample font ====================================
-          # Tiny ~25KB font used to render the home-page hero text.
-          # Mapping CSV contains only the chars of the hero phrase.
-          # @font-face referenced from web/src/index.css as
-          # `ChironSungHK-hero-sample`. Edit mappings/hero-sample.csv
-          # when the hero text changes.
           - { name: ChironSungHK-hero-sample,              args: "-opt -i input_fonts/ChironSungHK-R.ttf -a input_fonts/NotoSerif-Regular.ttf -m mappings/hero-sample.csv -as 0.27" }
           # === Taiwanese / Southern Min (河洛話) showcase ===========
-          # Noto Sans TC base + Huninn (carries every Tâi-lô / POJ
-          # combining tone mark + nasal ⁿ + POJ o͘ dot). Two
-          # tone-marked schemes (tailo, poj) + hero-tailo.
-          # Data source: AlanJui/Piau-Im + AlanJui/rime-tlpa.
           - { name: NotoSansTC-Huninn-tailo,               args: "-opt -i input_fonts/NotoSansTC-VariableFont_wght.ttf -a input_fonts/Huninn-Regular.ttf -m mappings/taigi-tl-toned.csv -as 0.25" }
           - { name: NotoSansTC-Huninn-poj,                 args: "-opt -i input_fonts/NotoSansTC-VariableFont_wght.ttf -a input_fonts/Huninn-Regular.ttf -m mappings/taigi-poj-toned.csv -as 0.25" }
           - { name: NotoSansTC-Huninn-hero-tailo,          args: "-opt -i input_fonts/NotoSansTC-VariableFont_wght.ttf -a input_fonts/Huninn-Regular.ttf -m mappings/hero-taigi.csv -as 0.25" }
           # === Teochew / Min Nan (潮州話) showcase ==================
-          # Reuses the Noto Sans TC + Huninn pairing. Two schemes
-          # (pengim numeric-tone, puj diacritic-tone) + hero-pengim.
-          # Data source: learn-teochew + parsetc.
           - { name: NotoSansTC-Huninn-teochew-pengim,      args: "-opt -i input_fonts/NotoSansTC-VariableFont_wght.ttf -a input_fonts/Huninn-Regular.ttf -m mappings/teochew-gdpi.csv -as 0.25" }
           - { name: NotoSansTC-Huninn-teochew-puj,         args: "-opt -i input_fonts/NotoSansTC-VariableFont_wght.ttf -a input_fonts/Huninn-Regular.ttf -m mappings/teochew-duffus.csv -as 0.25" }
           - { name: NotoSansTC-Huninn-hero-pengim,         args: "-opt -i input_fonts/NotoSansTC-VariableFont_wght.ttf -a input_fonts/Huninn-Regular.ttf -m mappings/hero-teochew.csv -as 0.25" }
           # === Mandarin (普通話 / 國語) showcase ====================
-          # Noto Sans SC base + Huninn anno + numeric-tone Hanyu Pinyin.
-          # The mapping is ~95k rows (full CJK ideograph range), so
-          # this single entry takes longer to build than any other
-          # font in the matrix — but in parallel that's irrelevant
-          # for wall-clock since other entries finish concurrently.
-          # Data source: Unihan kMandarin + CC-CEDICT.
           - { name: NotoSansSC-Huninn-mandarin,            args: "-opt -i input_fonts/NotoSansSC-VariableFont_wght.ttf -a input_fonts/Huninn-Regular.ttf -m mappings/mandarin.csv -as 0.25" }
 
     steps:
@@ -235,32 +166,20 @@ jobs:
       - name: Setup Python environment
         uses: actions/setup-python@v5
         with:
-            python-version: '3.12'
-            architecture: 'x64'
-            cache: 'pip'
-            cache-dependency-path: ./python/requirements.txt
+          python-version: '3.12'
+          architecture: 'x64'
+          cache: 'pip'
+          cache-dependency-path: ./python/requirements.txt
       - name: Install dependencies
         run: |
           python -m pip install --upgrade pip
           pip install -r ./requirements.txt
       - name: Build font
-        # `${{ matrix.font.args }}` expands at YAML render time, so the
-        # bash command sees the literal flag string. Single quotes
-        # inside args (around the GoogleSans filename with commas)
-        # survive the substitution because they're already inside a
-        # double-quoted YAML string. `set -o xtrace` echoes the
-        # resolved command into the log for debuggability.
         run: |
           mkdir -p outputs
           set -o xtrace
           python wing-font.py ${{ matrix.font.args }} -f ${{ matrix.font.name }} -o outputs/${{ matrix.font.name }}
       - name: Upload font artifact
-        # One artifact per font so the Deploy job can download with
-        # `pattern: font-*` + `merge-multiple: true` and end up with a
-        # flat `fonts/` directory ready for gh-pages. Short retention
-        # because the Deploy job consumes these within minutes; the
-        # combined `wing-fonts` artifact in the Deploy job is the
-        # inspectable copy kept for 30 days.
         uses: actions/upload-artifact@v4
         with:
           name: font-${{ matrix.font.name }}
@@ -270,54 +189,114 @@ jobs:
           retention-days: 1
           if-no-files-found: error
 
-  Deploy:
-    name: Deploy /fonts/ to gh-pages
-    needs: Build
+  # ── Flatten the per-font artifacts and warm the cache ──────────────
+  # Runs only on a cache miss AND only if every matrix leg succeeded
+  # (default needs semantics). That guard is deliberate: saving a
+  # PARTIAL font set would poison the cache and the missing fonts would
+  # never rebuild on later runs. A failed font therefore fails the
+  # whole deploy instead of silently shipping an incomplete /fonts/.
+  collect-fonts:
+    needs: [probe-font-cache, build-fonts]
+    if: needs.probe-font-cache.outputs.cache-hit != 'true'
     runs-on: ubuntu-latest
-    # Run even if some matrix entries failed — better to ship the
-    # surviving fonts than leave /fonts/ stale. `failure()` would
-    # block; `! failure()` allows partial-success + skip-on-cancel.
-    if: ${{ ! failure() }}
     steps:
       - name: Download all font artifacts
-        # `pattern: font-*` matches every per-font artifact uploaded
-        # by the Build matrix; `merge-multiple: true` flattens them
-        # into one directory so the deploy action sees a clean tree.
         uses: actions/download-artifact@v4
         with:
           pattern: font-*
           merge-multiple: true
           path: fonts
-      - name: List fonts to be deployed
+      - name: List fonts
         run: ls -lh fonts/
-      - name: Upload combined artifact
-        # Inspectable snapshot of the full /fonts/ tree, kept longer
-        # than the per-font artifacts in case someone wants to grab a
-        # specific run's output without re-pulling 46 individual ones.
+      - name: Save fonts cache
+        uses: actions/cache/save@v4
+        with:
+          path: fonts
+          key: ${{ needs.probe-font-cache.outputs.key }}
+
+  # ── Build the React app (parallel to the fonts) ────────────────────
+  build-web:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: web
+    steps:
+      - name: Check out repository code
+        uses: actions/checkout@v4
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'yarn'
+          cache-dependency-path: web/yarn.lock
+      - name: Install dependencies
+        run: yarn install --frozen-lockfile
+      - name: Type-check + Vite build
+        # `yarn build` also runs `yarn sync` (sync-python.mjs), so this
+        # mirrors Python sources into dist/wingfont for the Pyodide
+        # worker — same as the old build-demo step.
+        run: yarn build
+      - name: Upload web dist
         uses: actions/upload-artifact@v4
         with:
-          name: wing-fonts
-          path: fonts/
-          retention-days: 30
-      - name: Deploy fonts to gh-pages /fonts/
-        uses: JamesIves/github-pages-deploy-action@v4
+          name: web-dist
+          path: web/dist
+          retention-days: 1
+          if-no-files-found: error
+
+  # ── Assemble the site and publish it ───────────────────────────────
+  # !cancelled() + per-need result checks (rather than success()) so the
+  # job still runs on the cache-HIT path, where build-fonts/collect-fonts
+  # are SKIPPED. It will not run if build-web failed or if a font build
+  # failed on a cache-miss (collect-fonts would then not be 'success').
+  deploy:
+    needs: [probe-font-cache, build-web, collect-fonts]
+    if: >-
+      ${{ !cancelled()
+          && needs.build-web.result == 'success'
+          && (needs.collect-fonts.result == 'success' || needs.collect-fonts.result == 'skipped') }}
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deploy.outputs.page_url }}
+    steps:
+      - name: Download web dist
+        uses: actions/download-artifact@v4
         with:
-          # Source folder we just downloaded into.
-          folder: fonts
-          # Target SUBFOLDER on gh-pages — everything outside /fonts/
-          # (i.e. the React app at the branch root) is untouched.
-          target-folder: fonts
-          branch: gh-pages
-          # `clean: true` here is scoped to the target-folder, so it
-          # wipes only /fonts/ (lets us drop renamed/removed fonts
-          # cleanly). The React app at the root is safe.
-          clean: true
-          commit-message: "fonts: update from ${{ github.sha }}"
-          # `single-commit: true` rewrites gh-pages history to one
-          # commit per deploy, containing the resulting tree (web app
-          # at root + new fonts at /fonts/). Branch size = current
-          # snapshot, forever — see the comment block at the top of
-          # this file for why we converged on this. force-push is
-          # implicit with single-commit (you can't rewrite history
-          # without it); the action retries on non-fast-forward.
-          single-commit: true
+          name: web-dist
+          path: site
+      - name: Restore fonts from cache
+        uses: actions/cache/restore@v4
+        with:
+          path: fonts
+          key: ${{ needs.probe-font-cache.outputs.key }}
+          # On the cache-miss path collect-fonts saved this exact key
+          # moments ago; on the cache-hit path it was already warm.
+          fail-on-cache-miss: true
+      - name: Place fonts under the site at /fonts/
+        # VITE_FONT_URL = https://wing-fonts.chunlaw.io/fonts, so the
+        # fonts must live at the served path /fonts/.
+        run: |
+          mkdir -p site/fonts
+          cp -v fonts/* site/fonts/
+      - name: Ensure CNAME and .nojekyll are present
+        # CNAME ships from web/public so the custom domain survives each
+        # deploy. The Actions artifact path does not run Jekyll, but
+        # .nojekyll is kept as belt-and-braces for the _-prefixed Python
+        # package files mirrored into wingfont/.
+        run: |
+          echo "wing-fonts.chunlaw.io" > site/CNAME
+          touch site/.nojekyll
+      - name: Show what will be published
+        run: |
+          echo "Top level:" && ls -la site/
+          echo "Fonts:" && ls -lh site/fonts/ | head
+      - name: Configure Pages
+        uses: actions/configure-pages@v5
+      - name: Upload Pages artifact
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: site
+      - name: Deploy to GitHub Pages
+        id: deploy
+        uses: actions/deploy-pages@v4
