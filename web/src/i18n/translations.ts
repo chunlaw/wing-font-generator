@@ -101,6 +101,7 @@ export type TranslationKey =
   | "ack.mandarin.pinyindata"
   | "ack.mandarin.phrasepinyindata"
   | "ack.mandarin.unihan"
+  | "ack.mandarin.moedict"
   | "ack.license"
   | "ack.cta.showcase"
   // Home
@@ -385,10 +386,11 @@ export const TRANSLATIONS: Record<Language, Record<TranslationKey, string>> = {
     "ack.canto.kodensha": "粵語羅馬拼音轉換工具。",
     "ack.mandarin.title": "普通話／國語　字音資料",
     "ack.mandarin.body":
-      "普通話字音資料全部取自 mozillazg 採用 MIT 授權嘅開源資料，並非來自任何 OFL 字型項目。每字嘅預設讀音依照 Unicode Unihan 資料庫嘅 kMandarin 欄。將拼音直接造入字形、再按上下文自動切換多音字嘅做法，最早由 Mengshen 拼音字型（OFL-1.1）開創；Wing Font 並無使用佢嘅資料檔案，但謹此鳴謝佢嘅啟發。",
-    "ack.mandarin.pinyindata": "逐字讀音資料（MIT；源自 Unihan）。",
+      "普通話（mandarin-cn）字音資料全部取自 mozillazg 採用 MIT 授權嘅開源資料，並非來自任何 OFL 字型項目；每字嘅預設讀音依照 Unicode Unihan 資料庫嘅 kMandarin 欄。新加坡同馬來西亞官方都採用普通話讀音標準，所以同 mandarin-cn 一致。台灣國語（mandarin-tw）就唔同：有 753 個單字嘅預設讀音改用台灣教育部《國語辭典》嘅標準音（例如 期 qí、危 wéi、突 tú），資料取自 g0v moedict-data。將拼音直接造入字形、再按上下文自動切換多音字嘅做法，最早由 Mengshen 拼音字型（OFL-1.1）開創；Wing Font 並無使用佢嘅資料檔案，但謹此鳴謝佢嘅啟發。",
+    "ack.mandarin.pinyindata": "普通話逐字讀音資料（MIT；源自 Unihan）。",
     "ack.mandarin.phrasepinyindata": "詞語讀音資料，用嚟做多音字上下文判斷（MIT）。",
     "ack.mandarin.unihan": "Unicode 漢字資料庫（Unihan）— 上游讀音資料。",
+    "ack.mandarin.moedict": "台灣教育部《國語辭典》字音資料，用嚟做國語（mandarin-tw）讀音（g0v moedict-data；CC BY-ND 3.0 TW）。",
     "ack.license":
       "各項資料與字型均依其原有授權條款使用；如需轉載或再發佈，請先參閱各來源之授權。",
     "ack.cta.showcase": "睇睇成品字體",
@@ -713,11 +715,14 @@ export const TRANSLATIONS: Record<Language, Record<TranslationKey, string>> = {
     "ack.canto.kodensha": "Cantonese Romanization Converter.",
     "ack.mandarin.title": "Mandarin (普通話 / 國語) — reading data",
     "ack.mandarin.body":
-      "The Mandarin reading data is built entirely from mozillazg's MIT-licensed datasets — taken from their permissive upstream, not from any OFL-licensed font project. Each character's default reading follows the Unicode Unihan database's kMandarin field. The technique of baking pinyin into the glyphs with contextual homograph disambiguation was pioneered by Mengshen-pinyin-font (OFL-1.1); Wing Font reuses none of its data files but gratefully acknowledges it as inspiration.",
-    "ack.mandarin.pinyindata": "Per-character readings (MIT; derived from Unihan).",
+      "The Mainland 普通話 reading data (mandarin-cn) is built entirely from mozillazg's MIT-licensed datasets — taken from their permissive upstream, not from any OFL-licensed font project — with each character's default reading following the Unicode Unihan database's kMandarin field. Singapore and Malaysia officially adopt the same 普通話 standard, so they share mandarin-cn. The Taiwan 國語 variant (mandarin-tw) diverges: 753 single-character default readings are re-derived from the Taiwan Ministry of Education's 《國語辭典》 (e.g. 期 qí, 危 wéi, 突 tú), sourced from g0v's moedict-data. The technique of baking pinyin into the glyphs with contextual homograph disambiguation was pioneered by Mengshen-pinyin-font (OFL-1.1); Wing Font reuses none of its data files but gratefully acknowledges it as inspiration.",
+    "ack.mandarin.pinyindata":
+      "Per-character 普通話 readings (MIT; derived from Unihan).",
     "ack.mandarin.phrasepinyindata":
       "Word/phrase readings that drive contextual homograph disambiguation (MIT).",
     "ack.mandarin.unihan": "Unicode Han Database (Unihan) — upstream reading data.",
+    "ack.mandarin.moedict":
+      "Taiwan MOE 《國語辭典》 readings used for the 國語 variant (mandarin-tw), via g0v's moedict-data (CC BY-ND 3.0 TW).",
     "ack.license":
       "Each dataset and font is used under its own licence — check the upstream source before redistributing.",
     "ack.cta.showcase": "Browse the fonts",

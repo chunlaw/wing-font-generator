@@ -197,11 +197,29 @@ jobs:
           - { name: NotoSansTC-Huninn-teochew-puj,         args: "-opt -i input_fonts/NotoSansTC-VariableFont_wght.ttf -a input_fonts/Huninn-Regular.ttf -m mappings/teochew-duffus.csv -as 0.25" }
           - { name: Xiaolai-Huninn-hero-pengim,            args: "-opt -i input_fonts/XiaolaiSC-Regular.ttf -a input_fonts/Huninn-Regular.ttf -m mappings/hero-teochew.csv -as 0.25" }
           # === Mandarin (普通話 / 國語) showcase ====================
-          - { name: NotoSansSC-Huninn-mandarin,            args: "-opt -i input_fonts/NotoSansSC-VariableFont_wght.ttf -a input_fonts/Huninn-Regular.ttf -m mappings/mandarin.csv -as 0.25" }
+          # Two regional standards, built from the SAME annotation fonts
+          # but DIFFERENT glyph (base) + mapping pairs:
+          #   • -cn → mappings/mandarin-cn.csv on Simplified-region base
+          #     fonts (Noto Sans SC / Noto Serif SC / Xiaolai SC). The
+          #     Mainland 普通話 standard — also what Singapore / Malaysia
+          #     officially adopt.
+          #   • -tw → mappings/mandarin-tw.csv on Traditional base fonts.
+          #     The Taiwan 國語 standard — 753 single-character defaults
+          #     re-derived from the MOE 國語辭典 (e.g. 期 qī→qí, 危 wēi→wéi,
+          #     突 tū→tú). mandarin-tw.csv is a Traditional-Chinese mapping
+          #     (166 of the 753 differences are traditional-only glyphs),
+          #     so the -tw builds use Noto Sans TC and Xiaolai SC — the two
+          #     hub fonts that cover ≥95% of the common Traditional set
+          #     (Noto Sans TC 97.8%, Xiaolai SC 100%). Noto Serif SC is a
+          #     Simplified-region serif, so it ships -cn only.
+          - { name: NotoSansSC-Huninn-mandarin-cn,         args: "-opt -i input_fonts/NotoSansSC-VariableFont_wght.ttf -a input_fonts/Huninn-Regular.ttf -m mappings/mandarin-cn.csv -as 0.25" }
+          - { name: NotoSansTC-Huninn-mandarin-tw,         args: "-opt -i input_fonts/NotoSansTC-VariableFont_wght.ttf -a input_fonts/Huninn-Regular.ttf -m mappings/mandarin-tw.csv -as 0.25" }
           # Mengshen-equivalent products (source fonts are SIL OFL-1.1, user-supplied in input_fonts/).
-          # Serif: Source Han Serif + M+ 1m. Handwritten: Xiaolai + M+ Rounded 1c (OFL stand-in for Mengshen's non-OFL SetoFontSP).
-          - { name: SourceHanSerif-Mplus-mandarin,         args: "-opt -i input_fonts/SourceHanSerif-Regular.ttf -a input_fonts/mplus-1m-medium.ttf -m mappings/mandarin.csv -as 0.25" }
-          - { name: Xiaolai-MplusRounded-mandarin,         args: "-opt -i input_fonts/XiaolaiSC-Regular.ttf -a input_fonts/MPLUSRounded1c-Regular.ttf -m mappings/mandarin.csv -as 0.25" }
+          # Serif: Source Han Serif (Noto Serif SC) + M+ 1m — Simplified, -cn only.
+          # Handwritten: Xiaolai + M+ Rounded 1c (OFL stand-in for Mengshen's non-OFL SetoFontSP); Xiaolai SC covers Traditional, so it builds both -cn and -tw.
+          - { name: SourceHanSerif-Mplus-mandarin-cn,      args: "-opt -i input_fonts/SourceHanSerif-Regular.ttf -a input_fonts/mplus-1m-medium.ttf -m mappings/mandarin-cn.csv -as 0.25" }
+          - { name: Xiaolai-MplusRounded-mandarin-cn,      args: "-opt -i input_fonts/XiaolaiSC-Regular.ttf -a input_fonts/MPLUSRounded1c-Regular.ttf -m mappings/mandarin-cn.csv -as 0.25" }
+          - { name: Xiaolai-MplusRounded-mandarin-tw,      args: "-opt -i input_fonts/XiaolaiSC-Regular.ttf -a input_fonts/MPLUSRounded1c-Regular.ttf -m mappings/mandarin-tw.csv -as 0.25" }
           # === Xiaolai + Huninn family (handwritten base) ============
           # A consistent base + annotation pairing across every dialect
           # mapping the Huninn annotation font can render in Latin
@@ -223,7 +241,8 @@ jobs:
           - { name: Xiaolai-Huninn-poj,                    args: "-opt -i input_fonts/XiaolaiSC-Regular.ttf -a input_fonts/Huninn-Regular.ttf -m mappings/taigi-poj-toned.csv -as 0.25" }
           - { name: Xiaolai-Huninn-teochew-pengim,         args: "-opt -i input_fonts/XiaolaiSC-Regular.ttf -a input_fonts/Huninn-Regular.ttf -m mappings/teochew-gdpi.csv -as 0.25" }
           - { name: Xiaolai-Huninn-teochew-puj,            args: "-opt -i input_fonts/XiaolaiSC-Regular.ttf -a input_fonts/Huninn-Regular.ttf -m mappings/teochew-duffus.csv -as 0.25" }
-          - { name: Xiaolai-Huninn-mandarin,               args: "-opt -i input_fonts/XiaolaiSC-Regular.ttf -a input_fonts/Huninn-Regular.ttf -m mappings/mandarin.csv -as 0.25" }
+          - { name: Xiaolai-Huninn-mandarin-cn,            args: "-opt -i input_fonts/XiaolaiSC-Regular.ttf -a input_fonts/Huninn-Regular.ttf -m mappings/mandarin-cn.csv -as 0.25" }
+          - { name: Xiaolai-Huninn-mandarin-tw,            args: "-opt -i input_fonts/XiaolaiSC-Regular.ttf -a input_fonts/Huninn-Regular.ttf -m mappings/mandarin-tw.csv -as 0.25" }
 
     steps:
       - name: Check out repository code

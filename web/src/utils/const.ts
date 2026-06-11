@@ -84,8 +84,8 @@ export const TEMPLATES_BY_DIALECT: Record<string, string[]> = {
   ],
   // Mandarin (普通話 / 國語) samples — render with the Mandarin
   // showcase fonts (思源宋體 拼音 / 小賴字體 拼音) to see Hanyu Pinyin
-  // stacked above each character via the full-Unihan mandarin.csv
-  // mapping. Mix of 鄧麗君 / 王菲 / 羅大佑 / 周華健 / 五月天 / 朴樹
+  // stacked above each character via the full-Unihan mandarin-cn /
+  // mandarin-tw mappings. Mix of 鄧麗君 / 王菲 / 羅大佑 / 周華健 / 五月天 / 朴樹
   // / 周深 — broad coverage across 70s–2010s 國語 pop so a reader
   // of any generation lands on something familiar.
   mandarin: [
@@ -355,40 +355,50 @@ export const AVAILABLE_FONTS: FontSet = {
       },
     },
   },
-  // Mandarin (普通話 / 國語) — the two Mengshen-equivalent products,
-  // built from the same source fonts Mengshen-pinyin-font uses (all
-  // SIL OFL-1.1): Source Han Serif + M+ 1m for the Serif face, and
-  // Xiaolai + M+ Rounded 1c for the Handwritten face (M+ Rounded is an
-  // OFL stand-in for Mengshen's non-OFL SetoFontSP). Hanyu Pinyin is
-  // the mandarin.csv mapping (full Unihan coverage, contextual 多音字
-  // disambiguation). Both .woff files are produced by the build matrix
-  // in .github/workflows/deploy-pages.yml — they go live once the
-  // source TTFs are added to python/input_fonts/ and CI rebuilds.
+  // Mandarin (普通話 / 國語) — showcased in BOTH regional standards so a
+  // reader can compare the cross-strait reading differences:
+  //   • 普通話 (-cn) — mandarin-cn.csv on Simplified-region fonts. The
+  //     Mainland standard (also what Singapore / Malaysia adopt).
+  //   • 國語 (-tw) — mandarin-tw.csv on Traditional fonts. The Taiwan
+  //     standard, 753 single-character defaults re-derived from the MOE
+  //     國語辭典 (e.g. 期 qí, 危 wéi, 突 tú, 企 qì, 跌 dié).
+  // mandarin-tw.csv is a Traditional-Chinese mapping (166 of the 753
+  // differences are traditional-only glyphs), so the 國語 builds use
+  // Traditional bases: Noto Sans TC (思源黑體 台灣) for the sans face and
+  // Xiaolai SC for the handwritten face (it covers 100% of the common
+  // Traditional set despite the "SC" name). The 小賴字體 face appears in
+  // both standards — the cleanest same-face A/B of 普通話 vs 國語. The
+  // Simplified-region Noto Serif SC (思源宋體) is 普通話-only.
+  // All .woff files come from the build matrix in
+  // .github/workflows/deploy-pages.yml — they go live once the source
+  // TTFs are added to python/input_fonts/ and CI rebuilds. The
+  // Xiaolai-MplusRounded-mandarin-{cn,tw} face is also built but not
+  // surfaced here (reachable by direct /fonts/ URL).
   mandarin: {
     lang: {
-      zh: "普通話",
+      zh: "國語 / 普通話",
       en: "Mandarin",
     },
     fonts: {
-      "SourceHanSerif-Mplus-mandarin": {
-        displayName: "思源宋體（拼音）",
-        name: "SourceHanSerif-Mplus-mandarin",
-        source: `url(${import.meta.env.VITE_FONT_URL}/SourceHanSerif-Mplus-mandarin.woff) format('woff')`,
+      "NotoSansTC-Huninn-mandarin-tw": {
+        displayName: "思源黑體 台灣（拼音 · 國語）",
+        name: "NotoSansTC-Huninn-mandarin-tw",
+        source: `url(${import.meta.env.VITE_FONT_URL}/NotoSansTC-Huninn-mandarin-tw.woff) format('woff')`,
       },
-      "Xiaolai-MplusRounded-mandarin": {
-        // Disambiguating suffix added when the Xiaolai-Huninn-mandarin
-        // entry below joined the showcase — both use Xiaolai as the
-        // base but differ in the annotation typeface (M+ Rounded vs
-        // Huninn). Putting the anno name in parentheses lets a
-        // reader scanning the picker tell them apart at a glance.
-        displayName: "小賴字體（拼音 · M+ Rounded）",
-        name: "Xiaolai-MplusRounded-mandarin",
-        source: `url(${import.meta.env.VITE_FONT_URL}/Xiaolai-MplusRounded-mandarin.woff) format('woff')`,
+      "Xiaolai-Huninn-mandarin-tw": {
+        displayName: "小賴字體（拼音 · 國語）",
+        name: "Xiaolai-Huninn-mandarin-tw",
+        source: `url(${import.meta.env.VITE_FONT_URL}/Xiaolai-Huninn-mandarin-tw.woff) format('woff')`,
       },
-      "Xiaolai-Huninn-mandarin": {
-        displayName: "小賴字體（拼音 · Huninn）",
-        name: "Xiaolai-Huninn-mandarin",
-        source: `url(${import.meta.env.VITE_FONT_URL}/Xiaolai-Huninn-mandarin.woff) format('woff')`,
+      "SourceHanSerif-Mplus-mandarin-cn": {
+        displayName: "思源宋體（拼音 · 普通話）",
+        name: "SourceHanSerif-Mplus-mandarin-cn",
+        source: `url(${import.meta.env.VITE_FONT_URL}/SourceHanSerif-Mplus-mandarin-cn.woff) format('woff')`,
+      },
+      "Xiaolai-Huninn-mandarin-cn": {
+        displayName: "小賴字體（拼音 · 普通話）",
+        name: "Xiaolai-Huninn-mandarin-cn",
+        source: `url(${import.meta.env.VITE_FONT_URL}/Xiaolai-Huninn-mandarin-cn.woff) format('woff')`,
       },
     },
   },

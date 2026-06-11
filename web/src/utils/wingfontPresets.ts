@@ -453,8 +453,8 @@ export const BUILT_IN_MAPPINGS: BuiltInPreset[] = [
     filename: "cangjie.csv",
     group: "輸入法 (Chinese input)",
   },
-  // ─ Mandarin (1) ──────────────────────────────────────────────────
-  // Hanyu Pinyin in numeric-tone form (ling2, yuan2, xing1). The
+  // ─ Mandarin (2) ──────────────────────────────────────────────────
+  // Hanyu Pinyin in numeric-tone form (ling2, yuan2, xing1). Each
   // CSV is large (~95k rows, ~3 MB) because it covers the full
   // Unihan CJK ideograph range, not a curated subset like the
   // Cantonese / Taiwanese / Teochew CSVs. The in-browser pipeline
@@ -464,12 +464,24 @@ export const BUILT_IN_MAPPINGS: BuiltInPreset[] = [
   // the other showcase mappings. Pairs naturally with Noto Sans SC
   // as the base; any annotation font with Latin + digit coverage
   // works (Huninn, Noto Serif, ChironHei/Sung all fine).
+  //
+  // Two regional standards: 普通話 (Mainland China; also the standard
+  // Singapore and Malaysia adopt) and 國語 (Taiwan — 753 single-char
+  // default readings re-derived from the MOE 國語辭典, e.g. 期 qí,
+  // 危 wéi, 突 tú).
   {
-    key: "mandarin",
-    label: "拼音 (Hanyu Pinyin, 數字調)",
-    url: "/wingfont/mappings/mandarin.csv",
-    filename: "mandarin.csv",
-    group: "普通話 (Mandarin)",
+    key: "mandarin-tw",
+    label: "拼音 · 國語 (Hanyu Pinyin, 數字調)",
+    url: "/wingfont/mappings/mandarin-tw.csv",
+    filename: "mandarin-tw.csv",
+    group: "國語 / 普通話 (Mandarin)",
+  },
+  {
+    key: "mandarin-cn",
+    label: "拼音 · 普通話 (Hanyu Pinyin, 數字調)",
+    url: "/wingfont/mappings/mandarin-cn.csv",
+    filename: "mandarin-cn.csv",
+    group: "國語 / 普通話 (Mandarin)",
   },
 ];
 

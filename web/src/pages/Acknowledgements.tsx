@@ -183,6 +183,11 @@ const MANDARIN_SOURCES: Source[] = [
     url: "https://www.unicode.org/charts/unihan.html",
     descKey: "ack.mandarin.unihan",
   },
+  {
+    name: "g0v / moedict-data (教育部國語辭典)",
+    url: "https://github.com/g0v/moedict-data",
+    descKey: "ack.mandarin.moedict",
+  },
 ];
 
 const Acknowledgements = () => {
