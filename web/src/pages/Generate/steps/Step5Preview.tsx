@@ -26,6 +26,7 @@ import { Code, ContentCopy } from "@mui/icons-material";
 import { Fragment, ReactNode, useEffect, useState } from "react";
 import { useGenerate } from "../GenerateContext";
 import { useTranslation } from "../../../i18n/LanguageContext";
+import Markdown from "../../../components/Markdown";
 
 /**
  * Wrap each ligature-trigger group (`字1`, `字23`, `字丅一`, …) in a
@@ -258,13 +259,18 @@ const Step5Preview = () => {
           >
             {cssSnippet}
           </Box>
-          <Typography
-            variant="caption"
-            color="text.secondary"
-            sx={{ display: "block", mt: 1.5 }}
-          >
-            {t("step5.cssSnippet.hint")}
-          </Typography>
+          {/*
+            File-placement hint. Markdown lets translators bold the
+            "same folder" recommendation and inline-code the file
+            extensions — both meaningfully easier to scan than a
+            wall of plain caption text. Wrapped in mt sx so the
+            block sits exactly where the old <Typography> did.
+          */}
+          <Box sx={{ mt: 1.5 }}>
+            <Markdown variant="compact">
+              {t("step5.cssSnippet.hint")}
+            </Markdown>
+          </Box>
           {/*
             Design-app note. Distinct from the CSS hint above because
             it applies to a totally different deployment surface
@@ -287,13 +293,16 @@ const Step5Preview = () => {
           >
             {t("step5.cssSnippet.designAppTitle")}
           </Typography>
-          <Typography
-            variant="caption"
-            color="text.secondary"
-            sx={{ display: "block" }}
-          >
+          {/*
+            Design-app rule list. Markdown lets us bold each
+            override-path category ("word-context", "digit-suffix",
+            "trigger+numeral") and the supported-app names so a
+            user skimming the dialog spots the relevant bit
+            immediately rather than reading the whole sentence.
+          */}
+          <Markdown variant="compact">
             {t("step5.cssSnippet.designAppHint")}
-          </Typography>
+          </Markdown>
         </DialogContent>
         <DialogActions>
           <Button onClick={() => setSnippetDialogOpen(false)}>

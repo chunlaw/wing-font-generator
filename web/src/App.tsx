@@ -4,7 +4,9 @@ import About from "./pages/About";
 import Acknowledgements from "./pages/Acknowledgements";
 import Home from "./pages/Home";
 import Showcase from "./pages/Main";
+import Privacy from "./pages/Privacy";
 import Specimen from "./pages/Specimen";
+import Terms from "./pages/Terms";
 import Generate from "./pages/Generate";
 
 /**
@@ -15,6 +17,8 @@ import Generate from "./pages/Generate";
  *   /showcase           → existing showcase (formerly at /)
  *   /specimen/:family   → per-font specimen page
  *   /generate           → stepped font-generation flow
+ *   /terms              → Terms & Conditions
+ *   /privacy            → Privacy Policy
  *
  * `Showcase` is the same component the old `/` route used (pages/Main.tsx).
  * Aliased on import for readability; renaming the file isn't worth the
@@ -31,6 +35,8 @@ function App() {
           <Route path="generate" element={<Generate />} />
           <Route path="specimen/:family" element={<Specimen />} />
           <Route path="showcase" element={<Showcase />} />
+          <Route path="terms" element={<Terms />} />
+          <Route path="privacy" element={<Privacy />} />
         </Route>
       </Routes>
     </BrowserRouter>

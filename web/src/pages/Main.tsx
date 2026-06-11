@@ -300,9 +300,15 @@ const FontShowcaseCard = ({
 };
 
 const msgSx: SxProps<Theme> = {
-  // Responsive: small phones get a readable 22px, scaling up to 36px
-  // on tablets+. textWrap retained so the showcase line doesn't break
-  // mid-sample.
-  fontSize: { xs: 22, sm: 28, md: 36 },
+  // Responsive: bumped up from the original 22/28/36 ramp because the
+  // annotation strokes — which render at roughly 25% of the base
+  // character height per the default `anno_scale` — became
+  // illegible at the small end (~5-6px tall on phones, ~9px on
+  // desktop). The new ramp keeps the base char comfortably scannable
+  // while pushing the annotation into the 9-12 px range where Latin
+  // letters and pinyin tone marks read cleanly without anti-aliasing
+  // mush. textWrap=nowrap keeps a single sample on one line so
+  // rotation between lyrics doesn't reflow the row height.
+  fontSize: { xs: 28, sm: 36, md: 48 },
   textWrap: "nowrap",
 };

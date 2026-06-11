@@ -176,11 +176,16 @@ jobs:
           - { name: NotoSansHK-NotoJP-katakana,            args: "-opt -i input_fonts/NotoSansHK-VariableFont_wght.ttf -a input_fonts/NotoSansJP-VariableFont_wght.ttf -m mappings/canto-katakana.csv -as 0.24" }
           - { name: NotoSansHK-NotoKR-korean,              args: "-opt -i input_fonts/NotoSansHK-VariableFont_wght.ttf -a input_fonts/NotoSansKR-VariableFont_wght.ttf -m mappings/canto-korean.csv -as 0.24" }
           # === Hero sample font ====================================
-          - { name: ChironSungHK-hero-sample,              args: "-opt -i input_fonts/ChironSungHK-R.ttf -a input_fonts/NotoSerif-Regular.ttf -m mappings/hero-sample.csv -as 0.27" }
+          # All three hero subsets use the same Xiaolai (handwritten,
+          # OFL) + Huninn (Latin-friendly CJK) pairing so the home page
+          # hero is visually unified across Cantonese / Taiwanese /
+          # Teochew phrases. Previous versions used ChironSung HK and
+          # Noto Sans TC bases respectively — see git history.
+          - { name: Xiaolai-Huninn-hero-sample,            args: "-opt -i input_fonts/XiaolaiSC-Regular.ttf -a input_fonts/Huninn-Regular.ttf -m mappings/hero-sample.csv -as 0.25" }
           # === Taiwanese / Southern Min (河洛話) showcase ===========
           - { name: NotoSansTC-Huninn-tailo,               args: "-opt -i input_fonts/NotoSansTC-VariableFont_wght.ttf -a input_fonts/Huninn-Regular.ttf -m mappings/taigi-tl-toned.csv -as 0.25" }
           - { name: NotoSansTC-Huninn-poj,                 args: "-opt -i input_fonts/NotoSansTC-VariableFont_wght.ttf -a input_fonts/Huninn-Regular.ttf -m mappings/taigi-poj-toned.csv -as 0.25" }
-          - { name: NotoSansTC-Huninn-hero-tailo,          args: "-opt -i input_fonts/NotoSansTC-VariableFont_wght.ttf -a input_fonts/Huninn-Regular.ttf -m mappings/hero-taigi.csv -as 0.25" }
+          - { name: Xiaolai-Huninn-hero-tailo,             args: "-opt -i input_fonts/XiaolaiSC-Regular.ttf -a input_fonts/Huninn-Regular.ttf -m mappings/hero-taigi.csv -as 0.25" }
           # Non-Latin Taiwanese annotation (data from ButTaiwan/taigivs).
           # 方音符號 (TPS): annotation font must cover Bopomofo + Bopomofo
           # Extended — Noto Sans TC does (serves as both base and anno).
@@ -190,13 +195,35 @@ jobs:
           # === Teochew / Min Nan (潮州話) showcase ==================
           - { name: NotoSansTC-Huninn-teochew-pengim,      args: "-opt -i input_fonts/NotoSansTC-VariableFont_wght.ttf -a input_fonts/Huninn-Regular.ttf -m mappings/teochew-gdpi.csv -as 0.25" }
           - { name: NotoSansTC-Huninn-teochew-puj,         args: "-opt -i input_fonts/NotoSansTC-VariableFont_wght.ttf -a input_fonts/Huninn-Regular.ttf -m mappings/teochew-duffus.csv -as 0.25" }
-          - { name: NotoSansTC-Huninn-hero-pengim,         args: "-opt -i input_fonts/NotoSansTC-VariableFont_wght.ttf -a input_fonts/Huninn-Regular.ttf -m mappings/hero-teochew.csv -as 0.25" }
+          - { name: Xiaolai-Huninn-hero-pengim,            args: "-opt -i input_fonts/XiaolaiSC-Regular.ttf -a input_fonts/Huninn-Regular.ttf -m mappings/hero-teochew.csv -as 0.25" }
           # === Mandarin (普通話 / 國語) showcase ====================
           - { name: NotoSansSC-Huninn-mandarin,            args: "-opt -i input_fonts/NotoSansSC-VariableFont_wght.ttf -a input_fonts/Huninn-Regular.ttf -m mappings/mandarin.csv -as 0.25" }
           # Mengshen-equivalent products (source fonts are SIL OFL-1.1, user-supplied in input_fonts/).
           # Serif: Source Han Serif + M+ 1m. Handwritten: Xiaolai + M+ Rounded 1c (OFL stand-in for Mengshen's non-OFL SetoFontSP).
           - { name: SourceHanSerif-Mplus-mandarin,         args: "-opt -i input_fonts/SourceHanSerif-Regular.ttf -a input_fonts/mplus-1m-medium.ttf -m mappings/mandarin.csv -as 0.25" }
           - { name: Xiaolai-MplusRounded-mandarin,         args: "-opt -i input_fonts/XiaolaiSC-Regular.ttf -a input_fonts/MPLUSRounded1c-Regular.ttf -m mappings/mandarin.csv -as 0.25" }
+          # === Xiaolai + Huninn family (handwritten base) ============
+          # A consistent base + annotation pairing across every dialect
+          # mapping the Huninn annotation font can render in Latin
+          # script: Cantonese (Jyutping × 5), Taiwanese (Tâi-lô + POJ),
+          # Teochew (Peng'im + PUJ), and Mandarin Pinyin. Skipped:
+          # cangjie (annotation IS the base font, not a Latin scheme),
+          # canto-thai/katakana/korean (Huninn doesn't cover those
+          # scripts), and taigi-kana/tps (likewise outside Huninn's
+          # repertoire). Xiaolai gives a warm handwritten 楷書 feel
+          # distinct from the existing Noto Sans HK / ChironSung
+          # showcase sets, while Huninn keeps the romanizations
+          # legible at small sizes.
+          - { name: Xiaolai-Huninn-lshk,                   args: "-opt -i input_fonts/XiaolaiSC-Regular.ttf -a input_fonts/Huninn-Regular.ttf -m mappings/canto-lshk.csv -as 0.25" }
+          - { name: Xiaolai-Huninn-yale,                   args: "-opt -i input_fonts/XiaolaiSC-Regular.ttf -a input_fonts/Huninn-Regular.ttf -m mappings/canto-yale.csv -as 0.25" }
+          - { name: Xiaolai-Huninn-lau,                    args: "-opt -i input_fonts/XiaolaiSC-Regular.ttf -a input_fonts/Huninn-Regular.ttf -m mappings/canto-lau.csv -as 0.25" }
+          - { name: Xiaolai-Huninn-guangdong,              args: "-opt -i input_fonts/XiaolaiSC-Regular.ttf -a input_fonts/Huninn-Regular.ttf -m mappings/canto-guangdong.csv -as 0.25" }
+          - { name: Xiaolai-Huninn-chishima,               args: "-opt -i input_fonts/XiaolaiSC-Regular.ttf -a input_fonts/Huninn-Regular.ttf -m mappings/canto-chishima.csv -as 0.25" }
+          - { name: Xiaolai-Huninn-tailo,                  args: "-opt -i input_fonts/XiaolaiSC-Regular.ttf -a input_fonts/Huninn-Regular.ttf -m mappings/taigi-tl-toned.csv -as 0.25" }
+          - { name: Xiaolai-Huninn-poj,                    args: "-opt -i input_fonts/XiaolaiSC-Regular.ttf -a input_fonts/Huninn-Regular.ttf -m mappings/taigi-poj-toned.csv -as 0.25" }
+          - { name: Xiaolai-Huninn-teochew-pengim,         args: "-opt -i input_fonts/XiaolaiSC-Regular.ttf -a input_fonts/Huninn-Regular.ttf -m mappings/teochew-gdpi.csv -as 0.25" }
+          - { name: Xiaolai-Huninn-teochew-puj,            args: "-opt -i input_fonts/XiaolaiSC-Regular.ttf -a input_fonts/Huninn-Regular.ttf -m mappings/teochew-duffus.csv -as 0.25" }
+          - { name: Xiaolai-Huninn-mandarin,               args: "-opt -i input_fonts/XiaolaiSC-Regular.ttf -a input_fonts/Huninn-Regular.ttf -m mappings/mandarin.csv -as 0.25" }
 
     steps:
       - name: Check out repository code

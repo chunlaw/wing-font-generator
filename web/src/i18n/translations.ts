@@ -35,7 +35,13 @@ export type TranslationKey =
   | "footer.links.showcase"
   | "footer.links.source"
   | "footer.links.credits"
+  | "footer.links.terms"
+  | "footer.links.privacy"
   | "footer.credit"
+  // Legal pages
+  | "legal.terms.title"
+  | "legal.privacy.title"
+  | "legal.effectiveDate"
   | "ack.hero.title"
   | "ack.hero.tagline"
   | "ack.intro"
@@ -196,10 +202,6 @@ export type TranslationKey =
   | "step2.coverage.annoLabel"
   | "step2.coverage.andMore"
   | "step2.confirmDelete"
-  | "step2.mandarinWarning.title"
-  | "step2.mandarinWarning.body"
-  | "step2.mandarinWarning.cta"
-  | "step2.mandarinWarning.cli"
   // Step 3 — parameters
   | "step3.title"
   | "step3.description"
@@ -271,7 +273,12 @@ export const TRANSLATIONS: Record<Language, Record<TranslationKey, string>> = {
     "footer.links.showcase": "字體展示",
     "footer.links.source": "原始碼（GitHub）",
     "footer.links.credits": "鳴謝",
+    "footer.links.terms": "使用條款",
+    "footer.links.privacy": "私隱政策",
     "footer.credit": "由 chunlaw 設計與開發",
+    "legal.terms.title": "使用條款",
+    "legal.privacy.title": "私隱政策",
+    "legal.effectiveDate": "生效日期：{date}",
     // Acknowledgements page
     "ack.hero.title": "鳴謝",
     "ack.hero.tagline": "Wing Font 站喺好多開源資料庫同字型嘅肩膊上。",
@@ -353,23 +360,23 @@ export const TRANSLATIONS: Record<Language, Record<TranslationKey, string>> = {
     "home.platforms.learnMoreSubtitle":
       "選擇你常用的軟件或作業系統，查看安裝與設定步驟。",
     "home.platforms.tabs.canva":
-      "開啟設計，點擊文字元素。\n在字型選單按「上載字型」，選擇下載的 .ttf 檔案。\n字型即時可用，毋須額外設定。\n免費帳戶可能需升級至 Canva Pro 方能上載字型。",
+      "1. 開啟設計，點擊文字元素。\n2. 在字型選單按「**上載字型**」，選擇下載的 `.ttf` 檔案。\n3. 字型即時可用，毋須額外設定。\n\n*免費帳戶可能需升級至 Canva Pro 方能上載字型。*",
     "home.platforms.tabs.affinity":
-      "先在作業系統安裝字型（見 Windows / macOS / Linux 分頁）。\n關閉並重新開啟 Affinity Designer / Photo / Publisher。\n字型隨即出現在所有字型選單，毋須額外設定。",
+      "1. 先在作業系統安裝字型（見 **Windows / macOS / Linux** 分頁）。\n2. 關閉並重新開啟 Affinity Designer / Photo / Publisher。\n3. 字型隨即出現在所有字型選單，毋須額外設定。",
     "home.platforms.tabs.adobe":
-      "先在作業系統安裝字型。\n關閉並重新開啟 Adobe Illustrator / Photoshop / InDesign。\n字型會以家族名稱出現在字型選單，毋須額外設定即可使用。",
+      "1. 先在作業系統安裝字型。\n2. 關閉並重新開啟 Adobe Illustrator / Photoshop / InDesign。\n3. 字型會以家族名稱出現在字型選單，毋須額外設定即可使用。",
     "home.platforms.tabs.word":
-      "先在作業系統安裝字型。\n關閉並重啟 Word。\n在「常用 > 字型」選單中找到字型，毋須額外設定。",
+      "1. 先在作業系統安裝字型。\n2. 關閉並重啟 Word。\n3. 在「**常用 > 字型**」選單中找到字型，毋須額外設定。",
     "home.platforms.tabs.iwork":
-      "先用 macOS 字體簿安裝字型（見 macOS 分頁）。\n開啟 Pages 或 Keynote，字型會以家族名稱出現在「格式 > 字型」選單，毋須額外設定即可使用。",
+      "1. 先用 macOS **字體簿**安裝字型（見 **macOS** 分頁）。\n2. 開啟 Pages 或 Keynote，字型會以家族名稱出現在「**格式 > 字型**」選單，毋須額外設定即可使用。",
     "home.platforms.tabs.web":
-      "將下載的 .woff 與 .ttf 上傳至你的伺服器（或任何 CSS 能存取的位置）。\n在 CSS 中加入 @font-face 宣告（生成器 Step 5 對話框提供可複製的範本）。\n套用字型：`font-family: '你的字型家族名稱'`。\nChrome、Firefox、Safari 均自動支援，毋須額外設定。",
+      "1. 將下載的 `.woff` 與 `.ttf` 上傳至你的伺服器（或任何 CSS 能存取的位置）。\n2. 在 CSS 中加入 `@font-face` 宣告（生成器 Step 5 對話框提供可複製的範本）。\n3. 套用字型：`font-family: '你的字型家族名稱'`。\n\n*Chrome、Firefox、Safari 均自動支援，毋須額外設定。*",
     "home.platforms.tabs.windows":
-      "右鍵點擊 .ttf 檔案，選擇「安裝」（或「為所有使用者安裝」以全系統可用）。\n或拖曳 .ttf 至「設定 > 個人化 > 字型」。\n重啟已開啟的應用程式，否則它們無法載入新字型。",
+      "1. 右鍵點擊 `.ttf` 檔案，選擇「**安裝**」（或「為所有使用者安裝」以全系統可用）。\n2. 或拖曳 `.ttf` 至「**設定 > 個人化 > 字型**」。\n3. **重啟已開啟的應用程式**，否則它們無法載入新字型。",
     "home.platforms.tabs.macos":
-      "雙擊 .ttf 檔案——「字體簿（Font Book）」會自動開啟。\n在字體簿預覽視窗中點擊「安裝字型」。\n字型隨即可供所有應用程式使用，毋須重啟系統。",
+      "1. 雙擊 `.ttf` 檔案——「**字體簿（Font Book）**」會自動開啟。\n2. 在字體簿預覽視窗中點擊「**安裝字型**」。\n3. 字型隨即可供所有應用程式使用，毋須重啟系統。",
     "home.platforms.tabs.linux":
-      "將 .ttf 複製至 `~/.fonts/`（單一使用者）或 `/usr/share/fonts/truetype/`（全系統）。\n執行 `fc-cache -f` 更新字型快取。\n重啟需要使用此字型的 GUI 應用程式。",
+      "1. 將 `.ttf` 複製至 `~/.fonts/`（單一使用者）或 `/usr/share/fonts/truetype/`（全系統）。\n2. 執行 `fc-cache -f` 更新字型快取。\n3. **重啟**需要使用此字型的 GUI 應用程式。",
     "home.what.title": "這是甚麼",
     "home.what.body":
       "Wing Font 是一套字型生成工具。輸入兩個 TTF（一個底字、一個標注字）加上字符對應 CSV，便會輸出一個全新的 OpenType 字型 — 每個底字字形都直接刻上標注，可作粵拼、耶魯、倉頡等任何標注用途。輸出的字型可用於網頁、Word、Telegram、Email 等任何支援自訂字型的地方。",
@@ -418,7 +425,7 @@ export const TRANSLATIONS: Record<Language, Record<TranslationKey, string>> = {
       "暫時最缺係詞典 —— 同埋多音字嘅預設讀音應該點揀。如果你對某種語言有研究，可以加入 Telegram 群討論。",
     "about.support.title": "想表達支持？",
     "about.support.body":
-      "多謝先。話說我都有做巴士 app —— 不妨試埋 hkbus.app。喺 GitHub Sponsors 撐我一啲都好歡迎。",
+      "多謝先。話說我都有做巴士 app —— 不妨試埋 [hkbus.app](https://hkbus.app)。喺 [GitHub Sponsors](https://github.com/sponsors/chunlaw) 撐我一啲都好歡迎。",
     "about.cta.generate": "開始自製字體",
     "about.cta.showcase": "瀏覽現成字體",
     "about.cta.telegram": "加入 Telegram 群",
@@ -490,12 +497,6 @@ export const TRANSLATIONS: Record<Language, Record<TranslationKey, string>> = {
     "step2.coverage.annoLabel": "標注字型缺少的字元：",
     "step2.coverage.andMore": "還有 {n} 個未顯示",
     "step2.confirmDelete": "確定要刪除嗎？",
-    "step2.mandarinWarning.title": "普通話對應表體積較大",
-    "step2.mandarinWarning.body":
-      "拼音對應表覆蓋全部 CJK 字符（約 95,000 筆），在瀏覽器內生成可能需時 5-15 分鐘，亦有機會因為記憶體不足而中斷。建議直接使用已經預先生成嘅普通話字型——同樣輸出，即時下載。",
-    "step2.mandarinWarning.cta": "查看預先生成字型",
-    "step2.mandarinWarning.cli":
-      "熟悉命令列？直接喺本機跑生成腳本最快",
     // Step 3
     "step3.title": "步驟 3：參數設定",
     "step3.description": "微調字形位置、大小與輸出選項。",
@@ -547,11 +548,11 @@ export const TRANSLATIONS: Record<Language, Record<TranslationKey, string>> = {
     "step5.cssSnippet.copy": "複製程式碼",
     "step5.cssSnippet.copied": "已複製",
     "step5.cssSnippet.hint":
-      "將下載的 .woff 與 .ttf 放在與 CSS 同目錄；若放在其他位置，請相應更新 url() 內的路徑。",
+      "將下載的 `.woff` 與 `.ttf` 放在與 CSS **同目錄**；若放在其他位置，請相應更新 `url()` 內的路徑。",
     "step5.cssSnippet.close": "關閉",
     "step5.cssSnippet.designAppTitle": "於設計工具中使用",
     "step5.cssSnippet.designAppHint":
-      "字型的詞語對應與「字1」、「字丅一」等數字標注切換無需任何設定即可運作（基於 OpenType `ccmp` 必定啟用功能）。Canva、InDesign、Word、Pages、Keynote 等工具均能直接使用。",
+      "字型的詞語對應與「字1」、「字丅一」等數字標注切換**無需任何設定**即可運作（基於 OpenType `ccmp` 必定啟用功能）。**Canva、InDesign、Word、Pages、Keynote** 等工具均能直接使用。",
   },
   en: {
     // Header
@@ -572,7 +573,12 @@ export const TRANSLATIONS: Record<Language, Record<TranslationKey, string>> = {
     "footer.links.showcase": "Showcase",
     "footer.links.source": "Source (GitHub)",
     "footer.links.credits": "Acknowledgements",
+    "footer.links.terms": "Terms",
+    "footer.links.privacy": "Privacy",
     "footer.credit": "Designed and built by chunlaw",
+    "legal.terms.title": "Terms & Conditions",
+    "legal.privacy.title": "Privacy Policy",
+    "legal.effectiveDate": "Effective date: {date}",
     // Acknowledgements page
     "ack.hero.title": "Acknowledgements",
     "ack.hero.tagline":
@@ -657,23 +663,23 @@ export const TRANSLATIONS: Record<Language, Record<TranslationKey, string>> = {
     "home.platforms.learnMoreSubtitle":
       "Pick the app or operating system you use most and see what to do.",
     "home.platforms.tabs.canva":
-      "Open a design and click any text element.\nIn the font picker, choose “Upload a font” and select the .ttf you downloaded.\nThe font is ready to use immediately — no extra settings.\nFree accounts may need a Canva Pro upgrade to upload custom fonts.",
+      "1. Open a design and click any text element.\n2. In the font picker, choose “**Upload a font**” and select the `.ttf` you downloaded.\n3. The font is ready to use immediately — no extra settings.\n\n*Free accounts may need a Canva Pro upgrade to upload custom fonts.*",
     "home.platforms.tabs.affinity":
-      "Install the font through your operating system (see the Windows / macOS / Linux tabs).\nQuit and reopen Affinity Designer / Photo / Publisher.\nThe font now appears in every font picker — no extra settings.",
+      "1. Install the font through your operating system (see the **Windows / macOS / Linux** tabs).\n2. Quit and reopen Affinity Designer / Photo / Publisher.\n3. The font now appears in every font picker — no extra settings.",
     "home.platforms.tabs.adobe":
-      "Install the font through your operating system.\nQuit and restart Illustrator / Photoshop / InDesign.\nThe font appears in the font menu under its family name and is ready to use — no extra settings.",
+      "1. Install the font through your operating system.\n2. Quit and restart Illustrator / Photoshop / InDesign.\n3. The font appears in the font menu under its family name and is ready to use — no extra settings.",
     "home.platforms.tabs.word":
-      "Install the font through your operating system.\nQuit and restart Word.\nFind the font under Home > Font and use it normally — no extra settings.",
+      "1. Install the font through your operating system.\n2. Quit and restart Word.\n3. Find the font under **Home > Font** and use it normally — no extra settings.",
     "home.platforms.tabs.iwork":
-      "Install the font via macOS Font Book (see the macOS tab).\nOpen Pages or Keynote; the font appears in Format > Font under its family name and is ready to use — no extra settings.",
+      "1. Install the font via macOS **Font Book** (see the **macOS** tab).\n2. Open Pages or Keynote; the font appears in **Format > Font** under its family name and is ready to use — no extra settings.",
     "home.platforms.tabs.web":
-      "Upload the .woff and .ttf to your server (or anywhere your CSS can reach them).\nAdd the @font-face snippet from the generator's Step 5 dialog to your stylesheet.\nUse the font like any other: `font-family: 'YourFamilyName'`.\nWorks automatically in Chrome, Firefox, and Safari — no extra settings.",
+      "1. Upload the `.woff` and `.ttf` to your server (or anywhere your CSS can reach them).\n2. Add the `@font-face` snippet from the generator's Step 5 dialog to your stylesheet.\n3. Use the font like any other: `font-family: 'YourFamilyName'`.\n\n*Works automatically in Chrome, Firefox, and Safari — no extra settings.*",
     "home.platforms.tabs.windows":
-      "Right-click the .ttf file and choose “Install” (or “Install for all users” for system-wide access).\nAlternatively, drag the .ttf into Settings > Personalization > Fonts.\nRestart any application that was already running, otherwise it won't see the new font.",
+      "1. Right-click the `.ttf` file and choose “**Install**” (or “Install for all users” for system-wide access).\n2. Alternatively, drag the `.ttf` into **Settings > Personalization > Fonts**.\n3. **Restart any application** that was already running, otherwise it won't see the new font.",
     "home.platforms.tabs.macos":
-      "Double-click the .ttf file — Font Book opens automatically.\nClick “Install Font” in the Font Book preview window.\nThe font becomes immediately available in every application — no restart needed.",
+      "1. Double-click the `.ttf` file — **Font Book** opens automatically.\n2. Click “**Install Font**” in the Font Book preview window.\n3. The font becomes immediately available in every application — no restart needed.",
     "home.platforms.tabs.linux":
-      "Copy the .ttf to `~/.fonts/` (current user) or `/usr/share/fonts/truetype/` (all users).\nRun `fc-cache -f` to refresh the font cache.\nRestart any GUI applications you want to use the font in.",
+      "1. Copy the `.ttf` to `~/.fonts/` (current user) or `/usr/share/fonts/truetype/` (all users).\n2. Run `fc-cache -f` to refresh the font cache.\n3. **Restart** any GUI applications you want to use the font in.",
     "home.what.title": "What it is",
     "home.what.body":
       "Wing Font is a font-generation tool. Give it two TTFs (one for the base characters, one for the annotation glyphs) plus a CSV mapping characters to annotations, and it produces a new OpenType font whose glyphs have those annotations baked in. The output works anywhere a custom font can be loaded — websites, Word, Telegram, email, you name it.",
@@ -722,7 +728,7 @@ export const TRANSLATIONS: Record<Language, Record<TranslationKey, string>> = {
       "The biggest gap right now is mapping data — and deciding which reading should be the default for polyphonic characters. If you've studied a particular language, the Telegram group is where these conversations happen.",
     "about.support.title": "Want to show support?",
     "about.support.body":
-      "Thank you in advance. I also built a Hong Kong bus app — try hkbus.app if you're local. Sponsoring on GitHub is also genuinely appreciated.",
+      "Thank you in advance. I also built a Hong Kong bus app — try [hkbus.app](https://hkbus.app) if you're local. Sponsoring on [GitHub Sponsors](https://github.com/sponsors/chunlaw) is also genuinely appreciated.",
     "about.cta.generate": "Make your own font",
     "about.cta.showcase": "Browse ready-made fonts",
     "about.cta.telegram": "Join the Telegram group",
@@ -797,12 +803,6 @@ export const TRANSLATIONS: Record<Language, Record<TranslationKey, string>> = {
     "step2.coverage.annoLabel": "Missing from annotation font:",
     "step2.coverage.andMore": "and {n} more",
     "step2.confirmDelete": "Delete this row?",
-    "step2.mandarinWarning.title": "The Mandarin mapping is computationally heavy",
-    "step2.mandarinWarning.body":
-      "The Hanyu Pinyin mapping covers the full CJK ideograph range (~95,000 rows). In-browser generation can take 5–15 minutes and may run out of memory before finishing. We recommend the pre-built Mandarin showcase fonts instead — same output, instant download.",
-    "step2.mandarinWarning.cta": "View pre-built fonts",
-    "step2.mandarinWarning.cli":
-      "Comfortable with the command line? Run the generator locally for the fastest path",
     // Step 3
     "step3.title": "Step 3: Parameters",
     "step3.description":
@@ -858,10 +858,10 @@ export const TRANSLATIONS: Record<Language, Record<TranslationKey, string>> = {
     "step5.cssSnippet.copy": "Copy snippet",
     "step5.cssSnippet.copied": "Copied",
     "step5.cssSnippet.hint":
-      "Save the downloaded .woff and .ttf to the same folder as your stylesheet, or update the url() paths to point at wherever you host them.",
+      "Save the downloaded `.woff` and `.ttf` to the **same folder** as your stylesheet, or update the `url()` paths to point at wherever you host them.",
     "step5.cssSnippet.close": "Close",
     "step5.cssSnippet.designAppTitle": "Using it in a design app",
     "step5.cssSnippet.designAppHint":
-      "All override paths (word-context like 銀行/行人, digit-suffix like 字1, and trigger+numeral like 字丅一) work automatically with no text-setting toggles. The font's rules ride on OpenType `ccmp`, which is mandatory — Canva, InDesign, Word, Pages, and Keynote all apply them out of the box.",
+      "All override paths — **word-context** (like 銀行/行人), **digit-suffix** (like 字1), and **trigger+numeral** (like 字丅一) — work automatically with no text-setting toggles. The font's rules ride on OpenType `ccmp`, which is mandatory — **Canva, InDesign, Word, Pages, and Keynote** all apply them out of the box.",
   },
 };

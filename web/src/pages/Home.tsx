@@ -34,41 +34,26 @@ import DescriptionOutlinedIcon from "@mui/icons-material/DescriptionOutlined";
 import LanguageOutlinedIcon from "@mui/icons-material/LanguageOutlined";
 import LaptopOutlinedIcon from "@mui/icons-material/LaptopOutlined";
 import type { SvgIconComponent } from "@mui/icons-material";
-import { Fragment, ReactNode, useEffect, useState } from "react";
+import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useTranslation } from "../i18n/LanguageContext";
-
-/**
- * Wrap backtick-delimited segments of a step string in <code>.
- *
- * Splits on the backtick character; even-indexed segments are plain
- * text, odd-indexed segments are code. This lets translators write
- * paths like `~/.fonts/` or CSS like `font-family: '...'` directly in
- * the i18n string without any markdown layer.
- *
- * Returns an array of React nodes the caller can drop straight into
- * a list item or paragraph.
- */
-function renderInlineCode(text: string): ReactNode[] {
-  return text.split("`").map((segment, idx) =>
-    idx % 2 === 0 ? (
-      <Fragment key={idx}>{segment}</Fragment>
-    ) : (
-      <code key={idx}>{segment}</code>
-    ),
-  );
-}
+import Markdown from "../components/Markdown";
 
 /*
  * Hero samples that rotate in the landing hero. Each entry is a
  * self-demonstrating line of plain UTF-8 text plus the subset
- * @font-face (declared in index.css) that bakes its annotations in:
- *   • Cantonese (LSHK Jyutping) — ChironSung base
- *   • Taiwanese / Southern Min (Tâi-lô) — Noto Sans TC base + Huninn
- *   • Teochew (Peng'im) — Noto Sans TC base + Huninn
+ * @font-face (declared in index.css) that bakes its annotations in.
+ * As of the Xiaolai-Huninn unification (June 2026) all three subsets
+ * share the same handwritten base + Latin-friendly annotation
+ * pairing — visually unified across:
+ *   • Cantonese (LSHK Jyutping)            — Xiaolai + Huninn
+ *   • Taiwanese / Southern Min (Tâi-lô)    — Xiaolai + Huninn
+ *   • Teochew (Peng'im)                    — Xiaolai + Huninn
  * The fallback chain after each subset font covers the brief
  * font-display: swap window and any glyphs not in the subset (e.g.
- * the Taiwanese line's 、；。 punctuation).
+ * the Taiwanese line's 、；。 punctuation). System fallbacks lean
+ * toward the same楷書 / handwritten feel where available so the
+ * brief swap is less jarring.
  */
 /*
  * Each sample renders as exactly TWO ROWS — one entry per row in the
@@ -92,18 +77,22 @@ function renderInlineCode(text: string): ReactNode[] {
 const HERO_SAMPLES: { lines: [string, string]; fontFamily: string }[] = [
   {
     lines: ["各有各唱自己歌", "各找自我"],
+    // Fallback chain prioritises handwritten / Kai-style faces so a
+    // missed subset font doesn't snap to a Songti serif (which would
+    // visually mismatch the Xiaolai 楷書 we're rendering when the
+    // subset arrives ~50-100 ms later).
     fontFamily:
-      '"ChironSungHK-hero-sample", "Noto Serif TC", "Songti TC", serif',
+      '"Xiaolai-Huninn-hero-sample", "Kaiti TC", "標楷體", "DFKai-SB", "STKaiti", serif',
   },
   {
     lines: ["家己的歌家己唱", "家己的字家己選"],
     fontFamily:
-      '"NotoSansTC-Huninn-hero-tailo", "Noto Sans TC", "PingFang TC", sans-serif',
+      '"Xiaolai-Huninn-hero-tailo", "Kaiti TC", "標楷體", "DFKai-SB", "STKaiti", serif',
   },
   {
     lines: ["家己个歌家己唱", "家己个字家己揀"],
     fontFamily:
-      '"NotoSansTC-Huninn-hero-pengim", "Noto Sans TC", "PingFang TC", sans-serif',
+      '"Xiaolai-Huninn-hero-pengim", "Kaiti TC", "標楷體", "DFKai-SB", "STKaiti", serif',
   },
 ];
 
@@ -474,11 +463,13 @@ const Home = () => {
         official translations like 「字體簿」 / 「字型簿」 that a
         literal English translation would miss).
 
-        Each tab body is plain text — no inline code highlighting.
-        File paths in the bodies are wrapped in backticks for
-        readability but render as regular Typography. If install
-        instructions evolve to need command blocks or richer
-        formatting, swap the Typography for a Markdown renderer.
+        Each tab body is authored in markdown. The shared
+        `<Markdown>` component (components/Markdown.tsx) handles
+        ordered lists, inline code, bold/italic emphasis, and
+        links — so translators can highlight the key click target
+        ("**Upload a font**") or path (`~/.fonts/`) directly in the
+        i18n string without us extending a hand-rolled renderer
+        every time the copy needs more nuance.
       */}
       <Box maxWidth={900} mx="auto" width="100%" px={2}>
         <Typography variant="h4" gutterBottom textAlign="center">
@@ -518,52 +509,18 @@ const Home = () => {
             ))}
           </Tabs>
           {/*
-            Body rendered as an ordered list rather than a paragraph.
-            The i18n string for each platform is newline-separated;
-            we split on \n and emit one <li> per step. The browser
-            handles the numbering — no JS-level counter — which keeps
-            CJK locales aligned (the visual ordinal is the same in
-            both languages).
-
-            Backtick-wrapped segments inside a step (e.g. paths like
-            `~/.fonts/` or CSS like `font-family: 'X'`) are rendered
-            as inline `<code>` for readability. The renderStep helper
-            below splits on backticks and wraps odd-indexed segments
-            (the ones BETWEEN backticks) in <code>. No markdown
-            library involved.
+            Tab body — full markdown rendering via the shared
+            `<Markdown>` component. Each translation string is
+            authored as an ordered list (`1.` / `2.` / `3.`) with
+            inline code for paths + commands and `**bold**` on the
+            specific click targets users should look for in their
+            app's UI ("Upload a font", "Install Font", "Format >
+            Font", …). The Markdown component maps each construct
+            to its themed MUI counterpart so the visual rhythm
+            stays consistent with the rest of the page.
           */}
           <Box sx={{ p: { xs: 2, sm: 3 } }}>
-            <Box
-              component="ol"
-              sx={{
-                pl: 3,
-                m: 0,
-                color: "text.secondary",
-                "& li": {
-                  mb: 1,
-                  lineHeight: 1.7,
-                  fontSize: "1rem",
-                  "&:last-child": { mb: 0 },
-                },
-                "& code": {
-                  fontFamily:
-                    "ui-monospace, SFMono-Regular, Menlo, monospace",
-                  fontSize: "0.9em",
-                  px: 0.6,
-                  py: 0.1,
-                  borderRadius: 0.5,
-                  bgcolor: "action.hover",
-                  color: "text.primary",
-                },
-              }}
-            >
-              {t(platformTabs[activeTab].bodyKey)
-                .split("\n")
-                .filter((line) => line.trim().length > 0)
-                .map((step, idx) => (
-                  <li key={idx}>{renderInlineCode(step)}</li>
-                ))}
-            </Box>
+            <Markdown>{t(platformTabs[activeTab].bodyKey)}</Markdown>
           </Box>
         </Paper>
       </Box>

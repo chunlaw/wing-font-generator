@@ -100,6 +100,32 @@ const Footer = () => {
             >
               {t("footer.links.credits")}
             </Link>
+            {/*
+              Legal links — Terms first (it explains the licensing
+              model that users are most likely to care about), then
+              Privacy (which is short because we collect nothing).
+              Kept inside the same Links column rather than spinning
+              up a fourth "Legal" column — at this site's scale, two
+              extra entries don't justify the extra grid column.
+            */}
+            <Link
+              href="/terms"
+              variant="body2"
+              underline="hover"
+              color="text.secondary"
+              sx={{ "&:hover": { color: "primary.main" } }}
+            >
+              {t("footer.links.terms")}
+            </Link>
+            <Link
+              href="/privacy"
+              variant="body2"
+              underline="hover"
+              color="text.secondary"
+              sx={{ "&:hover": { color: "primary.main" } }}
+            >
+              {t("footer.links.privacy")}
+            </Link>
           </Stack>
         </Box>
 

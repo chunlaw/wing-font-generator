@@ -244,6 +244,40 @@ export const AVAILABLE_FONTS: FontSet = {
         name: "ChironSungHK-NotoKR-korean",
         source: `url(${import.meta.env.VITE_FONT_URL}/ChironSungHK-NotoKR-korean.woff) format('woff')`,
       },
+      // ─ Xiaolai (小賴) + Huninn pairing ────────────────────────────
+      // Handwritten 楷書-style base font (Xiaolai, OFL) with the
+      // Latin-friendly Huninn (jf-openhuninn) annotation set.
+      // Visually distinct from the Noto Sans HK and ChironSung HK
+      // groups above — the warm hand-drawn strokes read well for
+      // dialect-learning material, classroom worksheets, and
+      // children's books. Also introduces three Cantonese
+      // romanization schemes that weren't previously surfaced in
+      // the showcase: Lau (劉錫祥), Guangdong PRC, and Chishima.
+      "Xiaolai-Huninn-lshk": {
+        displayName: "小賴字體（香港語言學會）",
+        name: "Xiaolai-Huninn-lshk",
+        source: `url(${import.meta.env.VITE_FONT_URL}/Xiaolai-Huninn-lshk.woff) format('woff')`,
+      },
+      "Xiaolai-Huninn-yale": {
+        displayName: "小賴字體（耶魯拼音）",
+        name: "Xiaolai-Huninn-yale",
+        source: `url(${import.meta.env.VITE_FONT_URL}/Xiaolai-Huninn-yale.woff) format('woff')`,
+      },
+      "Xiaolai-Huninn-lau": {
+        displayName: "小賴字體（劉錫祥）",
+        name: "Xiaolai-Huninn-lau",
+        source: `url(${import.meta.env.VITE_FONT_URL}/Xiaolai-Huninn-lau.woff) format('woff')`,
+      },
+      "Xiaolai-Huninn-guangdong": {
+        displayName: "小賴字體（廣州話拼音方案）",
+        name: "Xiaolai-Huninn-guangdong",
+        source: `url(${import.meta.env.VITE_FONT_URL}/Xiaolai-Huninn-guangdong.woff) format('woff')`,
+      },
+      "Xiaolai-Huninn-chishima": {
+        displayName: "小賴字體（千島）",
+        name: "Xiaolai-Huninn-chishima",
+        source: `url(${import.meta.env.VITE_FONT_URL}/Xiaolai-Huninn-chishima.woff) format('woff')`,
+      },
     },
   },
   // Taiwanese / Southern Min (河洛話) — the first non-Cantonese dialect
@@ -267,6 +301,18 @@ export const AVAILABLE_FONTS: FontSet = {
         displayName: "思源黑體（白話字）",
         name: "NotoSansTC-Huninn-poj",
         source: `url(${import.meta.env.VITE_FONT_URL}/NotoSansTC-Huninn-poj.woff) format('woff')`,
+      },
+      // Xiaolai handwritten companions — same two romanizations as
+      // the Noto Sans TC entries above, but on a warm 楷書 base.
+      "Xiaolai-Huninn-tailo": {
+        displayName: "小賴字體（台羅）",
+        name: "Xiaolai-Huninn-tailo",
+        source: `url(${import.meta.env.VITE_FONT_URL}/Xiaolai-Huninn-tailo.woff) format('woff')`,
+      },
+      "Xiaolai-Huninn-poj": {
+        displayName: "小賴字體（白話字）",
+        name: "Xiaolai-Huninn-poj",
+        source: `url(${import.meta.env.VITE_FONT_URL}/Xiaolai-Huninn-poj.woff) format('woff')`,
       },
     },
   },
@@ -296,6 +342,17 @@ export const AVAILABLE_FONTS: FontSet = {
         name: "NotoSansTC-Huninn-teochew-puj",
         source: `url(${import.meta.env.VITE_FONT_URL}/NotoSansTC-Huninn-teochew-puj.woff) format('woff')`,
       },
+      // Xiaolai handwritten companions for Teochew.
+      "Xiaolai-Huninn-teochew-pengim": {
+        displayName: "小賴字體（潮拼）",
+        name: "Xiaolai-Huninn-teochew-pengim",
+        source: `url(${import.meta.env.VITE_FONT_URL}/Xiaolai-Huninn-teochew-pengim.woff) format('woff')`,
+      },
+      "Xiaolai-Huninn-teochew-puj": {
+        displayName: "小賴字體（潮州白話字）",
+        name: "Xiaolai-Huninn-teochew-puj",
+        source: `url(${import.meta.env.VITE_FONT_URL}/Xiaolai-Huninn-teochew-puj.woff) format('woff')`,
+      },
     },
   },
   // Mandarin (普通話 / 國語) — the two Mengshen-equivalent products,
@@ -319,9 +376,19 @@ export const AVAILABLE_FONTS: FontSet = {
         source: `url(${import.meta.env.VITE_FONT_URL}/SourceHanSerif-Mplus-mandarin.woff) format('woff')`,
       },
       "Xiaolai-MplusRounded-mandarin": {
-        displayName: "小賴字體（拼音）",
+        // Disambiguating suffix added when the Xiaolai-Huninn-mandarin
+        // entry below joined the showcase — both use Xiaolai as the
+        // base but differ in the annotation typeface (M+ Rounded vs
+        // Huninn). Putting the anno name in parentheses lets a
+        // reader scanning the picker tell them apart at a glance.
+        displayName: "小賴字體（拼音 · M+ Rounded）",
         name: "Xiaolai-MplusRounded-mandarin",
         source: `url(${import.meta.env.VITE_FONT_URL}/Xiaolai-MplusRounded-mandarin.woff) format('woff')`,
+      },
+      "Xiaolai-Huninn-mandarin": {
+        displayName: "小賴字體（拼音 · Huninn）",
+        name: "Xiaolai-Huninn-mandarin",
+        source: `url(${import.meta.env.VITE_FONT_URL}/Xiaolai-Huninn-mandarin.woff) format('woff')`,
       },
     },
   },

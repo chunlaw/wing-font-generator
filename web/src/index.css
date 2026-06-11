@@ -51,58 +51,53 @@ button:focus-visible {
 }
 
 /*
- * Hero sample font — a ~25 KB subset of ChironSung Sung + Noto Serif
- * built by .github/workflows/build-fonts.yml from
- * python/mappings/hero-sample.csv. Contains only the 8 characters used
- * in the Home page hero lyric, so the LCP impact is negligible and
- * the first-load swap is barely perceptible.
+ * Hero sample fonts — three small subsets built by
+ * .github/workflows/deploy-pages.yml from python/mappings/hero-*.csv,
+ * one per dialect the home page hero rotates through. All three use
+ * the same Xiaolai (small subset of 小賴, OFL handwritten 楷書) base
+ * paired with Huninn (jf-openhuninn) for the romanization above,
+ * giving the hero a visually unified handwritten feel across
+ * Cantonese / Taiwanese / Teochew.
+ *
+ * Each file contains only the ~7-8 characters of its hero line, so
+ * the LCP impact is negligible (~17-25 KB each) and the first-load
+ * swap is barely perceptible. Punctuation (，；。) isn't in the subset
+ * and falls back to the Box's font-family chain — intentional, keeps
+ * the file tiny.
  *
  * `font-display: swap` means the page renders immediately in the
  * system font and upgrades to this font when it arrives — better
  * than blocking text on font load (which would show blank space on
  * slow connections).
  *
- * If this file 404s (e.g. CI hasn't rebuilt the gh-pages /fonts/
+ * If a file 404s (e.g. CI hasn't rebuilt the gh-pages /fonts/
  * directory yet after this entry was added), the hero text falls
- * back to the system serif via the Box's `font-family` chain. The
- * site stays functional; the hero just looks unstyled until CI
+ * back to the system fallback via the Box's `font-family` chain.
+ * The site stays functional; the hero just looks unstyled until CI
  * catches up.
+ *
+ * Predecessor names — for git-archaeology:
+ *   ChironSungHK-hero-sample          (Cantonese, before Xiaolai swap)
+ *   NotoSansTC-Huninn-hero-tailo      (Taiwanese, before Xiaolai swap)
+ *   NotoSansTC-Huninn-hero-pengim     (Teochew,   before Xiaolai swap)
  */
 @font-face {
-  font-family: "ChironSungHK-hero-sample";
-  src: url("https://wing-font.chunlaw.io/fonts/ChironSungHK-hero-sample.woff")
+  font-family: "Xiaolai-Huninn-hero-sample";
+  src: url("https://wing-font.chunlaw.io/fonts/Xiaolai-Huninn-hero-sample.woff")
     format("woff");
   font-display: swap;
 }
 
-/*
- * Taiwanese / Southern Min hero-sample font. Same idea as the
- * Cantonese one above: a ~17 KB subset (Noto Sans TC base + Huninn
- * annotation) containing only the 7 characters of the Tâi-lô hero
- * line 「家己的歌，家己唱；家己的字，家己選。」. The home-page hero
- * rotates between this line and the Cantonese one. Punctuation
- * (，；。) isn't in the subset and falls back to the Box's
- * font-family chain — intentional, keeps the file tiny.
- */
 @font-face {
-  font-family: "NotoSansTC-Huninn-hero-tailo";
-  src: url("https://wing-font.chunlaw.io/fonts/NotoSansTC-Huninn-hero-tailo.woff")
+  font-family: "Xiaolai-Huninn-hero-tailo";
+  src: url("https://wing-font.chunlaw.io/fonts/Xiaolai-Huninn-hero-tailo.woff")
     format("woff");
   font-display: swap;
 }
 
-/*
- * Teochew (潮州話) hero-sample font. Same idea as the two above: a
- * ~17 KB subset (Noto Sans TC base + Huninn annotation) containing
- * only the 7 characters of the Peng'im hero line
- * 「家己个歌，家己唱；家己个字，家己揀。」. The home-page hero rotates
- * between this line, the Taiwanese one, and the Cantonese one.
- * Punctuation (，；。) isn't in the subset and falls back to the Box's
- * font-family chain — intentional, keeps the file tiny.
- */
 @font-face {
-  font-family: "NotoSansTC-Huninn-hero-pengim";
-  src: url("https://wing-font.chunlaw.io/fonts/NotoSansTC-Huninn-hero-pengim.woff")
+  font-family: "Xiaolai-Huninn-hero-pengim";
+  src: url("https://wing-font.chunlaw.io/fonts/Xiaolai-Huninn-hero-pengim.woff")
     format("woff");
   font-display: swap;
 }

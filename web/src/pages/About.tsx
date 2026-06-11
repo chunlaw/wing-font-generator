@@ -23,6 +23,7 @@ import {
 import { GitHub, Telegram } from "@mui/icons-material";
 import { useNavigate } from "react-router-dom";
 import { useTranslation } from "../i18n/LanguageContext";
+import Markdown from "../components/Markdown";
 
 const About = () => {
   const { t } = useTranslation();
@@ -124,9 +125,14 @@ const About = () => {
                 <Typography variant="subtitle1" sx={{ fontWeight: 600, mb: 1 }}>
                   {t(card.titleKey)}
                 </Typography>
-                <Typography variant="body2" color="text.secondary">
-                  {t(card.bodyKey)}
-                </Typography>
+                {/*
+                  Card body is markdown for parity with the Section
+                  prose above. Lets each contribute role inline a
+                  link to GitHub / the Telegram group rather than
+                  describing them in prose; compact variant tightens
+                  spacing for the card surface.
+                */}
+                <Markdown variant="compact">{t(card.bodyKey)}</Markdown>
               </CardContent>
             </Card>
           ))}
@@ -217,9 +223,14 @@ const Section = ({ title, body }: { title: string; body: string }) => (
     <Typography variant="h4" gutterBottom>
       {title}
     </Typography>
-    <Typography variant="body1" color="text.secondary">
-      {body}
-    </Typography>
+    {/*
+      Section bodies are markdown so translators can mark up key
+      terms in **bold**, link out to upstream projects directly
+      from inside the prose (e.g. hkbus.app in the support
+      section, GitHub repos in the contribute section), and split
+      long paragraphs with blank lines when needed.
+    */}
+    <Markdown>{body}</Markdown>
   </Box>
 );
 
