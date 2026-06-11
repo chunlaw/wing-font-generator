@@ -1,0 +1,15 @@
+python/input_fonts/Huninn-Regular.ttf filter=lfs diff=lfs merge=lfs -text
+python/input_fonts/NotoSansSC-VariableFont_wght.ttf filter=lfs diff=lfs merge=lfs -text
+python/input_fonts/ChironHeiHK-B.ttf filter=lfs diff=lfs merge=lfs -text
+python/input_fonts/ChironSungHK-R-It.ttf filter=lfs diff=lfs merge=lfs -text
+python/input_fonts/ChironSungHK-R.ttf filter=lfs diff=lfs merge=lfs -text
+python/input_fonts/MPLUSRounded1c-Regular.ttf filter=lfs diff=lfs merge=lfs -text
+python/input_fonts/ChironHeiHK-R.ttf filter=lfs diff=lfs merge=lfs -text
+python/input_fonts/GoogleSans-VariableFont_GRAD,opsz,wght.ttf filter=lfs diff=lfs merge=lfs -text
+python/input_fonts/NotoSansJP-VariableFont_wght.ttf filter=lfs diff=lfs merge=lfs -text
+python/input_fonts/NotoSansTC-VariableFont_wght.ttf filter=lfs diff=lfs merge=lfs -text
+python/input_fonts/mplus-1m-medium.ttf filter=lfs diff=lfs merge=lfs -text
+python/input_fonts/NotoSansKR-VariableFont_wght.ttf filter=lfs diff=lfs merge=lfs -text
+python/input_fonts/NotoSerif-Regular.ttf filter=lfs diff=lfs merge=lfs -text
+python/input_fonts/SourceHanSerif-Regular.ttf filter=lfs diff=lfs merge=lfs -text
+python/input_fonts/XiaolaiSC-Regular.ttf filter=lfs diff=lfs merge=lfs -text
