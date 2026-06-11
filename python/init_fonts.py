@@ -67,6 +67,7 @@ FONT_FILES: list[str] = [
     "Huninn-Regular.ttf",
     "MPLUSRounded1c-Regular.ttf",
     "NotoSansJP-VariableFont_wght.ttf",
+    "NotoSansHK-VariableFont_wght.ttf",
     "NotoSansKR-VariableFont_wght.ttf",
     "NotoSansSC-VariableFont_wght.ttf",
     "NotoSansTC-VariableFont_wght.ttf",

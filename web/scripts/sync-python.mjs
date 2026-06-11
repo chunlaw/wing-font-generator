@@ -138,6 +138,15 @@ const MANIFEST = [
     "input_fonts/NotoSansTC-VariableFont_wght.ttf",
     "NotoSansTC-VariableFont_wght.ttf",
   ],
+  // Noto Sans HK — Hong-Kong-styled CJK base font. Same variable
+  // `wght` axis as Noto Sans TC / SC, same auto-instance behaviour.
+  // Used by the Cantonese showcase default set so HK readers see
+  // HK-locale glyph forms (字 / 為 / 起 / 緣 / 緊 follow HK
+  // conventions rather than TW conventions).
+  [
+    "input_fonts/NotoSansHK-VariableFont_wght.ttf",
+    "NotoSansHK-VariableFont_wght.ttf",
+  ],
   // Simplified-Chinese sibling of Noto Sans TC. Same `wght` variable
   // axis; ship the variable file so the Step 1 weight slider works.
   [

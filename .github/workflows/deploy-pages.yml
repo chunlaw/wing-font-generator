@@ -155,6 +155,26 @@ jobs:
           - { name: ChironSungHK-Google-thai-It,           args: "-opt -i input_fonts/ChironSungHK-R-It.ttf -a 'input_fonts/GoogleSans-VariableFont_GRAD,opsz,wght.ttf' -m mappings/canto-thai.csv -as 0.22" }
           - { name: ChironSungHK-NotoJP-katakana-It,       args: "-opt -i input_fonts/ChironSungHK-R-It.ttf -a input_fonts/NotoSansJP-VariableFont_wght.ttf -m mappings/canto-katakana.csv -as 0.24" }
           - { name: ChironSungHK-NotoKR-korean-It,         args: "-opt -i input_fonts/ChironSungHK-R-It.ttf -a input_fonts/NotoSansKR-VariableFont_wght.ttf -m mappings/canto-korean.csv -as 0.24" }
+          # === Cantonese — Noto Sans HK base (lighter showcase set) =
+          # Hong-Kong-styled Cantonese variants. Same six mappings as
+          # the ChironSung set above but built on Noto Sans HK
+          # (variable wght) — output files are roughly half the size
+          # of the Chiron equivalents, so /showcase loads ~2× faster
+          # on slow connections. Chiron variants stay built and
+          # downloadable; these are the new default showcase set.
+          - { name: NotoSansHK-Noto-lshk,                  args: "-opt -i input_fonts/NotoSansHK-VariableFont_wght.ttf -a input_fonts/NotoSerif-Regular.ttf -m mappings/canto-lshk.csv -as 0.27" }
+          - { name: NotoSansHK-Noto-yale,                  args: "-opt -i input_fonts/NotoSansHK-VariableFont_wght.ttf -a input_fonts/NotoSerif-Regular.ttf -m mappings/canto-yale.csv -as 0.27" }
+          - { name: NotoSansHK-Noto-chishima,              args: "-opt -i input_fonts/NotoSansHK-VariableFont_wght.ttf -a input_fonts/NotoSerif-Regular.ttf -m mappings/canto-chishima.csv -as 0.27" }
+          - { name: NotoSansHK-Noto-guangdong,             args: "-opt -i input_fonts/NotoSansHK-VariableFont_wght.ttf -a input_fonts/NotoSerif-Regular.ttf -m mappings/canto-guangdong.csv -as 0.27" }
+          - { name: NotoSansHK-Noto-lau,                   args: "-opt -i input_fonts/NotoSansHK-VariableFont_wght.ttf -a input_fonts/NotoSerif-Regular.ttf -m mappings/canto-lau.csv -as 0.27" }
+          # Cangjie under Noto Sans HK: annotation IS the base font
+          # (so the radicals render in HK style), no -opt because
+          # subsetting would chase the self-reference.
+          - { name: NotoSansHK-cangjie,                    args: "-i input_fonts/NotoSansHK-VariableFont_wght.ttf -a input_fonts/NotoSansHK-VariableFont_wght.ttf -m mappings/cangjie.csv -as 0.25" }
+          # Script-specific Cantonese transliterations on the HK base.
+          - { name: NotoSansHK-Google-thai,                args: "-opt -i input_fonts/NotoSansHK-VariableFont_wght.ttf -a 'input_fonts/GoogleSans-VariableFont_GRAD,opsz,wght.ttf' -m mappings/canto-thai.csv -as 0.22" }
+          - { name: NotoSansHK-NotoJP-katakana,            args: "-opt -i input_fonts/NotoSansHK-VariableFont_wght.ttf -a input_fonts/NotoSansJP-VariableFont_wght.ttf -m mappings/canto-katakana.csv -as 0.24" }
+          - { name: NotoSansHK-NotoKR-korean,              args: "-opt -i input_fonts/NotoSansHK-VariableFont_wght.ttf -a input_fonts/NotoSansKR-VariableFont_wght.ttf -m mappings/canto-korean.csv -as 0.24" }
           # === Hero sample font ====================================
           - { name: ChironSungHK-hero-sample,              args: "-opt -i input_fonts/ChironSungHK-R.ttf -a input_fonts/NotoSerif-Regular.ttf -m mappings/hero-sample.csv -as 0.27" }
           # === Taiwanese / Southern Min (河洛話) showcase ===========
