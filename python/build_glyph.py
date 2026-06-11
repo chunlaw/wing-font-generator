@@ -184,6 +184,20 @@ def generate_annotated_glyphs(
         processed_glyph_names: set[str] = set()
         cnt = 0
 
+        # ── HarfBuzz buffer reuse ────────────────────────────────────────
+        # One buffer for the whole composition phase. The inner loop
+        # below calls `hb.shape` once per annotation string — for the
+        # Mandarin mapping (~95k mapping rows × ~5-10 variants each)
+        # that's 200-500k shape calls. Previously each call allocated
+        # a fresh hb.Buffer(), churning through the WASM heap and
+        # forcing Pyodide's GC to walk that many short-lived objects.
+        # Hoisting the allocation out of the loop and calling
+        # `clear_contents()` between uses keeps the underlying glyph
+        # array in place — the API contract is the same (empty buffer
+        # → add_str → guess_segment_properties → shape) but the
+        # allocator only runs once.
+        hb_buffer = hb.Buffer()
+
         for base_char, anno_strs_dict in mapping.items():
             glyph_name_raw = get_glyph_name_by_char(base_font, base_char)
             if (
@@ -228,7 +242,17 @@ def generate_annotated_glyphs(
                 # y_offset, x_advance) tuples in the font's native
                 # design units — same coordinate space as
                 # `hmtx[name][0]` returned for the naive path.
-                buf = hb.Buffer()
+                #
+                # `hb_buffer` is the loop-shared instance hoisted
+                # above. `clear_contents()` zeroes the glyph array
+                # AND drops the script/direction/language that
+                # `guess_segment_properties()` derived for the prior
+                # call — so the next `guess_segment_properties()`
+                # sees just the fresh codepoints and re-detects
+                # correctly. Without the clear the buffer would still
+                # carry the previous run's glyphs and properties.
+                buf = hb_buffer
+                buf.clear_contents()
                 buf.add_str(anno_str)
                 # `guess_segment_properties` auto-detects script,
                 # direction, and language from the Unicode codepoints
