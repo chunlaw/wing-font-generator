@@ -101,12 +101,12 @@ const FONT_SOURCES: Source[] = [
   },
   // CJK base — serif
   {
-    name: "ChironSung HK — chiron-fonts",
+    name: "昭源宋體（ChironSung HK）— chiron-fonts",
     url: "https://github.com/chiron-fonts/chiron-sung-hk",
     descKey: "ack.fonts.chironsung",
   },
   {
-    name: "ChironHei HK — chiron-fonts",
+    name: "昭源黑體（ChironHei HK）— chiron-fonts",
     url: "https://github.com/chiron-fonts/chiron-hei-hk",
     descKey: "ack.fonts.chironhei",
   },

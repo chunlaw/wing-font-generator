@@ -196,6 +196,10 @@ export type TranslationKey =
   | "step2.coverage.annoLabel"
   | "step2.coverage.andMore"
   | "step2.confirmDelete"
+  | "step2.mandarinWarning.title"
+  | "step2.mandarinWarning.body"
+  | "step2.mandarinWarning.cta"
+  | "step2.mandarinWarning.cli"
   // Step 3 — parameters
   | "step3.title"
   | "step3.description"
@@ -349,17 +353,17 @@ export const TRANSLATIONS: Record<Language, Record<TranslationKey, string>> = {
     "home.platforms.learnMoreSubtitle":
       "選擇你常用的軟件或作業系統，查看安裝與設定步驟。",
     "home.platforms.tabs.canva":
-      "開啟設計，點擊文字元素。\n在字型選單按「上載字型」，選擇下載的 .ttf 檔案。\n字型的詞語對應與「字1」、「字丅一」等標注切換無需任何設定即可運作（基於 OpenType `ccmp` 必定啟用功能）。\n免費帳戶可能需升級至 Canva Pro 方能上載字型。",
+      "開啟設計，點擊文字元素。\n在字型選單按「上載字型」，選擇下載的 .ttf 檔案。\n字型即時可用，毋須額外設定。\n免費帳戶可能需升級至 Canva Pro 方能上載字型。",
     "home.platforms.tabs.affinity":
-      "先在作業系統安裝字型（見 Windows / macOS / Linux 分頁）。\n關閉並重新開啟 Affinity Designer / Photo / Publisher。\n字型隨即出現在所有字型選單。預設已啟用連字，毋須額外設定。",
+      "先在作業系統安裝字型（見 Windows / macOS / Linux 分頁）。\n關閉並重新開啟 Affinity Designer / Photo / Publisher。\n字型隨即出現在所有字型選單，毋須額外設定。",
     "home.platforms.tabs.adobe":
-      "先在作業系統安裝字型。\n關閉並重新開啟 Adobe Illustrator / Photoshop / InDesign。\n字型會以家族名稱出現在字型選單。\n所有標注功能（詞語對應、「字1」、「字丅一」）無需任何設定即可運作——本字型已將規則放在 OpenType `ccmp` 功能（必定啟用），無需開啟「連字」選項。",
+      "先在作業系統安裝字型。\n關閉並重新開啟 Adobe Illustrator / Photoshop / InDesign。\n字型會以家族名稱出現在字型選單，毋須額外設定即可使用。",
     "home.platforms.tabs.word":
-      "先在作業系統安裝字型。\n關閉並重啟 Word。\n在「常用 > 字型」選單中找到字型。\n所有標注功能無需任何設定即可運作——本字型已將規則放在 OpenType `ccmp` 功能（必定啟用），無需在「格式 > 字型 > 進階 > OpenType 功能」中啟用連字。",
+      "先在作業系統安裝字型。\n關閉並重啟 Word。\n在「常用 > 字型」選單中找到字型，毋須額外設定。",
     "home.platforms.tabs.iwork":
-      "先用 macOS 字體簿安裝字型（見 macOS 分頁）。\n開啟 Pages 或 Keynote，字型會以家族名稱出現在「格式 > 字型」選單。\n所有標注功能（詞語對應、數字標注、丅+中文數字）無需任何設定即可運作——本字型已將規則放在 OpenType `ccmp` 功能。\nPages 與 Keynote 預設會抑制 CJK 文字的部分 OpenType 功能（包括 `liga`），但 `ccmp` 屬於強制啟用層級，不會受到抑制。",
+      "先用 macOS 字體簿安裝字型（見 macOS 分頁）。\n開啟 Pages 或 Keynote，字型會以家族名稱出現在「格式 > 字型」選單，毋須額外設定即可使用。",
     "home.platforms.tabs.web":
-      "將下載的 .woff 與 .ttf 上傳至你的伺服器（或任何 CSS 能存取的位置）。\n在 CSS 中加入 @font-face 宣告（生成器 Step 5 對話框提供可複製的範本）。\n套用字型：`font-family: '你的字型家族名稱'`。\n毋須額外設定——`liga` 在所有現代瀏覽器預設啟用，`ccmp` 依 OpenType 規格屬於強制執行，Chrome、Firefox、Safari 均自動套用。",
+      "將下載的 .woff 與 .ttf 上傳至你的伺服器（或任何 CSS 能存取的位置）。\n在 CSS 中加入 @font-face 宣告（生成器 Step 5 對話框提供可複製的範本）。\n套用字型：`font-family: '你的字型家族名稱'`。\nChrome、Firefox、Safari 均自動支援，毋須額外設定。",
     "home.platforms.tabs.windows":
       "右鍵點擊 .ttf 檔案，選擇「安裝」（或「為所有使用者安裝」以全系統可用）。\n或拖曳 .ttf 至「設定 > 個人化 > 字型」。\n重啟已開啟的應用程式，否則它們無法載入新字型。",
     "home.platforms.tabs.macos":
@@ -486,6 +490,12 @@ export const TRANSLATIONS: Record<Language, Record<TranslationKey, string>> = {
     "step2.coverage.annoLabel": "標注字型缺少的字元：",
     "step2.coverage.andMore": "還有 {n} 個未顯示",
     "step2.confirmDelete": "確定要刪除嗎？",
+    "step2.mandarinWarning.title": "普通話對應表體積較大",
+    "step2.mandarinWarning.body":
+      "拼音對應表覆蓋全部 CJK 字符（約 95,000 筆），在瀏覽器內生成可能需時 5-15 分鐘，亦有機會因為記憶體不足而中斷。建議直接使用已經預先生成嘅普通話字型——同樣輸出，即時下載。",
+    "step2.mandarinWarning.cta": "查看預先生成字型",
+    "step2.mandarinWarning.cli":
+      "熟悉命令列？直接喺本機跑生成腳本最快",
     // Step 3
     "step3.title": "步驟 3：參數設定",
     "step3.description": "微調字形位置、大小與輸出選項。",
@@ -647,17 +657,17 @@ export const TRANSLATIONS: Record<Language, Record<TranslationKey, string>> = {
     "home.platforms.learnMoreSubtitle":
       "Pick the app or operating system you use most and see what to do.",
     "home.platforms.tabs.canva":
-      "Open a design and click any text element.\nIn the font picker, choose “Upload a font” and select the .ttf you downloaded.\nWord-context substitution and digit overrides (`字1`, `字丅一`) work without any text-setting toggles — they ride on OpenType `ccmp`, which is mandatory.\nFree accounts may need a Canva Pro upgrade to upload custom fonts.",
+      "Open a design and click any text element.\nIn the font picker, choose “Upload a font” and select the .ttf you downloaded.\nThe font is ready to use immediately — no extra settings.\nFree accounts may need a Canva Pro upgrade to upload custom fonts.",
     "home.platforms.tabs.affinity":
-      "Install the font through your operating system (see the Windows / macOS / Linux tabs).\nQuit and reopen Affinity Designer / Photo / Publisher.\nThe font now appears in every font picker. Ligatures are enabled by default — no app-side setup needed.",
+      "Install the font through your operating system (see the Windows / macOS / Linux tabs).\nQuit and reopen Affinity Designer / Photo / Publisher.\nThe font now appears in every font picker — no extra settings.",
     "home.platforms.tabs.adobe":
-      "Install the font through your operating system.\nQuit and restart Illustrator / Photoshop / InDesign.\nThe font appears in the font menu under its family name.\nAll override paths (word-context, `字1`, `字丅一`) work without any settings — the font's rules ride on OpenType `ccmp`, which is mandatory. The Character panel's “Ligatures” toggle is no longer needed for this font.",
+      "Install the font through your operating system.\nQuit and restart Illustrator / Photoshop / InDesign.\nThe font appears in the font menu under its family name and is ready to use — no extra settings.",
     "home.platforms.tabs.word":
-      "Install the font through your operating system.\nQuit and restart Word.\nFind the font under Home > Font.\nAll override paths work without any settings — the font's rules ride on OpenType `ccmp`, which is mandatory. The Format > Font > Advanced > OpenType Features → Ligatures setting is no longer required.",
+      "Install the font through your operating system.\nQuit and restart Word.\nFind the font under Home > Font and use it normally — no extra settings.",
     "home.platforms.tabs.iwork":
-      "Install the font via macOS Font Book (see the macOS tab).\nOpen Pages or Keynote; the font appears in Format > Font under its family name.\nAll override paths work without any settings — the font's rules ride on OpenType `ccmp` (required-by-spec). Pages and Keynote suppress `liga` on CJK runs, so we deliberately route everything through `ccmp` instead; nothing for you to enable.",
+      "Install the font via macOS Font Book (see the macOS tab).\nOpen Pages or Keynote; the font appears in Format > Font under its family name and is ready to use — no extra settings.",
     "home.platforms.tabs.web":
-      "Upload the .woff and .ttf to your server (or anywhere your CSS can reach them).\nAdd the @font-face snippet from the generator's Step 5 dialog to your stylesheet.\nUse the font like any other: `font-family: 'YourFamilyName'`.\nNo extra setup needed — `liga` is default-on in all modern browsers and `ccmp` is mandatory per OpenType spec, so both fire automatically in Chrome, Firefox, and Safari.",
+      "Upload the .woff and .ttf to your server (or anywhere your CSS can reach them).\nAdd the @font-face snippet from the generator's Step 5 dialog to your stylesheet.\nUse the font like any other: `font-family: 'YourFamilyName'`.\nWorks automatically in Chrome, Firefox, and Safari — no extra settings.",
     "home.platforms.tabs.windows":
       "Right-click the .ttf file and choose “Install” (or “Install for all users” for system-wide access).\nAlternatively, drag the .ttf into Settings > Personalization > Fonts.\nRestart any application that was already running, otherwise it won't see the new font.",
     "home.platforms.tabs.macos":
@@ -787,6 +797,12 @@ export const TRANSLATIONS: Record<Language, Record<TranslationKey, string>> = {
     "step2.coverage.annoLabel": "Missing from annotation font:",
     "step2.coverage.andMore": "and {n} more",
     "step2.confirmDelete": "Delete this row?",
+    "step2.mandarinWarning.title": "The Mandarin mapping is computationally heavy",
+    "step2.mandarinWarning.body":
+      "The Hanyu Pinyin mapping covers the full CJK ideograph range (~95,000 rows). In-browser generation can take 5–15 minutes and may run out of memory before finishing. We recommend the pre-built Mandarin showcase fonts instead — same output, instant download.",
+    "step2.mandarinWarning.cta": "View pre-built fonts",
+    "step2.mandarinWarning.cli":
+      "Comfortable with the command line? Run the generator locally for the fastest path",
     // Step 3
     "step3.title": "Step 3: Parameters",
     "step3.description":

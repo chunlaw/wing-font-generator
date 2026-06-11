@@ -23,6 +23,7 @@ import {
   FormControl,
   IconButton,
   InputLabel,
+  Link,
   ListSubheader,
   MenuItem,
   Paper,
@@ -52,10 +53,32 @@ import {
   useState,
 } from "react";
 import { FixedSizeList, ListChildComponentProps } from "react-window";
+import { Link as RouterLink } from "react-router-dom";
 import { useGenerate } from "../GenerateContext";
 import { useTranslation } from "../../../i18n/LanguageContext";
 import { BUILT_IN_MAPPINGS } from "../../../utils/wingfontPresets";
 import { MappingRow } from "../types";
+
+// Pre-built Mandarin showcase fonts the warning Alert links to. The
+// in-browser generator can handle mandarin.csv but at the edge of
+// what Pyodide is comfortable with — 5-15 min runtime, possible
+// tab-OOM on low-memory devices. Steering users to the CI-built
+// shortcuts here is a much better default experience than letting
+// the tab grind for ten minutes.
+const MANDARIN_SHOWCASE_QUERY =
+  "/showcase?fonts=NotoSansSC-Huninn-mandarin," +
+  "SourceHanSerif-Mplus-mandarin," +
+  "Xiaolai-MplusRounded-mandarin";
+
+// Power-user escape hatch: pre-built showcase fonts cover the common
+// case, but anyone who wants a customised Mandarin variant (different
+// base font, tweaked mappings, advanced parameters) is much better
+// off running the CLI generator on their own machine than waiting
+// 5-15 min for Pyodide. We point at python/README.md on the GitHub
+// repo rather than duplicating install steps in a modal — single
+// source of truth, and the README already covers prerequisites.
+const MANDARIN_CLI_README_URL =
+  "https://github.com/chunlaw/wing-font-generator/tree/main/python#readme";
 
 // Two row heights — phones get taller rows because we stack the data
 // onto two lines (chars + actions on top, annos + weight below). The
@@ -320,6 +343,66 @@ const Step2Mappings = () => {
       </Box>
 
       {importError && <Alert severity="error">{importError}</Alert>}
+
+      {/*
+        Mandarin-mapping heads-up.
+
+        mandarin.csv covers the full Unihan CJK ideograph range
+        (~95k rows). The Python pipeline handles that fine on a
+        Linux runner (3-5 min) but Pyodide in a browser tab runs
+        the same code at ~50× the cost, and the intermediate state
+        eats several hundred MB of WASM heap — the tab often goes
+        unresponsive or runs out of memory before finishing.
+
+        Rather than block generation, we set expectations: warn
+        clearly, point at the pre-built showcase fonts that solve
+        the same problem in zero seconds, and let the determined
+        user proceed if they want a customised variant.
+       */}
+      {mappingsPresetKey === "mandarin" && (
+        <Alert
+          severity="warning"
+          variant="outlined"
+          action={
+            <Button
+              color="inherit"
+              size="small"
+              component={RouterLink}
+              to={MANDARIN_SHOWCASE_QUERY}
+            >
+              {t("step2.mandarinWarning.cta")}
+            </Button>
+          }
+        >
+          <Typography variant="body2" sx={{ fontWeight: 600, mb: 0.5 }}>
+            {t("step2.mandarinWarning.title")}
+          </Typography>
+          <Typography variant="body2">
+            {t("step2.mandarinWarning.body")}
+          </Typography>
+          {/*
+            Secondary CLI escape-hatch. The primary CTA (the action
+            button up top) sends most users to the pre-built showcase
+            fonts. This smaller inline link is for the minority who
+            want to customise — points at python/README.md so we
+            don't duplicate install steps in the UI. underline="hover"
+            and inherit colour keep it quiet visually — it's an
+            offer, not a recommendation.
+           */}
+          <Typography variant="caption" sx={{ display: "block", mt: 1 }}>
+            <Link
+              href={MANDARIN_CLI_README_URL}
+              target="_blank"
+              rel="noopener noreferrer"
+              underline="hover"
+              color="inherit"
+              sx={{ fontWeight: 500 }}
+            >
+              {t("step2.mandarinWarning.cli")} →
+            </Link>
+          </Typography>
+        </Alert>
+      )}
 
       {/*
         Coverage validator.
