@@ -117,10 +117,55 @@ python wing-font.py \
   -opt -as 0.27
 ```
 
-This writes `ChironSungHK-Noto-lshk.ttf` and `ChironSungHK-Noto-lshk.woff`
-to the working directory. Drop the WOFF into a page with
-`@font-face { font-family: …; src: url('…') }` and any Chinese text using
-mapped characters will render with romanization stacked above.
+This writes `ChironSungHK-Noto-lshk.ttf` and `ChironSungHK-Noto-lshk.woff2`
+to the working directory. Drop the WOFF2 into a page with
+`@font-face { font-family: …; src: url('…') format('woff2') }` and any
+Chinese text using mapped characters will render with romanization
+stacked above.
+
+### Tall annotations on low-ascent bases — use `--out-ascent`
+
+When the base font has a low native ascent (e.g. Xiaolai at 880u — vs.
+NotoSansHK's 1160u) and the annotation cascades far above the base
+character (Urdu Nastaliq's zabar/kasra stack, Thai vowel + tone marks,
+Hangul jamo), the same `-as` value that's fine on NotoSansHK can push
+the top of the annotation past Xiaolai's `winAscent` line. Browsers
+will overflow gracefully, but apps that strictly clip at `winAscent`
+(Word, Pages, Keynote, Canva) silently truncate the tallest glyphs.
+
+Fix: pass `--out-ascent` to bump the output font's `hhea.ascent` +
+`OS/2.usWinAscent` (font units, UPM=1000). For Xiaolai paired with
+Thai/Katakana/Korean, `1200` is enough; for Urdu Nastaliq, use `1300`.
+Recommended pairings:
+
+```sh
+# Xiaolai + Thai (Google Sans Thai)
+python wing-font.py \
+  -i input_fonts/XiaolaiSC-Regular.ttf \
+  -a 'input_fonts/GoogleSans-VariableFont_GRAD,opsz,wght.ttf' \
+  -m mappings/canto-thai.csv \
+  -o Xiaolai-Google-thai \
+  -opt -as 0.26 --out-ascent 1200
+
+# Xiaolai + Urdu Nastaliq (Noto Nastaliq Urdu)
+python wing-font.py \
+  -i input_fonts/XiaolaiSC-Regular.ttf \
+  -a input_fonts/NotoNastaliqUrdu-VariableFont_wght.ttf \
+  -m mappings/canto-urdu.csv \
+  -o Xiaolai-NotoNastaliq-urdu \
+  -opt -as 0.22 --out-ascent 1300
+```
+
+You can leave `--out-ascent` unset for typical pairings (CJK + Latin
+romanization, NotoSansHK base): the legacy "inherit from base" default
+gives the right line heights everywhere with no clipping. See the
+[`deploy-pages.yml`](../.github/workflows/deploy-pages.yml) matrix for
+the canonical `-as` / `--out-ascent` pairings shipped to
+<https://wing-font.chunlaw.io/>.
+
+The same lever is exposed in the in-browser pipeline at `/generate` →
+Step 3 → Advanced → "Output ascent (font units)", so you can iterate
+on a value visually before committing to a CLI invocation.
 
 ### Full CLI
 
@@ -128,7 +173,7 @@ mapped characters will render with romanization stacked above.
 | --- | --- | --- | --- |
 | `-i` | `--base-font-file` | required | TTF whose glyphs become the bottom of each annotated glyph |
 | `-a` | `--anno-font-file` | required | TTF supplying the romanization letterforms |
-| `-o` | `--output-prefix` | required | Output basename; `.ttf` and `.woff` are appended |
+| `-o` | `--output-prefix` | required | Output basename; `.ttf` and `.woff2` are appended |
 | `-m` | `--mapping` | required | CSV mapping characters/words to romanizations |
 | `-f` | `--family-name` | source name | Overwrites `name` table family entries |
 | `-bs` | `--base-scale` | `0.75` | How much to shrink the base character (vertical room for anno) |
@@ -136,6 +181,8 @@ mapped characters will render with romanization stacked above.
 | `-y` | `--upper_y_offset_ratio` | `0.8` | Where to put the annotation (fraction of em) |
 | `-v` | `--invert` | off | Swap positions: annotation below, base above |
 | `-opt` | `--optimize` | off | Subset the output to just glyphs we actually use (drops it from ~30 MB to ~200–500 KB per font) |
+| | `--trigger-char` | `丅` (U+4E05) | Override-trigger character for the IME-friendly variant selection path (`<base><trigger><numeral>`). Pass an empty string to disable the trigger+numeral path while keeping the digit-suffix path (`<base><1-9>`) intact. |
+| | `--out-ascent` | inherit | Override the output font's `hhea.ascent` + `OS/2.usWinAscent` (font units, UPM=1000). Pairings whose annotation cascades far above the base — Urdu Nastaliq, tall Thai marks, Hangul jamo on low-ascent bases like Xiaolai (880u) — need more headroom than the base provides; without this flag, apps that strictly honour `winAscent` (Word, Pages, Keynote, Canva) truncate the top of the tallest annotation. Typical values: `1200` for Xiaolai paired with Thai / Katakana / Korean, `1300` for Xiaolai paired with Urdu. Leaving unset preserves legacy behaviour. |
 
 ---
 

@@ -70,6 +70,8 @@ python wing-font.py \
 
 Input fonts aren't tracked in this repo — [`python/init_fonts.py`](python/init_fonts.py) fetches them from the [wing-font-hub](https://github.com/chunlaw/wing-font-hub) CDN. See [`python/README.md`](python/README.md) for the full CLI reference and pipeline walkthrough.
 
+> **Pairing tall annotations** (Urdu Nastaliq, Thai with vowel + tone, Hangul jamo) with a low-ascent base font (e.g. Xiaolai at 880u): pass `--out-ascent` so apps that strictly clip at `winAscent` (Word, Pages, Keynote, Canva) don't truncate the top of the tallest glyphs. Suggested values: `1200` for Thai / Katakana / Korean on Xiaolai, `1300` for Urdu. The same lever is exposed in the in-browser pipeline at `/generate` → Step 3 → Advanced → "Output ascent" — handy for visually dialling in a value before committing to a CLI invocation.
+
 ### Web dev
 
 ```sh
