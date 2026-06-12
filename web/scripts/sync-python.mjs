@@ -77,6 +77,10 @@ const MANIFEST = [
   ["mappings/canto-katakana-notone.csv", "mappings/canto-katakana-notone.csv"],
   ["mappings/canto-filipino-notone.csv", "mappings/canto-filipino-notone.csv"],
   ["mappings/canto-urdu-notone.csv", "mappings/canto-urdu-notone.csv"],
+  ["mappings/canto-hindi.csv", "mappings/canto-hindi.csv"],
+  ["mappings/canto-punjab.csv", "mappings/canto-punjab.csv"],
+  ["mappings/canto-hindi-notone.csv", "mappings/canto-hindi-notone.csv"],
+  ["mappings/canto-punjab-notone.csv", "mappings/canto-punjab-notone.csv"],
   ["mappings/cangjie.csv", "mappings/cangjie.csv"],
   // Mandarin — Hanyu Pinyin in numeric-tone form (e.g. `ling2`,
   // `yuan2`). Two regional variants, each ~95k rows / ~3 MB covering
@@ -163,6 +167,14 @@ const MANIFEST = [
   [
     "input_fonts/NotoSansTagalog-Regular.ttf",
     "NotoSansTagalog-Regular.ttf",
+  ],
+  // Devanagari annotation font for canto-hindi (static Regular).
+  ["input_fonts/Hind-Regular.ttf", "Hind-Regular.ttf"],
+  // Gurmukhi annotation font for canto-punjab. Variable; renamed to
+  // "-VF" to drop the comma in the source filename (like Google Sans).
+  [
+    "input_fonts/NotoSansGurmukhi-VariableFont_wdth,wght.ttf",
+    "NotoSansGurmukhi-VF.ttf",
   ],
   // Taiwanese / Southern Min showcase pairing: Noto Sans TC base CJK
   // font + Huninn (jf-openhuninn) annotation font carrying the Tâi-lô
