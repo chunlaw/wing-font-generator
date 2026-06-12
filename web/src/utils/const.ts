@@ -369,6 +369,18 @@ export const AVAILABLE_FONTS: FontSet = {
         source: `url(${import.meta.env.VITE_FONT_URL}/Xiaolai-NotoNastaliq-urdu.woff2) format('woff2')`,
         group: CANTO_GROUP_OTHER_SCRIPTS,
       },
+      "Xiaolai-Hind-hindi": {
+        displayName: "小賴字體（印地文標注）",
+        name: "Xiaolai-Hind-hindi",
+        source: `url(${import.meta.env.VITE_FONT_URL}/Xiaolai-Hind-hindi.woff2) format('woff2')`,
+        group: CANTO_GROUP_OTHER_SCRIPTS,
+      },
+      "Xiaolai-Gurmukhi-punjab": {
+        displayName: "小賴字體（旁遮普文標注）",
+        name: "Xiaolai-Gurmukhi-punjab",
+        source: `url(${import.meta.env.VITE_FONT_URL}/Xiaolai-Gurmukhi-punjab.woff2) format('woff2')`,
+        group: CANTO_GROUP_OTHER_SCRIPTS,
+      },
       // ─ Toneless / decorative (souvenir) set — Xiaolai base, tone
       // digit stripped so the script reads as clean native text.
       "Xiaolai-Google-thai-notone": {
@@ -399,6 +411,18 @@ export const AVAILABLE_FONTS: FontSet = {
         displayName: "小賴字體（烏爾都文・無聲調）",
         name: "Xiaolai-NotoNastaliq-urdu-notone",
         source: `url(${import.meta.env.VITE_FONT_URL}/Xiaolai-NotoNastaliq-urdu-notone.woff2) format('woff2')`,
+        group: CANTO_GROUP_TONELESS,
+      },
+      "Xiaolai-Hind-hindi-notone": {
+        displayName: "小賴字體（印地文・無聲調）",
+        name: "Xiaolai-Hind-hindi-notone",
+        source: `url(${import.meta.env.VITE_FONT_URL}/Xiaolai-Hind-hindi-notone.woff2) format('woff2')`,
+        group: CANTO_GROUP_TONELESS,
+      },
+      "Xiaolai-Gurmukhi-punjab-notone": {
+        displayName: "小賴字體（旁遮普文・無聲調）",
+        name: "Xiaolai-Gurmukhi-punjab-notone",
+        source: `url(${import.meta.env.VITE_FONT_URL}/Xiaolai-Gurmukhi-punjab-notone.woff2) format('woff2')`,
         group: CANTO_GROUP_TONELESS,
       },
     },

@@ -247,6 +247,18 @@ export const BUILT_IN_ANNO_FONTS: BuiltInPreset[] = [
     url: "/wingfont/NotoSansTagalog-Regular.ttf",
     filename: "NotoSansTagalog-Regular.ttf",
   },
+  {
+    key: "anno-hind",
+    label: "Hind (देवनागरी Devanagari)",
+    url: "/wingfont/Hind-Regular.ttf",
+    filename: "Hind-Regular.ttf",
+  },
+  {
+    key: "anno-notosansgurmukhi",
+    label: "Noto Sans Gurmukhi (ਗੁਰਮੁਖੀ)",
+    url: "/wingfont/NotoSansGurmukhi-VF.ttf",
+    filename: "NotoSansGurmukhi-VF.ttf",
+  },
   // ─ Mengshen-equivalent annotation fonts (普通話 pinyin Latin) ─────
   //
   // The pinyin (標注) faces for the two Mengshen-style products. M+ 1m
@@ -355,6 +367,20 @@ export const BUILT_IN_MAPPINGS: BuiltInPreset[] = [
     filename: "canto-urdu.csv",
     group: "粵語拼寫 (Cantonese, other scripts)",
   },
+  {
+    key: "canto-hindi",
+    label: "देवनागरी (Hindi / Devanagari)",
+    url: "/wingfont/mappings/canto-hindi.csv",
+    filename: "canto-hindi.csv",
+    group: "粵語拼寫 (Cantonese, other scripts)",
+  },
+  {
+    key: "canto-punjab",
+    label: "ਗੁਰਮੁਖੀ (Punjabi / Gurmukhi)",
+    url: "/wingfont/mappings/canto-punjab.csv",
+    filename: "canto-punjab.csv",
+    group: "粵語拼寫 (Cantonese, other scripts)",
+  },
   // ─ Toneless / decorative variants of the four scripts above ──────
   // Identical transliterations with the tone DIGIT stripped, so the
   // output reads as clean native script (헝 공 instead of 헝1 공2) —
@@ -394,6 +420,20 @@ export const BUILT_IN_MAPPINGS: BuiltInPreset[] = [
     label: "اردو・無聲調 (Urdu, toneless)",
     url: "/wingfont/mappings/canto-urdu-notone.csv",
     filename: "canto-urdu-notone.csv",
+    group: "粵語拼寫・無聲調 (Cantonese, toneless / decorative)",
+  },
+  {
+    key: "canto-hindi-notone",
+    label: "देवनागरी・無聲調 (Hindi, toneless)",
+    url: "/wingfont/mappings/canto-hindi-notone.csv",
+    filename: "canto-hindi-notone.csv",
+    group: "粵語拼寫・無聲調 (Cantonese, toneless / decorative)",
+  },
+  {
+    key: "canto-punjab-notone",
+    label: "ਗੁਰਮੁਖੀ・無聲調 (Punjabi, toneless)",
+    url: "/wingfont/mappings/canto-punjab-notone.csv",
+    filename: "canto-punjab-notone.csv",
     group: "粵語拼寫・無聲調 (Cantonese, toneless / decorative)",
   },
   // Taiwanese / Southern Min (河洛話) — pair these with the Noto Sans

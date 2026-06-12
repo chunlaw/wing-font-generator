@@ -312,6 +312,13 @@ jobs:
           - { name: Xiaolai-NotoJP-katakana,               args: "-opt -i input_fonts/XiaolaiSC-Regular.ttf -a input_fonts/NotoSansJP-VariableFont_wght.ttf -m mappings/canto-katakana.csv -as 0.28 --out-ascent 1200" }
           - { name: Xiaolai-NotoKR-korean,                 args: "-opt -i input_fonts/XiaolaiSC-Regular.ttf -a input_fonts/NotoSansKR-VariableFont_wght.ttf -m mappings/canto-korean.csv -as 0.28 --out-ascent 1200" }
           - { name: Xiaolai-NotoNastaliq-urdu,             args: "-opt -i input_fonts/XiaolaiSC-Regular.ttf -a input_fonts/NotoNastaliqUrdu-VariableFont_wght.ttf -m mappings/canto-urdu.csv -as 0.22 --out-ascent 1300" }
+          # Devanagari / Gurmukhi: height-matched to Thai/Kana/Hangul
+          # (worst-top ~1033u @0.26), so they share the 0.26 / out-ascent
+          # 1200 band. Hind is static Regular; Noto Sans Gurmukhi is
+          # variable (defaults to wght 400). Gurmukhi runs a touch wide,
+          # so both stay at 0.26 rather than 0.28.
+          - { name: Xiaolai-Hind-hindi,                    args: "-opt -i input_fonts/XiaolaiSC-Regular.ttf -a input_fonts/Hind-Regular.ttf -m mappings/canto-hindi.csv -as 0.26 --out-ascent 1200" }
+          - { name: Xiaolai-Gurmukhi-punjab,               args: "-opt -i input_fonts/XiaolaiSC-Regular.ttf -a 'input_fonts/NotoSansGurmukhi-VariableFont_wdth,wght.ttf' -m mappings/canto-punjab.csv -as 0.26 --out-ascent 1200" }
           # Toneless / decorative variants (tone digit stripped) — souvenir
           # set, Xiaolai base. Same -as / --out-ascent treatment as the
           # toned Xiaolai annotation lines above (recovering legible size
@@ -324,6 +331,8 @@ jobs:
           - { name: Xiaolai-NotoKR-korean-notone,          args: "-opt -i input_fonts/XiaolaiSC-Regular.ttf -a input_fonts/NotoSansKR-VariableFont_wght.ttf -m mappings/canto-korean-notone.csv -as 0.28 --out-ascent 1200" }
           - { name: Xiaolai-NotoTagalog-baybayin-notone,   args: "-opt -i input_fonts/XiaolaiSC-Regular.ttf -a input_fonts/NotoSansTagalog-Regular.ttf -m mappings/canto-filipino-notone.csv -as 0.28 --out-ascent 1200" }
           - { name: Xiaolai-NotoNastaliq-urdu-notone,      args: "-opt -i input_fonts/XiaolaiSC-Regular.ttf -a input_fonts/NotoNastaliqUrdu-VariableFont_wght.ttf -m mappings/canto-urdu-notone.csv -as 0.22 --out-ascent 1300" }
+          - { name: Xiaolai-Hind-hindi-notone,             args: "-opt -i input_fonts/XiaolaiSC-Regular.ttf -a input_fonts/Hind-Regular.ttf -m mappings/canto-hindi-notone.csv -as 0.26 --out-ascent 1200" }
+          - { name: Xiaolai-Gurmukhi-punjab-notone,        args: "-opt -i input_fonts/XiaolaiSC-Regular.ttf -a 'input_fonts/NotoSansGurmukhi-VariableFont_wdth,wght.ttf' -m mappings/canto-punjab-notone.csv -as 0.26 --out-ascent 1200" }
           - { name: Xiaolai-Huninn-tailo,                  args: "-opt -i input_fonts/XiaolaiSC-Regular.ttf -a input_fonts/Huninn-Regular.ttf -m mappings/taigi-tl-toned.csv -as 0.25" }
           - { name: Xiaolai-Huninn-poj,                    args: "-opt -i input_fonts/XiaolaiSC-Regular.ttf -a input_fonts/Huninn-Regular.ttf -m mappings/taigi-poj-toned.csv -as 0.25" }
           - { name: Xiaolai-Huninn-teochew-pengim,         args: "-opt -i input_fonts/XiaolaiSC-Regular.ttf -a input_fonts/Huninn-Regular.ttf -m mappings/teochew-gdpi.csv -as 0.25" }
