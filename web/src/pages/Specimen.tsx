@@ -238,15 +238,22 @@ const Specimen = () => {
       <Box flex={1} display="flex" width="100%" overflow="scroll">
         <Typography
           sx={{
-            // Apply user-tunable type controls. textWrap=wrap +
-            // lineHeight=1.4 preserved from the static msgSx —
-            // specimen pages still want long sample text to break
-            // across multiple lines (unlike /showcase where each
-            // sample stays on one line).
+            // Apply user-tunable type controls. textWrap=wrap so
+            // long sample text breaks across multiple lines on the
+            // specimen page (unlike /showcase where each sample
+            // stays on one line). lineHeight bumped 1.4 → 1.6 in
+            // June 2026 to absorb the taller line cells that some
+            // fonts now ship with — specifically the Xiaolai +
+            // Thai/Katakana/Korean/Urdu builds, where --out-ascent
+            // raises the winAscent from 880u to 1200-1300u so the
+            // annotation has headroom (see deploy-pages.yml
+            // matrix). 1.6 covers the worst case (Urdu at 1300u)
+            // without making the lines feel sparse on the more
+            // typical pairings.
             fontSize: `${typoSettings.fontSizePx}px`,
             letterSpacing: `${typoSettings.letterSpacingEm}em`,
             textWrap: "wrap" as const,
-            lineHeight: 1.4,
+            lineHeight: 1.6,
             opacity: previewOpacity,
             transition: `opacity ${FADE_MS}ms ease-in-out`,
           }}

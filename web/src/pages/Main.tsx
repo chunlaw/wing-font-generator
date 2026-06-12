@@ -657,8 +657,20 @@ const FontShowcaseCard = ({
             // responsive ladder for predictable WYSIWYG output.
             // letterSpacingEm threads in as em (so spacing scales
             // proportionally with size when the user adjusts both).
+            //
+            // lineHeight: 1.6 (was the default 1.4) absorbs the
+            // taller line cells on fonts that ship with raised
+            // winAscent for annotation headroom — specifically the
+            // Xiaolai + Thai/Katakana/Korean/Urdu builds where
+            // --out-ascent pushes the clipping ascent up from 880u
+            // to 1200-1300u. Without the bump, those cards stack
+            // tighter than peers and the showcase grid reads
+            // unevenly when those rows are picked. 1.6 covers the
+            // worst case (Urdu at 1300u) while still feeling
+            // intentional on the typical NotoSansHK pairings.
             fontSize: `${typoSettings.fontSizePx}px`,
             letterSpacing: `${typoSettings.letterSpacingEm}em`,
+            lineHeight: 1.6,
             textWrap: "nowrap" as const,
             cursor: "pointer",
             // Composed opacity drives both:

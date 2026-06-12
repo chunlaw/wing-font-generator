@@ -64,6 +64,27 @@ def main(
     # entirely while leaving the universal digit-suffix path
     # (`行1`, `行2`, …) intact.
     trigger_char=DEFAULT_TRIGGER_CHAR,
+    # --- Output ascent override ------------------------------------
+    #
+    # Raises the output font's hhea.ascent and OS/2.usWinAscent to
+    # the requested value (in font units, same UPM=1000 as
+    # everything else). Pairings where the annotation cascades far
+    # above the base character (Urdu Nastaliq, tall Thai marks,
+    # tall Hangul jamo) need more headroom than the base font's
+    # native ascent provides — without this lever, the annotation's
+    # top is clipped by apps that strictly honor winAscent (Word,
+    # Pages, Keynote, Canva). The cost is a slightly taller line
+    # height in those apps; the gain is the annotation actually
+    # being visible.
+    #
+    # When None, the output keeps the BASE font's ascent unchanged
+    # (legacy behaviour — matches every build before the Xiaolai
+    # variant tuning of June 2026). When set, BOTH hhea.ascent and
+    # OS/2.usWinAscent are bumped together; sTypoAscender is left
+    # alone so the typographic baseline stays where designers
+    # expect it (apps that respect typo metrics get the same line
+    # spacing as before).
+    out_ascent=None,
 ):
     # Sanity-check input font sizes before letting fontTools blow up
     # with a cryptic "bad sfntVersion" error. A common failure mode
@@ -429,6 +450,28 @@ def main(
     # pipeline.
     from fontTools.ttLib.tables.otBase import USE_HARFBUZZ_REPACKER
     output_font.cfg[USE_HARFBUZZ_REPACKER] = False
+
+    # ── Ascent override (optional) ────────────────────────────────
+    # Bump the output font's vertical-metrics ascent values so the
+    # annotation has somewhere to grow. We touch:
+    #   * hhea.ascent      — used by macOS / iOS / CoreText layout
+    #   * OS/2.usWinAscent — the "clipping" ascent honored by
+    #                        Windows-derived apps (Word, Pages,
+    #                        Keynote, Canva). Without this, those
+    #                        apps clip anything above winAscent.
+    # We deliberately leave OS/2.sTypoAscender unchanged: that's
+    # the "designer's preferred baseline" used by apps that respect
+    # typo metrics (Adobe InDesign, modern browsers in some
+    # contexts), and keeping it constant means typo-metrics
+    # consumers get the same line spacing as before. The "useTypo
+    # metrics" bit in fsSelection isn't toggled by this path
+    # either — apps that DO respect typo metrics inherit the base
+    # font's setting (NotoSansHK / Xiaolai both have it off, so
+    # winAscent is what most renderers actually use).
+    if out_ascent is not None:
+        output_font["hhea"].ascent = int(out_ascent)
+        output_font["OS/2"].usWinAscent = int(out_ascent)
+
     with step_timer("TTF save"):
         output_font.save(str(output_prefix) + ".ttf")
     if not skip_woff:
@@ -472,6 +515,24 @@ if __name__ == "__main__":
             "the digit-suffix path (`<base><1-9>`)."
         ),
     )
+    parser.add_argument(
+        '--out-ascent',
+        type=int,
+        default=None,
+        help=(
+            "Override the output font's hhea.ascent and "
+            "OS/2.usWinAscent (font units, UPM=1000). Pairings with "
+            "tall annotations (Urdu Nastaliq, tall Thai marks, "
+            "Hangul jamo on low-ascent bases like Xiaolai 880u) "
+            "need more headroom than the base font's native ascent. "
+            "Without this flag the output inherits the base font's "
+            "ascent and apps that strictly clip at winAscent (Word, "
+            "Pages, Keynote, Canva) truncate the top of the tallest "
+            "annotation. Typical values: 1200 for Xiaolai + Thai / "
+            "Katakana / Korean, 1300 for Xiaolai + Urdu. Leaving "
+            "unset preserves the previous behaviour."
+        ),
+    )
     try:
         options = parser.parse_args()
     except:
@@ -489,4 +550,5 @@ if __name__ == "__main__":
         invert=options.invert,
         optimize=options.optimize,
         trigger_char=options.trigger_char,
+        out_ascent=options.out_ascent,
     )

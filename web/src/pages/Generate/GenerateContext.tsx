@@ -705,6 +705,12 @@ export const GenerateProvider = ({ children }: { children: ReactNode }) => {
     // that won't collide with normal text. Users can change this in
     // Step 3 if they prefer something easier to type with their IME.
     triggerChar: "丅",
+    // null = inherit from base font's ascent (legacy behaviour).
+    // The Step 3 Advanced "Output ascent" input switches this to a
+    // numeric value when the user needs annotation headroom (e.g.
+    // Xiaolai paired with Thai/Urdu/Katakana/Korean — see the CI
+    // matrix lines in deploy-pages.yml for the canonical values).
+    outAscent: null,
   });
   const setParam = useCallback<GenerateContextValue["setParam"]>(
     (key, value) => setParams((p) => ({ ...p, [key]: value })),
@@ -789,6 +795,7 @@ export const GenerateProvider = ({ children }: { children: ReactNode }) => {
         baseAxisLocation: baseFont.axisLocation,
         annoAxisLocation: annoFont.axisLocation,
         triggerChar: params.triggerChar,
+        outAscent: params.outAscent,
         onProgress: (msg) => {
           // Parse step boundaries to drive the determinate progress
           // bar. "Processing X..." marks a step start; "Processing X...
@@ -1011,6 +1018,10 @@ export const GenerateProvider = ({ children }: { children: ReactNode }) => {
         // Match the user's chosen trigger char so the preview's liga
         // rules use the same separator the real generate would.
         triggerChar: ps.triggerChar,
+        // Honour the user's --out-ascent choice in the preview too,
+        // so the live preview shows the same vertical-metrics
+        // behaviour the eventual full generate will produce.
+        outAscent: ps.outAscent,
         // Subsetting on a single-mapping run has nothing to drop, so
         // it costs the same regardless. Honour the user's choice for
         // consistency with the full run they'll trigger later.

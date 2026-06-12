@@ -306,6 +306,48 @@ const Step3Parameters = () => {
             slotProps={{ htmlInput: { maxLength: 2 } }}
             sx={{ maxWidth: 220 }}
           />
+          {/*
+            Output-ascent override — the in-browser counterpart of
+            wing-font.py's --out-ascent CLI flag and the CI matrix's
+            --out-ascent argument. Empty input keeps the base font's
+            ascent unchanged (the default for ~95 % of pairings); a
+            numeric value bumps hhea.ascent + OS/2.usWinAscent before
+            save, giving annotations headroom on low-ascent bases.
+
+            Concrete suggested values (visible in the helper copy):
+              * 1200 — Xiaolai + Thai / Katakana / Korean / Baybayin
+              * 1300 — Xiaolai + Urdu Nastaliq, or NotoSansHK + Urdu
+              * blank — every other pairing
+
+            We type the input as plain text rather than `type=number`
+            so an empty value is unambiguous (number inputs coerce ""
+            to 0 in some browsers, which would unhelpfully change the
+            semantic). The parse path treats "" → null (inherit) and
+            any other value → Number with a 0/NaN reject.
+          */}
+          <TextField
+            label={t("step3.outAscent.label")}
+            helperText={t("step3.outAscent.hint")}
+            value={params.outAscent === null ? "" : String(params.outAscent)}
+            onChange={(e) => {
+              const v = e.target.value.trim();
+              if (v === "") {
+                setParam("outAscent", null);
+                return;
+              }
+              const n = Number(v);
+              // Refuse non-positive integers — ascent has to be
+              // above the baseline. Silently ignore invalid input
+              // so the user can keep typing without the field
+              // resetting mid-keystroke; the helper text covers the
+              // valid-range guidance.
+              if (Number.isFinite(n) && n > 0) {
+                setParam("outAscent", Math.round(n));
+              }
+            }}
+            slotProps={{ htmlInput: { inputMode: "numeric", pattern: "[0-9]*" } }}
+            sx={{ maxWidth: 220 }}
+          />
         </Box>
 
         {/* ---- Preview column (left on desktop, bottom on mobile) --- */}

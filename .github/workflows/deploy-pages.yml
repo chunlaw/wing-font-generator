@@ -189,7 +189,15 @@ jobs:
           # 1184u (clips the 1160 ascent by 24u); 0.16 → 1141u (19u
           # headroom). Do NOT raise above 0.16 without either lowering
           # -y (offset) or accepting a clipped zabar tip on kam-syllables.
-          - { name: NotoSansHK-NotoNastaliq-urdu,          args: "-opt -i input_fonts/NotoSansHK-VariableFont_wght.ttf -a input_fonts/NotoNastaliqUrdu-VariableFont_wght.ttf -m mappings/canto-urdu.csv -as 0.16" }
+          # NotoSansHK + Urdu: at -as 0.16 the zabar-cap tops out at
+          # 1141u, leaving only 19u headroom against the 1160u
+          # winAscent — perilously close. Bumping to -as 0.22 with
+          # --out-ascent 1300 gives a chunkier, more legible Urdu
+          # cascade (top ~1269u with ~31u headroom inside the raised
+          # 1300u ascent). The trade-off is a slightly taller line in
+          # apps that honour winAscent; for dialect-learning material
+          # this is fine.
+          - { name: NotoSansHK-NotoNastaliq-urdu,          args: "-opt -i input_fonts/NotoSansHK-VariableFont_wght.ttf -a input_fonts/NotoNastaliqUrdu-VariableFont_wght.ttf -m mappings/canto-urdu.csv -as 0.22 --out-ascent 1300" }
           # === Hero sample font ====================================
           # All three hero subsets use the same Xiaolai (handwritten,
           # OFL) + Huninn (Latin-friendly CJK) pairing so the home page
@@ -287,19 +295,35 @@ jobs:
           # annotation fonts as the Noto Sans HK / Chiron variants —
           # only the base swaps.
           - { name: Xiaolai-cangjie,                       args: "-i input_fonts/XiaolaiSC-Regular.ttf -a input_fonts/XiaolaiSC-Regular.ttf -m mappings/cangjie.csv -as 0.25" }
-          - { name: Xiaolai-Google-thai,                   args: "-opt -i input_fonts/XiaolaiSC-Regular.ttf -a 'input_fonts/GoogleSans-VariableFont_GRAD,opsz,wght.ttf' -m mappings/canto-thai.csv -as 0.22" }
-          - { name: Xiaolai-NotoJP-katakana,               args: "-opt -i input_fonts/XiaolaiSC-Regular.ttf -a input_fonts/NotoSansJP-VariableFont_wght.ttf -m mappings/canto-katakana.csv -as 0.24" }
-          - { name: Xiaolai-NotoKR-korean,                 args: "-opt -i input_fonts/XiaolaiSC-Regular.ttf -a input_fonts/NotoSansKR-VariableFont_wght.ttf -m mappings/canto-korean.csv -as 0.24" }
-          - { name: Xiaolai-NotoNastaliq-urdu,             args: "-opt -i input_fonts/XiaolaiSC-Regular.ttf -a input_fonts/NotoNastaliqUrdu-VariableFont_wght.ttf -m mappings/canto-urdu.csv -as 0.16" }
+          # ── Xiaolai-paired script transliterations ──────────────
+          # Xiaolai's native ascent is 880u — 280u shorter than
+          # NotoSansHK's 1160u. The script-transliteration -as
+          # values inherited from the NotoSansHK rows would make
+          # annotations look proportionally small (they were
+          # calibrated for NotoSansHK's larger headroom). We:
+          #   * Bump -as upward to recover legible annotation size
+          #     (Thai/Kana/Korean ~0.26-0.28; Urdu 0.22).
+          #   * Raise --out-ascent to 1200 (1300 for Urdu) so the
+          #     top of the annotation doesn't clip against the
+          #     output font's winAscent in strict-clipping apps.
+          # Same line-height bump trade-off as the NotoSansHK Urdu
+          # line above — accepted for the legibility win.
+          - { name: Xiaolai-Google-thai,                   args: "-opt -i input_fonts/XiaolaiSC-Regular.ttf -a 'input_fonts/GoogleSans-VariableFont_GRAD,opsz,wght.ttf' -m mappings/canto-thai.csv -as 0.26 --out-ascent 1200" }
+          - { name: Xiaolai-NotoJP-katakana,               args: "-opt -i input_fonts/XiaolaiSC-Regular.ttf -a input_fonts/NotoSansJP-VariableFont_wght.ttf -m mappings/canto-katakana.csv -as 0.28 --out-ascent 1200" }
+          - { name: Xiaolai-NotoKR-korean,                 args: "-opt -i input_fonts/XiaolaiSC-Regular.ttf -a input_fonts/NotoSansKR-VariableFont_wght.ttf -m mappings/canto-korean.csv -as 0.28 --out-ascent 1200" }
+          - { name: Xiaolai-NotoNastaliq-urdu,             args: "-opt -i input_fonts/XiaolaiSC-Regular.ttf -a input_fonts/NotoNastaliqUrdu-VariableFont_wght.ttf -m mappings/canto-urdu.csv -as 0.22 --out-ascent 1300" }
           # Toneless / decorative variants (tone digit stripped) — souvenir
-          # set, Xiaolai base. Same annotation fonts & scales as the toned
-          # builds above; Baybayin uses the new Noto Sans Tagalog (-as 0.24,
-          # height-matched to Thai/Kana/Hangul).
-          - { name: Xiaolai-Google-thai-notone,            args: "-opt -i input_fonts/XiaolaiSC-Regular.ttf -a 'input_fonts/GoogleSans-VariableFont_GRAD,opsz,wght.ttf' -m mappings/canto-thai-notone.csv -as 0.22" }
-          - { name: Xiaolai-NotoJP-katakana-notone,        args: "-opt -i input_fonts/XiaolaiSC-Regular.ttf -a input_fonts/NotoSansJP-VariableFont_wght.ttf -m mappings/canto-katakana-notone.csv -as 0.24" }
-          - { name: Xiaolai-NotoKR-korean-notone,          args: "-opt -i input_fonts/XiaolaiSC-Regular.ttf -a input_fonts/NotoSansKR-VariableFont_wght.ttf -m mappings/canto-korean-notone.csv -as 0.24" }
-          - { name: Xiaolai-NotoTagalog-baybayin-notone,   args: "-opt -i input_fonts/XiaolaiSC-Regular.ttf -a input_fonts/NotoSansTagalog-Regular.ttf -m mappings/canto-filipino-notone.csv -as 0.24" }
-          - { name: Xiaolai-NotoNastaliq-urdu-notone,      args: "-opt -i input_fonts/XiaolaiSC-Regular.ttf -a input_fonts/NotoNastaliqUrdu-VariableFont_wght.ttf -m mappings/canto-urdu-notone.csv -as 0.16" }
+          # set, Xiaolai base. Same -as / --out-ascent treatment as the
+          # toned Xiaolai annotation lines above (recovering legible size
+          # against Xiaolai's 880u native ascent). Baybayin shares the
+          # height profile of Thai/Kana/Hangul so it gets the 0.26-0.28
+          # band; Urdu gets the higher --out-ascent for the Nastaliq
+          # cascade.
+          - { name: Xiaolai-Google-thai-notone,            args: "-opt -i input_fonts/XiaolaiSC-Regular.ttf -a 'input_fonts/GoogleSans-VariableFont_GRAD,opsz,wght.ttf' -m mappings/canto-thai-notone.csv -as 0.26 --out-ascent 1200" }
+          - { name: Xiaolai-NotoJP-katakana-notone,        args: "-opt -i input_fonts/XiaolaiSC-Regular.ttf -a input_fonts/NotoSansJP-VariableFont_wght.ttf -m mappings/canto-katakana-notone.csv -as 0.28 --out-ascent 1200" }
+          - { name: Xiaolai-NotoKR-korean-notone,          args: "-opt -i input_fonts/XiaolaiSC-Regular.ttf -a input_fonts/NotoSansKR-VariableFont_wght.ttf -m mappings/canto-korean-notone.csv -as 0.28 --out-ascent 1200" }
+          - { name: Xiaolai-NotoTagalog-baybayin-notone,   args: "-opt -i input_fonts/XiaolaiSC-Regular.ttf -a input_fonts/NotoSansTagalog-Regular.ttf -m mappings/canto-filipino-notone.csv -as 0.28 --out-ascent 1200" }
+          - { name: Xiaolai-NotoNastaliq-urdu-notone,      args: "-opt -i input_fonts/XiaolaiSC-Regular.ttf -a input_fonts/NotoNastaliqUrdu-VariableFont_wght.ttf -m mappings/canto-urdu-notone.csv -as 0.22 --out-ascent 1300" }
           - { name: Xiaolai-Huninn-tailo,                  args: "-opt -i input_fonts/XiaolaiSC-Regular.ttf -a input_fonts/Huninn-Regular.ttf -m mappings/taigi-tl-toned.csv -as 0.25" }
           - { name: Xiaolai-Huninn-poj,                    args: "-opt -i input_fonts/XiaolaiSC-Regular.ttf -a input_fonts/Huninn-Regular.ttf -m mappings/taigi-poj-toned.csv -as 0.25" }
           - { name: Xiaolai-Huninn-teochew-pengim,         args: "-opt -i input_fonts/XiaolaiSC-Regular.ttf -a input_fonts/Huninn-Regular.ttf -m mappings/teochew-gdpi.csv -as 0.25" }

@@ -62,6 +62,18 @@ export interface GenerateParams {
    * user's mapping annotates.
    */
   triggerChar: string;
+  /**
+   * Optional output-font ascent override (font units, UPM=1000).
+   * null = inherit from the base font (the legacy / default
+   * behaviour). When set, the pipeline bumps hhea.ascent and
+   * OS/2.usWinAscent to this value before save, giving annotations
+   * headroom on bases with low native ascent (Xiaolai 880u versus
+   * NotoSansHK 1160u). Use for pairings whose annotation cascades
+   * far above the base — typical values: 1200 for Thai / Katakana
+   * / Korean on Xiaolai, 1300 for Urdu Nastaliq on either base.
+   * Surfaced in Step 3 → Advanced as the "Output ascent" input.
+   */
+  outAscent: number | null;
 }
 
 /** Successful generation result; null until the user clicks Generate. */

@@ -266,6 +266,16 @@ interface GeneratePayload {
    * digit-suffix path (`<base><1-9>`) intact.
    */
   triggerChar?: string;
+  /**
+   * Optional override of the output font's clipping ascent
+   * (hhea.ascent + OS/2.usWinAscent). Same lever as wing-font.py's
+   * --out-ascent CLI flag and the CI matrix's --out-ascent
+   * argument. null/undefined = inherit from the base font (legacy
+   * behaviour); numeric = override in font units (e.g. 1200 for
+   * Xiaolai + Thai/Kana/Korean, 1300 for Urdu Nastaliq). Forwarded
+   * to the Python runner as `out_ascent`.
+   */
+  outAscent?: number | null;
 }
 
 interface PrepareTrimPayload {
@@ -303,6 +313,11 @@ async function handleGenerate(id: string, payload: GeneratePayload): Promise<voi
     base_axis_location: payload.baseAxisLocation ?? null,
     anno_axis_location: payload.annoAxisLocation ?? null,
     trigger_char: payload.triggerChar ?? "丅",
+    // null / undefined → leave the output font's ascent untouched
+    // (inherit from base). Numeric → bump hhea.ascent +
+    // OS/2.usWinAscent to this value before save. Matches the
+    // --out-ascent CLI flag's semantics.
+    out_ascent: payload.outAscent ?? null,
   };
   pyodide.globals.set("_params", pyodide.toPy(params));
 

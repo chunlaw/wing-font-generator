@@ -279,6 +279,8 @@ export type TranslationKey =
   | "step3.triggerChar.label"
   | "step3.triggerChar.hint"
   | "step3.triggerChar.hintDisabled"
+  | "step3.outAscent.label"
+  | "step3.outAscent.hint"
   | "step3.baseScale"
   | "step3.annoScale"
   | "step3.annoSpacing"
@@ -648,6 +650,9 @@ export const TRANSLATIONS: Record<Language, Record<TranslationKey, string>> = {
       "用「字 + 此字元 + 一/二/…」手動切換多音字標注。預設「丅」（U+4E05）較為罕用、不易與正文衝突；可改成你的輸入法容易打到的字（如「々」「〇」）。",
     "step3.triggerChar.hintDisabled":
       "已停用「丅 + 中文數字」標注路徑；只能透過「字 + 0/1/2/…」的數字後綴方式手動切換多音字。",
+    "step3.outAscent.label": "輸出字型上緣（字單位）",
+    "step3.outAscent.hint":
+      "留空＝沿用底字型原本嘅 ascent。底字 ascent 較矮（如 Xiaolai 880u）配高標注（泰文、片假名、諺文：1200；烏爾都文 1300）就要填。會同時調整 hhea.ascent 同 OS/2.usWinAscent，避免 Word / Pages / Canva 等程式裁切到標注頂。",
     "step3.baseScale": "底字縮放比",
     "step3.annoScale": "標注縮放比",
     "step3.annoSpacing": "標注字距（em 比例，正值放寬、負值收緊）",
@@ -1029,6 +1034,9 @@ export const TRANSLATIONS: Record<Language, Record<TranslationKey, string>> = {
       "Types as `<char><trigger><numeral>` (e.g. 行 + trigger + 一) to manually pick a variant. Default `丅` (U+4E05) is deliberately rare so it doesn't collide with normal text — replace it with whatever your IME can produce easily (e.g. `々`, `〇`).",
     "step3.triggerChar.hintDisabled":
       "Trigger+numeral override is disabled. Users can still pick variants with the universal digit-suffix path (`<char><1-9>`).",
+    "step3.outAscent.label": "Output ascent (font units)",
+    "step3.outAscent.hint":
+      "Blank = inherit from the base font. Fill in when the base has a low native ascent (e.g. Xiaolai 880u) paired with a tall annotation: 1200 for Thai / Katakana / Hangul, 1300 for Urdu Nastaliq. Bumps hhea.ascent + OS/2.usWinAscent together so Word / Pages / Canva don't clip the top of the annotation.",
     "step3.baseScale": "Base glyph scale",
     "step3.annoScale": "Annotation scale",
     "step3.annoSpacing": "Annotation letter-spacing (em — positive loosens, negative tightens)",

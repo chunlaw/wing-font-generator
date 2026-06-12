@@ -152,8 +152,14 @@ const FontPicker = () => {
           return [
             ...(headerNeeded
               ? [
+                  // Key folds in `idx` because the SAME group label
+                  // legitimately recurs in non-contiguous runs — each
+                  // base-font family (Noto Sans HK / ChironSung /
+                  // Xiaolai) repeats the "其他標注 Other scripts" etc.
+                  // groups, so a label-only key collides. `idx` is the
+                  // unique position of the following MenuItem.
                   <ListSubheader
-                    key={`group-${opt.group}`}
+                    key={`group-${idx}-${opt.group}`}
                     sx={{ pointerEvents: "none", lineHeight: 2.2 }}
                   >
                     {opt.group}

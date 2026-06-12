@@ -52,6 +52,15 @@ export interface GenerateParams {
    * universal digit-suffix path (`<base><1-9>`) intact.
    */
   triggerChar?: string;
+  /**
+   * Optional override of the output font's clipping ascent
+   * (hhea.ascent + OS/2.usWinAscent). null/undefined = inherit from
+   * the base font (legacy behaviour); numeric = override in font
+   * units (e.g. 1200 for Xiaolai + Thai/Kana/Korean, 1300 for
+   * Urdu Nastaliq). Matches the wing-font.py --out-ascent CLI flag
+   * and the deploy-pages.yml matrix's --out-ascent argument.
+   */
+  outAscent?: number | null;
   onProgress?: (message: string) => void;
 }
 
@@ -247,6 +256,7 @@ export async function generateFont(params: GenerateParams): Promise<GenerateResu
           baseAxisLocation: params.baseAxisLocation,
           annoAxisLocation: params.annoAxisLocation,
           triggerChar: params.triggerChar,
+          outAscent: params.outAscent,
         },
       },
       transfer,
