@@ -71,6 +71,7 @@ FONT_FILES: list[str] = [
     "NotoSansKR-VariableFont_wght.ttf",
     "NotoSansSC-VariableFont_wght.ttf",
     "NotoSansTC-VariableFont_wght.ttf",
+    "NotoSansTagalog-Regular.ttf",
     "NotoNastaliqUrdu-VariableFont_wght.ttf",
     "NotoSerif-Regular.ttf",
     "SourceHanSerif-Regular.ttf",

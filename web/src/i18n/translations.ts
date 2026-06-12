@@ -26,6 +26,13 @@ export type TranslationKey =
   | "header.cta.sponsor"
   | "header.lang.toggle"
   | "header.theme.toggle"
+  // Mobile drawer — the left-side nav surface that replaced the
+  // popover Menu on <md viewports. It absorbs the nav-flavored
+  // footer links so the mobile page can ship without a 3-column
+  // footer hanging off the bottom.
+  | "drawer.more"
+  | "drawer.social"
+  | "drawer.close"
   // Footer
   | "footer.license"
   | "footer.about.title"
@@ -142,6 +149,15 @@ export type TranslationKey =
   | "home.features.f4.body"
   // Showcase (existing Main page)
   | "showcase.tryIt"
+  | "showcase.share"
+  | "showcase.shareCopied"
+  | "showcase.shareFailed"
+  | "showcase.upload"
+  | "showcase.uploadAdded"
+  | "showcase.uploadBadFormat"
+  | "showcase.uploadTooLarge"
+  | "showcase.uploadReadFailed"
+  | "showcase.emptyHint"
   | "specimen.reportError"
   | "showcase.userFonts.zh"
   | "showcase.userFonts.en"
@@ -315,6 +331,10 @@ export const TRANSLATIONS: Record<Language, Record<TranslationKey, string>> = {
     "header.cta.sponsor": "捐助",
     "header.lang.toggle": "切換語言",
     "header.theme.toggle": "切換主題",
+    // Mobile drawer
+    "drawer.more": "其他連結",
+    "drawer.social": "社交網絡",
+    "drawer.close": "關閉",
     // Footer
     "footer.license": "MIT License（自由及開源軟件）",
     "footer.about.title": "關於 Wing Font",
@@ -481,11 +501,21 @@ export const TRANSLATIONS: Record<Language, Record<TranslationKey, string>> = {
       "你的字體與對應表全程不會離開瀏覽器，所有處理皆在本機進行。",
     // Showcase
     "showcase.tryIt": "隨便試 (Try it!!)",
+    "showcase.share": "分享連結",
+    "showcase.shareCopied": "已複製連結到剪貼簿",
+    "showcase.shareFailed": "未能複製，請手動複製網址列",
+    "showcase.upload": "上載字型",
+    "showcase.uploadAdded": "已加入 {name}",
+    "showcase.uploadBadFormat":
+      "唔識讀呢個檔案格式（要 .ttf / .otf / .woff / .woff2）",
+    "showcase.uploadTooLarge": "檔案太大（上限 30 MB）",
+    "showcase.uploadReadFailed": "讀取檔案失敗",
+    "showcase.emptyHint": "揀個字型開始對比吧。",
     "specimen.reportError":
       "發現標注有錯？歡迎[喺 GitHub 報告](https://github.com/chunlaw/wing-font-generator/issues/new?title=Annotation%20error%20in%20{name})",
-    "showcase.userFonts.zh": "自家生成字型",
-    "showcase.userFonts.en": "Your generated fonts",
-    "step1.recentFonts.title": "近期生成字型",
+    "showcase.userFonts.zh": "自家字型",
+    "showcase.userFonts.en": "Your fonts",
+    "step1.recentFonts.title": "近期字型",
     "step1.recentFonts.pin": "釘住",
     "step1.recentFonts.unpin": "解除釘住",
     "step1.recentFonts.pinCap": "最多釘 4 個 — 先取消其中一個",
@@ -673,6 +703,10 @@ export const TRANSLATIONS: Record<Language, Record<TranslationKey, string>> = {
     "header.cta.sponsor": "Sponsor",
     "header.lang.toggle": "Switch language",
     "header.theme.toggle": "Switch theme",
+    // Mobile drawer
+    "drawer.more": "More links",
+    "drawer.social": "Social",
+    "drawer.close": "Close",
     // Footer
     "footer.license": "MIT License (free & open source)",
     "footer.about.title": "About Wing Font",
@@ -844,11 +878,21 @@ export const TRANSLATIONS: Record<Language, Record<TranslationKey, string>> = {
       "Your fonts and mapping never leave your browser. Everything runs client-side.",
     // Showcase
     "showcase.tryIt": "Try typing here",
+    "showcase.share": "Share link",
+    "showcase.shareCopied": "Link copied to clipboard",
+    "showcase.shareFailed": "Couldn't copy — please copy the URL bar manually",
+    "showcase.upload": "Upload font",
+    "showcase.uploadAdded": "Added {name}",
+    "showcase.uploadBadFormat":
+      "Doesn't look like a font (expected .ttf / .otf / .woff / .woff2)",
+    "showcase.uploadTooLarge": "File too large (30 MB max)",
+    "showcase.uploadReadFailed": "Couldn't read the file",
+    "showcase.emptyHint": "Pick a font to start comparing.",
     "specimen.reportError":
       "Spot an annotation error? Please [report it on GitHub](https://github.com/chunlaw/wing-font-generator/issues/new?title=Annotation%20error%20in%20{name}).",
-    "showcase.userFonts.zh": "自家生成字型",
-    "showcase.userFonts.en": "Your generated fonts",
-    "step1.recentFonts.title": "Recent generations",
+    "showcase.userFonts.zh": "自家字型",
+    "showcase.userFonts.en": "Your fonts",
+    "step1.recentFonts.title": "Recent fonts",
     "step1.recentFonts.pin": "Pin",
     "step1.recentFonts.unpin": "Unpin",
     "step1.recentFonts.pinCap": "Unpin one first (max 4 pinned)",

@@ -114,7 +114,32 @@ export interface FontOption {
   name: string;
   displayName: string;
   source: string;
+  /**
+   * Optional subgrouping within a dialect — surfaced as a
+   * `<ListSubheader>` between adjacent entries with different
+   * `group` values in the /showcase FontPicker dropdown. Mirrors the
+   * pattern used by BUILT_IN_MAPPINGS in wingfontPresets.ts so the
+   * Step 2 and /showcase pickers feel consistent.
+   *
+   * Entries without a `group` render flat (no subheader). When some
+   * entries in a dialect have `group` and others don't, the
+   * un-grouped ones implicitly belong to a leading "(no group)"
+   * section before the first subheader appears.
+   *
+   * Within the Cantonese dialect we use it to split:
+   *   "粵拼 Romanization"    — Latin romanizations (LSHK, Yale, …)
+   *   "其他標注 Other scripts" — Thai / Katakana / Korean / Cangjie
+   */
+  group?: string;
 }
+
+// Group labels for Cantonese subgrouping. Exported so callers
+// constructing FontOption entries can reference these constants
+// instead of duplicating bilingual strings — typo-safe and i18n-
+// migratable later if we want full per-locale group labels.
+export const CANTO_GROUP_ROMANIZATION = "粵拼 Romanization";
+export const CANTO_GROUP_OTHER_SCRIPTS = "其他標注 Other scripts";
+export const CANTO_GROUP_TONELESS = "無聲調・裝飾 Toneless / decorative";
 
 export type FontSet = Record<
   string,
@@ -182,36 +207,43 @@ export const AVAILABLE_FONTS: FontSet = {
         displayName: "思源黑體 香港（香港語言學會）",
         name: "NotoSansHK-Noto-lshk",
         source: `url(${import.meta.env.VITE_FONT_URL}/NotoSansHK-Noto-lshk.woff) format('woff')`,
+        group: CANTO_GROUP_ROMANIZATION,
       },
       "NotoSansHK-Noto-yale": {
         displayName: "思源黑體 香港（耶魯拼音）",
         name: "NotoSansHK-Noto-yale",
         source: `url(${import.meta.env.VITE_FONT_URL}/NotoSansHK-Noto-yale.woff) format('woff')`,
+        group: CANTO_GROUP_ROMANIZATION,
       },
       "NotoSansHK-cangjie": {
         displayName: "思源黑體 香港（倉頡）",
         name: "NotoSansHK-cangjie",
         source: `url(${import.meta.env.VITE_FONT_URL}/NotoSansHK-cangjie.woff) format('woff')`,
+        group: CANTO_GROUP_OTHER_SCRIPTS,
       },
       "NotoSansHK-Google-thai": {
         displayName: "思源黑體 香港（泰文標注）",
         name: "NotoSansHK-Google-thai",
         source: `url(${import.meta.env.VITE_FONT_URL}/NotoSansHK-Google-thai.woff) format('woff')`,
+        group: CANTO_GROUP_OTHER_SCRIPTS,
       },
       "NotoSansHK-NotoJP-katakana": {
         displayName: "思源黑體 香港（片假名標注）",
         name: "NotoSansHK-NotoJP-katakana",
         source: `url(${import.meta.env.VITE_FONT_URL}/NotoSansHK-NotoJP-katakana.woff) format('woff')`,
+        group: CANTO_GROUP_OTHER_SCRIPTS,
       },
       "NotoSansHK-NotoKR-korean": {
         displayName: "思源黑體 香港（諺文標注）",
         name: "NotoSansHK-NotoKR-korean",
         source: `url(${import.meta.env.VITE_FONT_URL}/NotoSansHK-NotoKR-korean.woff) format('woff')`,
+        group: CANTO_GROUP_OTHER_SCRIPTS,
       },
       "NotoSansHK-NotoNastaliq-urdu": {
         displayName: "思源黑體 香港（烏爾都文標注）",
         name: "NotoSansHK-NotoNastaliq-urdu",
         source: `url(${import.meta.env.VITE_FONT_URL}/NotoSansHK-NotoNastaliq-urdu.woff) format('woff')`,
+        group: CANTO_GROUP_OTHER_SCRIPTS,
       },
       // ─ ChironSung Heavyweight Edition ────────────────────────────
       // The original (HK-serif) Cantonese showcase set. Heavier
@@ -225,36 +257,43 @@ export const AVAILABLE_FONTS: FontSet = {
         displayName: "昭源宋體（香港語言學會）",
         name: "ChironSungHK-Noto-lshk",
         source: `url(${import.meta.env.VITE_FONT_URL}/ChironSungHK-Noto-lshk.woff) format('woff')`,
+        group: CANTO_GROUP_ROMANIZATION,
       },
       "ChironSungHK-Noto-yale": {
         displayName: "昭源宋體（耶魯拼音）",
         name: "ChironSungHK-Noto-yale",
         source: `url(${import.meta.env.VITE_FONT_URL}/ChironSungHK-Noto-yale.woff) format('woff')`,
+        group: CANTO_GROUP_ROMANIZATION,
       },
       "ChironSungHK-cangjie": {
         displayName: "昭源宋體（倉頡）",
         name: "ChironSungHK-cangjie",
         source: `url(${import.meta.env.VITE_FONT_URL}/ChironSungHK-cangjie.woff) format('woff')`,
+        group: CANTO_GROUP_OTHER_SCRIPTS,
       },
       "ChironSungHK-Google-thai": {
         displayName: "昭源宋體（泰文標注）",
         name: "ChironSungHK-Google-thai",
         source: `url(${import.meta.env.VITE_FONT_URL}/ChironSungHK-Google-thai.woff) format('woff')`,
+        group: CANTO_GROUP_OTHER_SCRIPTS,
       },
       "ChironSungHK-NotoJP-katakana": {
         displayName: "昭源宋體（片假名標注）",
         name: "ChironSungHK-NotoJP-katakana",
         source: `url(${import.meta.env.VITE_FONT_URL}/ChironSungHK-NotoJP-katakana.woff) format('woff')`,
+        group: CANTO_GROUP_OTHER_SCRIPTS,
       },
       "ChironSungHK-NotoKR-korean": {
         displayName: "昭源宋體（諺文標注）",
         name: "ChironSungHK-NotoKR-korean",
         source: `url(${import.meta.env.VITE_FONT_URL}/ChironSungHK-NotoKR-korean.woff) format('woff')`,
+        group: CANTO_GROUP_OTHER_SCRIPTS,
       },
       "ChironSungHK-NotoNastaliq-urdu": {
         displayName: "昭源宋體（烏爾都文標注）",
         name: "ChironSungHK-NotoNastaliq-urdu",
         source: `url(${import.meta.env.VITE_FONT_URL}/ChironSungHK-NotoNastaliq-urdu.woff) format('woff')`,
+        group: CANTO_GROUP_OTHER_SCRIPTS,
       },
       // ─ Xiaolai (小賴) + Huninn pairing ────────────────────────────
       // Handwritten 楷書-style base font (Xiaolai, OFL) with the
@@ -269,26 +308,98 @@ export const AVAILABLE_FONTS: FontSet = {
         displayName: "小賴字體（香港語言學會）",
         name: "Xiaolai-Huninn-lshk",
         source: `url(${import.meta.env.VITE_FONT_URL}/Xiaolai-Huninn-lshk.woff) format('woff')`,
+        group: CANTO_GROUP_ROMANIZATION,
       },
       "Xiaolai-Huninn-yale": {
         displayName: "小賴字體（耶魯拼音）",
         name: "Xiaolai-Huninn-yale",
         source: `url(${import.meta.env.VITE_FONT_URL}/Xiaolai-Huninn-yale.woff) format('woff')`,
+        group: CANTO_GROUP_ROMANIZATION,
       },
       "Xiaolai-Huninn-lau": {
         displayName: "小賴字體（劉錫祥）",
         name: "Xiaolai-Huninn-lau",
         source: `url(${import.meta.env.VITE_FONT_URL}/Xiaolai-Huninn-lau.woff) format('woff')`,
+        group: CANTO_GROUP_ROMANIZATION,
       },
       "Xiaolai-Huninn-guangdong": {
         displayName: "小賴字體（廣州話拼音方案）",
         name: "Xiaolai-Huninn-guangdong",
         source: `url(${import.meta.env.VITE_FONT_URL}/Xiaolai-Huninn-guangdong.woff) format('woff')`,
+        group: CANTO_GROUP_ROMANIZATION,
       },
       "Xiaolai-Huninn-chishima": {
         displayName: "小賴字體（千島）",
         name: "Xiaolai-Huninn-chishima",
         source: `url(${import.meta.env.VITE_FONT_URL}/Xiaolai-Huninn-chishima.woff) format('woff')`,
+        group: CANTO_GROUP_ROMANIZATION,
+      },
+      // Xiaolai-base non-romanization companions. Annotation font
+      // varies (Xiaolai itself for cangjie self-reference; Google
+      // Sans Thai / Noto Sans JP / Noto Sans KR for the script
+      // transliterations) — see deploy-pages.yml matrix for the
+      // exact CI invocation.
+      "Xiaolai-cangjie": {
+        displayName: "小賴字體（倉頡）",
+        name: "Xiaolai-cangjie",
+        source: `url(${import.meta.env.VITE_FONT_URL}/Xiaolai-cangjie.woff) format('woff')`,
+        group: CANTO_GROUP_OTHER_SCRIPTS,
+      },
+      "Xiaolai-Google-thai": {
+        displayName: "小賴字體（泰文標注）",
+        name: "Xiaolai-Google-thai",
+        source: `url(${import.meta.env.VITE_FONT_URL}/Xiaolai-Google-thai.woff) format('woff')`,
+        group: CANTO_GROUP_OTHER_SCRIPTS,
+      },
+      "Xiaolai-NotoJP-katakana": {
+        displayName: "小賴字體（片假名標注）",
+        name: "Xiaolai-NotoJP-katakana",
+        source: `url(${import.meta.env.VITE_FONT_URL}/Xiaolai-NotoJP-katakana.woff) format('woff')`,
+        group: CANTO_GROUP_OTHER_SCRIPTS,
+      },
+      "Xiaolai-NotoKR-korean": {
+        displayName: "小賴字體（諺文標注）",
+        name: "Xiaolai-NotoKR-korean",
+        source: `url(${import.meta.env.VITE_FONT_URL}/Xiaolai-NotoKR-korean.woff) format('woff')`,
+        group: CANTO_GROUP_OTHER_SCRIPTS,
+      },
+      "Xiaolai-NotoNastaliq-urdu": {
+        displayName: "小賴字體（烏爾都文標注）",
+        name: "Xiaolai-NotoNastaliq-urdu",
+        source: `url(${import.meta.env.VITE_FONT_URL}/Xiaolai-NotoNastaliq-urdu.woff) format('woff')`,
+        group: CANTO_GROUP_OTHER_SCRIPTS,
+      },
+      // ─ Toneless / decorative (souvenir) set — Xiaolai base, tone
+      // digit stripped so the script reads as clean native text.
+      "Xiaolai-Google-thai-notone": {
+        displayName: "小賴字體（泰文・無聲調）",
+        name: "Xiaolai-Google-thai-notone",
+        source: `url(${import.meta.env.VITE_FONT_URL}/Xiaolai-Google-thai-notone.woff) format('woff')`,
+        group: CANTO_GROUP_TONELESS,
+      },
+      "Xiaolai-NotoKR-korean-notone": {
+        displayName: "小賴字體（諺文・無聲調）",
+        name: "Xiaolai-NotoKR-korean-notone",
+        source: `url(${import.meta.env.VITE_FONT_URL}/Xiaolai-NotoKR-korean-notone.woff) format('woff')`,
+        group: CANTO_GROUP_TONELESS,
+      },
+      "Xiaolai-NotoJP-katakana-notone": {
+        displayName: "小賴字體（片假名・無聲調）",
+        name: "Xiaolai-NotoJP-katakana-notone",
+        source: `url(${import.meta.env.VITE_FONT_URL}/Xiaolai-NotoJP-katakana-notone.woff) format('woff')`,
+        group: CANTO_GROUP_TONELESS,
+      },
+      "Xiaolai-NotoTagalog-baybayin-notone": {
+        displayName: "小賴字體（貝貝因・無聲調）",
+        name: "Xiaolai-NotoTagalog-baybayin-notone",
+        source: `url(${import.meta.env.VITE_FONT_URL}/Xiaolai-NotoTagalog-baybayin-notone.woff) format('woff')`,
+        group: CANTO_GROUP_TONELESS,
+      },
+      "Xiaolai-NotoNastaliq-urdu-notone": {
+        displayName: "小賴字體（烏爾都文・無聲調）",
+        name: "Xiaolai-NotoNastaliq-urdu-notone",
+        source: `url(${import.meta.env.VITE_FONT_URL}/Xiaolai-NotoNastaliq-urdu-notone.woff) format('woff')`,
+        group: CANTO_GROUP_TONELESS,
       },
     },
   },
@@ -548,7 +659,33 @@ export function getDialectLabel(
   dialectKey: string,
   locale: "zh" | "en",
 ): string {
+  // Synthetic "user fonts" group — the IndexedDB-cached recent fonts
+  // surfaced in the FontPicker / Showcase / Specimen, sitting next to
+  // the static AVAILABLE_FONTS dialects. Not in the catalog (it's
+  // generated at runtime from RecentFontsContext) so we resolve the
+  // bilingual label inline. Centralising the lookup here lets every
+  // consumer (FontPicker, Main's FontShowcaseCard, Specimen) call a
+  // single function instead of repeating the `lang === "zh" ? ... :
+  // ...` ternary across three files.
+  if (dialectKey === USER_FONTS_GROUP_KEY) {
+    // Label switched from "自家生成字型 / Your generated fonts" to a
+    // broader "自家字型 / Your fonts" when /showcase + /specimen
+    // gained the ability to upload arbitrary .ttf/.woff files. The
+    // group now covers both pipeline-generated and user-uploaded
+    // entries; the chip's source-specific icon (RecentFontsChips)
+    // tells them apart at a glance, while the group label stays
+    // general enough to honestly describe the contents.
+    return locale === "zh" ? "自家字型" : "Your fonts";
+  }
   const group = AVAILABLE_FONTS[dialectKey];
   if (!group) return dialectKey;
   return group.lang[locale] ?? group.lang.zh ?? dialectKey;
 }
+
+/**
+ * Synthetic dialect key for the user's IndexedDB-cached recent
+ * fonts. Lives here (rather than in AppContext.tsx where it's also
+ * exported) so const.ts can resolve labels without circular imports.
+ * AppContext re-exports for backward-compat.
+ */
+export const USER_FONTS_GROUP_KEY = "userFonts";

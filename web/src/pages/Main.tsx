@@ -1,11 +1,14 @@
 import {
   Box,
+  Button,
   Chip,
   CircularProgress,
   Divider,
+  Snackbar,
   TextField,
   Typography,
 } from "@mui/material";
+import { Share as ShareIcon } from "@mui/icons-material";
 import { useContext, useEffect, useRef, useState } from "react";
 import AppContext from "../AppContext";
 import { useNavigate, useSearchParams } from "react-router-dom";
@@ -17,10 +20,23 @@ import {
 import { FontHeader } from "../components/components/FonttHeader";
 import FontPicker from "../components/main/FontPicker";
 import { useTranslation } from "../i18n/LanguageContext";
-import { FontOption, findDialectKey, getDialectLabel } from "../utils/const";
-import { useRecentFonts } from "../RecentFontsContext";
+import {
+  FontOption,
+  USER_FONTS_GROUP_KEY,
+  findDialectKey,
+  getDialectLabel,
+} from "../utils/const";
+import {
+  recentEntryToFontOption,
+  useRecentFonts,
+} from "../RecentFontsContext";
+import UploadFontButton from "../components/main/UploadFontButton";
 import TypographyControls, {
   useTypographySettings,
+  FONT_SIZE_MAX,
+  FONT_SIZE_MIN,
+  LETTER_SPACING_MAX,
+  LETTER_SPACING_MIN,
   type TypographySettings,
 } from "../components/TypographyControls";
 
@@ -44,8 +60,33 @@ import type { Language } from "../i18n/translations";
 // punctuation in future font names won't break the encoding.
 const FONTS_PARAM = "fonts";
 
+// Query-string parameter for the live-preview text. A user typing
+// "今晚打老虎" into the "Try it" field has the URL update to
+//   /showcase?fonts=...&text=今晚打老虎
+// so they can share the exact preview they're looking at. CJK
+// characters are percent-encoded by URLSearchParams automatically.
+//
+// The param is intentionally LIVE-bound (one URL write per keystroke
+// via setSearchParams(..., { replace: true })) rather than debounced.
+// replaceState is cheap and history stays clean because we never
+// push, so even a 50-character paste produces ~50 silent URL
+// rewrites and zero back-button stops. If we later add expensive
+// per-keystroke work elsewhere this can be debounced — for now the
+// simpler model wins.
+const TEXT_PARAM = "text";
+
+// Query-string parameters for the TypographyControls settings.
+// Persisting them in the URL means a share link captures the exact
+// preview a sender was looking at — including the size/spacing they
+// chose, not just the picked fonts and text. Format:
+//   /showcase?size=64&spacing=0.05
+// Values that match the page defaults (or fall outside the slider
+// range) are omitted to keep share URLs short for the common case.
+const FONT_SIZE_PARAM = "size";
+const LETTER_SPACING_PARAM = "spacing";
+
 const Main = () => {
-  const { msg, setMsg, pickedFonts, setPickedFonts, loadingFonts } =
+  const { msg, setMsg, pickedFonts, setPickedFonts, addPickedFontOption, loadingFonts } =
     useContext(AppContext);
   const { t, lang } = useTranslation();
   const [searchParams, setSearchParams] = useSearchParams();
@@ -74,6 +115,56 @@ const Main = () => {
     SHOWCASE_TYPO_DEFAULTS,
   );
 
+  // ── Share-link affordance ──────────────────────────────────────────
+  // One-tap share of the current URL — which now encodes everything
+  // (picked fonts, preview text, size, spacing) thanks to the
+  // URL-sync effects below. On platforms with the native Web Share
+  // API (most mobile browsers, recent desktop Safari/Edge) we
+  // invoke it directly so the user can hand the link to any app.
+  // Everywhere else we fall back to clipboard copy with a Snackbar
+  // confirmation. `snackbarKey` is a translation key so the
+  // success/failure copy is bilingual — null means snackbar closed.
+  const [snackbarKey, setSnackbarKey] = useState<
+    "showcase.shareCopied" | "showcase.shareFailed" | null
+  >(null);
+
+  const handleShare = async () => {
+    const url = window.location.href;
+    // Prefer the native share sheet when available. Skipping it on
+    // desktop browsers that expose it but route through "share via
+    // email" sub-menus would be a worse UX than direct copy — so we
+    // sniff the existence of `navigator.share` only, which is gated
+    // to secure contexts and typically only present where the OS
+    // actually has a share sheet to invoke.
+    if (
+      typeof navigator !== "undefined" &&
+      typeof navigator.share === "function"
+    ) {
+      try {
+        await navigator.share({ url, title: "Wing Font" });
+        // navigator.share resolves on success and rejects (with an
+        // AbortError) when the user cancels — we don't snackbar on
+        // success because the OS share sheet IS the feedback.
+        return;
+      } catch (err) {
+        // User-cancelled share → no message. Real errors → fall
+        // through to the clipboard path so the user has SOME way
+        // to get the link.
+        if (err instanceof Error && err.name === "AbortError") return;
+      }
+    }
+    // Clipboard path. `navigator.clipboard` requires secure
+    // context (https or localhost) — true for our deploy and dev
+    // server. If it's missing or rejects, show the "manual copy"
+    // hint Snackbar instead of failing silently.
+    try {
+      await navigator.clipboard.writeText(url);
+      setSnackbarKey("showcase.shareCopied");
+    } catch {
+      setSnackbarKey("showcase.shareFailed");
+    }
+  };
+
   // ── URL ↔ pickedFonts synchronisation ─────────────────────────────
   // Two effects:
   //   1) ONCE on mount: if the URL has ?fonts=..., that wins over the
@@ -94,12 +185,49 @@ const Main = () => {
   useEffect(() => {
     if (didApplyUrlRef.current) return;
     didApplyUrlRef.current = true;
+    // ── Pull fonts list from URL ──
     const urlFonts = searchParams.get(FONTS_PARAM);
     if (urlFonts) {
       const names = urlFonts.split(",").map((n) => n.trim()).filter(Boolean);
       if (names.length > 0) {
         setPickedFonts(names);
       }
+    }
+    // ── Pull preview text from URL ──
+    // If `?text=...` is present, it wins over whatever AppContext.msg
+    // held (which itself was either localStorage-restored from a
+    // previous visit, or empty on first load). This lets a recipient
+    // of a shared link see the exact same preview text the sender
+    // was looking at — not just the picked-fonts list.
+    const urlText = searchParams.get(TEXT_PARAM);
+    if (urlText !== null) {
+      setMsg(urlText);
+    }
+    // ── Pull typography settings from URL ──
+    // size and spacing each parsed independently — a partial URL
+    // (e.g. only ?size=) still wins for the one provided, the other
+    // falls back to localStorage / page default via useTypographySettings.
+    // Range-clamp via Number.isFinite + min/max so a malformed share
+    // link can't drive the slider to an invalid value.
+    const urlSize = searchParams.get(FONT_SIZE_PARAM);
+    const urlSpacing = searchParams.get(LETTER_SPACING_PARAM);
+    if (urlSize !== null || urlSpacing !== null) {
+      const parsedSize = urlSize !== null ? Number(urlSize) : NaN;
+      const parsedSpacing = urlSpacing !== null ? Number(urlSpacing) : NaN;
+      setTypoSettings({
+        fontSizePx:
+          Number.isFinite(parsedSize) &&
+          parsedSize >= FONT_SIZE_MIN &&
+          parsedSize <= FONT_SIZE_MAX
+            ? parsedSize
+            : typoSettings.fontSizePx,
+        letterSpacingEm:
+          Number.isFinite(parsedSpacing) &&
+          parsedSpacing >= LETTER_SPACING_MIN &&
+          parsedSpacing <= LETTER_SPACING_MAX
+            ? parsedSpacing
+            : typoSettings.letterSpacingEm,
+      });
     }
     // Intentionally no deps — this is a once-on-mount sync.
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -127,6 +255,61 @@ const Main = () => {
     );
   }, [pickedFonts, setSearchParams]);
 
+  // Mirror msg → `?text=` whenever the user edits the field. Same
+  // replace-not-push policy as the fonts effect so the back button
+  // stays useful (one URL state per visit, not one per keystroke).
+  useEffect(() => {
+    if (!didApplyUrlRef.current) return;
+    setSearchParams(
+      (prev) => {
+        const next = new URLSearchParams(prev);
+        if (msg) {
+          next.set(TEXT_PARAM, msg);
+        } else {
+          // Empty msg → drop the param so the URL doesn't carry a
+          // dangling `&text=`. Mirrors the FONTS_PARAM behaviour.
+          next.delete(TEXT_PARAM);
+        }
+        return next;
+      },
+      { replace: true },
+    );
+  }, [msg, setSearchParams]);
+
+  // Mirror typoSettings → `?size=` / `?spacing=` whenever the user
+  // drags either slider. Defaults are OMITTED from the URL so the
+  // share link stays clean for the common case where someone
+  // didn't tweak the controls — only their override (if any) ends
+  // up in the link.
+  useEffect(() => {
+    if (!didApplyUrlRef.current) return;
+    setSearchParams(
+      (prev) => {
+        const next = new URLSearchParams(prev);
+        if (typoSettings.fontSizePx !== SHOWCASE_TYPO_DEFAULTS.fontSizePx) {
+          next.set(FONT_SIZE_PARAM, String(typoSettings.fontSizePx));
+        } else {
+          next.delete(FONT_SIZE_PARAM);
+        }
+        if (
+          typoSettings.letterSpacingEm !==
+          SHOWCASE_TYPO_DEFAULTS.letterSpacingEm
+        ) {
+          // toFixed(2) keeps the URL stable across mathematically-
+          // identical float representations (0.05 vs 0.0500…0001).
+          next.set(
+            LETTER_SPACING_PARAM,
+            typoSettings.letterSpacingEm.toFixed(2),
+          );
+        } else {
+          next.delete(LETTER_SPACING_PARAM);
+        }
+        return next;
+      },
+      { replace: true },
+    );
+  }, [typoSettings, setSearchParams]);
+
   return (
     <Box
       display="flex"
@@ -136,30 +319,163 @@ const Main = () => {
       gap={2}
       my={1}
     >
-      <TextField
-        label={t("showcase.tryIt")}
-        value={msg}
-        onChange={({ target: { value } }) => setMsg(value)}
-        fullWidth
-      />
-      <FontPicker />
-      <TypographyControls
-        defaults={SHOWCASE_TYPO_DEFAULTS}
-        settings={typoSettings}
-        setSettings={setTypoSettings}
-      />
-      {pickedFonts.map((pickedFont, idx) => (
-        <FontShowcaseCard
-          key={`${pickedFont.name}-showcase`}
-          pickedFont={pickedFont}
-          idx={idx}
-          msg={msg}
-          lang={lang}
-          isLoading={Boolean(loadingFonts[pickedFont.name])}
-          sharedTick={sharedTick}
-          typoSettings={typoSettings}
+      {/*
+        ── Responsive layout — explicit flex `order` per group ──────────
+        On desktop (md+), groups read top-to-bottom in source order:
+          0. TextField + FontPicker (controls cluster)
+          1. Share button row
+          2. TypographyControls (collapsible "Display options")
+          3. Cards (the actual font previews)
+        — i.e. the same layout that's been here all along.
+
+        On mobile (xs), we flip to PREVIEWS-FIRST so the first paint
+        on a 360-wide viewport opens directly on the font samples
+        instead of ~250 px of chrome:
+          0. Share button row    (pinned at the very top — most
+                                  actionable affordance after the
+                                  user has tweaked things)
+          1. Cards
+          2. TextField + FontPicker
+          3. TypographyControls
+
+        Why flex `order` rather than restructuring the DOM or
+        rendering twice with display-hide tricks: DOM source stays
+        single-pass (no duplicate buttons / no SSR mismatch risk),
+        assistive-tech reading order follows the accessibility
+        tree's flex order, and the breakpoint switch costs zero JS
+        — pure CSS. The empty-state hint inside the cards group
+        prevents the page from looking broken on mobile when
+        pickedFonts is empty (cards group collapses to ~0 height
+        otherwise, which would leave the controls visually at the
+        top — confusing first-visit experience).
+       */}
+      <Box
+        sx={{
+          order: { xs: 2, md: 0 },
+          display: "flex",
+          flexDirection: "column",
+          gap: 2,
+          width: "100%",
+        }}
+      >
+        <TextField
+          label={t("showcase.tryIt")}
+          value={msg}
+          onChange={({ target: { value } }) => setMsg(value)}
+          fullWidth
         />
-      ))}
+        <FontPicker />
+      </Box>
+
+      {/*
+        Secondary-actions row. Right-aligned so the FontPicker
+        takes the full visual weight and the buttons here read as
+        secondary affordances rather than primary actions. Two
+        buttons live in this row:
+          • Upload font — picks a .ttf/.otf/.woff/.woff2 from disk
+            and adds it as a comparison card immediately. Stored
+            in IndexedDB alongside generated fonts so reopens
+            survive page reload (see UploadFontButton + RecentFontsContext).
+          • Share link — copies the current URL state to clipboard.
+        Both use the text variant + startIcon treatment for visual
+        quiet; the per-button Snackbar surfaces operation feedback.
+      */}
+      <Box
+        sx={{
+          order: { xs: 0, md: 1 },
+          display: "flex",
+          justifyContent: "flex-end",
+          alignItems: "center",
+          gap: 0.5,
+          width: "100%",
+        }}
+      >
+        <UploadFontButton
+          onUploaded={(entry) => {
+            // After save resolves, the entry is persisted in
+            // IndexedDB and its FontFace is registered (the
+            // context's refresh ran inside save()). React hasn't
+            // propagated the new entries list to AppContext's
+            // recentFontEntriesRef yet, though — so the standard
+            // addPickedFont(USER_FONTS_GROUP_KEY, id) path would
+            // see a stale ref and silently no-op. Skip the lookup
+            // and hand the resolved FontOption straight to
+            // addPickedFontOption — we already have the entry. The
+            // new card appears at the top of the picked list and
+            // renders immediately because FontFace is live.
+            addPickedFontOption(recentEntryToFontOption(entry));
+          }}
+        />
+        <Button
+          size="small"
+          variant="text"
+          startIcon={<ShareIcon />}
+          onClick={handleShare}
+          sx={{ borderRadius: "9999px", px: 1.5 }}
+        >
+          {t("showcase.share")}
+        </Button>
+      </Box>
+
+      <Box sx={{ order: { xs: 3, md: 2 }, width: "100%" }}>
+        <TypographyControls
+          defaults={SHOWCASE_TYPO_DEFAULTS}
+          settings={typoSettings}
+          setSettings={setTypoSettings}
+        />
+      </Box>
+
+      <Box
+        sx={{
+          order: { xs: 1, md: 3 },
+          display: "flex",
+          flexDirection: "column",
+          gap: 2,
+          width: "100%",
+        }}
+      >
+        {pickedFonts.length === 0 ? (
+          // Empty-state hint. Only earns its keep when there's
+          // genuinely nothing to render — non-empty showcase
+          // displays the cards directly. Quiet body2 + secondary
+          // colour so it reads as a nudge, not as an error.
+          <Typography
+            variant="body2"
+            color="text.secondary"
+            textAlign="center"
+            sx={{ py: { xs: 4, md: 6 }, fontStyle: "italic" }}
+          >
+            {t("showcase.emptyHint")}
+          </Typography>
+        ) : (
+          pickedFonts.map((pickedFont, idx) => (
+            <FontShowcaseCard
+              key={`${pickedFont.name}-showcase`}
+              pickedFont={pickedFont}
+              idx={idx}
+              msg={msg}
+              lang={lang}
+              isLoading={Boolean(loadingFonts[pickedFont.name])}
+              sharedTick={sharedTick}
+              typoSettings={typoSettings}
+            />
+          ))
+        )}
+      </Box>
+      {/*
+        Share-confirmation Snackbar. Anchored bottom-centre so it
+        doesn't collide with the page's right-aligned Share button.
+        autoHideDuration=3 s gives plenty of time to read a short
+        confirmation without lingering. Message is i18n-driven via
+        the snackbarKey state.
+      */}
+      <Snackbar
+        open={snackbarKey !== null}
+        autoHideDuration={3000}
+        onClose={() => setSnackbarKey(null)}
+        anchorOrigin={{ vertical: "bottom", horizontal: "center" }}
+        message={snackbarKey ? t(snackbarKey) : ""}
+      />
     </Box>
   );
 };
@@ -217,16 +533,16 @@ const FontShowcaseCard = ({
 }: FontShowcaseCardProps) => {
   const navigate = useNavigate();
   const { entries: recentEntries } = useRecentFonts();
-  const { t } = useTranslation();
   // Reverse-lookup the dialect from the font name. Returns undefined
   // for stale localStorage entries pointing at a font we no longer
   // expose — render without the chip rather than crashing.
   //
   // User-generated fonts (cached via IndexedDB) live outside the
   // static dialect catalog. They get a special "Your generated
-  // fonts" label but no associated dialect rotation pool — the
-  // rotation falls back to the flat TEMPLATES list because we
-  // don't know which dialect the user's mapping CSV represented.
+  // fonts" label (resolved by getDialectLabel via the synthetic
+  // USER_FONTS_GROUP_KEY) but no associated dialect rotation pool
+  // — the rotation falls back to the flat TEMPLATES list because
+  // we don't know which dialect the user's mapping CSV represented.
   const builtInDialectKey = findDialectKey(pickedFont.name);
   const isUserFont =
     !builtInDialectKey &&
@@ -234,9 +550,7 @@ const FontShowcaseCard = ({
   const dialectLabel = builtInDialectKey
     ? getDialectLabel(builtInDialectKey, lang)
     : isUserFont
-      ? lang === "zh"
-        ? t("showcase.userFonts.zh")
-        : t("showcase.userFonts.en")
+      ? getDialectLabel(USER_FONTS_GROUP_KEY, lang)
       : undefined;
   // Per-card rotation, filtered by this card's dialect, driven by
   // the shared tick so all cards roll together. When dialectKey is

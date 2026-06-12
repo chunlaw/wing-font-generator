@@ -241,6 +241,12 @@ export const BUILT_IN_ANNO_FONTS: BuiltInPreset[] = [
     url: "/wingfont/NotoNastaliqUrdu-VF.ttf",
     filename: "NotoNastaliqUrdu-VF.ttf",
   },
+  {
+    key: "anno-notosanstagalog",
+    label: "Noto Sans Tagalog (ᜊᜌ᜔ᜊᜌᜒᜈ᜔)",
+    url: "/wingfont/NotoSansTagalog-Regular.ttf",
+    filename: "NotoSansTagalog-Regular.ttf",
+  },
   // ─ Mengshen-equivalent annotation fonts (普通話 pinyin Latin) ─────
   //
   // The pinyin (標注) faces for the two Mengshen-style products. M+ 1m
@@ -348,6 +354,47 @@ export const BUILT_IN_MAPPINGS: BuiltInPreset[] = [
     url: "/wingfont/mappings/canto-urdu.csv",
     filename: "canto-urdu.csv",
     group: "粵語拼寫 (Cantonese, other scripts)",
+  },
+  // ─ Toneless / decorative variants of the four scripts above ──────
+  // Identical transliterations with the tone DIGIT stripped, so the
+  // output reads as clean native script (헝 공 instead of 헝1 공2) —
+  // intended for souvenirs / novelty pieces rather than as a
+  // pronunciation guide. They lose tone (and therefore merge more
+  // homophones), which is acceptable for decorative use.
+  {
+    key: "canto-thai-notone",
+    label: "泰文・無聲調 (Thai, toneless)",
+    url: "/wingfont/mappings/canto-thai-notone.csv",
+    filename: "canto-thai-notone.csv",
+    group: "粵語拼寫・無聲調 (Cantonese, toneless / decorative)",
+  },
+  {
+    key: "canto-korean-notone",
+    label: "諺文・無聲調 (Hangul, toneless)",
+    url: "/wingfont/mappings/canto-korean-notone.csv",
+    filename: "canto-korean-notone.csv",
+    group: "粵語拼寫・無聲調 (Cantonese, toneless / decorative)",
+  },
+  {
+    key: "canto-katakana-notone",
+    label: "片仮名・無聲調 (Katakana, toneless)",
+    url: "/wingfont/mappings/canto-katakana-notone.csv",
+    filename: "canto-katakana-notone.csv",
+    group: "粵語拼寫・無聲調 (Cantonese, toneless / decorative)",
+  },
+  {
+    key: "canto-filipino-notone",
+    label: "ᜊᜌ᜔ᜊᜌᜒᜈ᜔・無聲調 (Baybayin, toneless)",
+    url: "/wingfont/mappings/canto-filipino-notone.csv",
+    filename: "canto-filipino-notone.csv",
+    group: "粵語拼寫・無聲調 (Cantonese, toneless / decorative)",
+  },
+  {
+    key: "canto-urdu-notone",
+    label: "اردو・無聲調 (Urdu, toneless)",
+    url: "/wingfont/mappings/canto-urdu-notone.csv",
+    filename: "canto-urdu-notone.csv",
+    group: "粵語拼寫・無聲調 (Cantonese, toneless / decorative)",
   },
   // Taiwanese / Southern Min (河洛話) — pair these with the Noto Sans
   // TC base and the Huninn annotation font. The two "-toned" CSVs use

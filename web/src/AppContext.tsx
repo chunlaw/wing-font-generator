@@ -2,19 +2,16 @@ import React, { ReactNode, useCallback, useEffect, useRef, useState } from "reac
 import opentype from "opentype.js";
 import Papa from "papaparse";
 import { loadFont as loadFontToDocument } from "./utils";
-import { AVAILABLE_FONTS, FontOption } from "./utils/const";
+import { AVAILABLE_FONTS, FontOption, USER_FONTS_GROUP_KEY } from "./utils/const";
 import {
   recentEntryToFontOption,
   useRecentFonts,
 } from "./RecentFontsContext";
 
-// Synthetic dialect group key for the user's IndexedDB-cached fonts.
-// Treated as a peer of "cantonese" / "taiwanese" / etc. in
-// AppContext's catalog, in FontPicker's lang dropdown, and in
-// Specimen's lookup. Lives here rather than in const.ts because the
-// underlying group is dynamic (built at runtime from RecentFontsContext)
-// rather than a static catalog entry.
-export const USER_FONTS_GROUP_KEY = "userFonts";
+// Re-export so consumers that imported `USER_FONTS_GROUP_KEY` from
+// "./AppContext" before the const.ts move don't need to change
+// their import paths.
+export { USER_FONTS_GROUP_KEY };
 
 interface AppContextState {
   msg: string;
@@ -42,6 +39,19 @@ interface AppContextValue extends AppContextState {
   setMsg: (msg: string) => void;
   loadFont: (fonts: FontOption) => void;
   addPickedFont: (lang: string, fontName: string) => void;
+  /**
+   * Add a pre-resolved FontOption directly, bypassing the
+   * (lang, fontName) → catalog lookup. Used by the upload flow on
+   * /showcase: the just-saved entry needs to land in pickedFonts
+   * before React has propagated the new entries-list to
+   * AppContext's recentFontEntriesRef, so the standard
+   * `addPickedFont(USER_FONTS_GROUP_KEY, id)` path would no-op
+   * against a stale ref. Callers that already have the FontOption
+   * in hand (because they just constructed it from a known entry)
+   * skip the lookup entirely. The font is loaded via loadFont() if
+   * needed — same end-state as addPickedFont's resolved path.
+   */
+  addPickedFontOption: (option: FontOption) => void;
   removePickedFont: (idx: number) => void;
   /**
    * Replace the entire pickedFonts list in one shot. Used by
@@ -180,6 +190,19 @@ export const AppContextProvider = ({ children }: { children: ReactNode }) => {
     }))
   }, [])
 
+  // Direct-add: caller hands us a fully-resolved FontOption, we
+  // just prepend it. No catalog lookup, no ref read — the upload
+  // path needs this because it has the entry in hand BEFORE
+  // React has propagated the new recent-fonts list to the ref
+  // that addPickedFont(USER_FONTS_GROUP_KEY, id) would consult.
+  // Empty deps + functional setState keeps the callback stable.
+  const addPickedFontOption = useCallback((option: FontOption) => {
+    setState(prev => ({
+      ...prev,
+      pickedFonts: [option, ...prev.pickedFonts]
+    }))
+  }, [])
+
   const removePickedFont = useCallback((idx: number) => {
     setState(prev => ({
       ...prev,
@@ -230,6 +253,7 @@ export const AppContextProvider = ({ children }: { children: ReactNode }) => {
         setMsg,
         loadFont,
         addPickedFont,
+        addPickedFontOption,
         removePickedFont,
         setPickedFonts,
       }}

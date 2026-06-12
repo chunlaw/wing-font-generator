@@ -38,17 +38,32 @@ import {
   Download,
   DeleteOutline,
   Visibility,
+  UploadFile as UploadFileIcon,
 } from "@mui/icons-material";
 import React, { useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useRecentFonts } from "../RecentFontsContext";
 import { useTranslation } from "../i18n/LanguageContext";
+import { useSharedTick } from "../utils/hooks";
 import { BUILT_IN_MAPPINGS } from "../utils/wingfontPresets";
 import type { RecentFontEntry } from "../utils/recentFonts";
 
 const RecentFontsChips = () => {
   const { t } = useTranslation();
   const { entries, canPin, togglePin, remove, clearAll } = useRecentFonts();
+
+  // ── Minute-tick for relative-time captions ────────────────────────
+  // Each chip shows "X min ago" / "X h ago" computed off Date.now() at
+  // render time. Without an external nudge, that string would stale
+  // ("just now" stays "just now" indefinitely until something else
+  // re-renders the row). One 60 s setInterval at the parent triggers a
+  // re-render across every chip in lockstep, so the captions tick
+  // forward together. Return value of useSharedTick is the tick count,
+  // which we don't need — the side effect of the re-render is the
+  // whole point. Cadence of 60 s is the natural granularity of the
+  // captions ("min ago" / "h ago" / "d ago") — anything faster would
+  // be wasted work.
+  useSharedTick(60_000);
 
   if (entries.length === 0) return null;
 
@@ -237,6 +252,22 @@ const RecentFontChip = ({
           // a custom (uploaded) CSV — no preset key, no useful label
           // to surface.
           <Box display="flex" alignItems="baseline" gap={0.75}>
+            {/* Tiny upload-file icon for uploaded entries —
+                visually distinguishes them from pipeline-generated
+                ones at chip resolution. Generated entries get no
+                icon (the chip's quiet default IS the generated
+                state). Aligned to baseline-1px so the icon sits
+                with the displayName text. */}
+            {entry.source === "uploaded" && (
+              <UploadFileIcon
+                sx={{
+                  fontSize: 14,
+                  color: "text.secondary",
+                  alignSelf: "center",
+                  mr: -0.25,
+                }}
+              />
+            )}
             <Typography
               component="span"
               variant="body2"
@@ -314,14 +345,29 @@ const RecentFontChip = ({
         // Keep the chip width unrelated to the menu width — Menu
         // sizes to its own content, the chip stays compact.
       >
-        <MenuItem onClick={() => handleDownload("ttf")}>
-          <Download fontSize="small" sx={{ mr: 1 }} />
-          {t("step1.recentFonts.redownloadTtf")}
-        </MenuItem>
-        <MenuItem onClick={() => handleDownload("woff")}>
-          <Download fontSize="small" sx={{ mr: 1 }} />
-          {t("step1.recentFonts.redownloadWoff")}
-        </MenuItem>
+        {/* Download menu items — only render formats whose bytes
+            are actually populated. Generated entries always have
+            both; uploaded entries have exactly the format the
+            user gave us (TTF/OTF lands in ttfBytes; WOFF/WOFF2
+            in woffBytes), so the other menu item is hidden
+            rather than offering a broken download.
+
+            Why hide rather than disable: a disabled item with the
+            same label is confusing ("why can't I download a
+            .woff?"). Hiding makes the menu shorter and the
+            available action obvious. */}
+        {entry.ttfBytes && entry.ttfBytes.length > 0 && (
+          <MenuItem onClick={() => handleDownload("ttf")}>
+            <Download fontSize="small" sx={{ mr: 1 }} />
+            {t("step1.recentFonts.redownloadTtf")}
+          </MenuItem>
+        )}
+        {entry.woffBytes && entry.woffBytes.length > 0 && (
+          <MenuItem onClick={() => handleDownload("woff")}>
+            <Download fontSize="small" sx={{ mr: 1 }} />
+            {t("step1.recentFonts.redownloadWoff")}
+          </MenuItem>
+        )}
         <MenuItem
           onClick={() => {
             setMenuAnchor(null);

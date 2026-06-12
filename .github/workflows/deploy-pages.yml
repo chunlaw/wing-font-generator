@@ -279,6 +279,27 @@ jobs:
           - { name: Xiaolai-Huninn-lau,                    args: "-opt -i input_fonts/XiaolaiSC-Regular.ttf -a input_fonts/Huninn-Regular.ttf -m mappings/canto-lau.csv -as 0.25" }
           - { name: Xiaolai-Huninn-guangdong,              args: "-opt -i input_fonts/XiaolaiSC-Regular.ttf -a input_fonts/Huninn-Regular.ttf -m mappings/canto-guangdong.csv -as 0.25" }
           - { name: Xiaolai-Huninn-chishima,               args: "-opt -i input_fonts/XiaolaiSC-Regular.ttf -a input_fonts/Huninn-Regular.ttf -m mappings/canto-chishima.csv -as 0.25" }
+          # Cantonese non-romanization variants on Xiaolai base. Cangjie
+          # uses Xiaolai as its own annotation source (input-method
+          # radicals render in Xiaolai's hand-drawn style alongside the
+          # base character), so no -opt — subsetting would chase the
+          # self-reference. Thai / Katakana / Korean re-use the same
+          # annotation fonts as the Noto Sans HK / Chiron variants —
+          # only the base swaps.
+          - { name: Xiaolai-cangjie,                       args: "-i input_fonts/XiaolaiSC-Regular.ttf -a input_fonts/XiaolaiSC-Regular.ttf -m mappings/cangjie.csv -as 0.25" }
+          - { name: Xiaolai-Google-thai,                   args: "-opt -i input_fonts/XiaolaiSC-Regular.ttf -a 'input_fonts/GoogleSans-VariableFont_GRAD,opsz,wght.ttf' -m mappings/canto-thai.csv -as 0.22" }
+          - { name: Xiaolai-NotoJP-katakana,               args: "-opt -i input_fonts/XiaolaiSC-Regular.ttf -a input_fonts/NotoSansJP-VariableFont_wght.ttf -m mappings/canto-katakana.csv -as 0.24" }
+          - { name: Xiaolai-NotoKR-korean,                 args: "-opt -i input_fonts/XiaolaiSC-Regular.ttf -a input_fonts/NotoSansKR-VariableFont_wght.ttf -m mappings/canto-korean.csv -as 0.24" }
+          - { name: Xiaolai-NotoNastaliq-urdu,             args: "-opt -i input_fonts/XiaolaiSC-Regular.ttf -a input_fonts/NotoNastaliqUrdu-VariableFont_wght.ttf -m mappings/canto-urdu.csv -as 0.16" }
+          # Toneless / decorative variants (tone digit stripped) — souvenir
+          # set, Xiaolai base. Same annotation fonts & scales as the toned
+          # builds above; Baybayin uses the new Noto Sans Tagalog (-as 0.24,
+          # height-matched to Thai/Kana/Hangul).
+          - { name: Xiaolai-Google-thai-notone,            args: "-opt -i input_fonts/XiaolaiSC-Regular.ttf -a 'input_fonts/GoogleSans-VariableFont_GRAD,opsz,wght.ttf' -m mappings/canto-thai-notone.csv -as 0.22" }
+          - { name: Xiaolai-NotoJP-katakana-notone,        args: "-opt -i input_fonts/XiaolaiSC-Regular.ttf -a input_fonts/NotoSansJP-VariableFont_wght.ttf -m mappings/canto-katakana-notone.csv -as 0.24" }
+          - { name: Xiaolai-NotoKR-korean-notone,          args: "-opt -i input_fonts/XiaolaiSC-Regular.ttf -a input_fonts/NotoSansKR-VariableFont_wght.ttf -m mappings/canto-korean-notone.csv -as 0.24" }
+          - { name: Xiaolai-NotoTagalog-baybayin-notone,   args: "-opt -i input_fonts/XiaolaiSC-Regular.ttf -a input_fonts/NotoSansTagalog-Regular.ttf -m mappings/canto-filipino-notone.csv -as 0.24" }
+          - { name: Xiaolai-NotoNastaliq-urdu-notone,      args: "-opt -i input_fonts/XiaolaiSC-Regular.ttf -a input_fonts/NotoNastaliqUrdu-VariableFont_wght.ttf -m mappings/canto-urdu-notone.csv -as 0.16" }
           - { name: Xiaolai-Huninn-tailo,                  args: "-opt -i input_fonts/XiaolaiSC-Regular.ttf -a input_fonts/Huninn-Regular.ttf -m mappings/taigi-tl-toned.csv -as 0.25" }
           - { name: Xiaolai-Huninn-poj,                    args: "-opt -i input_fonts/XiaolaiSC-Regular.ttf -a input_fonts/Huninn-Regular.ttf -m mappings/taigi-poj-toned.csv -as 0.25" }
           - { name: Xiaolai-Huninn-teochew-pengim,         args: "-opt -i input_fonts/XiaolaiSC-Regular.ttf -a input_fonts/Huninn-Regular.ttf -m mappings/teochew-gdpi.csv -as 0.25" }

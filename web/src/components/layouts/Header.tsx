@@ -1,10 +1,15 @@
 import {
   Box,
   Divider,
+  Drawer,
   IconButton,
   Link as MuiLink,
-  Menu,
-  MenuItem,
+  List,
+  ListItem,
+  ListItemButton,
+  ListItemText,
+  ListSubheader,
+  Stack,
   Tab,
   Tabs,
   Tooltip,
@@ -15,7 +20,11 @@ import {
 import {
   Brightness4,
   Brightness7,
+  Close as CloseIcon,
+  GitHub as GitHubIcon,
+  Instagram,
   Menu as MenuIcon,
+  Telegram,
 } from "@mui/icons-material";
 import { SyntheticEvent, useMemo, useState } from "react";
 import { Link as RouterLink, useLocation } from "react-router-dom";
@@ -45,8 +54,12 @@ import LanguageSwitcher from "./LanguageSwitcher";
  *
  * Responsive layout:
  *   - md+: Tabs displayed inline.
- *   - <md: Tabs collapse into a hamburger Menu. The theme + lang
- *     toggles remain visible.
+ *   - <md: Tabs collapse into a hamburger that opens a left-anchored
+ *     <Drawer> (not a <Menu> popover any more — see the Drawer block
+ *     below for the rationale). The drawer also absorbs the
+ *     nav-flavored footer links (Source, CLI, Credits, Terms,
+ *     Privacy, Report-error) plus the theme toggle and social icons
+ *     so the mobile page no longer needs a three-column footer.
  */
 const Header = () => {
   const muiTheme = useMuiTheme();
@@ -55,7 +68,11 @@ const Header = () => {
   const { mode, toggleTheme } = useTheme();
   const { t } = useTranslation();
   const { pathname } = useLocation();
-  const [menuAnchor, setMenuAnchor] = useState<HTMLElement | null>(null);
+  // The mobile drawer's open/closed state. Previously this was an
+  // anchorEl HTMLElement | null because we used a popover <Menu>;
+  // a <Drawer> doesn't anchor to a DOM node, so a plain boolean
+  // suffices and the close handlers get cleaner.
+  const [drawerOpen, setDrawerOpen] = useState(false);
 
   // Each item has a stable `value` used both as a React key and as
   // the MUI Tabs value (which controls the active indicator).
@@ -77,6 +94,47 @@ const Header = () => {
         onClick: () =>
           window.open("https://github.com/sponsors/chunlaw", "_blank"),
       },
+    ],
+    [t],
+  );
+
+  // "More" links — the previously footer-only entries that now live
+  // inside the drawer on mobile. Mirrors the order used in
+  // Footer.tsx's Links column on desktop, minus the duplicates
+  // (Generate / Showcase) that already appear under primary nav.
+  type MoreLink = {
+    value: string;
+    label: string;
+    href: string;
+    external?: boolean;
+  };
+  const moreLinks: MoreLink[] = useMemo(
+    () => [
+      {
+        value: "source",
+        label: t("footer.links.source"),
+        href: "https://github.com/chunlaw/wing-font-generator",
+        external: true,
+      },
+      {
+        value: "cli",
+        label: t("footer.links.cli"),
+        href: "https://github.com/chunlaw/wing-font-generator/tree/main/python#readme",
+        external: true,
+      },
+      {
+        value: "credits",
+        label: t("footer.links.credits"),
+        href: "/credits",
+      },
+      {
+        value: "reportError",
+        label: t("footer.links.reportError"),
+        href: "https://github.com/chunlaw/wing-font-generator/issues/new?title=Annotation%20error",
+        external: true,
+      },
+      { value: "terms", label: t("footer.links.terms"), href: "/terms" },
+      { value: "privacy", label: t("footer.links.privacy"), href: "/privacy" },
     ],
     [t],
   );
@@ -108,10 +166,10 @@ const Header = () => {
     // derived from pathname.
   };
 
-  const closeMenu = () => setMenuAnchor(null);
-  const fireFromMenu = (action: () => void) => () => {
+  const closeDrawer = () => setDrawerOpen(false);
+  const fireFromDrawer = (action: () => void) => () => {
     action();
-    closeMenu();
+    closeDrawer();
   };
 
   return (
@@ -151,58 +209,244 @@ const Header = () => {
 
       <Box display="flex" alignItems="center" gap={1}>
         {isMobile ? (
-          // --- Mobile: hamburger menu ----------------------------------
-          // Tabs in a 360-wide viewport with 4 labels of varying width
-          // would either truncate or wrap. The hamburger menu we
-          // already built handles this much better.
+          // --- Mobile: hamburger opens a left-anchored Drawer ----------
+          // Previously a <Menu> popover; swapped to <Drawer anchor="left">
+          // because:
+          //   1. A popover is height-bounded by the viewport row it
+          //      anchors to — uncomfortable as more items pile up.
+          //   2. A drawer reads as the dedicated "navigation surface"
+          //      rather than a dropdown, which lets us push the
+          //      footer's nav-flavored links into it without making
+          //      them feel like menu items.
+          //   3. Standard mobile pattern (native iOS/Android, most
+          //      modern web apps) — users already know what to do.
+          // Width 280: wide enough for the longest zh string at
+          // body1 weight + ListItem padding without horizontal
+          // scrolling, narrow enough to leave a clear backdrop tap
+          // target on a 360-wide viewport.
           <>
             <IconButton
-              onClick={(e) => setMenuAnchor(e.currentTarget)}
+              onClick={() => setDrawerOpen(true)}
               aria-label="Open navigation"
               color="inherit"
             >
               <MenuIcon />
             </IconButton>
-            <Menu
-              anchorEl={menuAnchor}
-              open={Boolean(menuAnchor)}
-              onClose={closeMenu}
-              anchorOrigin={{ vertical: "bottom", horizontal: "right" }}
-              transformOrigin={{ vertical: "top", horizontal: "right" }}
-              slotProps={{ paper: { sx: { mt: 1, minWidth: 200 } } }}
+            <Drawer
+              anchor="left"
+              open={drawerOpen}
+              onClose={closeDrawer}
+              slotProps={{ paper: { sx: { width: 280 } } }}
             >
-              {navItems.map((item) =>
-                "to" in item ? (
-                  <MenuItem
-                    key={item.value}
-                    component="a"
-                    href={item.to}
-                    selected={activeTab === item.value}
-                    onClick={closeMenu}
-                    sx={
-                      activeTab === item.value
-                        ? { color: "primary.main", fontWeight: 600 }
-                        : undefined
-                    }
+              <Box
+                sx={{
+                  height: "100%",
+                  display: "flex",
+                  flexDirection: "column",
+                }}
+                role="presentation"
+              >
+                {/* Drawer header — brand + close X. Mirrors the
+                    page header's brand on the left so the user
+                    feels oriented when the drawer slides in. */}
+                <Box
+                  sx={{
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "space-between",
+                    px: 2,
+                    py: 1.5,
+                  }}
+                >
+                  <Typography variant="h6" letterSpacing={-0.5}>
+                    {t("header.title")}
+                  </Typography>
+                  <IconButton
+                    size="small"
+                    onClick={closeDrawer}
+                    aria-label={t("drawer.close")}
                   >
-                    {item.label}
-                  </MenuItem>
-                ) : (
-                  <MenuItem
-                    key={item.value}
-                    onClick={fireFromMenu(item.onClick)}
+                    <CloseIcon fontSize="small" />
+                  </IconButton>
+                </Box>
+                <Divider />
+
+                {/* Primary navigation — same 4 items as the desktop
+                    Tabs, rendered as full-width ListItemButtons so
+                    each row has a generous tap target. The active
+                    route is emphasised with primary.main color +
+                    600 weight, matching the Tabs indicator on
+                    desktop. */}
+                <List sx={{ py: 0 }}>
+                  {navItems.map((item) =>
+                    "to" in item ? (
+                      <ListItem key={item.value} disablePadding>
+                        <ListItemButton
+                          component="a"
+                          href={item.to}
+                          selected={activeTab === item.value}
+                          onClick={closeDrawer}
+                          sx={
+                            activeTab === item.value
+                              ? {
+                                  color: "primary.main",
+                                  "& .MuiListItemText-primary": {
+                                    fontWeight: 600,
+                                  },
+                                }
+                              : undefined
+                          }
+                        >
+                          <ListItemText primary={item.label} />
+                        </ListItemButton>
+                      </ListItem>
+                    ) : (
+                      <ListItem key={item.value} disablePadding>
+                        <ListItemButton
+                          onClick={fireFromDrawer(item.onClick)}
+                        >
+                          <ListItemText primary={item.label} />
+                        </ListItemButton>
+                      </ListItem>
+                    ),
+                  )}
+                </List>
+
+                <Divider />
+
+                {/* Theme toggle row. Kept inside the drawer (in
+                    addition to the always-visible IconButton next
+                    to the hamburger) so the drawer surface is
+                    self-sufficient — opening the drawer reveals
+                    every action that's normally crammed into the
+                    mobile header row. */}
+                <List sx={{ py: 0 }}>
+                  <ListItem disablePadding>
+                    <ListItemButton onClick={fireFromDrawer(toggleTheme)}>
+                      <ListItemText
+                        primary={
+                          mode === "dark"
+                            ? `${t("header.theme.toggle")} ☀`
+                            : `${t("header.theme.toggle")} 🌙`
+                        }
+                      />
+                    </ListItemButton>
+                  </ListItem>
+                </List>
+
+                <Divider />
+
+                {/* "More" links — Source / CLI / Credits / Report
+                    error / Terms / Privacy. These previously lived
+                    only in the Footer's Links column. On mobile
+                    the footer is now a slim one-liner, so these
+                    nav-flavored entries moved here where they
+                    remain a single tap from any route.
+
+                    External links open in a new tab; internal
+                    routes navigate via the standard SPA mechanism
+                    and close the drawer on the way. */}
+                <List
+                  dense
+                  sx={{ py: 0 }}
+                  subheader={
+                    <ListSubheader
+                      sx={{
+                        lineHeight: "2.4em",
+                        bgcolor: "transparent",
+                        fontWeight: 700,
+                        letterSpacing: "0.08em",
+                        fontSize: 11,
+                      }}
+                    >
+                      {t("drawer.more")}
+                    </ListSubheader>
+                  }
+                >
+                  {moreLinks.map((link) => (
+                    <ListItem key={link.value} disablePadding>
+                      <ListItemButton
+                        component="a"
+                        href={link.href}
+                        target={link.external ? "_blank" : undefined}
+                        rel={link.external ? "noopener noreferrer" : undefined}
+                        onClick={closeDrawer}
+                      >
+                        <ListItemText
+                          primary={link.label}
+                          slotProps={{
+                            primary: {
+                              variant: "body2",
+                              color: "text.secondary",
+                            },
+                          }}
+                        />
+                      </ListItemButton>
+                    </ListItem>
+                  ))}
+                </List>
+
+                {/* Spacer pushes the social icons to the very
+                    bottom of the drawer no matter how much
+                    vertical room is left over. */}
+                <Box sx={{ flexGrow: 1 }} />
+                <Divider />
+
+                {/* Social icons — bottom of drawer. Mirror of the
+                    desktop Footer's Social column. Kept as
+                    IconButtons (not list rows) so the cluster reads
+                    as a visually distinct sign-off rather than just
+                    more nav. */}
+                <Box sx={{ px: 1.5, py: 1 }}>
+                  <Typography
+                    variant="overline"
+                    color="text.secondary"
+                    sx={{
+                      fontWeight: 700,
+                      letterSpacing: "0.08em",
+                      pl: 0.5,
+                    }}
                   >
-                    {item.label}
-                  </MenuItem>
-                ),
-              )}
-              <Divider />
-              <MenuItem onClick={fireFromMenu(toggleTheme)}>
-                {mode === "dark"
-                  ? `${t("header.theme.toggle")} ☀`
-                  : `${t("header.theme.toggle")} 🌙`}
-              </MenuItem>
-            </Menu>
+                    {t("drawer.social")}
+                  </Typography>
+                  <Stack direction="row" spacing={0.5}>
+                    <IconButton
+                      size="small"
+                      onClick={fireFromDrawer(() =>
+                        window.open(
+                          "https://github.com/chunlaw/wing-font-generator",
+                          "_blank",
+                        ),
+                      )}
+                      aria-label="GitHub"
+                    >
+                      <GitHubIcon fontSize="small" />
+                    </IconButton>
+                    <IconButton
+                      size="small"
+                      onClick={fireFromDrawer(() =>
+                        window.open("https://t.me/wingfont", "_blank"),
+                      )}
+                      aria-label="Telegram"
+                    >
+                      <Telegram fontSize="small" />
+                    </IconButton>
+                    <IconButton
+                      size="small"
+                      onClick={fireFromDrawer(() =>
+                        window.open(
+                          "https://www.instagram.com/wingfont",
+                          "_blank",
+                        ),
+                      )}
+                      aria-label="Instagram"
+                    >
+                      <Instagram fontSize="small" />
+                    </IconButton>
+                  </Stack>
+                </Box>
+              </Box>
+            </Drawer>
           </>
         ) : (
           // --- Desktop: inline Tabs ------------------------------------

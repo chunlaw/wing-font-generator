@@ -42,9 +42,10 @@ export const MAX_SLOTS = 5;
 export const MAX_PINNED = 4;
 
 /**
- * What we persist per generated font. Kept deliberately compact —
+ * What we persist per font entry. Kept deliberately compact —
  * configuration metadata is enough to identify which font the user
- * is looking at without having to re-run the pipeline.
+ * is looking at without having to re-run the pipeline (or in the
+ * case of uploads, without re-reading the file from disk).
  */
 export interface RecentFontEntry {
   /**
@@ -54,9 +55,10 @@ export interface RecentFontEntry {
    */
   id: string;
   /**
-   * Human-readable label for the picker chip. Defaults to the
-   * font's internal family name; the user can override via the
-   * Step 3 "family" param.
+   * Human-readable label for the picker chip. For generated fonts
+   * defaults to the font's internal family name (user-overridable
+   * via the Step 3 "family" param); for uploaded fonts defaults to
+   * the file's base name without extension.
    */
   displayName: string;
   /**
@@ -69,9 +71,19 @@ export interface RecentFontEntry {
   /** Unix ms — for sorting + "X ago" copy. */
   generatedAt: number;
   /**
+   * Provenance of this entry. "generated" means produced by the
+   * Wing Font pipeline (Step 5 of /generate). "uploaded" means the
+   * user dropped a .ttf/.otf/.woff/.woff2 file onto /showcase or
+   * /specimen for comparison. Optional + defaults to "generated" so
+   * existing pre-uploads entries in IndexedDB don't break — the
+   * absent-field default treats them as generated, which they were.
+   */
+  source?: "generated" | "uploaded";
+  /**
    * Minimal description of HOW the font was generated. Used to
    * distinguish chips visually ("ChironSung × Jyutping" vs.
-   * "Xiaolai × Pinyin") and to surface in the chip tooltip.
+   * "Xiaolai × Pinyin") and to surface in the chip tooltip. Empty
+   * object for uploaded entries (no pipeline config to describe).
    */
   config: {
     baseFontName?: string;
@@ -79,9 +91,21 @@ export interface RecentFontEntry {
     mappingName?: string;
     annoScale?: number;
   };
-  /** Raw OpenType TTF bytes. */
+  /**
+   * Raw OpenType TTF bytes. Populated for generated fonts (always)
+   * and for uploaded fonts whose original format was TTF/OTF. For
+   * uploaded WOFF/WOFF2 files this is an empty Uint8Array — the
+   * upload pipeline doesn't transcode formats, so the available
+   * bytes live in `woffBytes` only and the chip's download menu
+   * hides the unavailable format.
+   */
   ttfBytes: Uint8Array;
-  /** Raw WOFF (compressed wrapper around TTF) bytes. */
+  /**
+   * Raw WOFF (compressed wrapper around TTF) bytes. Same
+   * populate-or-empty rule as `ttfBytes` for uploaded entries —
+   * generated entries always have both, uploaded entries have
+   * exactly the format the user gave us.
+   */
   woffBytes: Uint8Array;
 }
 
@@ -161,14 +185,26 @@ export async function listRecentFonts(): Promise<RecentFontEntry[]> {
  */
 export async function saveRecentFont(
   partial: Omit<RecentFontEntry, "id" | "generatedAt" | "pinned"> & {
+    /** Optional pre-assigned id. Used by the upload path so the
+        opaque id can carry an "up-" prefix instead of the default
+        "gen-" — purely cosmetic, since the id is opaque, but useful
+        when inspecting IndexedDB rows. When omitted, an id is
+        auto-generated with the "gen-" prefix. */
+    id?: string;
     pinned?: boolean;
   },
 ): Promise<RecentFontEntry> {
+  // Spread first so any keys we want to FORCE (id default, fresh
+  // generatedAt, pinned default) override partial's undefined or
+  // missing values. Previously the partial's Omit excluded id /
+  // generatedAt / pinned so the order didn't matter; now that
+  // partial can carry id (for upload-path opaque-id-with-prefix),
+  // the order is load-bearing: spread first, then assign with ??.
   const entry: RecentFontEntry = {
-    id: generateId(),
+    ...partial,
+    id: partial.id ?? generateId(),
     generatedAt: Date.now(),
     pinned: partial.pinned ?? false,
-    ...partial,
   };
 
   await withStore("readwrite", async (store) => {
@@ -248,10 +284,24 @@ export async function clearRecentFonts(): Promise<void> {
  * Stable opaque ID generator. crypto.randomUUID() exists in modern
  * browsers; the timestamp+random fallback is for older Safari /
  * sandboxed contexts where the API isn't exposed.
+ *
+ * The `prefix` argument lets callers tag the origin of the entry —
+ * "gen" for generated, "up" for uploaded — so a `/specimen/<id>`
+ * URL hints at the provenance, and the DB browser tool shows the
+ * source at a glance. The prefix is purely cosmetic; the FontFace
+ * registration / lookup treats the whole id as opaque.
  */
-function generateId(): string {
+export function generateRecentFontId(
+  prefix: "gen" | "up" = "gen",
+): string {
   if (typeof crypto !== "undefined" && "randomUUID" in crypto) {
-    return `gen-${crypto.randomUUID()}`;
+    return `${prefix}-${crypto.randomUUID()}`;
   }
-  return `gen-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 10)}`;
+  return `${prefix}-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 10)}`;
+}
+
+// Kept for callers that haven't migrated to the prefixed variant yet
+// (saveRecentFont below). Defaults to the "gen" prefix.
+function generateId(): string {
+  return generateRecentFontId("gen");
 }

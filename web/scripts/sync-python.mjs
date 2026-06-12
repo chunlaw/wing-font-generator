@@ -70,6 +70,12 @@ const MANIFEST = [
   ["mappings/canto-katakana.csv", "mappings/canto-katakana.csv"],
   ["mappings/canto-filipino.csv", "mappings/canto-filipino.csv"],
   ["mappings/canto-urdu.csv", "mappings/canto-urdu.csv"],
+  // Toneless / decorative variants (tone digit stripped) — souvenir use.
+  ["mappings/canto-thai-notone.csv", "mappings/canto-thai-notone.csv"],
+  ["mappings/canto-korean-notone.csv", "mappings/canto-korean-notone.csv"],
+  ["mappings/canto-katakana-notone.csv", "mappings/canto-katakana-notone.csv"],
+  ["mappings/canto-filipino-notone.csv", "mappings/canto-filipino-notone.csv"],
+  ["mappings/canto-urdu-notone.csv", "mappings/canto-urdu-notone.csv"],
   ["mappings/cangjie.csv", "mappings/cangjie.csv"],
   // Mandarin — Hanyu Pinyin in numeric-tone form (e.g. `ling2`,
   // `yuan2`). Two regional variants, each ~95k rows / ~3 MB covering
@@ -150,6 +156,12 @@ const MANIFEST = [
   [
     "input_fonts/NotoNastaliqUrdu-VariableFont_wght.ttf",
     "NotoNastaliqUrdu-VF.ttf",
+  ],
+  // Baybayin (Tagalog script) annotation font for canto-filipino.
+  // Static Regular — no rename needed.
+  [
+    "input_fonts/NotoSansTagalog-Regular.ttf",
+    "NotoSansTagalog-Regular.ttf",
   ],
   // Taiwanese / Southern Min showcase pairing: Noto Sans TC base CJK
   // font + Huninn (jf-openhuninn) annotation font carrying the Tâi-lô

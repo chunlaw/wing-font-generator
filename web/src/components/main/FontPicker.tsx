@@ -1,7 +1,11 @@
 import { Box, IconButton, ListSubheader, MenuItem, TextField } from "@mui/material"
 import { useCallback, useContext, useEffect, useState } from "react"
-import AppContext, { USER_FONTS_GROUP_KEY } from "../../AppContext"
-import { AVAILABLE_FONTS, getDialectLabel } from "../../utils/const"
+import AppContext from "../../AppContext"
+import {
+  AVAILABLE_FONTS,
+  getDialectLabel,
+  USER_FONTS_GROUP_KEY,
+} from "../../utils/const"
 import { useRecentFonts } from "../../RecentFontsContext"
 import { AddCircleOutline } from "@mui/icons-material"
 import { useTranslation } from "../../i18n/LanguageContext"
@@ -13,7 +17,7 @@ interface FontPickerState {
 
 const FontPicker = () => {
   const { addPickedFont } = useContext(AppContext)
-  const { lang, t } = useTranslation()
+  const { lang } = useTranslation()
   const { entries: recentEntries } = useRecentFonts()
 
   const [state, setState] = useState<FontPickerState>(DEFAULT_STATE)
@@ -64,18 +68,24 @@ const FontPicker = () => {
   // least one user font exists. No point exposing an empty group on
   // first-time visits — the dropdown stays simpler until earned.
   const showUserFontsGroup = recentEntries.length > 0;
-  const userFontsLabel =
-    lang === "zh" ? t("showcase.userFonts.zh") : t("showcase.userFonts.en");
+  const userFontsLabel = getDialectLabel(USER_FONTS_GROUP_KEY, lang);
 
   // The font-name dropdown's options depend on which lang is
   // selected. User-fonts entries don't live in AVAILABLE_FONTS so
-  // we branch the render.
+  // we branch the render. Built-in fonts carry an optional `group`
+  // field — preserve it so the render below can insert
+  // `<ListSubheader>` rows at group boundaries.
   const fontOptions =
     state.lang === USER_FONTS_GROUP_KEY
-      ? recentEntries.map((e) => ({ name: e.id, displayName: e.displayName }))
+      ? recentEntries.map((e) => ({
+          name: e.id,
+          displayName: e.displayName,
+          group: undefined as string | undefined,
+        }))
       : Object.values(AVAILABLE_FONTS[state.lang]?.fonts ?? {}).map((opt) => ({
           name: opt.name,
           displayName: opt.displayName,
+          group: opt.group,
         }));
 
   return (
@@ -121,11 +131,44 @@ const FontPicker = () => {
         fullWidth
         disabled={fontOptions.length === 0}
       >
-        {fontOptions.map(({ name, displayName }) => (
-          <MenuItem key={`${name}-option`} value={name}>
-            {displayName}
-          </MenuItem>
-        ))}
+        {/*
+          Render options with optional ListSubheader rows separating
+          adjacent entries that belong to different `group`s. Same
+          look-and-feel as the Step 2 mapping picker (see
+          Step2Mappings.tsx → BUILT_IN_MAPPINGS flatMap pattern).
+          A subheader is emitted whenever the current entry's group
+          differs from the previous one's group AND the current
+          group is non-empty.
+
+          pointerEvents:none + lineHeight bump on the subheader
+          prevents MUI's Select from treating the row as a clickable
+          option — without those, clicking the subheader would close
+          the menu without selecting anything.
+        */}
+        {fontOptions.flatMap((opt, idx, arr) => {
+          const prevGroup = idx > 0 ? arr[idx - 1].group : undefined;
+          const headerNeeded =
+            opt.group !== undefined && opt.group !== prevGroup;
+          return [
+            ...(headerNeeded
+              ? [
+                  <ListSubheader
+                    key={`group-${opt.group}`}
+                    sx={{ pointerEvents: "none", lineHeight: 2.2 }}
+                  >
+                    {opt.group}
+                  </ListSubheader>,
+                ]
+              : []),
+            <MenuItem
+              key={`${opt.name}-option`}
+              value={opt.name}
+              sx={opt.group ? { pl: 4 } : undefined}
+            >
+              {opt.displayName}
+            </MenuItem>,
+          ];
+        })}
       </TextField>
       <IconButton
         onClick={() => addPickedFont(state.lang, state.fontName)}

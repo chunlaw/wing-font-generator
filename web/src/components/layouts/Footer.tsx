@@ -7,8 +7,9 @@ import { Box, Divider, IconButton, Link, Stack, Typography } from "@mui/material
 import { useTranslation } from "../../i18n/LanguageContext";
 
 /**
- * Footer — three-section layout that gracefully collapses on phones.
+ * Footer — three-section layout on desktop; slim one-liner on mobile.
  *
+ * Desktop (md+):
  *   ┌─────────────────────────────────────────────────────────────┐
  *   │  About                  │  Links            │  Social      │
  *   │  blurb                  │  • Generate       │  GH/TG/IG    │
@@ -18,14 +19,58 @@ import { useTranslation } from "../../i18n/LanguageContext";
  *   │  License        ·        Built by chunlaw                   │
  *   └─────────────────────────────────────────────────────────────┘
  *
- * On xs the three columns stack vertically. The bottom row stays a
- * single line wherever it fits, wrapping naturally otherwise.
+ * Mobile (xs/sm):
+ *   ┌─────────────────────────────────────────────────────────────┐
+ *   │            MIT License · Designed by chunlaw                │
+ *   └─────────────────────────────────────────────────────────────┘
+ *
+ * Rationale: the rich three-column footer used to stack vertically
+ * on phones and dominated the bottom of every mobile page. The
+ * nav-flavored links (Source / CLI / Credits / Terms / Privacy /
+ * Report-error) and social icons now live inside the left-side
+ * Drawer (see Header.tsx) where they're a single tap from any
+ * route. The page footer reduces to a quiet editorial sign-off so
+ * the page still terminates with a credit line — but doesn't
+ * waste real estate duplicating navigation.
+ *
+ * The breakpoint is `md` for the swap because that matches where
+ * Header.tsx swaps Tabs → Drawer; keeping a single shared
+ * breakpoint avoids the "drawer present but big footer also
+ * present" awkward middle-state.
  */
 const Footer = () => {
   const { t } = useTranslation();
 
   return (
     <Box component="footer" width="100%" sx={{ mt: { xs: 6, md: 10 } }}>
+      {/* ── Mobile (xs/sm): slim one-line sign-off ───────────────
+          Just license + credit on a single centred line, with a
+          thin divider so the page has a clear visual terminus. No
+          nav links — those live in the Drawer now. */}
+      <Box sx={{ display: { xs: "block", md: "none" } }}>
+        <Divider sx={{ mb: 2 }} />
+        <Stack
+          direction="row"
+          divider={<span aria-hidden>·</span>}
+          spacing={1}
+          justifyContent="center"
+          alignItems="center"
+          flexWrap="wrap"
+          sx={{
+            pb: 3,
+            color: "text.secondary",
+            fontSize: 12,
+            textAlign: "center",
+            px: 2,
+          }}
+        >
+          <Box>{t("footer.license")}</Box>
+          <Box>{t("footer.credit")}</Box>
+        </Stack>
+      </Box>
+
+      {/* ── Desktop (md+): three-column layout + bottom row ───── */}
+      <Box sx={{ display: { xs: "none", md: "block" } }}>
       <Divider sx={{ mb: { xs: 3, md: 4 } }} />
 
       {/* Three-column upper section */}
@@ -229,6 +274,7 @@ const Footer = () => {
         <Box>{t("footer.license")}</Box>
         <Box>{t("footer.credit")}</Box>
       </Stack>
+      </Box>
     </Box>
   );
 };

@@ -125,8 +125,34 @@ export const RecentFontsProvider = ({ children }: { children: ReactNode }) => {
       try {
         // Browsers expect a BufferSource for FontFace; build a
         // fresh ArrayBuffer slice from the stored Uint8Array.
-        const bytes = entry.ttfBytes;
-        const blob = new Blob([bytes], { type: "font/ttf" });
+        // Generated entries always populate both ttfBytes and
+        // woffBytes — uploaded entries populate only the format
+        // the user gave us, with the other field being an empty
+        // Uint8Array. Prefer TTF when both exist (smaller decode
+        // cost than WOFF since no decompression); fall back to
+        // WOFF for uploaded-WOFF-only entries.
+        let bytes: Uint8Array;
+        let mime: string;
+        if (entry.ttfBytes && entry.ttfBytes.length > 0) {
+          bytes = entry.ttfBytes;
+          mime = "font/ttf";
+        } else if (entry.woffBytes && entry.woffBytes.length > 0) {
+          bytes = entry.woffBytes;
+          // font/woff covers both .woff and .woff2 for FontFace's
+          // purposes — the parser sniffs the magic anyway, so the
+          // wrong-extension-vs-magic case doesn't materialise.
+          mime = "font/woff";
+        } else {
+          // Defensive: every entry MUST have at least one populated
+          // byte field. Skip registration if somehow both are
+          // empty rather than throwing — the picker will just show
+          // the entry as un-renderable.
+          console.warn(
+            `[RecentFontsContext] entry ${entry.id} has no bytes; skipping FontFace registration`,
+          );
+          continue;
+        }
+        const blob = new Blob([bytes], { type: mime });
         const blobUrl = URL.createObjectURL(blob);
         // Register under the opaque `entry.id` rather than the
         // user-provided `fontFamily` so two generations that share a

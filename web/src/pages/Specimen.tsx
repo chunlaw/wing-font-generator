@@ -7,7 +7,8 @@ import {
 } from "@mui/material";
 import { useContext, useEffect, useMemo, useState } from "react";
 import AppContext from "../AppContext";
-import { useParams } from "react-router-dom";
+import { useNavigate, useParams } from "react-router-dom";
+import UploadFontButton from "../components/main/UploadFontButton";
 import { useDocumentMeta, useTemplateRotation } from "../utils/hooks";
 import {
   AVAILABLE_FONTS,
@@ -41,6 +42,7 @@ const Specimen = () => {
   const { msg, setMsg, loadFont, loadingFonts } = useContext(AppContext);
   const { entries: recentEntries } = useRecentFonts();
   const { family } = useParams<{ family: string }>();
+  const navigate = useNavigate();
   const { t, lang } = useTranslation();
 
   // Resolve the routed `family` URL param to a FontOption. We walk
@@ -89,15 +91,10 @@ const Specimen = () => {
     }
     return undefined;
   }, [fontOption.name, recentEntries]);
-  const dialectLabel = useMemo(() => {
-    if (!dialectKey) return undefined;
-    if (dialectKey === USER_FONTS_GROUP_KEY) {
-      return lang === "zh"
-        ? t("showcase.userFonts.zh")
-        : t("showcase.userFonts.en");
-    }
-    return getDialectLabel(dialectKey, lang);
-  }, [dialectKey, lang, t]);
+  const dialectLabel = useMemo(
+    () => (dialectKey ? getDialectLabel(dialectKey, lang) : undefined),
+    [dialectKey, lang],
+  );
 
   const isLoading = Boolean(loadingFonts[fontOption.name]);
 
@@ -207,6 +204,21 @@ const Specimen = () => {
             </Typography>
           </Box>
         )}
+        {/* Spacer pushes the upload affordance to the right edge so
+            it doesn't compete with the dialect chip for the left
+            anchor — same pattern as /showcase's Share row. */}
+        <Box sx={{ flexGrow: 1 }} />
+        <UploadFontButton
+          onUploaded={(entry) => {
+            // Specimen is a single-font page, so the natural thing
+            // after upload is to switch the view to the just-
+            // uploaded font. Navigate to its opaque-id URL — the
+            // page's family-resolution effect walks recentEntries
+            // for /specimen/<entry.id> lookups (see fontOption
+            // useMemo at the top of this component).
+            navigate(`/specimen/${entry.id}`);
+          }}
+        />
       </Box>
       <FontHeader
         family={fontOption.name}
