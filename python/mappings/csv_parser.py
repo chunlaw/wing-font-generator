@@ -2,12 +2,167 @@
 
 import csv
 from collections import defaultdict
+from typing import NamedTuple
 import re
 
 # 只保留長度 <= 7 的詞組 根據實際情況調整
 MAX_base_chars = 7
 # 每個單字的最大註音變體數量限制
 MAX_CHAR_VARIANTS = 10
+
+# --- Word-unit script entries (Arabic, Thai, …) -------------------------
+#
+# CJK rows are per-character: `base_chars,anno1 anno2 ...` with one
+# space-separated annotation per character. That model cannot work for
+# every script:
+#
+#   * Arabic — letters change shape contextually (init/medi/fina) and
+#     join cursively;
+#   * Thai — words are built from base consonants plus stacking
+#     vowel/tone marks, and running text has no spaces between words.
+#
+# For these scripts the meaningful annotated unit is the WORD, composed
+# as a single glyph by build_glyph. Their rows use a per-word format:
+#
+#     <word>,<whole-word annotation>[,weight]
+#
+# The annotation may contain spaces (e.g. a multi-word gloss); it is NOT
+# split per character. Rows are auto-detected by script — any base
+# string containing a codepoint from a word-unit script takes this path
+# — so one CSV can freely mix CJK per-char rows and word-unit rows.
+#
+# Word entries are keyed into `char_mapping` by the FULL word string
+# (the downstream handlers detect `len(key) > 1` and route them to the
+# word-ligation path instead of cmap/chain-context/IVS).
+MAX_WORD_CHARS = 16
+
+# Unicode ranges considered "Arabic script" for row auto-detection AND
+# for the boundary-guard glyph class built by word_liga_handler. Kept
+# here so both modules agree on what counts as an Arabic letter.
+ARABIC_RANGES = (
+    (0x0600, 0x06FF),   # Arabic
+    (0x0750, 0x077F),   # Arabic Supplement
+    (0x08A0, 0x08FF),   # Arabic Extended-A
+    (0xFB50, 0xFDFF),   # Arabic Presentation Forms-A
+    (0xFE70, 0xFEFF),   # Arabic Presentation Forms-B
+)
+
+THAI_RANGES = (
+    (0x0E00, 0x0E7F),   # Thai (consonants, vowels, tones, digits ๐-๙)
+)
+
+DEVANAGARI_RANGES = (
+    (0x0900, 0x097F),   # Devanagari (consonants, matras, digits ०-९)
+)
+
+
+class WordScript(NamedTuple):
+    """Everything that differs between word-unit scripts, as data.
+
+    Adding a script = adding one entry to WORD_SCRIPTS; the pipeline
+    modules read these fields instead of branching on script tags:
+
+      * ``ranges`` — codepoint ranges for row auto-detection
+        (csv_parser), the subset keep-list (wing-font), and the
+        boundary-guard glyph classes (word_liga_handler).
+      * ``boundary_guards`` — emit backtrack/lookahead blocker rules
+        around the word ligation (word_liga_handler). True for
+        space-separated scripts where a real boundary is detectable
+        (Arabic, Hindi); False for unspaced scripts (Thai), which
+        instead rely on longest-match rule ordering, CJK-style.
+      * ``variant_trigger`` — manual variant-override mechanism
+        (word_liga_handler): ``"cycle"`` = a trailing trigger_char
+        cycles readings (RTL scripts, where typed digits land in a
+        different bidi run and can never ligate with the word);
+        ``"digits"`` = CJK-style digit suffix (LTR scripts).
+      * ``trigger_char`` — the cycling character for ``"cycle"``
+        (Arabic: tatweel ـ — joining, on every keyboard, self-erasing
+        once consumed). None for ``"digits"``. Also excluded from the
+        LOOKAHEAD guard class so the trigger can follow a word
+        without blocking its ligation (it still BLOCKS as backtrack:
+        a preceding kashida means mid-word).
+      * ``component_mode`` — how build_glyph computes the ligature
+        component sequence (it must equal the shaper's buffer at the
+        moment our lookups run):
+          - ``"cmap"``  — per-codepoint cmap lookups. Right for
+            Arabic: no shaper preprocessing, and a GSUB-less Arabic
+            font would trigger HarfBuzz's legacy presentation-forms
+            fallback.
+          - ``"bare"``  — shape against a substitution-less copy of
+            the base font. Right for Thai, whose shaper REWRITES text
+            before any GSUB (SARA AM → NIKHAHIT + SARA AA, reordered
+            around tone marks).
+          - ``"basic"`` — shape with the REAL base font but with the
+            late (post-syllabic) features disabled. Right for Indic
+            scripts: the buffer our lookups see has already been
+            through syllable reordering AND the font's per-syllable
+            basic features (nukt/half/cjct conjunct formation), so
+            neither cmap nor bare shaping matches it.
+      * ``feature`` — the OpenType feature the ligation lookups are
+        registered under. ``"ccmp"`` wherever possible (required by
+        spec, applied by every shaper, no user toggle). Indic scripts
+        need ``"pres"`` instead: HarfBuzz applies ccmp/locl and the
+        basic features PER SYLLABLE for Indic shapers, so a word
+        ligature spanning syllables can never match there — the
+        "other" features (init/pres/abvs/blws/psts/haln) run
+        buffer-globally after final reordering, and pres is the
+        first of them.
+    """
+
+    tag: str
+    ranges: tuple
+    boundary_guards: bool
+    variant_trigger: str
+    trigger_char: str | None
+    component_mode: str
+    feature: str
+
+
+WORD_SCRIPTS = {
+    "arab": WordScript(
+        "arab", ARABIC_RANGES, True, "cycle", "ـ", "cmap", "ccmp"
+    ),
+    "thai": WordScript(
+        "thai", THAI_RANGES, False, "digits", None, "bare", "ccmp"
+    ),
+    # Experimental — see the "Indic scripts" notes in
+    # word_liga_handler.py for the per-syllable shaping caveats.
+    "deva": WordScript(
+        "deva", DEVANAGARI_RANGES, True, "digits", None, "basic", "calt"
+    ),
+}
+
+# OpenType script tag → codepoint ranges (derived view kept for
+# convenience of range-only consumers).
+WORD_UNIT_SCRIPT_RANGES = {
+    tag: ws.ranges for tag, ws in WORD_SCRIPTS.items()
+}
+
+
+def is_arabic_char(char: str) -> bool:
+    cp = ord(char)
+    return any(lo <= cp <= hi for lo, hi in ARABIC_RANGES)
+
+
+def is_arabic_word(s: str) -> bool:
+    """True when the base string contains any Arabic-script codepoint."""
+    return any(is_arabic_char(c) for c in s)
+
+
+def get_word_unit_script(s: str):
+    """Return the OpenType script tag ('arab', 'thai', …) of the first
+    word-unit-script codepoint in `s`, or None if there is none."""
+    for c in s:
+        cp = ord(c)
+        for tag, ws in WORD_SCRIPTS.items():
+            if any(lo <= cp <= hi for lo, hi in ws.ranges):
+                return tag
+    return None
+
+
+def is_word_unit_word(s: str) -> bool:
+    """True when the base string belongs to any word-unit script."""
+    return get_word_unit_script(s) is not None
 
 # --- 輔助函數：從註音字串中提取聲調 ---
 def get_tone(anno_str):
@@ -39,6 +194,16 @@ def _find_problematic_entries(csv_file, cmap, char, discarded_annos_set):
                 if len(row) < 2:
                     continue
                 base_chars = row[0]
+                # Word-unit rows: the whole second column is one
+                # annotation keyed by the full word (mirrors the main
+                # loop's routing).
+                if is_word_unit_word(base_chars):
+                    if (
+                        base_chars == char
+                        and row[1].strip() in discarded_annos_set
+                    ):
+                        problematic[row[1].strip()].add(base_chars)
+                    continue
                 anno_strs = row[1].split(' ')
                 if len(base_chars) != len(anno_strs):
                     continue
@@ -60,7 +225,6 @@ def _find_problematic_entries(csv_file, cmap, char, discarded_annos_set):
 
 def load_mapping(font, csv_file):
     cmap = font.getBestCmap()
-    word_mapping = {}
     char_cnt = defaultdict(lambda: defaultdict(int))
 
     # raw_word_entries 用於生成最終的 "詞組" 映射 (word_mapping)
@@ -89,6 +253,24 @@ def load_mapping(font, csv_file):
 
                 if True in [ord(char) not in cmap for char in base_chars]:
                     print(f"Skip {base_chars} as there is char not found in the font")
+                    continue
+
+                # --- Word-unit rows (see module-level comment) ---------
+                # The WHOLE second column is the annotation; nothing is
+                # split per character, and the entry never participates
+                # in the CJK chain-context word_mapping. Variants of the
+                # same word accumulate by weight exactly like CJK
+                # per-char readings do.
+                if is_word_unit_word(base_chars):
+                    if len(base_chars) > MAX_WORD_CHARS:
+                        print(
+                            f"Skip, {len(base_chars)} is too long "
+                            f"(>{MAX_WORD_CHARS}), word '{base_chars}'."
+                        )
+                        continue
+                    anno_whole = anno_str_raw.strip()
+                    if anno_whole:
+                        char_cnt[base_chars][anno_whole] += weight
                     continue
 
                 if len(base_chars) == len(anno_strs):

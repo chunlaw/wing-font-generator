@@ -44,6 +44,7 @@ Coverage spans:
 - **Taiwanese / Southern Min (台語 / 河洛話)** — Tâi-lô, POJ, Bopomofo (TPS), Taiwanese Kana.
 - **Teochew / Min Nan (潮州話)** — Peng'im (GDPI), Pe̍h-ūe-jī.
 - **Mandarin (普通話 / 國語)** — Hanyu Pinyin with phrase-level disambiguation across the full CJK Unified Ideograph range.
+- **Arabic (العربية), Thai (ไทย) & Hindi (हिन्दी) — experimental** — word-unit annotation for Arabic-, Thai- and Devanagari-script *base* fonts: each mapped word is composed into a single annotated glyph (cursive shaping / mark stacking / conjunct formation intact), reached via GSUB ligation (boundary-guarded for spaced scripts, longest-match for unspaced Thai), with GDEF ligature carets for in-word cursor movement and per-script variant override (trailing tatweel for Arabic, digit suffix for Thai/Hindi). Per-script behaviour is a data registry, designed to extend to further scripts. See [`python/README.md`](python/README.md#word-unit-base-fonts-arabic-thai).
 
 Pairings include ChironSung HK, ChironHei HK, Noto Sans HK / TC / SC, Source Han Serif, Xiaolai, and others. See [Acknowledgements](#acknowledgements) for upstream data + font sources.
 

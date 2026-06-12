@@ -51,6 +51,7 @@ const MANIFEST = [
   ["chain_context_handler.py", "chain_context_handler.py"],
   ["ivs_handler.py", "ivs_handler.py"],
   ["liga_handler.py", "liga_handler.py"],
+  ["word_liga_handler.py", "word_liga_handler.py"],
   ["utils.py", "utils.py"],
   ["runner.py", "runner.py"],
 

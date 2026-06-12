@@ -128,14 +128,21 @@ def buildLiga(
         subtable_break_counter = 0
 
         for original_char, anno_strs_dict in char_mapping.items():
+            # Multi-character keys are Arabic word-unit entries — their
+            # variant selection is tatweel-based and lives in
+            # word_liga_handler (digit suffixes don't survive the bidi
+            # run split after Arabic text anyway).
+            if len(original_char) != 1:
+                continue
             default_glyph_name = get_glyph_name_by_char(output_font, original_char)
             if not default_glyph_name:
                 continue
 
             # {variant_index: glyph_name} — needed because we want the
             # *target* glyph by index, not by annotation string.
-            index_to_glyph = {idx: name for name, idx in anno_strs_dict.values()}
-            all_variant_glyphs = [name for name, _ in anno_strs_dict.values()]
+            resolved = [t for t in anno_strs_dict.values() if isinstance(t, tuple)]
+            index_to_glyph = {idx: name for name, idx in resolved}
+            all_variant_glyphs = [name for name, _ in resolved]
 
             # Each variant can be the *starting* glyph of a ligature
             # (so a second digit overrides whatever the first sub picked).

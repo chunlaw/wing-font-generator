@@ -1,10 +1,15 @@
 # wing-font.py
 
 from fontTools.ttLib import TTFont
-from mappings.csv_parser import load_mapping
+from mappings.csv_parser import (
+    load_mapping,
+    WORD_UNIT_SCRIPT_RANGES,
+    get_word_unit_script,
+)
 from chain_context_handler import buildChainSub
 from ivs_handler import buildIvs
 from liga_handler import buildLiga, DEFAULT_TRIGGER_CHAR
+from word_liga_handler import buildWordLiga, buildLigCarets
 from build_glyph import generate_annotated_glyphs, scale_glyphs
 import gc
 import sys
@@ -15,6 +20,103 @@ import string
 
 WINDOWS_ENGLISH_IDS = 3, 1, 0x409
 MAC_ROMAN_IDS = 1, 0, 0
+
+
+def _prepare_word_mode_fonts(
+    base_font, output_font, base_font_file, base_axis_location
+):
+    """Word-unit (Arabic/Thai) mode needs raw base-font bytes for
+    HarfBuzz shaping. Returns ``(base_font_bytes, output_font)`` —
+    output_font may be REPLACED, see below.
+
+    Two paths:
+
+      * Base font was instanced from a variable master — the on-disk
+        bytes don't match the in-memory static instance, so serialise
+        it. This save runs with fontTools' DEFAULT serializer config
+        (hb.repack enabled) — safe because the GSUB is still the
+        source font's own (no wing lookups yet) — and it bakes
+        Extension (type 7) wrapping into any overflow-prone lookups.
+        We then RELOAD output_font from those very bytes: a
+        freshly-instanced in-memory font has every lookup unwrapped,
+        and big Arabic GSUB tables (Noto Nastaliq: ~200 lookups,
+        ~2.5k subtables) make Phase 4's repacker-disabled save
+        re-discover the Extension promotions one full GSUB recompile
+        at a time (30s+ instead of ~1s). The round-trip preserves the
+        baked-in wrapping through subset + save.
+      * Static base — just read the file.
+    """
+    if base_axis_location and "fvar" not in base_font:
+        import io as _io
+        _buf = _io.BytesIO()
+        base_font.save(_buf)
+        base_font_bytes = _buf.getvalue()
+        output_font.close()
+        output_font = TTFont(_io.BytesIO(base_font_bytes))
+    else:
+        with open(base_font_file, "rb") as _f:
+            base_font_bytes = _f.read()
+    return base_font_bytes, output_font
+
+
+def _word_mode_keep_glyphs(base_font, char_mapping, word_components):
+    """Extra glyphs the optimize/subset path must keep for word-unit
+    outputs:
+
+      * the ligature-component glyphs of every mapped word — the match
+        input the user actually types (post shaper-preprocessing,
+        e.g. Thai NIKHAHIT);
+      * the whole encoded repertoire of every word-unit script present
+        (letters, marks, digits, punctuation, tatweel) so un-mapped
+        words still render, the Arabic boundary-guard coverages stay
+        meaningful, and the variant-override triggers survive;
+      * the space glyph — Arabic words are space-separated and Thai
+        uses spaces between clauses.
+    """
+    keep: list = []
+    for comps in word_components.values():
+        keep.extend(comps)
+    scripts_present = {
+        get_word_unit_script(key) for key in char_mapping if len(key) > 1
+    }
+    keep_ranges = [
+        r
+        for tag, ranges in WORD_UNIT_SCRIPT_RANGES.items()
+        if tag in scripts_present
+        for r in ranges
+    ]
+    base_cmap = base_font.getBestCmap() or {}
+    for cp, g in base_cmap.items():
+        if isinstance(g, str) and any(
+            lo <= cp <= hi for lo, hi in keep_ranges
+        ):
+            keep.append(g)
+    space_glyph = get_glyph_name_by_char(base_font, " ")
+    if space_glyph:
+        keep.append(space_glyph)
+    return keep
+
+
+def _auto_extend_vertical_metrics(output_font, word_metrics, margin=20):
+    """Extend hhea + OS/2 win metrics to the composed word glyphs'
+    actual ink (plus a small safety margin) so neither direction gets
+    clipped: the below-the-word annotation default puts ink underneath
+    the base font's descent, and the above-the-word `-v` variant can
+    poke past its ascent. sTypo* stay untouched — same rationale as
+    the --out-ascent flag (apps respecting typo metrics keep their
+    line spacing)."""
+    if word_metrics.get("min_y") is not None:
+        ink_floor = int(word_metrics["min_y"]) - margin
+        if ink_floor < output_font["hhea"].descent:
+            output_font["hhea"].descent = ink_floor
+        if -ink_floor > output_font["OS/2"].usWinDescent:
+            output_font["OS/2"].usWinDescent = -ink_floor
+    if word_metrics.get("max_y") is not None:
+        ink_top = int(word_metrics["max_y"]) + margin
+        if ink_top > output_font["hhea"].ascent:
+            output_font["hhea"].ascent = ink_top
+        if ink_top > output_font["OS/2"].usWinAscent:
+            output_font["OS/2"].usWinAscent = ink_top
 
 def set_family_name(font, new_family_name):
     table = font["name"]
@@ -225,6 +327,43 @@ def main(
 
     word_mapping, char_mapping = load_mapping(base_font, mapping)
 
+    # ── Arabic word-unit entries ─────────────────────────────────────
+    # Multi-character keys in char_mapping are joining-script (Arabic)
+    # WORD entries: build_glyph shapes them against the BASE font and
+    # composes the whole word into one glyph, word_liga_handler makes
+    # them reachable via guarded ccmp ligation, and GDEF ligature
+    # carets keep the text cursor steppable inside the word glyph.
+    #
+    # The HarfBuzz face for base-font shaping needs raw bytes that
+    # MATCH the (possibly instanced) base_font TTFont — same two-path
+    # logic as anno_font_bytes below.
+    has_word_entries = any(len(k) > 1 for k in char_mapping)
+    base_font_bytes = None
+    if has_word_entries:
+        # NB: output_font may be REPLACED here (round-trip through
+        # hb-packed bytes when the base was instanced) — see the
+        # helper's docstring for the save-time perf rationale.
+        base_font_bytes, output_font = _prepare_word_mode_fonts(
+            base_font, output_font, base_font_file, base_axis_location
+        )
+
+    # Filled by generate_annotated_glyphs with caret X positions at
+    # letter boundaries of each composed word glyph; consumed by
+    # buildLigCarets after the GSUB phase.
+    ligature_carets: dict = {}
+
+    # Filled with the extreme ink Y of the composed word glyphs.
+    # Word-mode annotations sit BELOW the word by default, under the
+    # base font's descent — Phase 4 extends the output font's descent
+    # metrics to cover them so winDescent-clipping apps (Word, Pages,
+    # Keynote, Canva) don't truncate the annotation.
+    word_metrics: dict = {}
+
+    # Filled with the exact ligature-component glyph sequence per word
+    # (post shaper-preprocessing — matters for Thai SARA AM); consumed
+    # by buildWordLiga and the subset keep-list.
+    word_components: dict = {}
+
     # ── Memory: drop CSV-parse transients before Phase 1 ─────────────
     # load_mapping does four stable sorts in succession (each allocates
     # a fresh list) plus builds char_cnt as a nested defaultdict that's
@@ -257,7 +396,14 @@ def main(
         invert=invert,
         base_axis_location=base_axis_location,
         anno_axis_location=anno_axis_location,
+        base_font_bytes=base_font_bytes,
+        ligature_carets=ligature_carets,
+        word_metrics=word_metrics,
+        word_components=word_components,
     )
+    # The base-font blob was only needed for HarfBuzz shaping of word
+    # entries during composition; release it before the GSUB phase.
+    del base_font_bytes
 
     # ── Memory: release the annotation font ASAP ────────────────────
     # After composition completes, anno_font + anno_font_bytes are
@@ -312,6 +458,13 @@ def main(
     buildLiga(output_font, char_mapping, trigger_char=trigger_char)
     buildIvs(output_font, char_mapping)
 
+    # Step 2c — Arabic word entries: guarded ccmp word→glyph ligation
+    # (+ tatweel variant cycling) and GDEF ligature carets. Both are
+    # no-ops when the mapping has no multi-character keys.
+    if has_word_entries:
+        buildWordLiga(output_font, char_mapping, word_components)
+        buildLigCarets(output_font, ligature_carets)
+
     # ── Memory: drop GSUB build transients before Phase 3 ───────────
     # The Chain Context / Ligature builders allocate large intermediate
     # rule dicts (~100k+ entries combined on Mandarin) that go out of
@@ -345,8 +498,12 @@ def main(
             get_glyph_name_by_char(base_font, str(i)) for i in range(0, 10)
         ]
         for value in char_mapping.values():
-            for glyph_name, _idx in value.values():
-                glyphs_to_be_kept.append(glyph_name)
+            for composed in value.values():
+                # Entries whose composition was skipped (e.g. a word
+                # whose shaping produced nothing) still hold the
+                # parser's None placeholder — don't unpack those.
+                if isinstance(composed, tuple):
+                    glyphs_to_be_kept.append(composed[0])
 
         # ASCII punctuation/letters + full-width Chinese punctuation +
         # the 丅+numeral fallback triggers (without these the IME
@@ -361,6 +518,13 @@ def main(
             glyph_name = get_glyph_name_by_char(base_font, char)
             if glyph_name:
                 glyphs_to_be_kept.append(glyph_name)
+
+        if has_word_entries:
+            glyphs_to_be_kept.extend(
+                _word_mode_keep_glyphs(
+                    base_font, char_mapping, word_components
+                )
+            )
 
         valid_glyphs_to_keep = list(
             set(g for g in glyphs_to_be_kept if g is not None)
@@ -471,6 +635,13 @@ def main(
     if out_ascent is not None:
         output_font["hhea"].ascent = int(out_ascent)
         output_font["OS/2"].usWinAscent = int(out_ascent)
+
+    # ── Auto-extend metrics for word-unit (Arabic/Thai) outputs ───
+    # Composed word glyphs can carry ink below the base font's
+    # descent (below-the-word annotations) or above its ascent
+    # (`-v`). Explicit --out-ascent above still wins if it asked for
+    # more — this only ever widens.
+    _auto_extend_vertical_metrics(output_font, word_metrics)
 
     with step_timer("TTF save"):
         output_font.save(str(output_prefix) + ".ttf")

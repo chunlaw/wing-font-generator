@@ -23,6 +23,7 @@ the old order, so callers that haven't been updated still work.
 from fontTools.pens.ttGlyphPen import TTGlyphPen
 from fontTools.pens.transformPen import TransformPen
 
+from mappings.csv_parser import WORD_SCRIPTS, get_word_unit_script
 from utils import get_glyph_name_by_char, step_timer
 
 GLYPH_PREFIX = "wingfont"
@@ -42,6 +43,10 @@ def generate_annotated_glyphs(
     invert: bool = False,
     base_axis_location: dict | None = None,
     anno_axis_location: dict | None = None,
+    base_font_bytes: bytes | None = None,
+    ligature_carets: dict | None = None,
+    word_metrics: dict | None = None,
+    word_components: dict | None = None,
 ):
     """
     Compose annotated variant glyphs (former Part 1 of generate_glyphs).
@@ -88,6 +93,59 @@ def generate_annotated_glyphs(
     processed — pass it to `scale_glyphs(..., skip_glyph_names=...)`
     later so those glyphs aren't re-scaled (their outlines are already
     at the right size, having been composed via the same scale here).
+
+    Word-unit entries (Arabic)
+    --------------------------
+
+    Mapping keys longer than one character are treated as WORD entries:
+    the whole string is shaped with HarfBuzz against the BASE font (so
+    Arabic init/medi/fina forms, lam-alef ligatures, and mark anchors
+    all come out exactly as the base font renders them), and the entire
+    shaped run is drawn into ONE new glyph with the annotation centred
+    above it. This requires `base_font_bytes` (raw bytes of the —
+    possibly instanced — base font) for the HarfBuzz face; word entries
+    are skipped with a warning when it's None.
+
+    Differences from the single-char path:
+      * The annotation sits BELOW the word by default (the reverse of
+        the CJK above-the-character default): its top edge is placed at
+        the base font's scaled hhea descent, so it clears even the
+        deepest bowls. Pass `invert=True` to flip it above the word at
+        `upper_y_offset_ratio` (note this is also the reverse of what
+        `invert` means for single-char entries). The word outline
+        itself always stays on the baseline — raising it would knock
+        Arabic text out of alignment with everything around it.
+      * The composed glyph's advance is the SHAPED word width scaled by
+        `base_scale` (proportional — joining scripts can't tolerate the
+        CJK trick of keeping the full em advance around a shrunken
+        outline), widened only if the annotation is wider than the word.
+      * No cmap entry is written (there is no single codepoint to map);
+        the word glyph is only reachable through the GSUB ligation that
+        word_liga_handler builds from the mutated `mapping`.
+      * When `ligature_carets` (a dict) is passed, it is filled with
+        ``{glyph_name: [x, ...]}`` caret positions at letter-cluster
+        boundaries of the shaped run, for GDEF LigCaretList — this is
+        what lets text editors step the cursor *through* the word glyph
+        instead of jumping over it.
+      * When `word_metrics` (a dict) is passed, its ``"min_y"`` /
+        ``"max_y"`` keys are updated with the extreme ink Y of the
+        composed word glyphs, so the caller can extend the output
+        font's descent (or ascent) to keep below-the-word annotations
+        from being clipped by winDescent-honouring apps.
+      * When `word_components` (a dict) is passed, it is filled with
+        ``{word: [glyph_name, ...]}`` — the EXACT glyph sequence the
+        shaper's buffer will contain when word_liga_handler's
+        (prepended, so first-running) lookups see the typed word.
+        For Thai this is computed by shaping against a
+        substitution-less copy of the base font, because HarfBuzz's
+        Thai shaper preprocesses text before any GSUB: typed SARA AM
+        (ำ U+0E33) becomes NIKHAHIT + SARA AA, reordered around tone
+        marks — nominal per-codepoint cmap lookups would never match
+        words containing it. For Arabic the nominal cmap glyphs ARE
+        the buffer content (no shaper preprocessing), and shaping a
+        GSUB-less Arabic font would instead trigger HarfBuzz's
+        legacy presentation-forms fallback, so Arabic deliberately
+        stays on per-codepoint cmap resolution.
     """
     # Lazy import so the module loads cheaply on hosts that don't run
     # the composition path (test scripts, etc.). The Pyodide worker
@@ -171,11 +229,28 @@ def generate_annotated_glyphs(
         # loop because every annotated glyph uses the same value.
         anno_spacing_units = round(units_per_em * anno_spacing)
 
+        # ── Word-unit (Arabic) annotation placement ──────────────────
+        # Default is BELOW the word: the annotation's tallest ink
+        # (approximated by the annotation font's hhea ascent, scaled)
+        # is dropped to the base font's scaled hhea descent so it
+        # clears even the deepest descender bowls (Nastaliq dips far
+        # below the baseline). `invert=True` flips it above the word at
+        # `upper_y_offset_ratio` — the mirror of the single-char
+        # semantics, where the default is above and invert means below.
+        base_descent = min(0, base_font["hhea"].descent)
+        anno_hhea_ascent = max(0, anno_font["hhea"].ascent)
+        if not invert:
+            word_anno_y = round(
+                base_descent * base_scale
+                - anno_hhea_ascent * anno_scale_eff
+            )
+        else:
+            word_anno_y = round(units_per_em * upper_y_offset_ratio)
+
         # Hoist tables to locals once — every iteration would otherwise
         # do __getitem__ on the TTFont dict-like object, which involves
         # an attribute lookup chain in pure-Python land.
         base_hmtx = base_font["hmtx"]
-        anno_hmtx = anno_font["hmtx"]
         out_glyf = output_font["glyf"]
         out_hmtx = output_font["hmtx"]
         out_vmtx = output_font["vmtx"] if "vmtx" in output_font.keys() else None
@@ -198,7 +273,353 @@ def generate_annotated_glyphs(
         # allocator only runs once.
         hb_buffer = hb.Buffer()
 
+        def _shape_with(hb_f, text, glyph_order, glyph_order_set):
+            """Shape `text` against `hb_f`, returning a list of
+            ``(glyph_name, cluster, x_offset, y_offset, x_advance)``
+            tuples in the buffer's output order (visual order for RTL
+            runs — exactly the order to draw them in at cumulative
+            advances). Reuses the loop-shared `hb_buffer`."""
+            hb_buffer.clear_contents()
+            hb_buffer.add_str(text)
+            hb_buffer.guess_segment_properties()
+            hb.shape(hb_f, hb_buffer)
+            out = []
+            for info, pos in zip(
+                hb_buffer.glyph_infos, hb_buffer.glyph_positions
+            ):
+                gid = info.codepoint  # post-shaping glyph index, not a
+                # Unicode codepoint — see the comment on the single-char
+                # path below.
+                if 0 <= gid < len(glyph_order):
+                    name = glyph_order[gid]
+                    if name in glyph_order_set:
+                        out.append(
+                            (
+                                name,
+                                info.cluster,
+                                pos.x_offset,
+                                pos.y_offset,
+                                pos.x_advance,
+                            )
+                        )
+            return out
+
+        def _annotation_width(anno_shaped):
+            """Total width the shaped annotation block will occupy in
+            OUTPUT units, including the (N-1) inter-glyph
+            `anno_spacing` gaps, so the centring math positions it
+            correctly. Width per glyph is the post-shape x_advance —
+            it respects substitutions and GPOS spacing adjustments."""
+            return sum(
+                round(adv * anno_scale_eff) for *_rest, adv in anno_shaped
+            ) + max(0, len(anno_shaped) - 1) * anno_spacing_units
+
+        def _draw_annotation(pen, anno_shaped, x_start, y_offset):
+            """Draw a shaped annotation run into `pen`, starting at
+            `x_start` with its baseline at `y_offset`.
+
+            Each glyph's HarfBuzz (x_offset, y_offset) is applied on
+            top of the running position — that's what makes mark
+            glyphs (Thai vowels, Arabic dots, Devanagari ukar, …) sit
+            in the right place; the offsets are zero for plain Latin
+            so linear scripts render exactly as a naive advance walk
+            would. The cursor advances by the SHAPED x_advance (not
+            the hmtx advance — they differ when GPOS adjusts spacing
+            or GSUB substituted a glyph with different metrics), plus
+            the inter-glyph gap after every glyph except the last."""
+            n_anno = len(anno_shaped)
+            x_position = x_start
+            for j, (a_name, _cluster, xoff, yoff, xadv) in enumerate(
+                anno_shaped
+            ):
+                if a_name in anno_glyph_set:
+                    anno_glyph_set[a_name].draw(
+                        TransformPen(
+                            pen,
+                            (
+                                anno_scale_eff,
+                                0,
+                                0,
+                                anno_scale_eff,
+                                x_position + xoff * anno_scale_eff,
+                                y_offset + yoff * anno_scale_eff,
+                            ),
+                        )
+                    )
+                    x_position += round(xadv * anno_scale_eff)
+                    if j < n_anno - 1:
+                        x_position += anno_spacing_units
+
+        # HarfBuzz font over the BASE font — built lazily, only when the
+        # mapping actually contains word-unit (multi-char) entries.
+        # CJK-only runs never pay for it.
+        hb_base_font = None
+        warned_no_base_bytes = False
+
+        # HarfBuzz font over a SUBSTITUTION-LESS copy of the base font,
+        # used to compute the exact ligature-component sequence for
+        # scripts whose shaper preprocesses text (Thai SARA AM
+        # decomposition). Built lazily on the first word that needs it.
+        hb_bare_font = None
+
+        def _buffer_component_names():
+            """Glyph names currently in `hb_buffer`, in buffer order
+            (None for out-of-range glyph IDs so callers can detect
+            unresolvable words)."""
+            names = []
+            for info in hb_buffer.glyph_infos:
+                gid = info.codepoint
+                if 0 <= gid < len(base_glyph_order):
+                    names.append(base_glyph_order[gid])
+                else:
+                    names.append(None)
+            return names
+
+        def _bare_components(text):
+            """component_mode="bare" — the glyph sequence the real
+            shaping buffer holds BEFORE any GSUB lookup runs: cmap +
+            Unicode normalization + the script shaper's preprocessing,
+            no substitutions. Direction is forced LTR so the output
+            stays in LOGICAL order (with no GSUB, direction can't
+            change which glyphs come out — only whether the buffer
+            gets reversed)."""
+            nonlocal hb_bare_font
+            if hb_bare_font is None:
+                import io as _io
+                from fontTools.ttLib import TTFont as _TTFont
+                bare = _TTFont(_io.BytesIO(base_font_bytes), lazy=True)
+                for tag in ("GSUB", "GPOS"):
+                    if tag in bare:
+                        del bare[tag]
+                _buf = _io.BytesIO()
+                bare.save(_buf)
+                bare.close()
+                hb_bare_font = hb.Font(hb.Face(_buf.getvalue()))
+            hb_buffer.clear_contents()
+            hb_buffer.add_str(text)
+            hb_buffer.guess_segment_properties()
+            hb_buffer.direction = "ltr"
+            hb.shape(hb_bare_font, hb_buffer)
+            return _buffer_component_names()
+
+        # GSUB features that run in the FINAL (buffer-global) stage of
+        # the Indic shapers, i.e. at-or-after the point where our
+        # `pres`-registered lookups fire. component_mode="basic"
+        # disables exactly these, so the resulting glyph sequence is
+        # the buffer state our lookups will actually see: post
+        # syllable-reordering, post per-syllable basic features
+        # (nukt/akhn/half/cjct conjunct formation by the font's own
+        # GSUB), but before any late substitutions.
+        _LATE_STAGE_FEATURES = (
+            "init", "pres", "abvs", "blws", "psts", "haln",
+            "calt", "liga", "clig", "dlig", "rlig",
+        )
+
+        def _basic_components(text):
+            """component_mode="basic" — shape with the REAL base font
+            (its preprocessing, reordering and per-syllable basic
+            features all apply) but with the late buffer-global
+            features disabled. See _LATE_STAGE_FEATURES."""
+            hb_buffer.clear_contents()
+            hb_buffer.add_str(text)
+            hb_buffer.guess_segment_properties()
+            hb_buffer.direction = "ltr"
+            hb.shape(
+                hb_base_font,
+                hb_buffer,
+                {f: False for f in _LATE_STAGE_FEATURES},
+            )
+            return _buffer_component_names()
+
+        def _compose_word_entry(base_char, anno_strs_dict):
+            """Compose ONE word-unit entry — all its annotation
+            variants. Factored out of the main loop so the per-entry
+            dispatch below stays readable; closes over the same fonts,
+            glyph sets, scales/offsets and output tables as the
+            single-char path and writes to the same structures."""
+            nonlocal cnt, hb_base_font, warned_no_base_bytes
+
+            if base_font_bytes is None:
+                if not warned_no_base_bytes:
+                    print(
+                        "Warning: word-unit mapping entries present "
+                        "but no base_font_bytes supplied — skipping "
+                        "all word entries."
+                    )
+                    warned_no_base_bytes = True
+                return
+            if hb_base_font is None:
+                hb_base_font = hb.Font(hb.Face(base_font_bytes))
+                if base_axis_location:
+                    hb_base_font.set_variations(
+                        {
+                            k: float(v)
+                            for k, v in base_axis_location.items()
+                        }
+                    )
+
+            # Shape the word once — all annotation variants share the
+            # same base drawing. This is where Arabic contextual forms
+            # (init/medi/fina), mandatory ligatures (lam-alef) and mark
+            # anchoring happen, courtesy of the base font's own
+            # GSUB/GPOS.
+            base_shaped = _shape_with(
+                hb_base_font,
+                base_char,
+                base_glyph_order,
+                base_glyph_order_set,
+            )
+            if not base_shaped:
+                return
+
+            # Ligature components — the sequence word_liga_handler must
+            # match. How they're computed is a per-script decision
+            # (WordScript.component_mode — see csv_parser for the
+            # cmap/bare/basic rationale).
+            script = WORD_SCRIPTS.get(get_word_unit_script(base_char))
+            mode = script.component_mode if script is not None else "cmap"
+            if mode == "bare":
+                components = _bare_components(base_char)
+            elif mode == "basic":
+                components = _basic_components(base_char)
+            else:
+                components = [
+                    get_glyph_name_by_char(base_font, c)
+                    for c in base_char
+                ]
+            if any(
+                not isinstance(g, str) or g == ".notdef"
+                for g in components
+            ):
+                print(
+                    f"Skip word '{base_char}': component glyphs "
+                    "unresolvable in the base font"
+                )
+                return
+            if word_components is not None:
+                word_components[base_char] = components
+
+            word_adv = round(
+                sum(adv for *_rest, adv in base_shaped) * base_scale
+            )
+
+            # Caret positions at letter-cluster boundaries (visual
+            # order, unscaled units; scaled + offset per variant
+            # below). A boundary exists wherever the cluster value
+            # changes between consecutive shaped glyphs — marks share
+            # their base's cluster and base-font-internal ligatures
+            # merge clusters, so this naturally yields "between
+            # letters the user typed" positions.
+            carets_unscaled: list[float] = []
+            x_run = 0.0
+            for j, (_n, cluster, _xo, _yo, xadv) in enumerate(base_shaped):
+                x_run += xadv
+                if (
+                    j < len(base_shaped) - 1
+                    and base_shaped[j + 1][1] != cluster
+                ):
+                    carets_unscaled.append(x_run)
+
+            for i, anno_str in enumerate(anno_strs_dict.keys()):
+                # Word glyphs ALWAYS get fresh names — there is no
+                # original single glyph to re-use for variant 0.
+                new_glyph_name = GLYPH_PREFIX + str(cnt).zfill(6)
+                while new_glyph_name in output_glyph_name_used:
+                    cnt += 1
+                    new_glyph_name = GLYPH_PREFIX + str(cnt).zfill(6)
+
+                anno_shaped = _shape_with(
+                    hb_font,
+                    anno_str,
+                    anno_glyph_order,
+                    anno_glyph_order_set,
+                )
+                anno_len = _annotation_width(anno_shaped)
+
+                # If the annotation is wider than the word, widen the
+                # glyph's advance so it doesn't collide with its
+                # neighbours; both word and annotation are centred in
+                # whatever the final advance is.
+                total_advance = max(word_adv, int(anno_len))
+                word_x0 = (total_advance - word_adv) / 2
+
+                pen = TTGlyphPen(output_glyph_set)
+                x_cursor = 0.0
+                for b_name, _cluster, xoff, yoff, xadv in base_shaped:
+                    if b_name in base_glyph_set:
+                        # The word always sits ON the baseline
+                        # (deliberately NOT base_y_offset — raising
+                        # the word would knock it out of alignment
+                        # with surrounding un-annotated text).
+                        base_glyph_set[b_name].draw(
+                            TransformPen(
+                                pen,
+                                (
+                                    base_scale,
+                                    0,
+                                    0,
+                                    base_scale,
+                                    word_x0
+                                    + x_cursor
+                                    + xoff * base_scale,
+                                    yoff * base_scale,
+                                ),
+                            )
+                        )
+                        x_cursor += xadv * base_scale
+
+                _draw_annotation(
+                    pen,
+                    anno_shaped,
+                    (total_advance - anno_len) / 2,
+                    word_anno_y,
+                )
+
+                glyph = pen.glyph()
+                # hmtx LSB should track the outline's real xMin
+                # (TTGlyphPen emits simple glyphs with a flat
+                # `coordinates` array, so this is cheap).
+                lsb = 0
+                coords = getattr(glyph, "coordinates", None)
+                if coords is not None and len(coords):
+                    lsb = round(min(x for x, _y in coords))
+                    if word_metrics is not None:
+                        ys = [y for _x, y in coords]
+                        word_metrics["min_y"] = min(
+                            word_metrics.get("min_y", 0), min(ys)
+                        )
+                        word_metrics["max_y"] = max(
+                            word_metrics.get("max_y", 0), max(ys)
+                        )
+
+                out_hmtx[new_glyph_name] = (total_advance, lsb)
+                if out_vmtx is not None:
+                    # Only relevant when the BASE font carries vmtx
+                    # (CJK base + word entries — unusual but legal):
+                    # fontTools' vmtx compiler requires an entry for
+                    # every glyph in the glyph order.
+                    out_vmtx[new_glyph_name] = (units_per_em, 0)
+                out_glyf[new_glyph_name] = glyph
+                output_glyph_name_used[new_glyph_name] = True
+                mapping[base_char][anno_str] = (new_glyph_name, i)
+                # NO cmap entry — multi-char keys have no codepoint.
+                # The glyph is reached via word_liga_handler's GSUB.
+
+                if ligature_carets is not None and carets_unscaled:
+                    ligature_carets[new_glyph_name] = [
+                        round(word_x0 + c * base_scale)
+                        for c in carets_unscaled
+                    ]
+
         for base_char, anno_strs_dict in mapping.items():
+            # Multi-char keys are word-unit entries (Arabic / Thai —
+            # see csv_parser.WORD_SCRIPTS); single chars take the
+            # original CJK-style path below.
+            if len(base_char) > 1:
+                _compose_word_entry(base_char, anno_strs_dict)
+                continue
+
+            # ──────────────────── single-char entries ────────────────────
             glyph_name_raw = get_glyph_name_by_char(base_font, base_char)
             if (
                 not isinstance(glyph_name_raw, str)
@@ -233,114 +654,28 @@ def generate_annotated_glyphs(
                     )
                 )
 
-                # Shape the annotation string with HarfBuzz. This
+                # Shape the annotation string with HarfBuzz — this
                 # applies the annotation font's GSUB rules (Indic
-                # reordering, Arabic positional forms, etc.) and
-                # GPOS positioning (mark-to-base anchors that put
-                # Thai vowels above their consonants, kerning, …).
-                # The result is a list of (glyph_id, x_offset,
-                # y_offset, x_advance) tuples in the font's native
-                # design units — same coordinate space as
-                # `hmtx[name][0]` returned for the naive path.
-                #
-                # `hb_buffer` is the loop-shared instance hoisted
-                # above. `clear_contents()` zeroes the glyph array
-                # AND drops the script/direction/language that
-                # `guess_segment_properties()` derived for the prior
-                # call — so the next `guess_segment_properties()`
-                # sees just the fresh codepoints and re-detects
-                # correctly. Without the clear the buffer would still
-                # carry the previous run's glyphs and properties.
-                buf = hb_buffer
-                buf.clear_contents()
-                buf.add_str(anno_str)
-                # `guess_segment_properties` auto-detects script,
-                # direction, and language from the Unicode codepoints
-                # in the buffer. Good enough for our use case
-                # (Latin, Thai, Arabic, Indic, CJK) without
-                # requiring the caller to tag each annotation.
-                buf.guess_segment_properties()
-                hb.shape(hb_font, buf)
-
-                # Translate HarfBuzz output into the (name, width)
-                # pairs the existing layout code expects. The shape
-                # result already includes any GPOS x_offset; we keep
-                # it separate so we can add it AT DRAW TIME rather
-                # than baking it into the running x_position
-                # (otherwise marks that re-emit advance=0 would
-                # accumulate the offset wrong).
-                shaped: list[tuple[str, int, int, int]] = []
-                # Tuple shape: (glyph_name, x_offset, y_offset, x_advance)
-                # all in unscaled font-design units.
-                for info, pos in zip(buf.glyph_infos, buf.glyph_positions):
-                    gid = info.codepoint  # HarfBuzz quirk: `codepoint`
-                    # field on glyph_info is actually the glyph index
-                    # post-shaping, NOT the original Unicode
-                    # codepoint. Naming is a long-standing HB
-                    # confusion — see harfbuzz/uharfbuzz#142.
-                    if 0 <= gid < len(anno_glyph_order):
-                        anno_glyph_name = anno_glyph_order[gid]
-                        if anno_glyph_name in anno_glyph_order_set:
-                            shaped.append(
-                                (
-                                    anno_glyph_name,
-                                    pos.x_offset,
-                                    pos.y_offset,
-                                    pos.x_advance,
-                                )
-                            )
-
-                # `anno_len` is the total width the annotation block
-                # will occupy in OUTPUT units, including (N-1)
-                # inter-glyph gaps so the re-centring math below
-                # positions it correctly. The width per glyph is the
-                # post-shape x_advance (which respects substitutions
-                # and per-glyph adjustments). When `anno_spacing` is
-                # 0 and the annotation is a linear script (Latin,
-                # cangjie) this collapses to the same number as the
-                # old naive walk.
-                n_anno = len(shaped)
-                inter_glyph_padding = max(0, n_anno - 1) * anno_spacing_units
-                anno_len = (
-                    sum(round(adv * anno_scale_eff) for _, _, _, adv in shaped)
-                    + inter_glyph_padding
+                # reordering, Arabic positional forms, …) and GPOS
+                # positioning (mark-to-base anchors that put Thai
+                # vowels above their consonants, kerning, …), then
+                # draw the run centred over the scaled base. The
+                # shaping/layout mechanics are shared with the
+                # word-unit path — see _shape_with /
+                # _annotation_width / _draw_annotation above.
+                anno_shaped = _shape_with(
+                    hb_font,
+                    anno_str,
+                    anno_glyph_order,
+                    anno_glyph_order_set,
                 )
-                x_position = (base_advance_width * base_scale - anno_len) / 2
-
-                for j, (anno_glyph_name, xoff, yoff, xadv) in enumerate(shaped):
-                    if anno_glyph_name in anno_glyph_set:
-                        # Apply the per-glyph (x_offset, y_offset)
-                        # from HarfBuzz on top of the running
-                        # x_position / anno_y_offset. The offsets
-                        # are what makes mark glyphs (Thai vowels,
-                        # Arabic dots, Devanagari ukar etc.) sit at
-                        # the right place over the base glyph; the
-                        # offsets are zero for plain Latin and
-                        # cangjie so the existing scripts render
-                        # identically to before.
-                        anno_glyph_set[anno_glyph_name].draw(
-                            TransformPen(
-                                pen,
-                                (
-                                    anno_scale_eff,
-                                    0,
-                                    0,
-                                    anno_scale_eff,
-                                    x_position + xoff * anno_scale_eff,
-                                    anno_y_offset + yoff * anno_scale_eff,
-                                ),
-                            )
-                        )
-                        # Advance by the shaped x_advance (NOT the
-                        # naive hmtx advance — they differ when GPOS
-                        # adjusts spacing or GSUB has substituted in
-                        # a glyph with a different metric).
-                        x_position += round(xadv * anno_scale_eff)
-                        # Add the inter-glyph gap after every glyph
-                        # except the last — keeps the block flush at
-                        # the right edge.
-                        if j < n_anno - 1:
-                            x_position += anno_spacing_units
+                anno_len = _annotation_width(anno_shaped)
+                _draw_annotation(
+                    pen,
+                    anno_shaped,
+                    (base_advance_width * base_scale - anno_len) / 2,
+                    anno_y_offset,
+                )
 
                 if out_vmtx is not None and glyph_name in base_glyph_order_set:
                     out_vmtx[new_glyph_name] = base_font["vmtx"][glyph_name]

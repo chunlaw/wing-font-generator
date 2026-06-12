@@ -270,6 +270,16 @@ _DEFAULT_FEATURE_SCRIPTS: tuple[str, ...] = (
     "kana",
     "hang",
     "bopo",
+    # Arabic / Thai / Devanagari — required for the word-unit base
+    # outputs: the word-ligation lookups must be discoverable when
+    # CoreText tags the run as `arab` / `thai` / `deva` (no DFLT
+    # fallback, same argument as above). `dev2` is the Indic-v2 script
+    # tag modern shapers prefer when a font declares it. Harmless
+    # extra ScriptRecords for CJK-only builds.
+    "arab",
+    "thai",
+    "deva",
+    "dev2",
 )
 
 

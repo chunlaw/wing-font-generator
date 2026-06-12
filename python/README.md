@@ -54,6 +54,9 @@ python/
 ├── build_glyph.py              # Pen-based glyph composition (base + anno)
 ├── chain_context_handler.py    # Builds the `ccmp` GSUB rules
 ├── liga_handler.py             # Builds the `ccmp` ligature-substitution rules
+├── word_liga_handler.py        # Arabic/Thai word-unit GSUB (ligation w/
+│                               #   per-script guards + variant override,
+│                               #   GDEF lig carets)
 ├── ivs_handler.py              # Builds the cmap format-14 IVS supplement
 ├── utils.py                    # cmap lookup + GSUB feature registration helper
 ├── mappings/                   # CSVs that map char → romanization (+csv_parser)
@@ -222,6 +225,156 @@ The third column is an optional integer weight that biases the
 (default). Lines whose `len(base_chars) > MAX_base_chars` (default 7)
 are skipped — long phrases would blow up the GSUB rule count without
 adding much value.
+
+Rows whose base text is **Arabic script** are auto-detected and use a
+per-WORD format instead — see the next section.
+
+---
+
+## Word-unit base fonts (Arabic, Thai)
+
+CJK annotation works per character: one codepoint, one glyph, one
+annotation. Some scripts can't be sliced that way — Arabic letters
+take contextual forms (initial/medial/final) and join cursively; Thai
+builds syllables from consonants plus stacking vowel/tone marks and
+writes words without spaces. For these scripts the pipeline treats
+the **word** as the annotated unit: the whole word is shaped with
+HarfBuzz against the base font (positional forms, lam-alef, mark
+anchors — exactly what the base font would render) and drawn into ONE
+composed glyph with the annotation centred BELOW it.
+
+Below is the word-mode default (the mirror of the CJK
+above-the-character default): the annotation drops under the base
+font's descent so it clears even Nastaliq's deepest bowls, and the
+output font's `hhea`/`OS/2` win metrics are auto-extended to cover the
+annotation ink, so nothing is clipped by winDescent-honouring apps —
+no `--out-ascent`-style flag needed. Pass `-v` to flip the annotation
+above the word instead (placed at `-y`, ascent auto-extended the same
+way if it pokes past the base font's own).
+
+Mapping rows are auto-detected by script; the annotation is the whole
+second column (spaces allowed), NOT split per letter:
+
+```
+كتاب,kitab,10
+كتاب,book,1
+مدرسة,madrasa
+```
+
+Build like any other font; recommended geometry keeps the base at
+full size (cursive joins can't tolerate the CJK shrink-and-centre
+trick) — vertical headroom is handled automatically:
+
+```sh
+python wing-font.py \
+  -i input_fonts/NotoNastaliqUrdu-VariableFont_wght.ttf \
+  -a input_fonts/NotoSerif-Regular.ttf \
+  -m mappings/arabic-demo.csv \
+  -o WingArabicDemo \
+  -opt -bs 1.0 -as 0.18
+```
+
+(Add `-v -y 1.15` for above-the-word placement.)
+
+Thai works identically — Thai-script rows are auto-detected the same
+way (`mappings/thai-demo.csv` is the demo set, Google Sans Thai a
+suitable base):
+
+```sh
+python wing-font.py \
+  -i "input_fonts/GoogleSans-VariableFont_GRAD,opsz,wght.ttf" \
+  -a input_fonts/NotoSerif-Regular.ttf \
+  -m mappings/thai-demo.csv \
+  -o WingThaiDemo \
+  -opt -bs 1.0 -as 0.18
+```
+
+Devanagari (Hindi) is supported as an **experimental** third script
+(`mappings/hindi-demo.csv`, Hind-Regular as base) — same flags. It is
+verified against HarfBuzz-based renderers (browsers, Android, Linux,
+LibreOffice); CoreText / DirectWrite use their own Indic engines and
+are unverified, see the Indic notes in
+[`word_liga_handler.py`](word_liga_handler.py).
+
+Per-script behaviour is data, not code: `csv_parser.WORD_SCRIPTS` maps
+each script tag to a `WordScript` record (detection ranges, boundary
+guards on/off, variant trigger, ligature-component computation mode,
+and the OpenType feature to register under). Supporting a new
+word-unit script starts with one registry entry — plus a demo mapping,
+a behavioural test like `tests/test_*_word.py`, and real verification:
+scripts whose shapers apply substitutions per-syllable (the Indic
+family, Khmer, Myanmar) need the `calt`-stage treatment Devanagari
+uses, and each script needs a sensible variant-trigger choice.
+
+How the pieces map to OpenType (details in
+[`word_liga_handler.py`](word_liga_handler.py)):
+
+- **Reaching the glyph** — the composed glyph has no codepoint, so a
+  GSUB Type 4 ligature keyed on the word's nominal letter glyphs
+  substitutes it. It runs under `ccmp`, which shapers apply while the
+  buffer still holds plain cmap glyphs in logical order (before
+  `init`/`medi`/`fina`/`rlig`), and the lookups are **prepended** to
+  the LookupList so they outrun the base font's own `ccmp`
+  substitutions (Noto Nastaliq decomposes dotted letters right there).
+- **Word boundaries** — *Arabic:* the ligation is nested inside a
+  chain-context lookup with blocker rules, so a mapped word does NOT
+  fire inside a longer unmapped word (كتاب stays plain inside كتابة)
+  or after a joined prefix. *Thai:* there are no spaces between words,
+  so blockers are deliberately omitted — adjacent mapped words both
+  ligate (กินข้าว annotates as gin + khao), and longest-match rule
+  ordering arbitrates overlaps (mapped น้ำใจ beats its mapped prefix
+  น้ำ), the same trade-off the CJK chain-context already makes.
+- **Shaper preprocessing** — ligature components are the glyph
+  sequence the buffer REALLY contains when our (first-running) lookups
+  fire. For Thai that sequence is computed by shaping each word
+  against a substitution-less copy of the base font, because HarfBuzz
+  rewrites Thai text before any GSUB: typed SARA AM (ำ) becomes
+  NIKHAHIT + SARA AA reordered around tone marks — per-codepoint cmap
+  lookups would never match น้ำ. (Arabic stays on cmap resolution: a
+  GSUB-less Arabic font would trigger HarfBuzz's legacy
+  presentation-forms fallback instead.)
+- **Variant override** — digits don't work after Arabic (bidi splits
+  the run), so a trailing *tatweel* (`ـ` U+0640, on every Arabic
+  keyboard) cycles readings: `كتابـ` → variant 1, `كتابــ` → variant 2,
+  … modulo the variant count. The tatweel is consumed by the ligature,
+  so nothing stray renders. Thai is LTR, so it keeps the CJK-style
+  digit suffix instead: `ผม1` picks variant 1, `ผม0` the default —
+  with both ASCII and Thai digits (`ผม๑`) wired.
+- **Cursor behaviour** — GDEF `LigCaretList` entries at letter-cluster
+  boundaries let editors that honour ligature carets (CoreText,
+  DirectWrite) step the cursor *through* the word glyph. Editors that
+  ignore carets treat the word as one block — still consistent with
+  how they treat any ligature.
+
+Known limitations:
+
+- *Arabic:* words written **with harakat** (vowel marks) don't match
+  the nominal-letter sequence; they render normally, un-annotated.
+  Add fully-vocalised spellings as separate rows if you need them.
+- *Arabic:* a mapped word directly after a **non-joining prefix
+  particle** (e.g. و in وكتاب) is conservatively NOT annotated — add
+  the prefixed form as its own row.
+- *Thai:* with no detectable word boundaries there are no guards — a
+  mapped word that occurs as a substring of a longer UNMAPPED word
+  will still ligate there. Mapping the longer word too fixes any
+  specific case (longest match wins); this is the same compromise the
+  CJK phrase rules live with.
+- Words longer than `MAX_WORD_CHARS` (16) are skipped.
+- `-opt` keeps the entire encoded repertoire of every word-unit
+  script present (letters, marks, digits, punctuation) so unmapped
+  words keep rendering correctly — these script blocks are small, so
+  it costs little.
+
+End-to-end behavioural tests (shaping with HarfBuzz against a built
+font: ligation, both boundary guards, tatweel cycling, GDEF carets):
+
+```sh
+python wing-font.py -i NotoNastaliqUrdu.ttf -a NotoSerif-Regular.ttf \
+  -m mappings/arabic-demo.csv -o /tmp/demo -opt -bs 1.0
+python tests/test_arabic_word.py /tmp/demo.ttf
+python tests/test_thai_word.py /tmp/demo-thai.ttf   # Thai counterpart
+python tests/render_sample.py /tmp/demo.ttf sample.png "كتاب مدرسة"
+```
 
 To wire a new mapping into the production batch build, add a line to
 [`.github/workflows/build-fonts.yml`](../.github/workflows/build-fonts.yml)
