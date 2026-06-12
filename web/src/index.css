@@ -83,21 +83,21 @@ button:focus-visible {
  */
 @font-face {
   font-family: "Xiaolai-Huninn-hero-sample";
-  src: url("https://wing-font.chunlaw.io/fonts/Xiaolai-Huninn-hero-sample.woff")
-    format("woff");
+  src: url("https://wing-font.chunlaw.io/fonts/Xiaolai-Huninn-hero-sample.woff2")
+    format("woff2");
   font-display: swap;
 }
 
 @font-face {
   font-family: "Xiaolai-Huninn-hero-tailo";
-  src: url("https://wing-font.chunlaw.io/fonts/Xiaolai-Huninn-hero-tailo.woff")
-    format("woff");
+  src: url("https://wing-font.chunlaw.io/fonts/Xiaolai-Huninn-hero-tailo.woff2")
+    format("woff2");
   font-display: swap;
 }
 
 @font-face {
   font-family: "Xiaolai-Huninn-hero-pengim";
-  src: url("https://wing-font.chunlaw.io/fonts/Xiaolai-Huninn-hero-pengim.woff")
-    format("woff");
+  src: url("https://wing-font.chunlaw.io/fonts/Xiaolai-Huninn-hero-pengim.woff2")
+    format("woff2");
   font-display: swap;
 }

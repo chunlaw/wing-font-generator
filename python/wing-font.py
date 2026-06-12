@@ -114,10 +114,6 @@ def main(
     # an annotation base. 400 is clamped into the axis's range; every
     # other axis (width, optical size, …) takes its default. Callers
     # can still override via `base_axis_location`.
-    #
-    # Annotation fonts are intentionally NOT auto-instanced here: they
-    # aren't glyf-rewritten, so the existing variable-annotation path
-    # (Google Sans / Noto Sans JP·KR) keeps working unchanged.
     if "fvar" in base_font and not base_axis_location:
         base_axis_location = {}
         for axis in base_font["fvar"].axes:
@@ -127,6 +123,27 @@ def main(
                 )
             else:
                 base_axis_location[axis.axisTag] = axis.defaultValue
+
+    # Annotation fonts get the SAME default-weight treatment as the
+    # base. Without this, a variable annotation font shapes and draws
+    # at its fvar default weight — which for Noto Sans JP/KR is Thin
+    # (wght=100) — producing hairline annotations that are far too
+    # light once scaled down to annotation size. Clamp to at least
+    # Regular (400). This is a no-op for fonts whose default is already
+    # >= 400 (Google Sans, Noto Nastaliq Urdu) and for static fonts
+    # with no fvar (Noto Sans Tagalog, Noto Serif, Huninn). The chosen
+    # location is instanced into both the drawn outlines and the
+    # HarfBuzz shaping bytes below, so weight stays consistent. Callers
+    # can still override via `anno_axis_location`.
+    if "fvar" in anno_font and not anno_axis_location:
+        anno_axis_location = {}
+        for axis in anno_font["fvar"].axes:
+            if axis.axisTag == "wght":
+                anno_axis_location[axis.axisTag] = min(
+                    max(400.0, axis.minValue), axis.maxValue
+                )
+            else:
+                anno_axis_location[axis.axisTag] = axis.defaultValue
 
     # ── Tier 2: variable-font axis instancing ───────────────────────
     # When the caller picked an axis location for a VARIABLE font,
@@ -364,13 +381,26 @@ def main(
         )
 
     # --- Phase 4: save ---------------------------------------------------
-    # The TTF is always emitted. The WOFF is optional: the in-browser
-    # pipeline (runner.py) sets skip_woff=True because the web app
-    # converts TTF→WOFF locally via the browser's CompressionStream,
-    # which is ~20-50x faster than the round-trip through Pyodide's
-    # zlib. CLI callers (.github/workflows/build-fonts.yml) keep the
-    # default skip_woff=False so the workflow's downstream cp/deploy
-    # steps still find a .woff next to the .ttf.
+    # The TTF is always emitted. The WOFF2 is optional and only the CLI
+    # path produces it:
+    #
+    #   * CLI callers (.github/workflows/deploy-pages.yml) keep the
+    #     default skip_woff=False. The matrix uploads both .ttf AND
+    #     .woff2 artifacts; the deploy job places both under /fonts/
+    #     on the published site. Switched from WOFF (zlib) → WOFF2
+    #     (Brotli) in June 2026 to cut the published-site footprint
+    #     by ~30-50% and ease the 100 GB/month GH Pages bandwidth
+    #     ceiling. Verified ccmp / GSUB are byte-identical after the
+    #     WOFF2 encode round-trip on representative builds — see
+    #     python/tools/verify_woff2_ccmp.py for the empirical check.
+    #
+    #   * The in-browser pipeline (runner.py) sets skip_woff=True
+    #     because the web app converts TTF → WOFF (1.0) locally via
+    #     the browser's CompressionStream, which is ~20-50x faster
+    #     than round-tripping through Pyodide's zlib. WOFF2 requires
+    #     a Brotli ENCODER which browsers don't ship natively (only
+    #     decoder), so the in-browser path stays on WOFF1 — different
+    #     audience (single user's own machine, not bandwidth-bound).
     #
     # ── Why disable hb.repack on save ───────────────────────────────
     # fontTools' default serializer for GSUB/GPOS calls into HarfBuzz's
@@ -402,9 +432,14 @@ def main(
     with step_timer("TTF save"):
         output_font.save(str(output_prefix) + ".ttf")
     if not skip_woff:
-        output_font.flavor = "woff"
-        with step_timer("WOFF save"):
-            output_font.save(str(output_prefix + ".woff"))
+        # WOFF2 = Brotli-compressed sfnt. fontTools' encoder picks up
+        # the local `brotli` (or `brotlicffi`) package automatically;
+        # both are in python/requirements.txt. Encoder is lossless —
+        # every GSUB lookup (including ccmp chain-context rules) is
+        # byte-preserved across the round-trip.
+        output_font.flavor = "woff2"
+        with step_timer("WOFF2 save"):
+            output_font.save(str(output_prefix + ".woff2"))
 
     # Close the font objects. `anno_font` was already closed + deleted
     # right after Phase 1 (see the "release the annotation font ASAP"

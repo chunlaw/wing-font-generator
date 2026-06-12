@@ -351,7 +351,7 @@ jobs:
           name: font-${{ matrix.font.name }}
           path: |
             python/outputs/${{ matrix.font.name }}.ttf
-            python/outputs/${{ matrix.font.name }}.woff
+            python/outputs/${{ matrix.font.name }}.woff2
           retention-days: 1
           if-no-files-found: error
 
@@ -445,10 +445,24 @@ jobs:
           && needs.build-web.result == 'success'
           && (needs.collect-fonts.result == 'success' || needs.collect-fonts.result == 'skipped') }}
     runs-on: ubuntu-latest
+    # Per-job permissions (overrides the workflow-level read for
+    # `contents`). `contents: write` is required by the two release
+    # steps at the end of this job — `gh release create / delete`
+    # both go through the GitHub Releases REST API which checks
+    # this scope. The other jobs in this workflow stay read-only.
+    permissions:
+      contents: write
+      pages: write
+      id-token: write
     environment:
       name: github-pages
       url: ${{ steps.deploy.outputs.page_url }}
     steps:
+      - name: Check out repository code
+        # Needed by the gh CLI release steps: gh expects to be run
+        # inside a git checkout so it can infer the repo from the
+        # remote. (download-artifact alone doesn't set that up.)
+        uses: actions/checkout@v4
       - name: Download web dist
         uses: actions/download-artifact@v4
         with:
@@ -462,12 +476,36 @@ jobs:
           # On the cache-miss path collect-fonts saved this exact key
           # moments ago; on the cache-hit path it was already warm.
           fail-on-cache-miss: true
-      - name: Place fonts under the site at /fonts/
+      - name: Place WOFF2 fonts under the site at /fonts/
         # VITE_FONT_URL = https://wing-font.chunlaw.io/fonts, so the
-        # fonts must live at the served path /fonts/.
+        # fonts must live at the served path /fonts/. We only copy
+        # WOFF2 onto Pages — TTFs are roughly 2× the bytes and would
+        # exhaust the Pages bandwidth budget on a popular project.
+        # TTFs go to a rolling GitHub Release instead (see the
+        # "Publish TTFs ..." step below); /showcase's "Download .ttf"
+        # button links to the release URL via VITE_TTF_URL.
         run: |
           mkdir -p site/fonts
-          cp -v fonts/* site/fonts/
+          cp -v fonts/*.woff2 site/fonts/
+      - name: Generate /fonts/index.html
+        # GitHub Pages doesn't serve directory indexes, so a request
+        # to https://wing-font.chunlaw.io/fonts/ would otherwise
+        # return a blank page. This step walks site/fonts/ after the
+        # cp above and emits a static index.html alongside the font
+        # files — a clean directory listing with direct .ttf / .woff
+        # download pills, regenerated on every deploy so it stays in
+        # sync with the matrix.
+        #
+        # The generator is in .github/scripts/ rather than inline
+        # here on purpose: this workflow file's content is folded
+        # into the font cache key (probe-font-cache, line ~81), so
+        # any edit invalidates the cache and triggers a full
+        # ~70-font rebuild. Keeping the generator out-of-line means
+        # CSS / copy tweaks on the index page are cache-neutral.
+        #
+        # Pure stdlib Python — no setup-python step needed beyond the
+        # system Python that ubuntu-latest ships with.
+        run: python3 .github/scripts/gen-fonts-index.py site/fonts
       - name: Ensure CNAME and .nojekyll are present
         # CNAME ships from web/public so the custom domain survives each
         # deploy. The Actions artifact path does not run Jekyll, but
@@ -489,3 +527,70 @@ jobs:
       - name: Deploy to GitHub Pages
         id: deploy
         uses: actions/deploy-pages@v4
+
+      # ── Publish TTFs to a rolling GitHub Release ──────────────────
+      # TTFs DON'T ship with the Pages site (see the cp step above)
+      # because they're ~2× the WOFF2 bytes and would chew through the
+      # 100 GB/month Pages bandwidth budget. Instead each main push
+      # cuts a new build-<short-sha> release containing every .ttf the
+      # matrix produced, marked --latest so the
+      # `releases/latest/download/<name>.ttf` redirect always resolves
+      # to the current set. VITE_TTF_URL (web/.env.production) points
+      # at that redirect, so /showcase's "Download .ttf" button and
+      # the gen-fonts-index page's .ttf pill both follow it without
+      # caring which specific tag is current.
+      #
+      # The next step (prune) keeps only the 3 most recent build-<sha>
+      # releases so storage doesn't grow unboundedly. Three's worth of
+      # rollback headroom matches the project's "generator, not
+      # archive" philosophy — current + N-1 + N-2 gives a couple of
+      # rollback hops if a deploy ships broken bytes.
+      - name: Publish TTFs to rolling GitHub Release
+        run: |
+          set -euo pipefail
+          SHORT_SHA="${GITHUB_SHA::7}"
+          TAG="build-${SHORT_SHA}"
+          echo "Creating release $TAG with $(ls fonts/*.ttf | wc -l) TTF assets"
+          # --latest marks this release as the one /releases/latest/
+          # redirects to. --target main pins the tag to the deploy
+          # commit so a click-through from the release UI lands on
+          # the right source state.
+          gh release create "$TAG" fonts/*.ttf \
+            --target main \
+            --title "Pre-built fonts (build $SHORT_SHA)" \
+            --notes "Auto-generated by deploy-pages.yml on $(date -u +%Y-%m-%dT%H:%M:%SZ) from main@$SHORT_SHA.
+
+          This release contains the TTF outputs of the Wing Font CI matrix at this commit. WOFF2 versions of the same fonts ship with the Pages site at https://wing-font.chunlaw.io/fonts/ (the directory index there shows the WOFF2 + TTF pair for each font).
+
+          Stable URL form: \`https://github.com/chunlaw/wing-font-generator/releases/latest/download/<name>.ttf\` always redirects to the latest \`build-<sha>\` release. CI keeps the 3 most recent." \
+            --latest
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Prune older build-* releases (keep 3 most recent)
+        # Sliding window over build-<sha> releases. List all of them
+        # newest-first, skip the 3 we keep, delete the rest with the
+        # tag too (--cleanup-tag). The jq filter is the load-bearing
+        # bit: it selects only releases whose tag begins with
+        # "build-" so we don't ever touch hand-cut version tags
+        # someone might add later (v1.0 etc.).
+        #
+        # `|| true` on the gh delete keeps a transient API hiccup
+        # from failing the whole deploy — worst case we leave an
+        # extra release behind and the next run prunes it.
+        run: |
+          set -euo pipefail
+          KEEP=3
+          gh release list --limit 100 --json tagName,createdAt \
+            | jq -r '[.[] | select(.tagName | startswith("build-"))]
+                     | sort_by(.createdAt) | reverse
+                     | .[(env.KEEP | tonumber):]
+                     | .[].tagName' \
+            | while read -r tag; do
+                [ -n "$tag" ] || continue
+                echo "Pruning release + tag: $tag"
+                gh release delete "$tag" --yes --cleanup-tag || true
+              done
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          KEEP: "3"

@@ -43,6 +43,22 @@ export const FontHeader = ({ family, displayName, idx }: FontHeaderProps) => {
     [recentEntries, family],
   );
 
+  // The compressed-format extension depends on where the bytes
+  // came from:
+  //   * Built-in (CDN) fonts ship as WOFF2 since June 2026 (Brotli-
+  //     compressed sfnt; ~30-50% smaller than WOFF1, every modern
+  //     browser supports it natively). See the WOFF2 swap in
+  //     wing-font.py / deploy-pages.yml — verified ccmp-preserving
+  //     in python/tools/verify_woff2_ccmp.py.
+  //   * Recent-fonts entries (IndexedDB) are still WOFF1: the
+  //     in-browser pipeline uses CompressionStream (zlib only —
+  //     browsers don't expose a Brotli ENCODER yet), so the cache
+  //     keeps the WOFF1 bytes the Pyodide worker produced. The
+  //     ".woff" button on these cards is correct as labelled.
+  // Choosing the extension per entry rather than per-format keeps
+  // the button label honest in both cases.
+  const woffExt = recentEntry ? "woff" : "woff2";
+
   const handleDownload = (format: "ttf" | "woff") => {
     if (recentEntry) {
       // Recent-fonts entry — download from IndexedDB bytes. The
@@ -61,25 +77,43 @@ export const FontHeader = ({ family, displayName, idx }: FontHeaderProps) => {
       a.href = url;
       // For generated entries we have a real OpenType family name
       // in fontFamily; for uploaded entries we used the file's
-      // base name. Either way, ${fontFamily}.${format} produces a
-      // sensible suggested filename.
-      a.download = `${recentEntry.fontFamily}.${format}`;
+      // base name. Either way, ${fontFamily}.${ext} produces a
+      // sensible suggested filename — `format === "woff"` always
+      // maps to the .woff extension for recent-fonts entries (see
+      // `woffExt` comment above).
+      const ext = format === "ttf" ? "ttf" : "woff";
+      a.download = `${recentEntry.fontFamily}.${ext}`;
       document.body.appendChild(a);
       a.click();
       a.remove();
       setTimeout(() => URL.revokeObjectURL(url), 1000);
       return;
     }
-    // Built-in font path — pull from the CDN. VITE_FONT_URL is set
-    // in web/.env.{development,production} to the current font CDN
-    // host. Going via the env var (instead of hard-coding the URL)
-    // means future domain changes are a single .env edit + redeploy.
-    const base = import.meta.env.VITE_FONT_URL ?? "";
-    window.open(`${base}/${family}.${format}`, "_blank");
+    // Built-in font path — two different CDNs for two formats:
+    //
+    //   * WOFF2 → VITE_FONT_URL → Pages (wing-font.chunlaw.io/fonts/).
+    //     Same-origin so FontFace registration sidesteps CORS; small
+    //     enough to fit the Pages bandwidth budget.
+    //
+    //   * TTF → VITE_TTF_URL → GitHub Releases rolling `latest/
+    //     download/` redirect. Off-Pages because TTFs are roughly
+    //     2× the WOFF2 bytes and would exhaust the Pages bandwidth
+    //     ceiling. The CI workflow keeps the 3 most recent
+    //     build-<sha> releases and marks the newest as latest, so
+    //     this URL never changes (302 to the current release).
+    //
+    // Going via env vars instead of hard-coding the URLs means a
+    // future host change is a single .env edit + redeploy.
+    const base =
+      format === "ttf"
+        ? (import.meta.env.VITE_TTF_URL ?? "")
+        : (import.meta.env.VITE_FONT_URL ?? "");
+    const ext = format === "ttf" ? "ttf" : woffExt;
+    window.open(`${base}/${family}.${ext}`, "_blank");
   };
 
   // Format availability flags. For built-in fonts both are always
-  // true (the CI matrix builds both .ttf and .woff for every
+  // true (the CI matrix builds both .ttf and .woff2 for every
   // font). For recent-fonts entries we check the actual byte
   // length: generated entries have both populated; uploaded
   // entries have exactly the format the user gave us.
@@ -139,10 +173,13 @@ export const FontHeader = ({ family, displayName, idx }: FontHeaderProps) => {
           shared borders can look like a single control.
         */}
         {hasTtf && (
-          <DownloadButton format="ttf" onClick={() => handleDownload("ttf")} />
+          <DownloadButton label="ttf" onClick={() => handleDownload("ttf")} />
         )}
         {hasWoff && (
-          <DownloadButton format="woff" onClick={() => handleDownload("woff")} />
+          <DownloadButton
+            label={woffExt}
+            onClick={() => handleDownload("woff")}
+          />
         )}
       </Box>
     </Box>
@@ -150,15 +187,22 @@ export const FontHeader = ({ family, displayName, idx }: FontHeaderProps) => {
 };
 
 /**
- * One pill-shaped download button. Extracted so the two formats stay
- * visually identical without duplicating the styling — and so any
- * future format additions (woff2, otf, …) are a one-line append.
+ * One pill-shaped download button. Extracted so the formats stay
+ * visually identical without duplicating the styling.
+ *
+ * `label` is the literal extension shown to the user (e.g. "ttf",
+ * "woff", "woff2"). The caller decides which extension is honest
+ * for a given entry — built-in fonts ship as WOFF2 since June 2026,
+ * IndexedDB recent-fonts entries still emit WOFF1 from the
+ * in-browser pipeline. Decoupling the label from the click handler
+ * lets the parent map "I want the compressed format" → the right
+ * extension per entry without this button having to know.
  */
 const DownloadButton = ({
-  format,
+  label,
   onClick,
 }: {
-  format: "ttf" | "woff";
+  label: string;
   onClick: () => void;
 }) => (
   <Button
@@ -175,6 +219,6 @@ const DownloadButton = ({
       px: 1.5,
     }}
   >
-    .{format}
+    .{label}
   </Button>
 );
