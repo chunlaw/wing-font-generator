@@ -364,17 +364,33 @@ is having to wire `lookup_index` ourselves and call
 
 ### Taiwanese / Southern Min (河洛話)
 
-The `taigi-*.csv` mappings are derived from AlanJui's open dictionaries.
-The base character→reading data is the `漢字庫` table of
-`Ho_Lok_Ue.db`; the cross-scheme spellings (TLPA / POJ / 閩拼) and the
-tone-mark placement come from the same project's conversion tables and
-`mod_帶調符音標.py`.
+The standard (優勢腔) `taigi-{tl,tl-toned,poj,poj-toned,tlpa,bp}.csv`
+mappings and the nine 腔 (accent) variants `taigi-tl-<accent>.csv` are
+built from the **MOE 教育部《臺灣台語常用詞辭典》** (sutian /
+`kautian.ods`), via the ChhoeTaigi conversion of that dataset:
+`KipUnicode` → Tâi-lô, `PojUnicode` → POJ (both verbatim), and the
+`KipDictDialects` 語音差異 table → the per-accent variants. TLPA and 閩拼
+are derived from Tâi-lô with the standard initial/final correspondences
+inlined in `gen_moe_standard.py`. Multi-character words are emitted **one syllable per
+character** (`一刀兩斷,it to lióng tuān`) so `csv_parser` can use them
+for 多音字 disambiguation. Regenerate everything (standard schemes **and**
+the nine 腔, all in the pipeline-ready per-character format) with
+[`taigi-mappings/gen_moe_standard.py`](../taigi-mappings/gen_moe_standard.py).
+(`dialects/gen_dialects.py` is the original raw 語音差異 extractor —
+hyphen-joined, kept for reference; superseded by `gen_moe_standard.py`.)
 
-1. [AlanJui/Piau-Im](https://github.com/AlanJui/Piau-Im)
-2. [AlanJui/rime-tlpa](https://github.com/AlanJui/rime-tlpa)
+1. [教育部《臺灣台語常用詞辭典》](https://sutian.moe.edu.tw/) — authoritative readings + 語音差異 各腔 table. **Licence: CC BY-ND 3.0 TW** — verify terms before redistributing derived fonts/CSVs.
+2. [ChhoeTaigi/ChhoeTaigiDatabase](https://github.com/ChhoeTaigi/ChhoeTaigiDatabase) — the dataset conversion actually consumed.
 
 The romanization is set in [Huninn (jf-openhuninn)](https://github.com/justfont/open-huninn-font),
 which carries the full Tâi-lô / POJ combining tone marks.
+
+TLPA and 閩拼 are derived from Tâi-lô by the standard initial/final
+correspondences inlined in `gen_moe_standard.py` (`INI_TBL` / `FIN_TBL`)
+— no external database.
+
+> `kana` is **not** produced from the MOE source (no 假名 column); it
+> stays the taigivs-derived file below.
 
 The two non-Latin Taiwanese annotation systems — `taigi-tps.csv`
 (方音符號 / Taiwanese Phonetic Symbols) and `taigi-kana.csv`

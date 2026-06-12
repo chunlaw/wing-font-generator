@@ -23,7 +23,6 @@ import {
   FormControl,
   IconButton,
   InputLabel,
-  ListSubheader,
   MenuItem,
   Paper,
   Select,
@@ -310,6 +309,52 @@ const Step2Mappings = () => {
     [loadBuiltInMappings],
   );
 
+  // ── Two-step preset picker: category (language) → scheme ──────────
+  // The flat BUILT_IN_MAPPINGS list has grown past ~30 presets (台語
+  // alone is 17), so — like the showcase FontPicker — a category
+  // dropdown narrows a scheme dropdown instead of one long grouped list.
+  const MAPPING_GROUPS = useMemo(() => {
+    const seen = new Set<string>();
+    const groups: string[] = [];
+    for (const p of BUILT_IN_MAPPINGS) {
+      if (p.group && !seen.has(p.group)) {
+        seen.add(p.group);
+        groups.push(p.group);
+      }
+    }
+    return groups;
+  }, []);
+
+  const activePreset = mappingsPresetKey
+    ? BUILT_IN_MAPPINGS.find((p) => p.key === mappingsPresetKey)
+    : undefined;
+
+  const [category, setCategory] = useState<string>(
+    activePreset?.group ?? MAPPING_GROUPS[0] ?? "",
+  );
+
+  // Follow the active preset's category when a mapping is loaded from
+  // outside this picker (the default on mount, or a programmatic load).
+  // Merely browsing the category dropdown doesn't change
+  // mappingsPresetKey, so a user's manual category choice is preserved.
+  useEffect(() => {
+    if (activePreset?.group && activePreset.group !== category) {
+      setCategory(activePreset.group);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [mappingsPresetKey]);
+
+  const schemesInCategory = useMemo(
+    () => BUILT_IN_MAPPINGS.filter((p) => p.group === category),
+    [category],
+  );
+
+  // The scheme dropdown reflects the active preset only when it belongs
+  // to the currently-browsed category; otherwise it shows a placeholder
+  // (Custom when the user edited, "Choose a scheme…" when just browsing).
+  const schemeValue =
+    activePreset && activePreset.group === category ? activePreset.key : "";
+
   return (
     <Box display="flex" flexDirection="column" gap={2}>
       <Box>
@@ -502,17 +547,37 @@ const Step2Mappings = () => {
           imports their own CSV, the context clears
           `mappingsPresetKey` to null which renders here as "".
         */}
+        {/*
+          Step 2 preset picker — two dependent dropdowns (category →
+          scheme) instead of one long grouped Select, matching the
+          showcase FontPicker. The category dropdown is a pure filter;
+          it never changes the loaded mapping. Picking a scheme loads it.
+        */}
+        <FormControl size="small" sx={{ minWidth: 170 }}>
+          <InputLabel id="mappings-category-label">
+            {t("step2.import.presetCategory")}
+          </InputLabel>
+          <Select
+            labelId="mappings-category-label"
+            label={t("step2.import.presetCategory")}
+            value={category}
+            onChange={(e) => setCategory(e.target.value)}
+          >
+            {MAPPING_GROUPS.map((g) => (
+              <MenuItem key={g} value={g}>
+                {g}
+              </MenuItem>
+            ))}
+          </Select>
+        </FormControl>
         <FormControl size="small" sx={{ minWidth: 200 }}>
           {/*
-            `shrink` on the InputLabel + `notched` on the Select
-            (forwarded to its underlying OutlinedInput) are required
-            because we use `displayEmpty` with an empty-string
-            sentinel for the "Custom / no preset" state. Without
-            both, MUI thinks the field is empty when
-            mappingsPresetKey is null and lets the label slide back
-            into the centre, where it overlaps the placeholder text
-            our renderValue paints. Forcing shrink keeps the label
-            in the notched-top position always.
+            `shrink` + `notched` are required because we use
+            `displayEmpty` with an empty-string sentinel: the scheme
+            select is empty when the active mapping is custom (edited /
+            imported) OR when the user has switched category but not yet
+            picked a scheme in it. Without forcing shrink, the label
+            slides back over the placeholder our renderValue paints.
           */}
           <InputLabel id="mappings-preset-label" shrink>
             {t("step2.import.preset")}
@@ -520,62 +585,27 @@ const Step2Mappings = () => {
           <Select
             labelId="mappings-preset-label"
             label={t("step2.import.preset")}
-            value={mappingsPresetKey ?? ""}
+            value={schemeValue}
             onChange={handlePresetChange}
             displayEmpty
             notched
             renderValue={(selected) => {
-              if (!selected) return t("step2.import.presetCustom");
-              const opt = BUILT_IN_MAPPINGS.find((p) => p.key === selected);
-              return opt?.label ?? selected;
+              if (selected) {
+                const opt = schemesInCategory.find((p) => p.key === selected);
+                return opt?.label ?? selected;
+              }
+              // Empty: distinguish "user edited → Custom" from "browsing
+              // a category whose scheme isn't selected yet → Choose…".
+              return mappingsPresetKey
+                ? t("step2.import.presetChoose")
+                : t("step2.import.presetCustom");
             }}
           >
-            {/*
-              Render mapping presets with <ListSubheader>s inserted at
-              `group` boundaries.
-
-              The grouping is "look at the previous element's group" —
-              every time the current preset's group differs from the
-              previous one, emit a subheader first, then the menu item.
-              Since BUILT_IN_MAPPINGS is declared in group order, this
-              produces one header per group with the items below it.
-
-              ListSubheader is the canonical MUI primitive for this —
-              it renders non-selectable inside a Select / List and
-              picks up the theme's group-header typography. We pass
-              `sx={{ pointerEvents: 'none' }}` to belt-and-braces
-              prevent the user from clicking the header (Select would
-              otherwise swallow the click).
-            */}
-            {BUILT_IN_MAPPINGS.flatMap((preset, idx, arr) => {
-              const prevGroup = idx > 0 ? arr[idx - 1].group : undefined;
-              const headerNeeded =
-                preset.group !== undefined && preset.group !== prevGroup;
-              return [
-                ...(headerNeeded
-                  ? [
-                      <ListSubheader
-                        key={`group-${preset.group}`}
-                        sx={{ pointerEvents: "none", lineHeight: 2.2 }}
-                      >
-                        {preset.group}
-                      </ListSubheader>,
-                    ]
-                  : []),
-                // Indent items relative to the group header so the
-                // visual hierarchy reads as "header — child — child".
-                // `pl` is overriden (not added) by MUI's default
-                // MenuItem padding, hence the explicit value; the
-                // theme default is roughly pl: 2.
-                <MenuItem
-                  key={preset.key}
-                  value={preset.key}
-                  sx={preset.group ? { pl: 4 } : undefined}
-                >
-                  {preset.label}
-                </MenuItem>,
-              ];
-            })}
+            {schemesInCategory.map((preset) => (
+              <MenuItem key={preset.key} value={preset.key}>
+                {preset.label}
+              </MenuItem>
+            ))}
           </Select>
         </FormControl>
         <Button

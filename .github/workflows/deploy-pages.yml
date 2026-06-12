@@ -143,18 +143,22 @@ jobs:
           - { name: ChironSungHK-Google-thai-Invert,       args: "-v -y 0.3 -opt -i input_fonts/ChironSungHK-R.ttf -a 'input_fonts/GoogleSans-VariableFont_GRAD,opsz,wght.ttf' -m mappings/canto-thai.csv -as 0.22" }
           - { name: ChironSungHK-NotoJP-katakana-Invert,   args: "-v -y 0.3 -opt -i input_fonts/ChironSungHK-R.ttf -a input_fonts/NotoSansJP-VariableFont_wght.ttf -m mappings/canto-katakana.csv -as 0.24" }
           - { name: ChironSungHK-NotoKR-korean-Invert,     args: "-v -y 0.3 -opt -i input_fonts/ChironSungHK-R.ttf -a input_fonts/NotoSansKR-VariableFont_wght.ttf -m mappings/canto-korean.csv -as 0.24" }
+          - { name: ChironSungHK-NotoNastaliq-urdu-Invert, args: "-v -y 0.3 -opt -i input_fonts/ChironSungHK-R.ttf -a input_fonts/NotoNastaliqUrdu-VariableFont_wght.ttf -m mappings/canto-urdu.csv -as 0.16" }
           # Inverted, ChironSung Italic:
           - { name: ChironSungHK-Google-thai-It-Invert,    args: "-v -y 0.3 -opt -i input_fonts/ChironSungHK-R-It.ttf -a 'input_fonts/GoogleSans-VariableFont_GRAD,opsz,wght.ttf' -m mappings/canto-thai.csv -as 0.22" }
           - { name: ChironSungHK-NotoJP-katakana-It-Invert, args: "-v -y 0.3 -opt -i input_fonts/ChironSungHK-R-It.ttf -a input_fonts/NotoSansJP-VariableFont_wght.ttf -m mappings/canto-katakana.csv -as 0.24" }
           - { name: ChironSungHK-NotoKR-korean-It-Invert,  args: "-v -y 0.3 -opt -i input_fonts/ChironSungHK-R-It.ttf -a input_fonts/NotoSansKR-VariableFont_wght.ttf -m mappings/canto-korean.csv -as 0.24" }
+          - { name: ChironSungHK-NotoNastaliq-urdu-It-Invert, args: "-v -y 0.3 -opt -i input_fonts/ChironSungHK-R-It.ttf -a input_fonts/NotoNastaliqUrdu-VariableFont_wght.ttf -m mappings/canto-urdu.csv -as 0.16" }
           # Standard, ChironSung Regular:
           - { name: ChironSungHK-Google-thai,              args: "-opt -i input_fonts/ChironSungHK-R.ttf -a 'input_fonts/GoogleSans-VariableFont_GRAD,opsz,wght.ttf' -m mappings/canto-thai.csv -as 0.22" }
           - { name: ChironSungHK-NotoJP-katakana,          args: "-opt -i input_fonts/ChironSungHK-R.ttf -a input_fonts/NotoSansJP-VariableFont_wght.ttf -m mappings/canto-katakana.csv -as 0.24" }
           - { name: ChironSungHK-NotoKR-korean,            args: "-opt -i input_fonts/ChironSungHK-R.ttf -a input_fonts/NotoSansKR-VariableFont_wght.ttf -m mappings/canto-korean.csv -as 0.24" }
+          - { name: ChironSungHK-NotoNastaliq-urdu,        args: "-opt -i input_fonts/ChironSungHK-R.ttf -a input_fonts/NotoNastaliqUrdu-VariableFont_wght.ttf -m mappings/canto-urdu.csv -as 0.16" }
           # Standard, ChironSung Italic:
           - { name: ChironSungHK-Google-thai-It,           args: "-opt -i input_fonts/ChironSungHK-R-It.ttf -a 'input_fonts/GoogleSans-VariableFont_GRAD,opsz,wght.ttf' -m mappings/canto-thai.csv -as 0.22" }
           - { name: ChironSungHK-NotoJP-katakana-It,       args: "-opt -i input_fonts/ChironSungHK-R-It.ttf -a input_fonts/NotoSansJP-VariableFont_wght.ttf -m mappings/canto-katakana.csv -as 0.24" }
           - { name: ChironSungHK-NotoKR-korean-It,         args: "-opt -i input_fonts/ChironSungHK-R-It.ttf -a input_fonts/NotoSansKR-VariableFont_wght.ttf -m mappings/canto-korean.csv -as 0.24" }
+          - { name: ChironSungHK-NotoNastaliq-urdu-It,     args: "-opt -i input_fonts/ChironSungHK-R-It.ttf -a input_fonts/NotoNastaliqUrdu-VariableFont_wght.ttf -m mappings/canto-urdu.csv -as 0.16" }
           # === Cantonese — Noto Sans HK base (lighter showcase set) =
           # Hong-Kong-styled Cantonese variants. Same six mappings as
           # the ChironSung set above but built on Noto Sans HK
@@ -175,6 +179,17 @@ jobs:
           - { name: NotoSansHK-Google-thai,                args: "-opt -i input_fonts/NotoSansHK-VariableFont_wght.ttf -a 'input_fonts/GoogleSans-VariableFont_GRAD,opsz,wght.ttf' -m mappings/canto-thai.csv -as 0.22" }
           - { name: NotoSansHK-NotoJP-katakana,            args: "-opt -i input_fonts/NotoSansHK-VariableFont_wght.ttf -a input_fonts/NotoSansJP-VariableFont_wght.ttf -m mappings/canto-katakana.csv -as 0.24" }
           - { name: NotoSansHK-NotoKR-korean,              args: "-opt -i input_fonts/NotoSansHK-VariableFont_wght.ttf -a input_fonts/NotoSansKR-VariableFont_wght.ttf -m mappings/canto-korean.csv -as 0.24" }
+          # Urdu (Nastaʿlīq, RTL). -as 0.16 — smaller than the other
+          # transliterations for TWO reasons: (1) Nastaliq cascades far
+          # more vertically, and (2) the output inherits NotoSansHK's
+          # ascent (1160u) which the pipeline never raises. The tallest
+          # reading is kʰ+short-a (kam/kap → کھَم/کھَپ): the zabar perched
+          # atop the tall kaf reaches 2132u in the anno font, so the
+          # composed glyph tops out at 800 + 2132*as. At 0.18 that's
+          # 1184u (clips the 1160 ascent by 24u); 0.16 → 1141u (19u
+          # headroom). Do NOT raise above 0.16 without either lowering
+          # -y (offset) or accepting a clipped zabar tip on kam-syllables.
+          - { name: NotoSansHK-NotoNastaliq-urdu,          args: "-opt -i input_fonts/NotoSansHK-VariableFont_wght.ttf -a input_fonts/NotoNastaliqUrdu-VariableFont_wght.ttf -m mappings/canto-urdu.csv -as 0.16" }
           # === Hero sample font ====================================
           # All three hero subsets use the same Xiaolai (handwritten,
           # OFL) + Huninn (Latin-friendly CJK) pairing so the home page
@@ -183,8 +198,35 @@ jobs:
           # Noto Sans TC bases respectively — see git history.
           - { name: Xiaolai-Huninn-hero-sample,            args: "-opt -i input_fonts/XiaolaiSC-Regular.ttf -a input_fonts/Huninn-Regular.ttf -m mappings/hero-sample.csv -as 0.25" }
           # === Taiwanese / Southern Min (河洛話) showcase ===========
-          - { name: NotoSansTC-Huninn-tailo,               args: "-opt -i input_fonts/NotoSansTC-VariableFont_wght.ttf -a input_fonts/Huninn-Regular.ttf -m mappings/taigi-tl-toned.csv -as 0.25" }
-          - { name: NotoSansTC-Huninn-poj,                 args: "-opt -i input_fonts/NotoSansTC-VariableFont_wght.ttf -a input_fonts/Huninn-Regular.ttf -m mappings/taigi-poj-toned.csv -as 0.25" }
+          # tailo / poj are the MOE 優勢腔 standard (sutian via ChhoeTaigi);
+          # sannkiap is the distinctive 三峽偏泉腔 accent (雞 = kere) — one
+          # of nine 腔 variants, all also offered in /generate.
+          # Two pairings — Noto Sans TC + Huninn (clean sans) and Xiaolai
+          # + M+ Rounded 1c (warm handwritten) — built for every
+          # taigi-tl-*.csv: the 優勢腔 standard (tailo) plus all nine 腔
+          # accent variants. M+ Rounded 1c carries the full Tâi-lô tone
+          # marks (M+ 1m does not). All also offered in /generate.
+          - { name: NotoSansTC-Huninn-tailo,                   args: "-opt -i input_fonts/NotoSansTC-VariableFont_wght.ttf -a input_fonts/Huninn-Regular.ttf -m mappings/taigi-tl-toned.csv -as 0.25" }
+          - { name: NotoSansTC-Huninn-poj,                     args: "-opt -i input_fonts/NotoSansTC-VariableFont_wght.ttf -a input_fonts/Huninn-Regular.ttf -m mappings/taigi-poj-toned.csv -as 0.25" }
+          - { name: NotoSansTC-Huninn-taipak,                  args: "-opt -i input_fonts/NotoSansTC-VariableFont_wght.ttf -a input_fonts/Huninn-Regular.ttf -m mappings/taigi-tl-taipak.csv -as 0.25" }
+          - { name: NotoSansTC-Huninn-sannkiap,                args: "-opt -i input_fonts/NotoSansTC-VariableFont_wght.ttf -a input_fonts/Huninn-Regular.ttf -m mappings/taigi-tl-sannkiap.csv -as 0.25" }
+          - { name: NotoSansTC-Huninn-sintik,                  args: "-opt -i input_fonts/NotoSansTC-VariableFont_wght.ttf -a input_fonts/Huninn-Regular.ttf -m mappings/taigi-tl-sintik.csv -as 0.25" }
+          - { name: NotoSansTC-Huninn-taitiong,                args: "-opt -i input_fonts/NotoSansTC-VariableFont_wght.ttf -a input_fonts/Huninn-Regular.ttf -m mappings/taigi-tl-taitiong.csv -as 0.25" }
+          - { name: NotoSansTC-Huninn-lokkang,                 args: "-opt -i input_fonts/NotoSansTC-VariableFont_wght.ttf -a input_fonts/Huninn-Regular.ttf -m mappings/taigi-tl-lokkang.csv -as 0.25" }
+          - { name: NotoSansTC-Huninn-tailam,                  args: "-opt -i input_fonts/NotoSansTC-VariableFont_wght.ttf -a input_fonts/Huninn-Regular.ttf -m mappings/taigi-tl-tailam.csv -as 0.25" }
+          - { name: NotoSansTC-Huninn-kohiong,                 args: "-opt -i input_fonts/NotoSansTC-VariableFont_wght.ttf -a input_fonts/Huninn-Regular.ttf -m mappings/taigi-tl-kohiong.csv -as 0.25" }
+          - { name: NotoSansTC-Huninn-gilan,                   args: "-opt -i input_fonts/NotoSansTC-VariableFont_wght.ttf -a input_fonts/Huninn-Regular.ttf -m mappings/taigi-tl-gilan.csv -as 0.25" }
+          - { name: NotoSansTC-Huninn-manking,                 args: "-opt -i input_fonts/NotoSansTC-VariableFont_wght.ttf -a input_fonts/Huninn-Regular.ttf -m mappings/taigi-tl-manking.csv -as 0.25" }
+          - { name: Xiaolai-MplusRounded-tailo,                args: "-opt -i input_fonts/XiaolaiSC-Regular.ttf -a input_fonts/MPLUSRounded1c-Regular.ttf -m mappings/taigi-tl-toned.csv -as 0.25" }
+          - { name: Xiaolai-MplusRounded-taipak,               args: "-opt -i input_fonts/XiaolaiSC-Regular.ttf -a input_fonts/MPLUSRounded1c-Regular.ttf -m mappings/taigi-tl-taipak.csv -as 0.25" }
+          - { name: Xiaolai-MplusRounded-sannkiap,             args: "-opt -i input_fonts/XiaolaiSC-Regular.ttf -a input_fonts/MPLUSRounded1c-Regular.ttf -m mappings/taigi-tl-sannkiap.csv -as 0.25" }
+          - { name: Xiaolai-MplusRounded-sintik,               args: "-opt -i input_fonts/XiaolaiSC-Regular.ttf -a input_fonts/MPLUSRounded1c-Regular.ttf -m mappings/taigi-tl-sintik.csv -as 0.25" }
+          - { name: Xiaolai-MplusRounded-taitiong,             args: "-opt -i input_fonts/XiaolaiSC-Regular.ttf -a input_fonts/MPLUSRounded1c-Regular.ttf -m mappings/taigi-tl-taitiong.csv -as 0.25" }
+          - { name: Xiaolai-MplusRounded-lokkang,              args: "-opt -i input_fonts/XiaolaiSC-Regular.ttf -a input_fonts/MPLUSRounded1c-Regular.ttf -m mappings/taigi-tl-lokkang.csv -as 0.25" }
+          - { name: Xiaolai-MplusRounded-tailam,               args: "-opt -i input_fonts/XiaolaiSC-Regular.ttf -a input_fonts/MPLUSRounded1c-Regular.ttf -m mappings/taigi-tl-tailam.csv -as 0.25" }
+          - { name: Xiaolai-MplusRounded-kohiong,              args: "-opt -i input_fonts/XiaolaiSC-Regular.ttf -a input_fonts/MPLUSRounded1c-Regular.ttf -m mappings/taigi-tl-kohiong.csv -as 0.25" }
+          - { name: Xiaolai-MplusRounded-gilan,                args: "-opt -i input_fonts/XiaolaiSC-Regular.ttf -a input_fonts/MPLUSRounded1c-Regular.ttf -m mappings/taigi-tl-gilan.csv -as 0.25" }
+          - { name: Xiaolai-MplusRounded-manking,              args: "-opt -i input_fonts/XiaolaiSC-Regular.ttf -a input_fonts/MPLUSRounded1c-Regular.ttf -m mappings/taigi-tl-manking.csv -as 0.25" }
           - { name: Xiaolai-Huninn-hero-tailo,             args: "-opt -i input_fonts/XiaolaiSC-Regular.ttf -a input_fonts/Huninn-Regular.ttf -m mappings/hero-taigi.csv -as 0.25" }
           # Non-Latin Taiwanese annotation (data from ButTaiwan/taigivs).
           # 方音符號 (TPS): annotation font must cover Bopomofo + Bopomofo

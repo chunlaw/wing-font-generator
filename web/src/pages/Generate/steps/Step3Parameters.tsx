@@ -25,6 +25,7 @@ import { useTheme } from "@mui/material/styles";
 import opentype from "opentype.js";
 import { useGenerate } from "../GenerateContext";
 import { useTranslation } from "../../../i18n/LanguageContext";
+import { useRecentFonts } from "../../../RecentFontsContext";
 import { GenerateParams } from "../types";
 
 const Step3Parameters = () => {
@@ -41,6 +42,28 @@ const Step3Parameters = () => {
     setPreviewText,
     runtimeReady,
   } = useGenerate();
+
+  // ── Family-name collision detector ─────────────────────────────
+  // If the user has already saved a generation with this family
+  // name to IndexedDB, render a non-blocking info Alert. Two fonts
+  // with identical family names work fine in CSS @font-face (we
+  // register each under a unique opaque id) and in IndexedDB (each
+  // gets a unique entry id), but they collide at the OS level when
+  // the user downloads BOTH and installs them in Font Book /
+  // Windows Fonts / Word — those treat "family name" as the
+  // identity. The hint sets expectations so the user can choose a
+  // distinct name BEFORE generating, when the choice is still
+  // cheap. Case-insensitive comparison because OS font lookups are
+  // case-insensitive (macOS Font Book matches "myfont" and
+  // "MyFont" as the same font).
+  const { entries: recentFontEntries } = useRecentFonts();
+  const hasFamilyCollision = (() => {
+    const typed = params.familyName?.trim().toLowerCase();
+    if (!typed) return false;
+    return recentFontEntries.some(
+      (e) => e.fontFamily.trim().toLowerCase() === typed,
+    );
+  })();
 
   // The auto-trigger in GenerateContext fires whenever the user is on
   // Step 3 and any input changes (debounced). Locally we just need to
@@ -172,6 +195,21 @@ const Step3Parameters = () => {
             onChange={(e) => setParam("familyName", e.target.value)}
             fullWidth
           />
+          {/*
+            Collision hint. Non-blocking info Alert that fires when
+            the typed family name matches an existing IndexedDB
+            entry's fontFamily. Lives immediately under the
+            TextField so the user reads the warning while still
+            looking at the field they'd want to edit. severity=info
+            (not warning) because there's nothing actually broken —
+            it's just a recommendation. variant="outlined" keeps it
+            visually softer than a filled alert.
+          */}
+          {hasFamilyCollision && (
+            <Alert severity="info" variant="outlined" sx={{ mt: -1 }}>
+              {t("step3.family.collisionHint")}
+            </Alert>
+          )}
 
           <LabeledSlider
             label={t("step3.baseScale")}

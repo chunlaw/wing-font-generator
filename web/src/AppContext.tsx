@@ -3,6 +3,18 @@ import opentype from "opentype.js";
 import Papa from "papaparse";
 import { loadFont as loadFontToDocument } from "./utils";
 import { AVAILABLE_FONTS, FontOption } from "./utils/const";
+import {
+  recentEntryToFontOption,
+  useRecentFonts,
+} from "./RecentFontsContext";
+
+// Synthetic dialect group key for the user's IndexedDB-cached fonts.
+// Treated as a peer of "cantonese" / "taiwanese" / etc. in
+// AppContext's catalog, in FontPicker's lang dropdown, and in
+// Specimen's lookup. Lives here rather than in const.ts because the
+// underlying group is dynamic (built at runtime from RecentFontsContext)
+// rather than a static catalog entry.
+export const USER_FONTS_GROUP_KEY = "userFonts";
 
 interface AppContextState {
   msg: string;
@@ -50,6 +62,19 @@ const AppContext = React.createContext({} as AppContextValue);
 export const AppContextProvider = ({ children }: { children: ReactNode }) => {
   const [state, setState] = useState<AppContextState>(DEFAULT_STATE);
   const loadedFonts = useRef<Record<string, boolean>>({})
+
+  // Pull the recent-fonts list so the picked-font catalog can resolve
+  // user-generated entries by name. Reading from this hook means
+  // AppContext's catalog automatically updates whenever a generation
+  // is saved / unpinned / cleared.
+  const { entries: recentFontEntries } = useRecentFonts();
+  // Memo-stable ref so addPickedFont / setPickedFonts (declared with
+  // empty deps via useCallback) can read the latest list without
+  // having to re-create on every recent-fonts change.
+  const recentFontEntriesRef = useRef(recentFontEntries);
+  useEffect(() => {
+    recentFontEntriesRef.current = recentFontEntries;
+  }, [recentFontEntries]);
 
   const setFile = useCallback(
     (
@@ -100,6 +125,16 @@ export const AppContextProvider = ({ children }: { children: ReactNode }) => {
 
   const loadFont = useCallback(async (font: FontOption) => {
     if (loadedFonts.current[font.name]) return;
+    // User-generated fonts (from the IndexedDB recent-fonts cache)
+    // are pre-registered as @font-face by RecentFontsContext on app
+    // boot — they have no `source` URL because their bytes live as
+    // blob: URLs scoped to that registration. Treat an empty source
+    // as "already loaded, nothing to fetch" rather than letting
+    // loadFontToDocument fail on an empty src descriptor.
+    if (!font.source) {
+      loadedFonts.current[font.name] = true;
+      return;
+    }
     // Mark as loading BEFORE the fetch so the UI can show a spinner
     // while the FontFace promise is pending. Browsers don't expose
     // a "is this @font-face currently fetching?" API, so we keep
@@ -125,9 +160,23 @@ export const AppContextProvider = ({ children }: { children: ReactNode }) => {
   }, []);
 
   const addPickedFont = useCallback((lang: string, fontName: string) => {
+    let resolved: FontOption | undefined;
+    if (lang === USER_FONTS_GROUP_KEY) {
+      // User-generated fonts live in IndexedDB, exposed via the
+      // RecentFontsContext list — not in AVAILABLE_FONTS. Look them
+      // up by entry.id (which doubles as FontOption.name).
+      const entry = recentFontEntriesRef.current.find(
+        (e) => e.id === fontName,
+      );
+      if (entry) resolved = recentEntryToFontOption(entry);
+    } else {
+      resolved = AVAILABLE_FONTS[lang]?.fonts[fontName];
+    }
+    if (!resolved) return;
+    const finalOpt = resolved;
     setState(prev => ({
       ...prev,
-      pickedFonts: [AVAILABLE_FONTS[lang].fonts[fontName], ...prev.pickedFonts]
+      pickedFonts: [finalOpt, ...prev.pickedFonts]
     }))
   }, [])
 
@@ -148,6 +197,13 @@ export const AppContextProvider = ({ children }: { children: ReactNode }) => {
       for (const [name, opt] of Object.entries(group.fonts)) {
         catalog[name] = opt
       }
+    }
+    // Layer the user-generated recents on top — keyed by entry.id
+    // (collision-free with the catalog above because built-in fonts
+    // use machine names like "NotoSansHK-Noto-lshk" while user
+    // entries use opaque "gen-uuid…" ids).
+    for (const entry of recentFontEntriesRef.current) {
+      catalog[entry.id] = recentEntryToFontOption(entry);
     }
     const resolved: FontOption[] = []
     for (const n of names) {

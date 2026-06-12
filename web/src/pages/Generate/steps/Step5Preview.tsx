@@ -23,9 +23,10 @@ import {
   Typography,
 } from "@mui/material";
 import { Code, ContentCopy } from "@mui/icons-material";
-import { Fragment, ReactNode, useEffect, useState } from "react";
+import { Fragment, ReactNode, useEffect, useRef, useState } from "react";
 import { useGenerate } from "../GenerateContext";
 import { useTranslation } from "../../../i18n/LanguageContext";
+import { useRecentFonts } from "../../../RecentFontsContext";
 import Markdown from "../../../components/Markdown";
 
 /**
@@ -77,12 +78,64 @@ function renderWithNoBreaks(text: string): ReactNode[] {
 
 const Step5Preview = () => {
   const { t } = useTranslation();
-  const { result, params } = useGenerate();
+  const { result, params, baseFont, annoFont, mappingsPresetKey } =
+    useGenerate();
+  const { save: saveRecentFont } = useRecentFonts();
   const [sample, setSample] = useState<string>(() => t("step5.sampleText"));
   const [ttfUrl, setTtfUrl] = useState<string | null>(null);
   const [woffUrl, setWoffUrl] = useState<string | null>(null);
   const [snippetCopied, setSnippetCopied] = useState(false);
   const [snippetDialogOpen, setSnippetDialogOpen] = useState(false);
+
+  // ── Save-to-recent-fonts effect ────────────────────────────────────
+  // Persist the latest successful generation to IndexedDB so the user
+  // can re-download / preview / pin it later. Saving from this effect
+  // (rather than from inside the GenerateContext) keeps the storage
+  // dependency at the UI layer — Generate's worker code doesn't need
+  // to know IndexedDB exists.
+  //
+  // `savedResultRef` tracks the result reference we've already
+  // persisted so a re-render (or a language switch that resets
+  // `sample`) doesn't re-save the same font and double-fill the
+  // 5-slot cache.
+  const savedResultRef = useRef<unknown>(null);
+  useEffect(() => {
+    if (!result) return;
+    if (savedResultRef.current === result) return;
+    savedResultRef.current = result;
+    (async () => {
+      try {
+        const ttfBytes = new Uint8Array(await result.ttfBlob.arrayBuffer());
+        const woffBytes = new Uint8Array(await result.woffBlob.arrayBuffer());
+        const fontFamily = params.familyName || "wingfont";
+        const displayName = fontFamily;
+        await saveRecentFont({
+          displayName,
+          fontFamily,
+          config: {
+            baseFontName: baseFont.name || undefined,
+            annoFontName: annoFont.name || undefined,
+            mappingName: mappingsPresetKey || undefined,
+            annoScale: params.annoScale,
+          },
+          ttfBytes,
+          woffBytes,
+        });
+      } catch (err) {
+        // Caching is a nice-to-have — don't break the download flow
+        // if storage fails (quota, private browsing, etc.).
+        console.warn("[Step5] failed to save font to recents:", err);
+      }
+    })();
+  }, [
+    result,
+    params.familyName,
+    params.annoScale,
+    baseFont.name,
+    annoFont.name,
+    mappingsPresetKey,
+    saveRecentFont,
+  ]);
 
   // Refresh sample text when language changes so the prompt is in the
   // active locale. Without this it'd freeze to whatever locale was

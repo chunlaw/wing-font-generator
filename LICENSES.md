@@ -90,6 +90,16 @@ license terms on top.
 `python/mappings/*.csv` is sourced from third-party romanization
 databases. See the
 [Acknowledgements page on wing-font.chunlaw.io](https://wing-font.chunlaw.io/credits)
-for per-language attribution (Piau-Im, rime-tlpa, learn-teochew,
+for per-language attribution (MOE sutian / ChhoeTaigi, learn-teochew,
 mozillazg's pinyin-data, the Unihan database, etc.) and their
 respective licenses (mostly MIT and similar permissive).
+
+> **Taiwanese (`taigi-*`) — important:** the standard and per-腔
+> reading data is derived from the MOE 教育部《臺灣台語常用詞辭典》
+> (sutian / kautian.ods), which is licensed **CC BY-ND 3.0 TW
+> (Attribution-NoDerivatives)**. The reformatted CSVs and any fonts
+> built from them are *derivative works*; NoDerivatives restricts
+> redistributing derivatives. Confirm the MOE terms (and ChhoeTaigi's
+> redistribution terms) before publishing the derived CSVs or
+> pre-built `taigi` fonts. `taigi-tps` / `taigi-kana` come from
+> ButTaiwan/taigivs (Apache-2.0, readings also MOE-based).

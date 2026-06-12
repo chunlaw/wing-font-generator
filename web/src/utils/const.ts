@@ -138,13 +138,15 @@ export type FontSet = Record<
  * casual viewer (e.g. LSHK vs Lau, both Latin-letter romanizations
  * on the same Sung base), only ONE belongs here.
  *
- * Currently surfaced (6):
+ * Currently surfaced (7):
  *   • LSHK Jyutping  — primary / most-widely-used Latin romanization
  *   • Yale           — historical alternative Latin romanization
  *   • Cangjie        — completely different concept: CJK input method
  *   • Thai script    — non-Latin transliteration (Google Sans)
  *   • Katakana       — non-Latin transliteration (Noto Sans JP)
  *   • Hangul         — non-Latin transliteration (Noto Sans KR)
+ *   • Urdu           — non-Latin, RIGHT-TO-LEFT transliteration
+ *                      (Noto Nastaliq Urdu); demonstrates RTL + abjad
  *
  * Built but NOT showcased (still reachable directly under /fonts/):
  *   • Chishima / Lau / Guangdong — three additional Latin romanizations,
@@ -206,6 +208,11 @@ export const AVAILABLE_FONTS: FontSet = {
         name: "NotoSansHK-NotoKR-korean",
         source: `url(${import.meta.env.VITE_FONT_URL}/NotoSansHK-NotoKR-korean.woff) format('woff')`,
       },
+      "NotoSansHK-NotoNastaliq-urdu": {
+        displayName: "思源黑體 香港（烏爾都文標注）",
+        name: "NotoSansHK-NotoNastaliq-urdu",
+        source: `url(${import.meta.env.VITE_FONT_URL}/NotoSansHK-NotoNastaliq-urdu.woff) format('woff')`,
+      },
       // ─ ChironSung Heavyweight Edition ────────────────────────────
       // The original (HK-serif) Cantonese showcase set. Heavier
       // outlines = ~2× the file size of the NotoSansHK equivalents
@@ -244,6 +251,11 @@ export const AVAILABLE_FONTS: FontSet = {
         name: "ChironSungHK-NotoKR-korean",
         source: `url(${import.meta.env.VITE_FONT_URL}/ChironSungHK-NotoKR-korean.woff) format('woff')`,
       },
+      "ChironSungHK-NotoNastaliq-urdu": {
+        displayName: "昭源宋體（烏爾都文標注）",
+        name: "ChironSungHK-NotoNastaliq-urdu",
+        source: `url(${import.meta.env.VITE_FONT_URL}/ChironSungHK-NotoNastaliq-urdu.woff) format('woff')`,
+      },
       // ─ Xiaolai (小賴) + Huninn pairing ────────────────────────────
       // Handwritten 楷書-style base font (Xiaolai, OFL) with the
       // Latin-friendly Huninn (jf-openhuninn) annotation set.
@@ -280,39 +292,143 @@ export const AVAILABLE_FONTS: FontSet = {
       },
     },
   },
-  // Taiwanese / Southern Min (河洛話) — the first non-Cantonese dialect
-  // showcased. Base CJK font is Noto Sans TC; romanization is set in
-  // Huninn (jf-openhuninn), which carries the Tâi-lô / POJ combining
-  // tone marks. The two entries mirror the LSHK / Yale pairing on the
-  // Cantonese side: a primary romanization and a historical one. Both
-  // .woff files are produced by .github/workflows/build-fonts.yml.
+  // Taiwanese / Southern Min (河洛話) — one group covering both the
+  // 優勢腔 standard reading (Tâi-lô + 白話字) and all nine MOE 語音差異
+  // accent (腔) survey points. NB the 優勢腔 is the MOE prestige/"common"
+  // reading and is NOT one of the nine survey points — so the accents
+  // are not a superset of the standard; they're listed together here as
+  // a single 臺語 category. Bases: Noto Sans TC (思源黑體) and Xiaolai
+  // (小賴), romanization in Huninn / M+ Rounded 1c. .woff files are
+  // produced by .github/workflows/deploy-pages.yml.
   taiwanese: {
     lang: {
       zh: "臺語",
       en: "Taiwanese / Southern Min",
     },
     fonts: {
+      // 優勢腔 standard reading (KipUnicode), Noto Sans TC + Huninn —
+      // Tâi-lô and 白話字. The 優勢腔 is the MOE prestige/"common"
+      // reading; it is NOT any single one of the nine survey points below.
       "NotoSansTC-Huninn-tailo": {
-        displayName: "思源黑體（台羅）",
+        displayName: "思源黑體（台羅・優勢腔）",
         name: "NotoSansTC-Huninn-tailo",
         source: `url(${import.meta.env.VITE_FONT_URL}/NotoSansTC-Huninn-tailo.woff) format('woff')`,
       },
       "NotoSansTC-Huninn-poj": {
-        displayName: "思源黑體（白話字）",
+        displayName: "思源黑體（白話字・優勢腔）",
         name: "NotoSansTC-Huninn-poj",
         source: `url(${import.meta.env.VITE_FONT_URL}/NotoSansTC-Huninn-poj.woff) format('woff')`,
       },
-      // Xiaolai handwritten companions — same two romanizations as
-      // the Noto Sans TC entries above, but on a warm 楷書 base.
+      // 優勢腔 standard on the Xiaolai handwritten 楷書 base, in two
+      // annotation styles: Huninn and the rounder M+ Rounded 1c.
       "Xiaolai-Huninn-tailo": {
-        displayName: "小賴字體（台羅）",
+        displayName: "小賴字體（台羅・優勢腔）",
         name: "Xiaolai-Huninn-tailo",
         source: `url(${import.meta.env.VITE_FONT_URL}/Xiaolai-Huninn-tailo.woff) format('woff')`,
       },
       "Xiaolai-Huninn-poj": {
-        displayName: "小賴字體（白話字）",
+        displayName: "小賴字體（白話字・優勢腔）",
         name: "Xiaolai-Huninn-poj",
         source: `url(${import.meta.env.VITE_FONT_URL}/Xiaolai-Huninn-poj.woff) format('woff')`,
+      },
+      "Xiaolai-MplusRounded-tailo": {
+        displayName: "小賴圓體（台羅・優勢腔）",
+        name: "Xiaolai-MplusRounded-tailo",
+        source: `url(${import.meta.env.VITE_FONT_URL}/Xiaolai-MplusRounded-tailo.woff) format('woff')`,
+      },
+      // Nine 腔 (accent) survey points — the same MOE 語音差異 data, each
+      // in two pairings (思源黑體 / 小賴圓體), all Tâi-lô. 漳/泉 splits
+      // (雞 ke/kue/kere, 飯 pn̄g/puīnn) are real here; the entries above
+      // are the 優勢腔 standard, which is not one of these nine points.
+      "NotoSansTC-Huninn-taipak": {
+        displayName: "思源黑體（台北腔）",
+        name: "NotoSansTC-Huninn-taipak",
+        source: `url(${import.meta.env.VITE_FONT_URL}/NotoSansTC-Huninn-taipak.woff) format('woff')`,
+      },
+      "Xiaolai-MplusRounded-taipak": {
+        displayName: "小賴圓體（台北腔）",
+        name: "Xiaolai-MplusRounded-taipak",
+        source: `url(${import.meta.env.VITE_FONT_URL}/Xiaolai-MplusRounded-taipak.woff) format('woff')`,
+      },
+      "NotoSansTC-Huninn-sannkiap": {
+        displayName: "思源黑體（三峽腔）",
+        name: "NotoSansTC-Huninn-sannkiap",
+        source: `url(${import.meta.env.VITE_FONT_URL}/NotoSansTC-Huninn-sannkiap.woff) format('woff')`,
+      },
+      "Xiaolai-MplusRounded-sannkiap": {
+        displayName: "小賴圓體（三峽腔）",
+        name: "Xiaolai-MplusRounded-sannkiap",
+        source: `url(${import.meta.env.VITE_FONT_URL}/Xiaolai-MplusRounded-sannkiap.woff) format('woff')`,
+      },
+      "NotoSansTC-Huninn-sintik": {
+        displayName: "思源黑體（新竹腔）",
+        name: "NotoSansTC-Huninn-sintik",
+        source: `url(${import.meta.env.VITE_FONT_URL}/NotoSansTC-Huninn-sintik.woff) format('woff')`,
+      },
+      "Xiaolai-MplusRounded-sintik": {
+        displayName: "小賴圓體（新竹腔）",
+        name: "Xiaolai-MplusRounded-sintik",
+        source: `url(${import.meta.env.VITE_FONT_URL}/Xiaolai-MplusRounded-sintik.woff) format('woff')`,
+      },
+      "NotoSansTC-Huninn-taitiong": {
+        displayName: "思源黑體（台中腔）",
+        name: "NotoSansTC-Huninn-taitiong",
+        source: `url(${import.meta.env.VITE_FONT_URL}/NotoSansTC-Huninn-taitiong.woff) format('woff')`,
+      },
+      "Xiaolai-MplusRounded-taitiong": {
+        displayName: "小賴圓體（台中腔）",
+        name: "Xiaolai-MplusRounded-taitiong",
+        source: `url(${import.meta.env.VITE_FONT_URL}/Xiaolai-MplusRounded-taitiong.woff) format('woff')`,
+      },
+      "NotoSansTC-Huninn-lokkang": {
+        displayName: "思源黑體（鹿港腔）",
+        name: "NotoSansTC-Huninn-lokkang",
+        source: `url(${import.meta.env.VITE_FONT_URL}/NotoSansTC-Huninn-lokkang.woff) format('woff')`,
+      },
+      "Xiaolai-MplusRounded-lokkang": {
+        displayName: "小賴圓體（鹿港腔）",
+        name: "Xiaolai-MplusRounded-lokkang",
+        source: `url(${import.meta.env.VITE_FONT_URL}/Xiaolai-MplusRounded-lokkang.woff) format('woff')`,
+      },
+      "NotoSansTC-Huninn-tailam": {
+        displayName: "思源黑體（台南腔）",
+        name: "NotoSansTC-Huninn-tailam",
+        source: `url(${import.meta.env.VITE_FONT_URL}/NotoSansTC-Huninn-tailam.woff) format('woff')`,
+      },
+      "Xiaolai-MplusRounded-tailam": {
+        displayName: "小賴圓體（台南腔）",
+        name: "Xiaolai-MplusRounded-tailam",
+        source: `url(${import.meta.env.VITE_FONT_URL}/Xiaolai-MplusRounded-tailam.woff) format('woff')`,
+      },
+      "NotoSansTC-Huninn-kohiong": {
+        displayName: "思源黑體（高雄腔）",
+        name: "NotoSansTC-Huninn-kohiong",
+        source: `url(${import.meta.env.VITE_FONT_URL}/NotoSansTC-Huninn-kohiong.woff) format('woff')`,
+      },
+      "Xiaolai-MplusRounded-kohiong": {
+        displayName: "小賴圓體（高雄腔）",
+        name: "Xiaolai-MplusRounded-kohiong",
+        source: `url(${import.meta.env.VITE_FONT_URL}/Xiaolai-MplusRounded-kohiong.woff) format('woff')`,
+      },
+      "NotoSansTC-Huninn-gilan": {
+        displayName: "思源黑體（宜蘭腔）",
+        name: "NotoSansTC-Huninn-gilan",
+        source: `url(${import.meta.env.VITE_FONT_URL}/NotoSansTC-Huninn-gilan.woff) format('woff')`,
+      },
+      "Xiaolai-MplusRounded-gilan": {
+        displayName: "小賴圓體（宜蘭腔）",
+        name: "Xiaolai-MplusRounded-gilan",
+        source: `url(${import.meta.env.VITE_FONT_URL}/Xiaolai-MplusRounded-gilan.woff) format('woff')`,
+      },
+      "NotoSansTC-Huninn-manking": {
+        displayName: "思源黑體（馬公腔）",
+        name: "NotoSansTC-Huninn-manking",
+        source: `url(${import.meta.env.VITE_FONT_URL}/NotoSansTC-Huninn-manking.woff) format('woff')`,
+      },
+      "Xiaolai-MplusRounded-manking": {
+        displayName: "小賴圓體（馬公腔）",
+        name: "Xiaolai-MplusRounded-manking",
+        source: `url(${import.meta.env.VITE_FONT_URL}/Xiaolai-MplusRounded-manking.woff) format('woff')`,
       },
     },
   },

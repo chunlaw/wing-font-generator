@@ -36,6 +36,7 @@ export type TranslationKey =
   | "footer.links.source"
   | "footer.links.credits"
   | "footer.links.cli"
+  | "footer.links.reportError"
   | "footer.links.terms"
   | "footer.links.privacy"
   | "footer.credit"
@@ -67,10 +68,12 @@ export type TranslationKey =
   | "ack.hero.title"
   | "ack.hero.tagline"
   | "ack.intro"
+  | "ack.dataQuality.title"
+  | "ack.dataQuality.body"
   | "ack.taigi.title"
   | "ack.taigi.body"
-  | "ack.taigi.piauim"
-  | "ack.taigi.rimetlpa"
+  | "ack.taigi.sutian"
+  | "ack.taigi.chhoetaigi"
   | "ack.taigi.taigivs"
   | "ack.teochew.title"
   | "ack.teochew.body"
@@ -139,6 +142,30 @@ export type TranslationKey =
   | "home.features.f4.body"
   // Showcase (existing Main page)
   | "showcase.tryIt"
+  | "specimen.reportError"
+  | "showcase.userFonts.zh"
+  | "showcase.userFonts.en"
+  // Step 1 — recent (user-generated) fonts cache
+  | "step1.recentFonts.title"
+  | "step1.recentFonts.pin"
+  | "step1.recentFonts.unpin"
+  | "step1.recentFonts.pinCap"
+  | "step1.recentFonts.remove"
+  | "step1.recentFonts.clearAll"
+  | "step1.recentFonts.clearConfirm"
+  | "step1.recentFonts.redownloadTtf"
+  | "step1.recentFonts.redownloadWoff"
+  | "step1.recentFonts.justNow"
+  | "step1.recentFonts.minutesAgo"
+  | "step1.recentFonts.hoursAgo"
+  | "step1.recentFonts.daysAgo"
+  | "step1.recentFonts.viewSpecimen"
+  | "step3.family.collisionHint"
+  // Typography controls (shared across /showcase + /specimen)
+  | "displayOptions.toggle"
+  | "displayOptions.fontSize"
+  | "displayOptions.letterSpacing"
+  | "displayOptions.reset"
   // About page
   | "about.hero.title"
   | "about.hero.tagline"
@@ -200,6 +227,8 @@ export type TranslationKey =
   | "step2.import.useDefault"
   | "step2.import.preset"
   | "step2.import.presetCustom"
+  | "step2.import.presetCategory"
+  | "step2.import.presetChoose"
   | "step2.export.button"
   | "step2.clear.button"
   | "step2.count"
@@ -297,6 +326,7 @@ export const TRANSLATIONS: Record<Language, Record<TranslationKey, string>> = {
     "footer.links.source": "原始碼（GitHub）",
     "footer.links.credits": "鳴謝",
     "footer.links.cli": "命令列版本",
+    "footer.links.reportError": "回報標注錯誤",
     "footer.links.terms": "使用條款",
     "footer.links.privacy": "私隱政策",
     "footer.credit": "由 chunlaw 設計與開發",
@@ -333,13 +363,16 @@ export const TRANSLATIONS: Record<Language, Record<TranslationKey, string>> = {
     "ack.hero.tagline": "Wing Font 站喺好多開源資料庫同字型嘅肩膊上。",
     "ack.intro":
       "以下係令到 Wing Font 各種方言標注得以實現嘅開源資料庫同字型。多謝佢哋嘅無私分享。",
+    "ack.dataQuality.title": "資料來源同準確性",
+    "ack.dataQuality.body":
+      "Wing Font 係一個個人開源項目，作者並非語言學者。每一份預生成字型嘅拼音對應表，原始資料都嚟自下面列出嘅上游開源項目；但各個來源嘅格式、用詞、聲調符號慣例都唔同，所以資料係透過**人手編輯、正則轉換，加上 AI 輔助工具**（LLM 用嚟清理數據、程式化轉換用嚟統一聲調同詞語切分、有覆蓋唔到嘅地方亦會生成 fallback 讀音）正規化、去重、消歧。\n\n換言之，**錯誤難免** —— 多音字嘅預設讀音可能揀錯、某啲方言變體可能漏咗、多字詞嘅切分可能唔啱、聲調連讀（tone sandhi）嘅邊界個案有機會處理唔到。\n\n如果你係母語使用者、語言學者，或者單純眼利見到出錯，**歡迎你[喺 GitHub 提 issue](https://github.com/chunlaw/wing-font-generator/issues) 或者[加入 Telegram 群組](https://t.me/wingfont)** 指正——修正會喺下一次 CI 構建發佈。",
     "ack.taigi.title": "臺語／河洛話　字音資料",
     "ack.taigi.body":
-      "臺語（河洛話）嘅漢字讀音、台羅／白話字／閩拼之間嘅轉換對照表，以及聲調符號標注嘅規則，全部源自 AlanJui 嘅開源項目。",
-    "ack.taigi.piauim":
-      "漢字標音資料庫（Ho_Lok_Ue.db 之「漢字庫」、聲母／韻母／聲調對照表）同調符標注邏輯（mod_帶調符音標.py）。",
-    "ack.taigi.rimetlpa":
-      "台語音標（TLPA）RIME 輸入方案及字庫，提供另一套漢字讀音對照。",
+      "臺語（河洛話）嘅標準（優勢腔）讀音同九種「腔」嘅語音差異，源自教育部《臺灣台語常用詞辭典》（CC BY-ND 3.0 TW），台羅／白話字直接取自辭典，TLPA／閩拼則由台羅推導。多字詞逐字標音，可用作多音字辨義。",
+    "ack.taigi.sutian":
+      "教育部《臺灣台語常用詞辭典》（sutian / kautian.ods）—— 漢字標準讀音及「語音差異」各腔資料嘅權威來源。授權：創用 CC 姓名標示－禁止改作 3.0 臺灣。",
+    "ack.taigi.chhoetaigi":
+      "ChhoeTaigi 開源資料庫，提供與辭典一致嘅 KipUnicode（台羅）／PojUnicode（白話字）欄位，係本站實際使用嘅資料轉換版本。",
     "ack.taigi.taigivs":
       "方音符號（注音）同台灣語假名嘅轉寫資料（Apache-2.0），字音源自教育部臺灣台語常用詞辭典。",
     "ack.teochew.title": "潮州話　字音資料",
@@ -448,6 +481,31 @@ export const TRANSLATIONS: Record<Language, Record<TranslationKey, string>> = {
       "你的字體與對應表全程不會離開瀏覽器，所有處理皆在本機進行。",
     // Showcase
     "showcase.tryIt": "隨便試 (Try it!!)",
+    "specimen.reportError":
+      "發現標注有錯？歡迎[喺 GitHub 報告](https://github.com/chunlaw/wing-font-generator/issues/new?title=Annotation%20error%20in%20{name})",
+    "showcase.userFonts.zh": "自家生成字型",
+    "showcase.userFonts.en": "Your generated fonts",
+    "step1.recentFonts.title": "近期生成字型",
+    "step1.recentFonts.pin": "釘住",
+    "step1.recentFonts.unpin": "解除釘住",
+    "step1.recentFonts.pinCap": "最多釘 4 個 — 先取消其中一個",
+    "step1.recentFonts.remove": "移除",
+    "step1.recentFonts.clearAll": "全部清除",
+    "step1.recentFonts.clearConfirm":
+      "確定清除所有未釘住嘅近期字型？已釘住嘅會保留。",
+    "step1.recentFonts.redownloadTtf": "下載 .ttf",
+    "step1.recentFonts.redownloadWoff": "下載 .woff",
+    "step1.recentFonts.justNow": "剛剛",
+    "step1.recentFonts.minutesAgo": "{n} 分鐘前",
+    "step1.recentFonts.hoursAgo": "{n} 小時前",
+    "step1.recentFonts.daysAgo": "{n} 日前",
+    "step1.recentFonts.viewSpecimen": "查看示範",
+    "step3.family.collisionHint":
+      "你嘅近期生成裡面已經有同名嘅字型。如果你打算將兩個一齊安裝到電腦或者 Word，建議改個唔同名字避免衝突。",
+    "displayOptions.toggle": "顯示選項",
+    "displayOptions.fontSize": "字體大小",
+    "displayOptions.letterSpacing": "字距",
+    "displayOptions.reset": "還原預設",
     // About
     "about.hero.title": "了解 Wing Font",
     "about.hero.tagline":
@@ -460,7 +518,7 @@ export const TRANSLATIONS: Record<Language, Record<TranslationKey, string>> = {
       "若我能說萬國的方言，但時間有限 —— 一齊參與，一齊為語言為文字努力，社會一定會更好。開源亦讓設計師可以用自己鍾意的字體合成屬於自己的版本：很多字體本身有版權，我們無辦法拎來合成畀大家用，但你可以自己搞，開開心心。同一套生成流水線亦以 [Python 命令列工具](https://github.com/chunlaw/wing-font-generator/tree/main/python#readme) 形式發佈，方便批量生成、整合自己嘅工作流，或者喺完全離線環境下運行。",
     "about.dialects.title": "唔止廣東話",
     "about.dialects.body":
-      "Wing Font 由廣東話開始，但設計上一直想支援更多漢語方言。最新加入嘅係臺語（河洛話）：用思源黑體（Noto Sans TC）做底字，配搭 Huninn（粉圓）標注台羅（Tâi-lô）同白話字（POJ）嘅聲調符號，字音資料源自 AlanJui 嘅 Piau-Im 同 rime-tlpa 開源字庫。喺首頁可以睇到「家己的歌，家己唱；家己的字，家己選。」嘅台羅示範，亦可以喺製作頁揀台語拼音方案，自己整一套。歡迎更多方言加入。",
+      "Wing Font 由廣東話開始，但設計上一直想支援更多漢語方言。最新加入嘅係臺語（河洛話）：用思源黑體（Noto Sans TC）做底字，配搭 Huninn（粉圓）標注台羅（Tâi-lô）同白話字（POJ）嘅聲調符號，字音資料源自教育部《臺灣台語常用詞辭典》（經 ChhoeTaigi 轉換）。喺首頁可以睇到「家己的歌，家己唱；家己的字，家己選。」嘅台羅示範，亦可以喺製作頁揀台語拼音方案，自己整一套。歡迎更多方言加入。",
     "about.contribute.title": "一齊參與",
     "about.contribute.intro":
       "Wing Font 永遠不會完美，亦永遠歡迎更多人手。下面係幾條最缺人嘅路。",
@@ -472,7 +530,7 @@ export const TRANSLATIONS: Record<Language, Record<TranslationKey, string>> = {
       "現時拼音擺位未必好突出。歡迎加入 Telegram 群組，傾下應該用咩字體、比例又應該係點。",
     "about.contribute.data.title": "詞庫",
     "about.contribute.data.body":
-      "暫時最缺係詞典 —— 同埋多音字嘅預設讀音應該點揀。如果你對某種語言有研究，可以加入 Telegram 群討論。",
+      "拼音對應表係本項目最容易出錯嘅部分 —— 資料嚟自唔同上游來源，加上 AI 輔助處理，難免有錯漏。如果你係母語使用者，發現有字讀錯、有變體漏咗，或者多字詞嘅切分唔啱，最簡單嘅做法係[喺 GitHub 提 issue](https://github.com/chunlaw/wing-font-generator/issues) 或者加入 [Telegram 群組](https://t.me/wingfont) 直接話我哋知。",
     "about.support.title": "想表達支持？",
     "about.support.body":
       "多謝先。話說我都有做巴士 app —— 不妨試埋 [hkbus.app](https://hkbus.app)。喺 [GitHub Sponsors](https://github.com/sponsors/chunlaw) 撐我一啲都好歡迎。",
@@ -519,6 +577,8 @@ export const TRANSLATIONS: Record<Language, Record<TranslationKey, string>> = {
     "step2.import.useDefault": "使用預設 (canto-lshk)",
     "step2.import.preset": "預設字詞配對",
     "step2.import.presetCustom": "自訂",
+    "step2.import.presetCategory": "分類",
+    "step2.import.presetChoose": "選擇方案…",
     "step2.export.button": "匯出 CSV",
     "step2.clear.button": "全部清除",
     "step2.count": "{count} 個對應",
@@ -624,6 +684,7 @@ export const TRANSLATIONS: Record<Language, Record<TranslationKey, string>> = {
     "footer.links.source": "Source (GitHub)",
     "footer.links.credits": "Acknowledgements",
     "footer.links.cli": "Command-line version",
+    "footer.links.reportError": "Report an annotation error",
     "footer.links.terms": "Terms",
     "footer.links.privacy": "Privacy",
     "footer.credit": "Designed and built by chunlaw",
@@ -661,13 +722,16 @@ export const TRANSLATIONS: Record<Language, Record<TranslationKey, string>> = {
       "Wing Font stands on the shoulders of open-source data and type.",
     "ack.intro":
       "These open dictionaries and fonts make Wing Font's dialect annotations possible. Thank you to everyone who shared their work.",
+    "ack.dataQuality.title": "Sources & accuracy",
+    "ack.dataQuality.body":
+      "Wing Font is a personal open-source project. The author is not a trained linguist. Every romanization table shipped with the pre-built fonts originates from one of the upstream open-source sources credited below — but those sources are heterogeneous in format, vocabulary, and tone-mark convention, so the data has been **normalised, deduplicated, and disambiguated using a mix of hand editing, regex, and AI-assisted tooling** (LLMs for cleanup; programmatic transformation for tone-mark and segmentation conversions; generated fallback readings where coverage gaps existed).\n\nThis means **errors are likely** — wrong default readings for polyphonic characters, missing dialect-specific variants, occasional mis-segmented multi-character entries, edge cases around tone sandhi.\n\nNative speakers, linguists, and curious readers who spot a mistake are warmly invited to **[file a GitHub issue](https://github.com/chunlaw/wing-font-generator/issues) or join the [Telegram group](https://t.me/wingfont)** — fixes ship in the next CI build.",
     "ack.taigi.title": "Taiwanese / Southern Min — reading data",
     "ack.taigi.body":
-      "The Taiwanese (Hō-ló) character readings, the cross-scheme conversion tables (Tâi-lô / POJ / 閩拼) and the tone-mark placement logic all come from AlanJui's open-source projects.",
-    "ack.taigi.piauim":
-      "Character-reading database — the 漢字庫 table of Ho_Lok_Ue.db plus the initial / final / tone conversion tables — and the tone-mark logic (mod_帶調符音標.py).",
-    "ack.taigi.rimetlpa":
-      "The TLPA RIME input schema and dictionaries, a second source of character readings.",
+      "The standard (優勢腔) readings and the nine accent (腔) variants come from the MOE 臺灣台語常用詞辭典 (sutian / kautian.ods, CC BY-ND 3.0 TW). Tâi-lô and POJ are taken straight from the dictionary; TLPA and 閩拼 are derived from Tâi-lô. Multi-character words carry one syllable per character so they drive 多音字 disambiguation.",
+    "ack.taigi.sutian":
+      "MOE 臺灣台語常用詞辭典 (sutian / kautian.ods) — the authoritative source for standard character readings and the per-accent 語音差異 table. Licence: CC BY-ND 3.0 Taiwan.",
+    "ack.taigi.chhoetaigi":
+      "ChhoeTaigi open database — the faithful conversion of the MOE dictionary whose KipUnicode (Tâi-lô) / PojUnicode (POJ) columns Wing Font actually consumes.",
     "ack.taigi.taigivs":
       "Transcription data for 方音符號 (Taiwanese Phonetic Symbols) and 台灣語假名 (Taiwanese kana) (Apache-2.0); readings sourced from the MOE Taiwanese dictionary.",
     "ack.teochew.title": "Teochew — reading data",
@@ -780,6 +844,31 @@ export const TRANSLATIONS: Record<Language, Record<TranslationKey, string>> = {
       "Your fonts and mapping never leave your browser. Everything runs client-side.",
     // Showcase
     "showcase.tryIt": "Try typing here",
+    "specimen.reportError":
+      "Spot an annotation error? Please [report it on GitHub](https://github.com/chunlaw/wing-font-generator/issues/new?title=Annotation%20error%20in%20{name}).",
+    "showcase.userFonts.zh": "自家生成字型",
+    "showcase.userFonts.en": "Your generated fonts",
+    "step1.recentFonts.title": "Recent generations",
+    "step1.recentFonts.pin": "Pin",
+    "step1.recentFonts.unpin": "Unpin",
+    "step1.recentFonts.pinCap": "Unpin one first (max 4 pinned)",
+    "step1.recentFonts.remove": "Remove",
+    "step1.recentFonts.clearAll": "Clear all",
+    "step1.recentFonts.clearConfirm":
+      "Clear all unpinned recent fonts? Pinned entries will stay.",
+    "step1.recentFonts.redownloadTtf": "Download .ttf",
+    "step1.recentFonts.redownloadWoff": "Download .woff",
+    "step1.recentFonts.justNow": "just now",
+    "step1.recentFonts.minutesAgo": "{n} min ago",
+    "step1.recentFonts.hoursAgo": "{n} h ago",
+    "step1.recentFonts.daysAgo": "{n} d ago",
+    "step1.recentFonts.viewSpecimen": "View specimen",
+    "step3.family.collisionHint":
+      "You've already generated a font with this family name. If you plan to install both on your OS or in Word, consider a distinct name to avoid font-table conflicts.",
+    "displayOptions.toggle": "Display options",
+    "displayOptions.fontSize": "Font size",
+    "displayOptions.letterSpacing": "Letter spacing",
+    "displayOptions.reset": "Reset to default",
     // About
     "about.hero.title": "About Wing Font",
     "about.hero.tagline":
@@ -792,7 +881,7 @@ export const TRANSLATIONS: Record<Language, Record<TranslationKey, string>> = {
       "If I were to speak in all the tongues of men, time would still be finite — but together we can push language and writing forward. Open source also lets designers compose annotated variants of their own typefaces. Many fonts are under restrictive licences and we can't redistribute the derived output ourselves; but a designer with their own font and the source code can build their version and ship it themselves. To that end, the same generation pipeline also ships as a [Python command-line tool](https://github.com/chunlaw/wing-font-generator/tree/main/python#readme) — handy for batch jobs, integrating into your own workflow, or running fully offline.",
     "about.dialects.title": "Beyond Cantonese",
     "about.dialects.body":
-      "Wing Font began with Cantonese, but it was always meant to carry more Sinitic topolects. The newest addition is Taiwanese / Southern Min (Hō-ló): Noto Sans TC as the base character font, with Huninn (jf-openhuninn) setting the Tâi-lô and Pe̍h-ōe-jī (POJ) tone marks. The reading data comes from AlanJui's open Piau-Im and rime-tlpa dictionaries. You can see the Tâi-lô sample 「家己的歌，家己唱；家己的字，家己選。」 on the home page, and pick a Taiwanese romanization scheme in the generator to build your own. More dialects are welcome.",
+      "Wing Font began with Cantonese, but it was always meant to carry more Sinitic topolects. The newest addition is Taiwanese / Southern Min (Hō-ló): Noto Sans TC as the base character font, with Huninn (jf-openhuninn) setting the Tâi-lô and Pe̍h-ōe-jī (POJ) tone marks. The reading data comes from the MOE 臺灣台語常用詞辭典 (sutian, via ChhoeTaigi). You can see the Tâi-lô sample 「家己的歌，家己唱；家己的字，家己選。」 on the home page, and pick a Taiwanese romanization scheme in the generator to build your own. More dialects are welcome.",
     "about.contribute.title": "Get involved",
     "about.contribute.intro":
       "Wing Font is never finished. These are the gaps where new hands help the most.",
@@ -804,7 +893,7 @@ export const TRANSLATIONS: Record<Language, Record<TranslationKey, string>> = {
       "The current annotation placement isn't always optimal. Join the Telegram group to discuss which typefaces and proportions work best.",
     "about.contribute.data.title": "Mappings",
     "about.contribute.data.body":
-      "The biggest gap right now is mapping data — and deciding which reading should be the default for polyphonic characters. If you've studied a particular language, the Telegram group is where these conversations happen.",
+      "Romanization data is the most error-prone part of the project — it's sourced from heterogeneous upstream projects and processed with AI-assisted tooling, so wrong readings, missing dialect variants, and bad multi-character segmentation are all plausible. If you spot one in a dialect you know, the easiest path is [filing a GitHub issue](https://github.com/chunlaw/wing-font-generator/issues) or joining the [Telegram group](https://t.me/wingfont).",
     "about.support.title": "Want to show support?",
     "about.support.body":
       "Thank you in advance. I also built a Hong Kong bus app — try [hkbus.app](https://hkbus.app) if you're local. Sponsoring on [GitHub Sponsors](https://github.com/sponsors/chunlaw) is also genuinely appreciated.",
@@ -852,6 +941,8 @@ export const TRANSLATIONS: Record<Language, Record<TranslationKey, string>> = {
     "step2.import.useDefault": "Use default (canto-lshk)",
     "step2.import.preset": "Built-in mapping",
     "step2.import.presetCustom": "Custom",
+    "step2.import.presetCategory": "Category",
+    "step2.import.presetChoose": "Choose a scheme…",
     "step2.export.button": "Export CSV",
     "step2.clear.button": "Clear all",
     "step2.count": "{count} entries",

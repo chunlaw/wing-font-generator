@@ -121,6 +121,26 @@ const Footer = () => {
               {t("footer.links.credits")}
             </Link>
             {/*
+              Mapping-correction CTA. Most error reports we want
+              come from native speakers / linguists who notice a
+              wrong romanization while browsing the site — they're
+              the audience for a footer-visible "report this" link.
+              Goes straight to a pre-titled GitHub issue so the
+              first input they need to provide is the actual
+              correction, not the boilerplate.
+            */}
+            <Link
+              href="https://github.com/chunlaw/wing-font-generator/issues/new?title=Annotation%20error"
+              target="_blank"
+              rel="noopener noreferrer"
+              variant="body2"
+              underline="hover"
+              color="text.secondary"
+              sx={{ "&:hover": { color: "primary.main" } }}
+            >
+              {t("footer.links.reportError")}
+            </Link>
+            {/*
               Legal links — Terms first (it explains the licensing
               model that users are most likely to care about), then
               Privacy (which is short because we collect nothing).

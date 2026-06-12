@@ -32,6 +32,7 @@ import {
 } from "../../../utils/wingfontPresets";
 import { AxisLocation, FontAxis } from "../types";
 import GlyphPreview from "../GlyphPreview";
+import RecentFontsChips from "../../../components/RecentFontsChips";
 
 // Sample characters chosen to exercise both fonts in their intended use:
 // CJK base glyphs for the base font, ASCII letters + digits for the
@@ -86,6 +87,15 @@ const Step1Fonts = () => {
       </Box>
 
       {loadError && <Alert severity="error">{loadError}</Alert>}
+
+      {/*
+        Recent-generations chips. Hidden when the IndexedDB cache is
+        empty (RecentFontsChips returns null in that case), so a
+        first-time visitor sees no extra UI. After their first
+        successful generation, this row surfaces here so they can
+        re-download / preview / pin without rerunning the pipeline.
+      */}
+      <RecentFontsChips />
 
       <Stack
         direction={{ xs: "column", md: "row" }}

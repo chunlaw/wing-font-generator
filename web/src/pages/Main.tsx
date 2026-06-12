@@ -3,9 +3,7 @@ import {
   Chip,
   CircularProgress,
   Divider,
-  SxProps,
   TextField,
-  Theme,
   Typography,
 } from "@mui/material";
 import { useContext, useEffect, useRef, useState } from "react";
@@ -20,6 +18,21 @@ import { FontHeader } from "../components/components/FonttHeader";
 import FontPicker from "../components/main/FontPicker";
 import { useTranslation } from "../i18n/LanguageContext";
 import { FontOption, findDialectKey, getDialectLabel } from "../utils/const";
+import { useRecentFonts } from "../RecentFontsContext";
+import TypographyControls, {
+  useTypographySettings,
+  type TypographySettings,
+} from "../components/TypographyControls";
+
+// Showcase-specific default: 48 px — matches the previous
+// md-breakpoint rendering, generous enough that the annotation
+// strokes (~25% of the base char height per default anno_scale)
+// render in the legible 10-12 px zone. Reset to this value via
+// the TypographyControls "Reset" link.
+const SHOWCASE_TYPO_DEFAULTS: TypographySettings = {
+  fontSizePx: 48,
+  letterSpacingEm: 0,
+};
 import type { Language } from "../i18n/translations";
 
 // Query-string parameter for the picked-font list. Comma-separated
@@ -51,6 +64,15 @@ const Main = () => {
   // setInterval and the rows drifted out of phase, which read as
   // accidental flicker rather than intentional rotation.
   const sharedTick = useSharedTick();
+
+  // Typography preferences (font size + letter spacing) shared
+  // across all rendered cards. Persisted to localStorage so the
+  // user's last-set size carries across /showcase ↔ /specimen
+  // visits — a designer who picks 56 px while looking at one font
+  // sees the next font at 56 px too.
+  const [typoSettings, setTypoSettings] = useTypographySettings(
+    SHOWCASE_TYPO_DEFAULTS,
+  );
 
   // ── URL ↔ pickedFonts synchronisation ─────────────────────────────
   // Two effects:
@@ -121,6 +143,11 @@ const Main = () => {
         fullWidth
       />
       <FontPicker />
+      <TypographyControls
+        defaults={SHOWCASE_TYPO_DEFAULTS}
+        settings={typoSettings}
+        setSettings={setTypoSettings}
+      />
       {pickedFonts.map((pickedFont, idx) => (
         <FontShowcaseCard
           key={`${pickedFont.name}-showcase`}
@@ -130,6 +157,7 @@ const Main = () => {
           lang={lang}
           isLoading={Boolean(loadingFonts[pickedFont.name])}
           sharedTick={sharedTick}
+          typoSettings={typoSettings}
         />
       ))}
     </Box>
@@ -169,6 +197,13 @@ interface FontShowcaseCardProps {
    * the per-card-timer behaviour.
    */
   sharedTick: number;
+  /**
+   * Active font-size + letter-spacing from the page-level
+   * TypographyControls. Threaded down so every card renders at the
+   * same size — the controls drive the whole comparison view in
+   * lockstep, not per-card.
+   */
+  typoSettings: TypographySettings;
 }
 
 const FontShowcaseCard = ({
@@ -178,19 +213,36 @@ const FontShowcaseCard = ({
   lang,
   isLoading,
   sharedTick,
+  typoSettings,
 }: FontShowcaseCardProps) => {
   const navigate = useNavigate();
+  const { entries: recentEntries } = useRecentFonts();
+  const { t } = useTranslation();
   // Reverse-lookup the dialect from the font name. Returns undefined
   // for stale localStorage entries pointing at a font we no longer
   // expose — render without the chip rather than crashing.
-  const dialectKey = findDialectKey(pickedFont.name);
-  const dialectLabel = dialectKey
-    ? getDialectLabel(dialectKey, lang)
-    : undefined;
+  //
+  // User-generated fonts (cached via IndexedDB) live outside the
+  // static dialect catalog. They get a special "Your generated
+  // fonts" label but no associated dialect rotation pool — the
+  // rotation falls back to the flat TEMPLATES list because we
+  // don't know which dialect the user's mapping CSV represented.
+  const builtInDialectKey = findDialectKey(pickedFont.name);
+  const isUserFont =
+    !builtInDialectKey &&
+    recentEntries.some((e) => e.id === pickedFont.name);
+  const dialectLabel = builtInDialectKey
+    ? getDialectLabel(builtInDialectKey, lang)
+    : isUserFont
+      ? lang === "zh"
+        ? t("showcase.userFonts.zh")
+        : t("showcase.userFonts.en")
+      : undefined;
   // Per-card rotation, filtered by this card's dialect, driven by
   // the shared tick so all cards roll together. When dialectKey is
-  // undefined the hook falls back to the global flat TEMPLATES list.
-  const msgShown = useTemplateRotation(msg, dialectKey, sharedTick);
+  // undefined (e.g. for user fonts, or stale entries) the hook
+  // falls back to the global flat TEMPLATES list.
+  const msgShown = useTemplateRotation(msg, builtInDialectKey, sharedTick);
 
   // ── Fade transition between rotations ────────────────────────────
   // When the shared tick advances, `msgShown` changes synchronously
@@ -285,7 +337,15 @@ const FontShowcaseCard = ({
       <Box>
         <Typography
           sx={{
-            ...msgSx,
+            // Apply the user-tunable typography from TypographyControls.
+            // fontSizePx applies uniformly across breakpoints — the
+            // user is making an explicit choice, so we trade the
+            // responsive ladder for predictable WYSIWYG output.
+            // letterSpacingEm threads in as em (so spacing scales
+            // proportionally with size when the user adjusts both).
+            fontSize: `${typoSettings.fontSizePx}px`,
+            letterSpacing: `${typoSettings.letterSpacingEm}em`,
+            textWrap: "nowrap" as const,
             cursor: "pointer",
             // Composed opacity drives both:
             //   * The font-loading dim (0.35 while FontFace is
@@ -310,16 +370,11 @@ const FontShowcaseCard = ({
   );
 };
 
-const msgSx: SxProps<Theme> = {
-  // Responsive: bumped up from the original 22/28/36 ramp because the
-  // annotation strokes — which render at roughly 25% of the base
-  // character height per the default `anno_scale` — became
-  // illegible at the small end (~5-6px tall on phones, ~9px on
-  // desktop). The new ramp keeps the base char comfortably scannable
-  // while pushing the annotation into the 9-12 px range where Latin
-  // letters and pinyin tone marks read cleanly without anti-aliasing
-  // mush. textWrap=nowrap keeps a single sample on one line so
-  // rotation between lyrics doesn't reflow the row height.
-  fontSize: { xs: 28, sm: 36, md: 48 },
-  textWrap: "nowrap",
-};
+// NOTE: the static `msgSx` (responsive xs:28/sm:36/md:48 ladder)
+// that used to live here has been retired. Per-page TypographyControls
+// drive font-size and letter-spacing via the localStorage-persisted
+// `typoSettings` prop threaded into each FontShowcaseCard. The
+// previous responsive ladder is captured as the SHOWCASE_TYPO_DEFAULTS
+// (single value 36 px) that resets restore — a slight compromise on
+// the desktop ramp in exchange for a single source of truth the
+// user can tune.

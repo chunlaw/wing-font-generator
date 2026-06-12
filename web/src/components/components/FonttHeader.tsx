@@ -36,9 +36,22 @@ export const FontHeader = ({ family, displayName, idx }: FontHeaderProps) => {
     <Box
       display="flex"
       gap={1}
-      alignItems="center"
+      // ── Responsive direction ──────────────────────────────────────
+      // Desktop (sm+): name on the left, download buttons on the
+      // right, both centred on a single row — the natural "card
+      // header" reading.
+      //
+      // Mobile (xs): switch to column. Some font displayNames are
+      // long (e.g. 「思源黑體 香港（香港語言學會）」) and on a
+      // ~360 px viewport there isn't room for that plus two
+      // download buttons on one row. Previously the row used
+      // flex-wrap, which let the buttons orphan onto a second row
+      // anchored to the right edge — visually disconnected from
+      // the font they belong to. Stacking explicitly keeps both
+      // groups left-anchored and reads as two intentional rows.
+      flexDirection={{ xs: "column", sm: "row" }}
+      alignItems={{ xs: "flex-start", sm: "center" }}
       justifyContent="space-between"
-      flexWrap="wrap"
     >
       <Box display="flex" gap={1} alignItems="center">
         {displayName}
@@ -48,7 +61,19 @@ export const FontHeader = ({ family, displayName, idx }: FontHeaderProps) => {
           </IconButton>
         )}
       </Box>
-      <Box display="flex" gap={1} alignItems="center">
+      <Box
+        display="flex"
+        gap={1}
+        alignItems="center"
+        // Negative margin pulls the button cluster back to the
+        // visual left edge when it wraps onto its own mobile row
+        // — the .ttf/.woff buttons have ~12 px of internal padding
+        // that otherwise makes them appear to sit indented from
+        // the font name above. Cancels out cleanly on desktop
+        // because alignItems="center" + justifyContent="space-between"
+        // doesn't care about the horizontal nudge.
+        sx={{ ml: { xs: -1, sm: 0 } }}
+      >
         {/*
           Two adjacent text buttons rather than a ButtonGroup so the
           rounded-pill shape on each individual button reads as

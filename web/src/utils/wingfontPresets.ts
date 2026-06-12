@@ -235,6 +235,12 @@ export const BUILT_IN_ANNO_FONTS: BuiltInPreset[] = [
     url: "/wingfont/NotoSansKR-VF.ttf",
     filename: "NotoSansKR-VF.ttf",
   },
+  {
+    key: "anno-notonastaliq-urdu",
+    label: "Noto Nastaliq Urdu (اردو)",
+    url: "/wingfont/NotoNastaliqUrdu-VF.ttf",
+    filename: "NotoNastaliqUrdu-VF.ttf",
+  },
   // ─ Mengshen-equivalent annotation fonts (普通話 pinyin Latin) ─────
   //
   // The pinyin (標注) faces for the two Mengshen-style products. M+ 1m
@@ -329,14 +335,30 @@ export const BUILT_IN_MAPPINGS: BuiltInPreset[] = [
     filename: "canto-katakana.csv",
     group: "粵語拼寫 (Cantonese, other scripts)",
   },
+  {
+    key: "canto-filipino",
+    label: "ᜊᜌ᜔ᜊᜌᜒᜈ᜔ (Baybayin)",
+    url: "/wingfont/mappings/canto-filipino.csv",
+    filename: "canto-filipino.csv",
+    group: "粵語拼寫 (Cantonese, other scripts)",
+  },
+  {
+    key: "canto-urdu",
+    label: "اردو (Urdu)",
+    url: "/wingfont/mappings/canto-urdu.csv",
+    filename: "canto-urdu.csv",
+    group: "粵語拼寫 (Cantonese, other scripts)",
+  },
   // Taiwanese / Southern Min (河洛話) — pair these with the Noto Sans
   // TC base and the Huninn annotation font. The two "-toned" CSVs use
   // diacritic tone marks (what the showcase fonts ship); the four
-  // numeric-tone CSVs keep tones as trailing digits. Data source:
-  // AlanJui/Piau-Im + AlanJui/rime-tlpa.
+  // numeric-tone CSVs keep tones as trailing digits. These six are the
+  // MOE 優勢腔 (standard) reading, from the 臺灣台語常用詞辭典 (sutian /
+  // kautian.ods) via ChhoeTaigi — multi-character words carry one
+  // syllable per character so the pipeline disambiguates 多音字.
   {
     key: "taigi-tl-toned",
-    label: "台羅 (Tâi-lô, 調符)",
+    label: "台羅 (Tâi-lô, 調符・優勢腔)",
     url: "/wingfont/mappings/taigi-tl-toned.csv",
     filename: "taigi-tl-toned.csv",
     group: "台語 (Taiwanese / Southern Min)",
@@ -374,6 +396,75 @@ export const BUILT_IN_MAPPINGS: BuiltInPreset[] = [
     label: "閩拼方案 (BP, 調號)",
     url: "/wingfont/mappings/taigi-bp.csv",
     filename: "taigi-bp.csv",
+    group: "台語 (Taiwanese / Southern Min)",
+  },
+  // Nine 腔 (accent) survey points in Tâi-lô, from the sutian 語音差異
+  // table: each reads the ~1,500 documented headwords its own way (the
+  // rest fall back to 優勢腔). 漳/泉 splits like 雞 ke/kue/kere,
+  // 飯 pn̄g/puīnn are real here. Grouped together with the 優勢腔 standard
+  // schemes above under one 台語 category. NB the 優勢腔 standard is the
+  // MOE prestige reading and is not one of these nine points.
+  {
+    key: "taigi-tl-kohiong",
+    label: "高雄腔 (Kaohsiung, 混合腔)",
+    url: "/wingfont/mappings/taigi-tl-kohiong.csv",
+    filename: "taigi-tl-kohiong.csv",
+    group: "台語 (Taiwanese / Southern Min)",
+  },
+  {
+    key: "taigi-tl-tailam",
+    label: "台南腔 (Tainan)",
+    url: "/wingfont/mappings/taigi-tl-tailam.csv",
+    filename: "taigi-tl-tailam.csv",
+    group: "台語 (Taiwanese / Southern Min)",
+  },
+  {
+    key: "taigi-tl-taipak",
+    label: "台北腔 (Taipei, 偏泉)",
+    url: "/wingfont/mappings/taigi-tl-taipak.csv",
+    filename: "taigi-tl-taipak.csv",
+    group: "台語 (Taiwanese / Southern Min)",
+  },
+  {
+    key: "taigi-tl-sannkiap",
+    label: "三峽腔 (Sanxia, 偏泉・kere)",
+    url: "/wingfont/mappings/taigi-tl-sannkiap.csv",
+    filename: "taigi-tl-sannkiap.csv",
+    group: "台語 (Taiwanese / Southern Min)",
+  },
+  {
+    key: "taigi-tl-sintik",
+    label: "新竹腔 (Hsinchu, 偏泉)",
+    url: "/wingfont/mappings/taigi-tl-sintik.csv",
+    filename: "taigi-tl-sintik.csv",
+    group: "台語 (Taiwanese / Southern Min)",
+  },
+  {
+    key: "taigi-tl-lokkang",
+    label: "鹿港腔 (Lukang, 泉/海口)",
+    url: "/wingfont/mappings/taigi-tl-lokkang.csv",
+    filename: "taigi-tl-lokkang.csv",
+    group: "台語 (Taiwanese / Southern Min)",
+  },
+  {
+    key: "taigi-tl-taitiong",
+    label: "台中腔 (Taichung, 偏漳)",
+    url: "/wingfont/mappings/taigi-tl-taitiong.csv",
+    filename: "taigi-tl-taitiong.csv",
+    group: "台語 (Taiwanese / Southern Min)",
+  },
+  {
+    key: "taigi-tl-gilan",
+    label: "宜蘭腔 (Yilan, 偏漳)",
+    url: "/wingfont/mappings/taigi-tl-gilan.csv",
+    filename: "taigi-tl-gilan.csv",
+    group: "台語 (Taiwanese / Southern Min)",
+  },
+  {
+    key: "taigi-tl-manking",
+    label: "馬公腔 (Magong / 澎湖, 偏泉)",
+    url: "/wingfont/mappings/taigi-tl-manking.csv",
+    filename: "taigi-tl-manking.csv",
     group: "台語 (Taiwanese / Southern Min)",
   },
   // Non-Latin Taiwanese annotation systems (from ButTaiwan/taigivs).

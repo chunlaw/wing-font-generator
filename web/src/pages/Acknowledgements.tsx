@@ -1,10 +1,10 @@
 /**
  * Acknowledgements (/credits) — credits the open-source datasets and
  * fonts Wing Font builds on. Added when the Taiwanese / Southern Min
- * showcase landed: its character readings, cross-romanization tables
- * and tone-mark logic all come from AlanJui's open repositories, and
- * the showcase is set in Noto Sans TC + Huninn — all of which deserve
- * visible attribution beyond a line in the README.
+ * showcase landed: its character readings come from the MOE 臺灣台語
+ * 常用詞辭典 (sutian, via ChhoeTaigi), and the showcase is set in Noto
+ * Sans TC + Huninn — all of which deserve visible attribution beyond a
+ * line in the README.
  *
  * Layout mirrors About.tsx: a centered hero, an intro paragraph, then
  * grouped sections. Each source is a card linking out to its upstream
@@ -22,6 +22,7 @@ import { OpenInNew } from "@mui/icons-material";
 import { useNavigate } from "react-router-dom";
 import { useTranslation } from "../i18n/LanguageContext";
 import { useDocumentMeta } from "../utils/hooks";
+import Markdown from "../components/Markdown";
 import type { TranslationKey } from "../i18n/translations";
 
 interface Source {
@@ -38,14 +39,14 @@ interface Source {
 // python/README.md.
 const TAIGI_SOURCES: Source[] = [
   {
-    name: "AlanJui / Piau-Im",
-    url: "https://github.com/AlanJui/Piau-Im",
-    descKey: "ack.taigi.piauim",
+    name: "教育部《臺灣台語常用詞辭典》(MOE sutian)",
+    url: "https://sutian.moe.edu.tw/",
+    descKey: "ack.taigi.sutian",
   },
   {
-    name: "AlanJui / rime-tlpa",
-    url: "https://github.com/AlanJui/rime-tlpa",
-    descKey: "ack.taigi.rimetlpa",
+    name: "ChhoeTaigi / ChhoeTaigiDatabase",
+    url: "https://github.com/ChhoeTaigi/ChhoeTaigiDatabase",
+    descKey: "ack.taigi.chhoetaigi",
   },
   {
     name: "ButTaiwan / taigivs",
@@ -231,6 +232,25 @@ const Acknowledgements = () => {
         <Typography variant="body1" color="text.secondary">
           {t("ack.intro")}
         </Typography>
+      </Box>
+
+      {/*
+        Sources & accuracy — an explicit editorial disclosure that
+        the author isn't a trained linguist and the romanization
+        data was normalised / disambiguated with AI-assisted tooling
+        on top of the upstream open-source sources. Sits HERE, right
+        after the intro and BEFORE the per-language sections, so
+        any reader scanning the page understands the editorial frame
+        before reading "we credit project X for data Y". Rendered
+        through <Markdown> so the body can link out to GitHub
+        Issues / Telegram inline and use **bold** for the key
+        admissions ("errors are likely").
+      */}
+      <Box maxWidth={880} mx="auto" width="100%" px={2}>
+        <Typography variant="h4" gutterBottom>
+          {t("ack.dataQuality.title")}
+        </Typography>
+        <Markdown>{t("ack.dataQuality.body")}</Markdown>
       </Box>
 
       {/* Taiwanese / Southern Min — the section this page exists for */}

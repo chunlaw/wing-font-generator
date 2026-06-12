@@ -68,23 +68,43 @@ const MANIFEST = [
   ["mappings/canto-thai.csv", "mappings/canto-thai.csv"],
   ["mappings/canto-korean.csv", "mappings/canto-korean.csv"],
   ["mappings/canto-katakana.csv", "mappings/canto-katakana.csv"],
+  ["mappings/canto-filipino.csv", "mappings/canto-filipino.csv"],
+  ["mappings/canto-urdu.csv", "mappings/canto-urdu.csv"],
   ["mappings/cangjie.csv", "mappings/cangjie.csv"],
-  // Mandarin (普通話 / 國語) — Hanyu Pinyin in numeric-tone form
-  // (e.g. `ling2`, `yuan2`). The file is large (~95k rows, ~3 MB)
-  // because it covers the full Unihan CJK ideograph range; the
-  // in-browser pipeline will surface every entry that matches a glyph
-  // in the user's selected base font. Pair naturally with Noto Sans
-  // SC (or any other base font) + Noto Serif / Huninn annotation.
-  ["mappings/mandarin.csv", "mappings/mandarin.csv"],
+  // Mandarin — Hanyu Pinyin in numeric-tone form (e.g. `ling2`,
+  // `yuan2`). Two regional variants, each ~95k rows / ~3 MB covering
+  // the full Unihan CJK ideograph range; the in-browser pipeline
+  // surfaces every entry that matches a glyph in the user's selected
+  // base font. Pair naturally with Noto Sans SC (or any base font) +
+  // Noto Serif / Huninn annotation.
+  //   • mandarin-cn.csv — Mainland 普通話 (also Singapore / Malaysia).
+  //   • mandarin-tw.csv — Taiwan 國語 (753 single-char defaults
+  //     re-derived from the MOE 國語辭典).
+  ["mappings/mandarin-cn.csv", "mappings/mandarin-cn.csv"],
+  ["mappings/mandarin-tw.csv", "mappings/mandarin-tw.csv"],
   // Taiwanese / Southern Min (河洛話) mappings — surfaced as Step 2
-  // presets for the Noto Sans TC + Huninn pairing. Two diacritic
-  // ("-toned") schemes plus four numeric-tone schemes.
+  // presets for the Noto Sans TC + Huninn pairing. The standard (優勢腔)
+  // reading data is the MOE 臺灣台語常用詞辭典 (sutian / kautian.ods) via
+  // ChhoeTaigi — KipUnicode→Tâi-lô, PojUnicode→POJ, TLPA/BP derived. Word
+  // entries are space-separated per character so they drive 多音字
+  // disambiguation. Two diacritic schemes + four numeric-tone schemes.
   ["mappings/taigi-tl-toned.csv", "mappings/taigi-tl-toned.csv"],
   ["mappings/taigi-poj-toned.csv", "mappings/taigi-poj-toned.csv"],
   ["mappings/taigi-tl.csv", "mappings/taigi-tl.csv"],
   ["mappings/taigi-poj.csv", "mappings/taigi-poj.csv"],
   ["mappings/taigi-tlpa.csv", "mappings/taigi-tlpa.csv"],
   ["mappings/taigi-bp.csv", "mappings/taigi-bp.csv"],
+  // Nine 腔 (accent) variants in Tâi-lô, from the same sutian 語音差異
+  // table — one reading per accent survey point. Tâi-lô tone-diacritic.
+  ["mappings/taigi-tl-taipak.csv", "mappings/taigi-tl-taipak.csv"],
+  ["mappings/taigi-tl-sannkiap.csv", "mappings/taigi-tl-sannkiap.csv"],
+  ["mappings/taigi-tl-sintik.csv", "mappings/taigi-tl-sintik.csv"],
+  ["mappings/taigi-tl-taitiong.csv", "mappings/taigi-tl-taitiong.csv"],
+  ["mappings/taigi-tl-lokkang.csv", "mappings/taigi-tl-lokkang.csv"],
+  ["mappings/taigi-tl-tailam.csv", "mappings/taigi-tl-tailam.csv"],
+  ["mappings/taigi-tl-kohiong.csv", "mappings/taigi-tl-kohiong.csv"],
+  ["mappings/taigi-tl-gilan.csv", "mappings/taigi-tl-gilan.csv"],
+  ["mappings/taigi-tl-manking.csv", "mappings/taigi-tl-manking.csv"],
   // Non-Latin Taiwanese annotation: 方音符號 (TPS, bopomofo-extended —
   // pair with a Bopomofo-covering CJK font like Noto Sans TC) and
   // 台灣語假名 (Taiwanese kana — pair with Noto Sans JP). Derived from
@@ -125,6 +145,12 @@ const MANIFEST = [
   ],
   ["input_fonts/NotoSansJP-VariableFont_wght.ttf", "NotoSansJP-VF.ttf"],
   ["input_fonts/NotoSansKR-VariableFont_wght.ttf", "NotoSansKR-VF.ttf"],
+  // Urdu (Nastaʿlīq) annotation font for the canto-urdu mapping.
+  // Same "-VF" rename for URL cleanliness.
+  [
+    "input_fonts/NotoNastaliqUrdu-VariableFont_wght.ttf",
+    "NotoNastaliqUrdu-VF.ttf",
+  ],
   // Taiwanese / Southern Min showcase pairing: Noto Sans TC base CJK
   // font + Huninn (jf-openhuninn) annotation font carrying the Tâi-lô
   // / POJ tone marks. Keep in sync with BUILT_IN_BASE_FONTS /

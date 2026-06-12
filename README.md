@@ -137,7 +137,7 @@ Wing Font stands on the shoulders of excellent open-source data and fonts. Full 
 ### Romanization data
 
 - **Cantonese** — [TypeDuck](https://github.com/TypeDuck-HK/TypeDuck-Mac), [粵語審音配詞字庫 (CUHK)](https://humanum.arts.cuhk.edu.hk/Lexis/lexi-can/), [Cantonese Romanization Converter (Kodensha)](https://www.kodensha.jp/webapp/cantonese/can_converter_e.html)
-- **Taiwanese / Southern Min** — AlanJui's [Piau-Im](https://github.com/AlanJui/Piau-Im) + [rime-tlpa](https://github.com/AlanJui/rime-tlpa); ButTaiwan's [taigivs](https://github.com/ButTaiwan/taigivs)
+- **Taiwanese / Southern Min** — MOE [《臺灣台語常用詞辭典》](https://sutian.moe.edu.tw/) via [ChhoeTaigi](https://github.com/ChhoeTaigi/ChhoeTaigiDatabase); ButTaiwan's [taigivs](https://github.com/ButTaiwan/taigivs)
 - **Teochew** — [learn-teochew](https://github.com/learn-teochew/learn-teochew.github.io), [parsetc](https://github.com/learn-teochew/parsetc)
 - **Mandarin** — mozillazg's [pinyin-data](https://github.com/mozillazg/pinyin-data) + [phrase-pinyin-data](https://github.com/mozillazg/phrase-pinyin-data); [Unicode Han Database (Unihan)](https://www.unicode.org/charts/unihan.html)
 
