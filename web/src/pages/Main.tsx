@@ -91,6 +91,7 @@ const Main = () => {
   const { t, lang } = useTranslation();
   const [searchParams, setSearchParams] = useSearchParams();
 
+
   // SEO meta. canonicalPath omits the `?fonts=...` query string —
   // every picked-fonts permutation collapses to the same canonical
   // URL so Google doesn't treat each share link as a separate page.
@@ -320,69 +321,37 @@ const Main = () => {
       my={1}
     >
       {/*
-        ── Responsive layout — explicit flex `order` per group ──────────
-        On desktop (md+), groups read top-to-bottom in source order:
-          0. TextField + FontPicker (controls cluster)
-          1. Share button row
-          2. TypographyControls (collapsible "Display options")
-          3. Cards (the actual font previews)
-        — i.e. the same layout that's been here all along.
+        Single layout, both breakpoints — source order matches
+        visual order top-down:
+          1. TextField + FontPicker (the controls cluster)
+          2. Upload + Share row
+          3. TypographyControls (collapsible Display options)
+          4. Cards (the font previews)
 
-        On mobile (xs), we flip to PREVIEWS-FIRST so the first paint
-        on a 360-wide viewport opens directly on the font samples
-        instead of ~250 px of chrome:
-          0. Share button row    (pinned at the very top — most
-                                  actionable affordance after the
-                                  user has tweaked things)
-          1. Cards
-          2. TextField + FontPicker
-          3. TypographyControls
-
-        Why flex `order` rather than restructuring the DOM or
-        rendering twice with display-hide tricks: DOM source stays
-        single-pass (no duplicate buttons / no SSR mismatch risk),
-        assistive-tech reading order follows the accessibility
-        tree's flex order, and the breakpoint switch costs zero JS
-        — pure CSS. The empty-state hint inside the cards group
-        prevents the page from looking broken on mobile when
-        pickedFonts is empty (cards group collapses to ~0 height
-        otherwise, which would leave the controls visually at the
-        top — confusing first-visit experience).
+        The mobile-special pinned-bar / append-on-mobile / scroll-
+        into-view experiment was reverted (tasks #248-#250). Mobile
+        now reads identically to desktop — controls at top, cards
+        below — with no flex-order shuffling, no fixed-position
+        chrome, and the historical "new card prepended to the top
+        of the list" behaviour on both breakpoints.
        */}
-      <Box
-        sx={{
-          order: { xs: 2, md: 0 },
-          display: "flex",
-          flexDirection: "column",
-          gap: 2,
-          width: "100%",
-        }}
-      >
-        <TextField
-          label={t("showcase.tryIt")}
-          value={msg}
-          onChange={({ target: { value } }) => setMsg(value)}
-          fullWidth
-        />
-        <FontPicker />
-      </Box>
-
+      <TextField
+        label={t("showcase.tryIt")}
+        value={msg}
+        onChange={({ target: { value } }) => setMsg(value)}
+        fullWidth
+      />
+      <FontPicker />
       {/*
         Secondary-actions row. Right-aligned so the FontPicker
-        takes the full visual weight and the buttons here read as
-        secondary affordances rather than primary actions. Two
-        buttons live in this row:
-          • Upload font — picks a .ttf/.otf/.woff/.woff2 from disk
-            and adds it as a comparison card immediately. Stored
-            in IndexedDB alongside generated fonts so reopens
-            survive page reload (see UploadFontButton + RecentFontsContext).
-          • Share link — copies the current URL state to clipboard.
-        Both use the text variant + startIcon treatment for visual
-        quiet; the per-button Snackbar surfaces operation feedback.
+        above takes the full visual weight and Upload + Share read
+        as supporting affordances. text variant + startIcon keeps
+        them visually quiet; per-button Snackbars (one inside
+        UploadFontButton, the page-level Snackbar below for share)
+        surface operation feedback.
       */}
       <Box
         sx={{
-          order: { xs: 0, md: 1 },
           display: "flex",
           justifyContent: "flex-end",
           alignItems: "center",
@@ -400,9 +369,9 @@ const Main = () => {
             // addPickedFont(USER_FONTS_GROUP_KEY, id) path would
             // see a stale ref and silently no-op. Skip the lookup
             // and hand the resolved FontOption straight to
-            // addPickedFontOption — we already have the entry. The
-            // new card appears at the top of the picked list and
-            // renders immediately because FontFace is live.
+            // addPickedFontOption — we already have the entry.
+            // The new card appears at the top of the picked list
+            // and renders immediately because FontFace is live.
             addPickedFontOption(recentEntryToFontOption(entry));
           }}
         />
@@ -417,54 +386,43 @@ const Main = () => {
         </Button>
       </Box>
 
-      <Box sx={{ order: { xs: 3, md: 2 }, width: "100%" }}>
-        <TypographyControls
-          defaults={SHOWCASE_TYPO_DEFAULTS}
-          settings={typoSettings}
-          setSettings={setTypoSettings}
-        />
-      </Box>
+      <TypographyControls
+        defaults={SHOWCASE_TYPO_DEFAULTS}
+        settings={typoSettings}
+        setSettings={setTypoSettings}
+      />
 
-      <Box
-        sx={{
-          order: { xs: 1, md: 3 },
-          display: "flex",
-          flexDirection: "column",
-          gap: 2,
-          width: "100%",
-        }}
-      >
-        {pickedFonts.length === 0 ? (
-          // Empty-state hint. Only earns its keep when there's
-          // genuinely nothing to render — non-empty showcase
-          // displays the cards directly. Quiet body2 + secondary
-          // colour so it reads as a nudge, not as an error.
-          <Typography
-            variant="body2"
-            color="text.secondary"
-            textAlign="center"
-            sx={{ py: { xs: 4, md: 6 }, fontStyle: "italic" }}
-          >
-            {t("showcase.emptyHint")}
-          </Typography>
-        ) : (
-          pickedFonts.map((pickedFont, idx) => (
-            <FontShowcaseCard
-              key={`${pickedFont.name}-showcase`}
-              pickedFont={pickedFont}
-              idx={idx}
-              msg={msg}
-              lang={lang}
-              isLoading={Boolean(loadingFonts[pickedFont.name])}
-              sharedTick={sharedTick}
-              typoSettings={typoSettings}
-            />
-          ))
-        )}
-      </Box>
+      {pickedFonts.length === 0 ? (
+        // Empty-state hint. Only earns its keep when there's
+        // genuinely nothing to render — non-empty showcase
+        // displays the cards directly. Quiet body2 + secondary
+        // colour so it reads as a nudge, not as an error.
+        <Typography
+          variant="body2"
+          color="text.secondary"
+          textAlign="center"
+          sx={{ py: { xs: 4, md: 6 }, fontStyle: "italic", width: "100%" }}
+        >
+          {t("showcase.emptyHint")}
+        </Typography>
+      ) : (
+        pickedFonts.map((pickedFont, idx) => (
+          <FontShowcaseCard
+            key={`${pickedFont.name}-showcase`}
+            pickedFont={pickedFont}
+            idx={idx}
+            msg={msg}
+            lang={lang}
+            isLoading={Boolean(loadingFonts[pickedFont.name])}
+            sharedTick={sharedTick}
+            typoSettings={typoSettings}
+          />
+        ))
+      )}
+
       {/*
-        Share-confirmation Snackbar. Anchored bottom-centre so it
-        doesn't collide with the page's right-aligned Share button.
+        Share-confirmation Snackbar. Anchored bottom-centre with
+        the MUI default 24px bottom offset on both breakpoints.
         autoHideDuration=3 s gives plenty of time to read a short
         confirmation without lingering. Message is i18n-driven via
         the snackbarKey state.

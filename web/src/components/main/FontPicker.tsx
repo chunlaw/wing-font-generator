@@ -99,6 +99,23 @@ const FontPicker = () => {
         value={state.lang}
         onChange={({target: {value}}) => handleLangChange(value)}
         fullWidth
+        // disableScrollLock stops MUI's Modal from adding
+        // compensating `padding-right` to <body> when the dropdown
+        // opens. On viewports with a visible scrollbar (most
+        // desktops) that padding prevents reflow when body scroll
+        // is locked; on viewports without one (mobile) it gets
+        // added anyway and visibly shifts the whole page right by
+        // ~15 px, so an open-close cycle reads as a layout shake.
+        // Disabling the lock removes the shake; the trade-off
+        // (page can scroll behind an open dropdown) is benign —
+        // touch-scroll inside the menu doesn't propagate to the
+        // page on mobile, and the menu auto-closes on outside-
+        // click on desktop.
+        slotProps={{
+          select: {
+            MenuProps: { disableScrollLock: true },
+          },
+        }}
       >
         {Object.keys(AVAILABLE_FONTS).map((key) =>
           <MenuItem key={`${key}-option`} value={key}>
@@ -130,6 +147,17 @@ const FontPicker = () => {
         onChange={({target: {value}}) => handleFontNameChange(value)}
         fullWidth
         disabled={fontOptions.length === 0}
+        // Same disableScrollLock fix as the dialect Select above —
+        // see that comment for rationale. The font Select is the
+        // more visible offender because it carries 20-30 entries
+        // (Cantonese in particular), so its dropdown is taller and
+        // the shake-on-open / unshake-on-close is more noticeable
+        // here than on the shorter dialect Select.
+        slotProps={{
+          select: {
+            MenuProps: { disableScrollLock: true },
+          },
+        }}
       >
         {/*
           Render options with optional ListSubheader rows separating

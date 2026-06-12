@@ -21,7 +21,7 @@ export const TEMPLATES_BY_DIALECT: Record<string, string[]> = {
     "拳頭若放開　可擁抱四周",
     "活着自活着 萬象在逝水中暢泳",
     "如果心聲真有療效　誰怕暴露更多",
-    "回望最初　當喪失是得著可不可",
+    "回望最初　當喪失是得着可不可",
     "立志助世人脫貧以為　便偉大到像多麼有為",
     "誰能憑愛意要富士山私有",
     "惟有我聽過你對我哭訴",
@@ -39,9 +39,9 @@ export const TEMPLATES_BY_DIALECT: Record<string, string[]> = {
     "遲了悔改　只好講抵你離開",
     "荒誕像這一切也變成往常",
     "別要我洗去　我的雙腳泥濘",
-    "留在彼此的身邊　牽著手再繼續飛",
+    "留在彼此的身邊　牽着手再繼續飛",
     "永遠有一個吻未嘗",
-    "望著他雙眼想別人　人留下了留不低那片心",
+    "望着他雙眼想別人　人留下了留不低那片心",
   ],
   // Taiwanese / Southern Min samples — render with the 思源黑體（台羅）
   // or （白話字）showcase fonts to see Tâi-lô / POJ tone marks above.

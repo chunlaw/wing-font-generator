@@ -184,6 +184,11 @@ export const AppContextProvider = ({ children }: { children: ReactNode }) => {
     }
     if (!resolved) return;
     const finalOpt = resolved;
+    // Prepend — new cards land at the TOP of the picked list,
+    // immediately visible under the controls cluster where the
+    // user just clicked +. Same on both breakpoints (mobile and
+    // desktop share a layout; the mobile-special pinned-bar UX
+    // was reverted).
     setState(prev => ({
       ...prev,
       pickedFonts: [finalOpt, ...prev.pickedFonts]
