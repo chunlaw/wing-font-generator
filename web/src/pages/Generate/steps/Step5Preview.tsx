@@ -28,6 +28,7 @@ import { useGenerate } from "../GenerateContext";
 import { useTranslation } from "../../../i18n/LanguageContext";
 import { useRecentFonts } from "../../../RecentFontsContext";
 import Markdown from "../../../components/Markdown";
+import { dirForText, isRtlText } from "../../../utils/textDirection";
 
 /**
  * Wrap each ligature-trigger group (`字1`, `字23`, `字丅一`, …) in a
@@ -44,10 +45,27 @@ import Markdown from "../../../components/Markdown";
  *
  * Characters that aren't part of a trigger group are emitted as plain
  * text fragments — they're free to wrap normally.
+ *
+ * IMPORTANT — RTL / cursive scripts: this per-group span split is only
+ * safe for scripts (CJK) where every character shapes independently
+ * AND has a line-break opportunity on its boundaries. For a cursive
+ * RTL base (Arabic and friends) splitting a connected word across
+ * inline <span>s severs the cursive joining, dropping every letter to
+ * its isolated form. Those scripts also have no intra-word break
+ * opportunity, so the no-break trick buys nothing there. Callers must
+ * therefore skip this splitter for RTL text — see the isRtlText()
+ * guard in the preview component below.
  */
 const TRIGGER_REGEX = /([^\s0-9丅])(?:([0-9]+)|(丅[零一二三四五六七八九]))/g;
 
 function renderWithNoBreaks(text: string): ReactNode[] {
+  // Cursive RTL scripts must NOT be split into per-group spans (it
+  // breaks letter joining). Render the run verbatim; the container's
+  // dir="rtl" handles ordering and there's no CJK-style mid-word break
+  // hazard to defend against.
+  if (isRtlText(text)) {
+    return [<Fragment key="rtl-whole">{text}</Fragment>];
+  }
   const parts: ReactNode[] = [];
   let lastIndex = 0;
   let match: RegExpExecArray | null;
@@ -374,6 +392,11 @@ const Step5Preview = () => {
 
       <Paper
         variant="outlined"
+        // Set the writing direction from the sample text so an RTL base
+        // (Arabic / Hebrew / Thaana …) renders right-to-left and the
+        // bidi-weak annotation triggers don't get reordered away from
+        // their base glyph. Defaults to "ltr" for CJK / Latin samples.
+        dir={dirForText(sample)}
         sx={{
           fontFamily: result.installedFamily,
           // Responsive: 28px on a phone, scaling up to 56px on lg+.

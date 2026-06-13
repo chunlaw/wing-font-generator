@@ -74,6 +74,14 @@ FONT_FILES: list[str] = [
     "NotoSansTagalog-Regular.ttf",
     "NotoSansGurmukhi-VariableFont_wdth,wght.ttf",
     "NotoNastaliqUrdu-VariableFont_wght.ttf",
+    # NotoSansArabic — used as the BASE for the first Arabic word-
+    # unit curated font (the experimental word-unit pipeline that
+    # composes whole Arabic words into single annotated glyphs with
+    # the DIN 31635 romanization above). Naskh-style (general MSA
+    # body-text rendering) — distinct from the Nastaliq above which
+    # is the Urdu calligraphic style. Variable axes: wdth + wght.
+    # OFL (Google Fonts).
+    "NotoSansArabic-VariableFont_wdth,wght.ttf",
     "Hind-Regular.ttf",
     "NotoSerif-Regular.ttf",
     "SourceHanSerif-Regular.ttf",

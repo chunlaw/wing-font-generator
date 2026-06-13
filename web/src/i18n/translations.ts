@@ -134,6 +134,7 @@ export type TranslationKey =
   | "home.platforms.tabs.windows"
   | "home.platforms.tabs.macos"
   | "home.platforms.tabs.linux"
+  | "home.platforms.tabs.ereader"
   | "home.what.title"
   | "home.what.body"
   | "home.how.title"
@@ -459,7 +460,7 @@ export const TRANSLATIONS: Record<Language, Record<TranslationKey, string>> = {
     "home.hero.cta.showcase": "瀏覽現成字體",
     "home.platforms.title": "你常用的軟件全部支援",
     "home.platforms.body":
-      "輸出標準 TTF / WOFF 字型檔，能在任何支援自訂字型的軟件中載入，無需特殊外掛或設定。",
+      "輸出標準 TTF / WOFF 字型檔，能在任何支援自訂字型的軟件中載入，無需特殊外掛或設定 — 連電子書閱讀器都用得上。",
     "home.platforms.free": "✓ 完全免費，無需註冊。",
     "home.platforms.learnMoreTitle": "在你的軟件上使用",
     "home.platforms.learnMoreSubtitle":
@@ -482,6 +483,8 @@ export const TRANSLATIONS: Record<Language, Record<TranslationKey, string>> = {
       "1. 雙擊 `.ttf` 檔案——「**字體簿（Font Book）**」會自動開啟。\n2. 在字體簿預覽視窗中點擊「**安裝字型**」。\n3. 字型隨即可供所有應用程式使用，毋須重啟系統。",
     "home.platforms.tabs.linux":
       "1. 將 `.ttf` 複製至 `~/.fonts/`（單一使用者）或 `/usr/share/fonts/truetype/`（全系統）。\n2. 執行 `fc-cache -f` 更新字型快取。\n3. **重啟**需要使用此字型的 GUI 應用程式。",
+    "home.platforms.tabs.ereader":
+      "電子書閱讀器只要文字渲染管線支援 OpenType GSUB `ccmp` 都能用得上。以下三款已確認可行；其他款式建議自行試用。\n\n**Kindle**（Paperwhite 4 或以後、Oasis、Scribe；近兩年韌體）\n1. 用 Calibre 開啟 EPUB／AZW3，於「**字型**」設定中嵌入 Wing Font。\n2. 透過 USB 或「**Send to Kindle**」電郵服務傳送至裝置。\n3. 自訂字型自動套用，標注隨原文一同顯示。\n\n**Kobo**（Clara、Libra、Sage、Elipsa、Forma；近期韌體）\n1. 用 USB 接駁 Kobo，於根目錄建立 `.kobo/fonts/` 資料夾（若無）。\n2. 將 `.ttf` 拖入 `.kobo/fonts/`。\n3. 退出 USB 後到「**設定 → 閱讀設定 → 字型**」選 Wing Font。\n\n**Boox / 其他 Android 電子書**（Onyx Boox、Meebook、Likebook 等）\n1. 用任何支援自訂字型嘅閱讀器 App（**Moon+ Reader**、**KOReader** 等）。\n2. 將 `.ttf` 複製至閱讀器 App 嘅字型資料夾，或裝至 Android 系統字型。\n3. 於 App 設定中套用。\n\n*PocketBook、Tolino 等同樣使用 HarfBuzz 渲染嘅閱讀器理論上可行，惟未經實機驗證；reMarkable 主要為 PDF 閱讀器，字型支援有限。*",
     "home.what.title": "這是甚麼",
     "home.what.body":
       "Wing Font 是一套字型生成工具。輸入兩個 TTF（一個底字、一個標注字）加上字符對應 CSV，便會輸出一個全新的 OpenType 字型 — 每個底字字形都直接刻上標注，可作粵拼、耶魯、倉頡等任何標注用途。輸出的字型可用於網頁、Word、Telegram、Email 等任何支援自訂字型的地方。",
@@ -652,7 +655,7 @@ export const TRANSLATIONS: Record<Language, Record<TranslationKey, string>> = {
       "已停用「丅 + 中文數字」標注路徑；只能透過「字 + 0/1/2/…」的數字後綴方式手動切換多音字。",
     "step3.outAscent.label": "輸出字型上緣（字單位）",
     "step3.outAscent.hint":
-      "留空＝沿用底字型原本嘅 ascent。底字 ascent 較矮（如 Xiaolai 880u）配高標注（泰文、片假名、諺文：1200；烏爾都文 1300）就要填。會同時調整 hhea.ascent 同 OS/2.usWinAscent，避免 Word / Pages / Canva 等程式裁切到標注頂。",
+      "留空＝沿用底字型原本嘅 ascent。底字 ascent 較矮（如 Xiaolai 880u）配高標注（泰文、片假名、諺文：1200；烏爾都文 1300）就要填。當底字本身係上下堆疊嘅文字（泰文母音／聲調符、阿拉伯文）、標注要多啲頂部空間時亦適用。會同時調整 hhea.ascent 同 OS/2.usWinAscent，避免 Word / Pages / Canva 等程式裁切到標注頂。",
     "step3.baseScale": "底字縮放比",
     "step3.annoScale": "標注縮放比",
     "step3.annoSpacing": "標注字距（em 比例，正值放寬、負值收緊）",
@@ -839,7 +842,7 @@ export const TRANSLATIONS: Record<Language, Record<TranslationKey, string>> = {
     "home.hero.cta.showcase": "Browse ready-made fonts",
     "home.platforms.title": "Works everywhere you do",
     "home.platforms.body":
-      "Standard TTF and WOFF files. Drop them anywhere a custom font goes — no plug-ins, no special integration.",
+      "Standard TTF and WOFF files. Drop them anywhere a custom font goes — no plug-ins, no special integration. Even on e-readers.",
     "home.platforms.free": "✓ And it's 100% free, no signup.",
     "home.platforms.learnMoreTitle": "Using it on your platform",
     "home.platforms.learnMoreSubtitle":
@@ -862,6 +865,8 @@ export const TRANSLATIONS: Record<Language, Record<TranslationKey, string>> = {
       "1. Double-click the `.ttf` file — **Font Book** opens automatically.\n2. Click “**Install Font**” in the Font Book preview window.\n3. The font becomes immediately available in every application — no restart needed.",
     "home.platforms.tabs.linux":
       "1. Copy the `.ttf` to `~/.fonts/` (current user) or `/usr/share/fonts/truetype/` (all users).\n2. Run `fc-cache -f` to refresh the font cache.\n3. **Restart** any GUI applications you want to use the font in.",
+    "home.platforms.tabs.ereader":
+      "E-readers work as long as their text renderer applies OpenType GSUB `ccmp` — modern HarfBuzz-based pipelines do. Three devices are confirmed; others are worth trying.\n\n**Kindle** (Paperwhite 4+, Oasis, Scribe; recent firmware)\n1. Open your EPUB / AZW3 in Calibre and embed the Wing Font under **Fonts**.\n2. Send to your Kindle over USB or via the **Send-to-Kindle** email service.\n3. The custom font applies automatically; annotations render in line with the base characters.\n\n**Kobo** (Clara, Libra, Sage, Elipsa, Forma; recent firmware)\n1. Connect your Kobo via USB, create `.kobo/fonts/` at the root if it's not there.\n2. Drop the `.ttf` into `.kobo/fonts/`.\n3. Eject; in **Settings → Reading Settings → Font**, select Wing Font.\n\n**Boox / other Android e-readers** (Onyx Boox, Meebook, Likebook…)\n1. Use any reader app that supports custom fonts — **Moon+ Reader** and **KOReader** are well-tested.\n2. Copy the `.ttf` to the reader app's font folder, or install it as a system font via Android settings.\n3. Apply in the app's font picker.\n\n*PocketBook, Tolino, and other HarfBuzz-based e-readers should work too but haven't been verified on hardware. reMarkable is primarily a PDF reader and doesn't reliably honour GSUB features in EPUB.*",
     "home.what.title": "What it is",
     "home.what.body":
       "Wing Font is a font-generation tool. Give it two TTFs (one for the base characters, one for the annotation glyphs) plus a CSV mapping characters to annotations, and it produces a new OpenType font whose glyphs have those annotations baked in. The output works anywhere a custom font can be loaded — websites, Word, Telegram, email, you name it.",
@@ -1036,7 +1041,7 @@ export const TRANSLATIONS: Record<Language, Record<TranslationKey, string>> = {
       "Trigger+numeral override is disabled. Users can still pick variants with the universal digit-suffix path (`<char><1-9>`).",
     "step3.outAscent.label": "Output ascent (font units)",
     "step3.outAscent.hint":
-      "Blank = inherit from the base font. Fill in when the base has a low native ascent (e.g. Xiaolai 880u) paired with a tall annotation: 1200 for Thai / Katakana / Hangul, 1300 for Urdu Nastaliq. Bumps hhea.ascent + OS/2.usWinAscent together so Word / Pages / Canva don't clip the top of the annotation.",
+      "Blank = inherit from the base font. Fill in when the base has a low native ascent (e.g. Xiaolai 880u) paired with a tall annotation: 1200 for Thai / Katakana / Hangul, 1300 for Urdu Nastaliq. Also useful when the BASE itself is a tall-stacking script (Thai vowels/tone marks, Arabic) and the annotation needs extra headroom above it. Bumps hhea.ascent + OS/2.usWinAscent together so Word / Pages / Canva don't clip the top of the annotation.",
     "step3.baseScale": "Base glyph scale",
     "step3.annoScale": "Annotation scale",
     "step3.annoSpacing": "Annotation letter-spacing (em — positive loosens, negative tightens)",

@@ -27,6 +27,7 @@ import { useGenerate } from "../GenerateContext";
 import { useTranslation } from "../../../i18n/LanguageContext";
 import { useRecentFonts } from "../../../RecentFontsContext";
 import { GenerateParams } from "../types";
+import { dirForText, isRtlText } from "../../../utils/textDirection";
 
 const Step3Parameters = () => {
   const { t } = useTranslation();
@@ -459,6 +460,11 @@ const Step3Parameters = () => {
                   />
                 ) : (
                   <Typography
+                    // RTL base scripts (Arabic / Hebrew …) render
+                    // right-to-left so the annotation triggers stay
+                    // attached to their base glyph in the correct
+                    // visual order. LTR for CJK / Latin samples.
+                    dir={dirForText(previewResult.sampleText)}
                     sx={{
                       fontFamily: `"${previewResult.installedFamily}", serif`,
                       // The chars should fill ~75 % of the preview-pane
@@ -860,6 +866,9 @@ const PreviewWithGuides = ({
         fontSize={EM}
         textAnchor="middle"
         dominantBaseline="alphabetic"
+        // Mark the run RTL for Arabic / Hebrew bases so the guides
+        // preview matches the HTML preview's ordering and joining.
+        direction={isRtlText(text) ? "rtl" : "ltr"}
         fill={glyphColor}
         stroke="none"
       >

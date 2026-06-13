@@ -333,6 +333,22 @@ jobs:
           - { name: Xiaolai-NotoNastaliq-urdu-notone,      args: "-opt -i input_fonts/XiaolaiSC-Regular.ttf -a input_fonts/NotoNastaliqUrdu-VariableFont_wght.ttf -m mappings/canto-urdu-notone.csv -as 0.22 --out-ascent 1300" }
           - { name: Xiaolai-Hind-hindi-notone,             args: "-opt -i input_fonts/XiaolaiSC-Regular.ttf -a input_fonts/Hind-Regular.ttf -m mappings/canto-hindi-notone.csv -as 0.26 --out-ascent 1200" }
           - { name: Xiaolai-Gurmukhi-punjab-notone,        args: "-opt -i input_fonts/XiaolaiSC-Regular.ttf -a 'input_fonts/NotoSansGurmukhi-VariableFont_wdth,wght.ttf' -m mappings/canto-punjab-notone.csv -as 0.26 --out-ascent 1200" }
+          # ── Arabic-base word-unit font (NEW tier) ────────────────
+          # First curated font using the WORD-UNIT pipeline with a
+          # non-Han base script. The pipeline (word_liga_handler.py)
+          # composes each Arabic word into a single annotated glyph
+          # with cursive shaping intact, then exposes it through
+          # GSUB ligation with boundary guards. Result: typing سلام
+          # produces a glyph that LOOKS like سلام but carries
+          # `salām` stacked above. Pre-built from the hand-curated
+          # ~130-word arabic-romanization.csv starter set; expand
+          # via gen_arabic_romanization.py later.
+          #
+          # `--out-ascent` not needed for this pairing: NotoSansArabic's
+          # ascent (~1500u) already accommodates the Latin annotation
+          # above. `-as 0.25` is a starting guess — may want tuning
+          # after eyeballing the first build.
+          - { name: NotoSansArabic-Noto-romanization,      args: "-opt -i 'input_fonts/NotoSansArabic-VariableFont_wdth,wght.ttf' -a input_fonts/NotoSerif-Regular.ttf -m mappings/arabic-romanization.csv -as 0.25" }
           - { name: Xiaolai-Huninn-tailo,                  args: "-opt -i input_fonts/XiaolaiSC-Regular.ttf -a input_fonts/Huninn-Regular.ttf -m mappings/taigi-tl-toned.csv -as 0.25" }
           - { name: Xiaolai-Huninn-poj,                    args: "-opt -i input_fonts/XiaolaiSC-Regular.ttf -a input_fonts/Huninn-Regular.ttf -m mappings/taigi-poj-toned.csv -as 0.25" }
           - { name: Xiaolai-Huninn-teochew-pengim,         args: "-opt -i input_fonts/XiaolaiSC-Regular.ttf -a input_fonts/Huninn-Regular.ttf -m mappings/teochew-gdpi.csv -as 0.25" }
