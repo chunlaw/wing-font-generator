@@ -50,3 +50,40 @@ jobs:
           name: web-dist
           path: web/dist
           retention-days: 7
+
+  # Lints the mapping CSVs a PR actually touches — format, provenance
+  # tags, base-script-leak-into-romanization, and glyph-budget headroom —
+  # without needing the base fonts or a full build. Scoped to changed
+  # files so a contributor's PR isn't blocked by pre-existing data quirks
+  # elsewhere in the corpus. See python/mappings/CONTRIBUTING-mappings.md.
+  validate-mappings:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out repository code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0   # need history to diff against the PR base
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Validate changed mapping CSVs
+        run: |
+          set -euo pipefail
+          base="${{ github.event.pull_request.base.sha }}"
+          if [ -z "$base" ]; then
+            # Manual run (workflow_dispatch): full audit, informational only.
+            echo "No PR base — validating all mapping CSVs (informational)."
+            python python/mappings/validate_mappings.py || true
+            exit 0
+          fi
+          changed=$(git diff --name-only "$base" "${{ github.sha }}" -- 'python/mappings/*.csv' || true)
+          if [ -z "$changed" ]; then
+            echo "No mapping CSVs changed — nothing to validate."
+            exit 0
+          fi
+          echo "Validating changed mapping CSVs:"
+          echo "$changed"
+          python python/mappings/validate_mappings.py $changed

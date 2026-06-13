@@ -31,6 +31,27 @@ MAC_ROMAN_IDS = 1, 0, 0
 OPENTYPE_NUMGLYPHS_CAP = 65535
 GLYPH_BUDGET_SOFT_CAP = 65000
 
+# ── Word-unit save-time guard ────────────────────────────────────────
+# Word-unit (Arabic / Thai / Indic) builds emit ~3 GSUB chain-context
+# rules per word. With the HarfBuzz repacker (uharfbuzz) enabled — which
+# main() turns on automatically for word-unit builds — that packs in
+# seconds. But if uharfbuzz is NOT importable, fontTools silently falls
+# back to its pure-Python serializer, whose GSUB pack time grows
+# superlinearly with rule count: measured ~0.4s @500 words, ~9s @8k, and
+# ~90 MINUTES at the full 25k-word Arabic set (the save appears to hang).
+#
+# Above this many word entries we therefore REQUIRE the repacker: if
+# it's missing the build aborts in milliseconds with an actionable
+# message instead of wedging at save time. Set WING_FONT_ALLOW_SLOW_SAVE
+# (any non-empty value) to bypass the abort and accept the slow path.
+#
+# The threshold is deliberately well above the largest curated mapping's
+# expected size but below the danger zone — 8k words still saves in ~9s
+# pure-Python, so 10k leaves headroom while catching the pathological
+# 25k+ case. Builds that DO have the repacker only get a heads-up
+# warning past the threshold, never an abort.
+WORD_UNIT_REPACKER_REQUIRED_THRESHOLD = 10000
+
 
 def _prepare_word_mode_fonts(
     base_font, output_font, base_font_file, base_axis_location
@@ -338,6 +359,101 @@ def _check_glyph_count_budget(output_font, char_mapping, optimize, mapping_path)
         )
 
 
+def _repacker_available() -> bool:
+    """True if uharfbuzz (the HarfBuzz GSUB/GPOS repacker fontTools
+    delegates to when USE_HARFBUZZ_REPACKER is on) can be imported.
+    When it can't, fontTools quietly serializes in pure Python — correct
+    but, for big word-unit tables, catastrophically slow."""
+    import importlib.util
+
+    return importlib.util.find_spec("uharfbuzz") is not None
+
+
+def _check_word_unit_save_budget(char_mapping, mapping_path):
+    """Pre-flight guard for word-unit (Arabic/Thai/Indic) mappings.
+
+    Counts word entries (multi-character keys — each becomes ~3 GSUB
+    chain rules) and, when the count crosses
+    WORD_UNIT_REPACKER_REQUIRED_THRESHOLD, ensures the build won't wedge
+    at save time:
+
+      * repacker present  → emit a heads-up warning and proceed (the
+        save stays in the seconds range);
+      * repacker missing  → abort in milliseconds with an actionable
+        message, UNLESS WING_FONT_ALLOW_SLOW_SAVE is set (opt-in to the
+        pure-Python slow path).
+
+    Runs right after the glyph-budget check so an oversized CSV fails
+    before the multi-minute composition phase, not after it. No-op for
+    CJK / small mappings — they never approach the threshold and the
+    pure-Python serializer handles them fine.
+    """
+    word_count = sum(1 for k in char_mapping if len(k) > 1)
+    if word_count <= WORD_UNIT_REPACKER_REQUIRED_THRESHOLD:
+        return
+
+    if _repacker_available():
+        print(
+            f"\n[wing-font] Large word-unit mapping: {word_count:,} word "
+            f"entries (> {WORD_UNIT_REPACKER_REQUIRED_THRESHOLD:,}).\n"
+            f"  The HarfBuzz repacker is available, so the save will use "
+            f"it and stay fast. Proceeding.\n",
+            flush=True,
+        )
+        return
+
+    import os
+
+    if os.environ.get("WING_FONT_ALLOW_SLOW_SAVE"):
+        print(
+            f"\n[wing-font] WARNING: {word_count:,} word entries and "
+            f"uharfbuzz is NOT installed.\n"
+            f"  WING_FONT_ALLOW_SLOW_SAVE is set, so continuing on the "
+            f"pure-Python serializer.\n"
+            f"  Expect the 'TTF save' step to take many minutes to over "
+            f"an hour at this size.\n",
+            flush=True,
+        )
+        return
+
+    # Fail fast with the same print-then-raise pattern as the glyph
+    # budget check (keeps the friendly diagnostic in runner.py's tee'd
+    # Step-4 log, with a short traceback behind it).
+    diagnostic = (
+        f"\n[wing-font] Word-unit mapping too large for the pure-Python "
+        f"save path.\n"
+        f"\n"
+        f"  Word entries in CSV:   {word_count:,}\n"
+        f"  Safe without repacker: {WORD_UNIT_REPACKER_REQUIRED_THRESHOLD:,}\n"
+        f"  Mapping:               {mapping_path}\n"
+        f"\n"
+        f"Each word becomes ~3 GSUB chain-context rules. Without the\n"
+        f"HarfBuzz repacker (uharfbuzz), fontTools packs the GSUB table\n"
+        f"in pure Python, whose time grows superlinearly with rule\n"
+        f"count — roughly 90 MINUTES at 25k words. The build would\n"
+        f"appear to hang at the 'TTF save' step.\n"
+        f"\n"
+        f"Pick one:\n"
+        f"  * Install the repacker:  pip install uharfbuzz   (it is in\n"
+        f"    python/requirements.txt; main() auto-enables it for\n"
+        f"    word-unit builds). This is the recommended fix.\n"
+        f"  * Trim the CSV to <= {WORD_UNIT_REPACKER_REQUIRED_THRESHOLD:,} "
+        f"rows (keep the\n"
+        f"    highest-weight words — the third CSV column).\n"
+        f"  * Force the slow path anyway: set WING_FONT_ALLOW_SLOW_SAVE=1.\n"
+        f"\n"
+        f"Aborting before the composition phase to spare you the wasted "
+        f"compute.\n"
+    )
+    print(diagnostic, flush=True)
+    raise RuntimeError(
+        f"Word-unit mapping too large for pure-Python save: "
+        f"{word_count:,} word entries > "
+        f"{WORD_UNIT_REPACKER_REQUIRED_THRESHOLD:,} and uharfbuzz is not "
+        f"installed. See the diagnostic printed above."
+    )
+
+
 def _format_cli_invocation(
     base_font_file,
     anno_font_file,
@@ -639,6 +755,9 @@ def main(
     # opaque `struct.error: 'H' format requires 0 <= number <= 65535`.
     # Check now so we can bail with an actionable error in milliseconds.
     _check_glyph_count_budget(output_font, char_mapping, optimize, mapping)
+    # Same spirit, different ceiling: guard word-unit mappings against
+    # the pure-Python save blow-up when uharfbuzz is missing.
+    _check_word_unit_save_budget(char_mapping, mapping)
 
     # ── Arabic word-unit entries ─────────────────────────────────────
     # Multi-character keys in char_mapping are joining-script (Arabic)
@@ -909,33 +1028,39 @@ def main(
     #     decoder), so the in-browser path stays on WOFF1 — different
     #     audience (single user's own machine, not bandwidth-bound).
     #
-    # ── Why disable hb.repack on save ───────────────────────────────
+    # ── hb.repack on save: off for CJK, ON for word-unit builds ─────
     # fontTools' default serializer for GSUB/GPOS calls into HarfBuzz's
-    # repacker (uharfbuzz.repack) for compactness. For very large GSUB
-    # tables (Mandarin pinyin: ~40k chain context + ~140k ligature
-    # rules) hb.repack runs out of resolution moves and raises
-    # `RepackerError`. As part of its attempt, hb.repack DOWNGRADES some
-    # of our Type 6 (Chain Context Substitution) lookups to Type 5
-    # (Context Substitution) — valid because the rules have empty
-    # backtrack/lookahead, but a no-op-and-a-half: fontTools' fallback
-    # `splitOverflowingSubtable` doesn't implement Type-5 splitting and
-    # the recovery loop spins forever logging "Don't know how to split
-    # GSUB lookup type 5". The user has to Ctrl+C.
+    # repacker (uharfbuzz.repack) for compactness. For the Mandarin
+    # pinyin CJK build (~40k chain context + ~140k ligature rules)
+    # hb.repack runs out of resolution moves and, as part of its
+    # attempt, DOWNGRADES some of our Type 6 (Chain Context
+    # Substitution) lookups to Type 5 (Context Substitution) — valid
+    # because the rules have empty backtrack/lookahead, but then
+    # fontTools' fallback `splitOverflowingSubtable` doesn't implement
+    # Type-5 splitting and the recovery loop spins forever logging
+    # "Don't know how to split GSUB lookup type 5". The user has to
+    # Ctrl+C. So for CJK chain-context builds we force the pure-Python
+    # serializer, which handles overflow by wrapping lookups in
+    # Extension format (Type 7, 32-bit offsets) instead of splitting.
     #
-    # Disabling hb.repack here forces fontTools' pure-Python serializer
-    # (`OTTableWriter.getAllData()`), which handles overflow by wrapping
-    # lookups in OpenType Extension format (Type 7 with 32-bit offsets)
-    # instead of by splitting or downgrading. Slower than hb.repack on
-    # paper (~10-20% over the whole save) but never trips the Type-5
-    # path. For small / medium mappings (Cantonese / Cangjie) it makes
-    # no observable difference; for the Mandarin mapping it's the
-    # difference between "saves in ~5 s" and "hangs forever."
+    # BUT the pure-Python serializer is catastrophically slow on the
+    # word-unit (Arabic / Thai / Indic) builds. Those emit ~3 chain
+    # rules per word, so the 25k-word Arabic romanization set produces
+    # ~76k chain rules whose pure-Python pack time grows superlinearly:
+    # measured 0.4 s @500 words → 9.4 s @8k → ~90 MIN at the full 25k
+    # (the save never finished). The word-unit handler already PRE-wraps
+    # its big lookups in Extension subtables (see
+    # word_liga_handler.maybe_wrap_lookup_in_extension), so hb.repack
+    # never needs to split/downgrade them — it packs the Extension graph
+    # directly in seconds with no Type-5 path. We therefore KEEP
+    # hb.repack ON for word-unit builds and OFF only for the CJK case
+    # that actually needs the workaround.
     #
-    # If a future fontTools release teaches the splitter how to handle
-    # Type 5, this can be removed without changing the rest of the
-    # pipeline.
+    # (If uharfbuzz is unavailable, fontTools silently falls back to the
+    # pure-Python serializer regardless of this flag — correct output,
+    # just slow.)
     from fontTools.ttLib.tables.otBase import USE_HARFBUZZ_REPACKER
-    output_font.cfg[USE_HARFBUZZ_REPACKER] = False
+    output_font.cfg[USE_HARFBUZZ_REPACKER] = has_word_entries
 
     # ── Ascent override (optional) ────────────────────────────────
     # Bump the output font's vertical-metrics ascent values so the
