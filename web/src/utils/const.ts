@@ -118,6 +118,31 @@ export const TEMPLATES_BY_DIALECT: Record<string, string[]> = {
     "واحد اثنان ثلاثة",
     "كثير قليل",
   ],
+  // Hindi (हिन्दी) samples — render with the Hindi showcase font
+  // (Hind（ISO 15919 罗马字）) to see each Devanagari word carry its
+  // ISO 15919 romanization (with Hindi word-final schwa deletion:
+  // राम → rām) baked in. Every word here is present in
+  // hindi-romanization.csv, so the word-unit font renders the whole
+  // phrase — greetings, common nouns, and a number sequence, short
+  // enough to stay single-line at the showcase's default size.
+  hindi: [
+    "नमस्ते",
+    "धन्यवाद",
+    "शुक्रिया",
+    "सुबह",
+    "हिंदी किताब",
+    "अच्छा दोस्त",
+    "नया घर",
+    "प्यार",
+    "खुशी",
+    "जीवन",
+    "दुनिया",
+    "सपना",
+    "आसमान",
+    "फूल",
+    "दिल",
+    "एक दो तीन",
+  ],
   mandarin: [
     "夜空中最亮的星　能否聽清",
     "月亮代表我的心",
@@ -733,15 +758,30 @@ export const AVAILABLE_FONTS: FontSet = {
         displayName: "Noto Sans Arabic（DIN 31635 罗马字）",
         name: "NotoSansArabic-Noto-romanization",
         source: `url(${import.meta.env.VITE_FONT_URL}/NotoSansArabic-Noto-romanization.woff2) format('woff2')`,
-        // Pending CDN availability — the matrix entry exists in
-        // deploy-pages.yml but NotoSansArabic-VariableFont_wdth,wght.ttf
-        // still needs to land in the wing-font-hub gh-pages branch
-        // before CI can build + serve this font. Until then, filter
-        // out of FontPicker / restore paths so users don't pick a
-        // font whose @font-face silently 404s. Remove this flag
-        // once https://wing-font.chunlaw.io/fonts/NotoSansArabic-Noto-romanization.woff2
-        // returns a 200.
-        pending: true,
+      },
+    },
+  },
+  // ── Hindi-base word-unit tier (experimental) ──────────────────
+  // The Devanagari analogue of the Arabic tier above: a real Hindi
+  // text face (Hind) as the BASE script, where each word composes
+  // into one glyph carrying its ISO 15919 romanization (with Hindi
+  // word-final schwa deletion: राम → rām). Distinct from the
+  // Xiaolai-Hind-hindi font, where Devanagari is only an ANNOTATION
+  // over Chinese — here Hindi IS the text. Built from
+  // hindi-romanization.csv via word_liga_handler.py (matrix entry
+  // Hind-Noto-romanization in deploy-pages.yml). Surfaced as its own
+  // /showcase category so users browsing for "Hindi" find a real
+  // Hindi-text font, not a Cantonese-transliteration variant.
+  hindi: {
+    lang: {
+      zh: "印地文",
+      en: "Hindi",
+    },
+    fonts: {
+      "Hind-Noto-romanization": {
+        displayName: "Hind（ISO 15919 罗马字）",
+        name: "Hind-Noto-romanization",
+        source: `url(${import.meta.env.VITE_FONT_URL}/Hind-Noto-romanization.woff2) format('woff2')`,
       },
     },
   },

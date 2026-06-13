@@ -159,7 +159,12 @@ from mappings.csv_parser import (
     WORD_SCRIPTS,
     get_word_unit_script,
 )
-from utils import get_glyph_name_by_char, register_feature_lookup, step_timer
+from utils import (
+    get_glyph_name_by_char,
+    maybe_wrap_lookup_in_extension,
+    register_feature_lookup,
+    step_timer,
+)
 
 # Native digit sets accepted by the digit-suffix variant selection
 # path, alongside ASCII 0-9.
@@ -180,6 +185,36 @@ MAX_TATWEEL_CYCLE = 9
 
 # Same per-subtable budget rationale as chain_context_handler.py.
 RULES_PER_SUBTABLE = 500
+
+# Maximum number of glyphs that can carry GDEF LigCaretList entries.
+#
+# The OpenType GDEF LigCaretList structure addresses its Coverage table
+# and every LigGlyph via uint16 offsets from the table start, so the
+# whole structure must fit in 64 KiB. The fontTools builder doesn't
+# offer Extension wrapping for GDEF (the spec has no such mechanism).
+# Hitting the limit at save time triggers a particularly opaque
+# failure: `struct.error: 'H' format` inside the pure-Python writer,
+# *plus* a secondary `AttributeError: 'OTTableWriter' object has no
+# attribute 'name'` from fontTools' overflow-recovery code path.
+#
+# Per-glyph size budget:
+#   * 2 bytes in LigGlyph offset array (LigCaretList header)
+#   * 2 bytes in Coverage glyph array (Format 1)
+#   * ~26 bytes for the LigGlyph table itself (header + caret records
+#     for a typical 5-letter word with 4 carets, format 1 records)
+#   ≈ 30 bytes per glyph
+# Long Thai words (6-letter, 5 carets) cost ~36 bytes/glyph. 1,500 is
+# a conservative ceiling that fits both cases with a few KB headroom.
+#
+# When the user's mapping exceeds this, buildLigCarets keeps the first
+# 1,500 entries in iteration order. csv_parser hands char_mapping back
+# in CSV-row order, so as long as the CSV is sorted weight-descending
+# (gen_*_paiboon.py output, and gen_arabic_romanization.py output) the
+# kept glyphs are the highest-weight words — the ones a reader actually
+# encounters most. Lower-weight word glyphs lose intra-letter cursor
+# stepping (an editor will treat them as one opaque unit) but the font
+# otherwise saves and renders perfectly.
+MAX_LIG_CARET_GLYPHS = 1500
 
 
 def _bump_subst_lookup_records(subtable, lookup_type, k):
@@ -552,6 +587,18 @@ def buildWordLiga(output_font, char_mapping, word_components=None):
             cycle_lookup = cycle_builder.build()
             new_lookups.append(cycle_lookup)
 
+        # ── Pre-wrap large lookups in Extension subtables ───────────
+        # The chain_lookup grows one subtable per RULES_PER_SUBTABLE
+        # rules; for big word-unit mappings (Thai 60k words → ~120
+        # subtables) the parent Lookup's uint16 subtable-offset array
+        # overflows around subtable #7. fontTools' save-time recovery
+        # crashes inside getOverflowErrorRecord (a known fontTools bug:
+        # `AttributeError: 'OTTableWriter' object has no attribute
+        # 'name'`). Pre-wrap defuses that — see
+        # utils.maybe_wrap_lookup_in_extension.
+        for lk in new_lookups:
+            maybe_wrap_lookup_in_extension(lk)
+
         _prepend_lookups(gsub, new_lookups)
 
         # The chain lookup is the feature entry point; the nested liga
@@ -611,6 +658,25 @@ def buildLigCarets(output_font, ligature_carets):
         if not carets:
             timer.note("no carets")
             return
+
+        # ── GDEF LigCaretList 64 KiB budget ─────────────────────────
+        # See MAX_LIG_CARET_GLYPHS at module top for the constraint and
+        # why we pick the first N entries. The cap preserves the most
+        # frequent words (insertion order tracks csv_parser char_mapping
+        # order, which tracks weight-desc CSV row order) and drops the
+        # long tail rather than the whole feature.
+        if len(carets) > MAX_LIG_CARET_GLYPHS:
+            total = len(carets)
+            print(
+                f"[GDEF carets] capping at {MAX_LIG_CARET_GLYPHS:,} "
+                f"of {total:,} word glyphs to fit OpenType's 64 KiB "
+                f"LigCaretList limit. Lower-frequency words still "
+                f"render and ligate; they just lose per-letter "
+                f"cursor stops inside the word.",
+                flush=True,
+            )
+            carets = dict(list(carets.items())[:MAX_LIG_CARET_GLYPHS])
+            timer.note(f"capped {len(carets):,} of {total:,}")
 
         if "GDEF" in output_font:
             gdef = output_font["GDEF"].table

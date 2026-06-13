@@ -97,6 +97,62 @@ class step_timer:
         return False
 
 
+# Subtable-count threshold above which a GSUB Lookup gets pre-wrapped
+# in Extension subtables. Subtable offsets within a parent Lookup are
+# uint16 from the lookup start, so for our ~10 KiB chain-context
+# subtables the cumulative offset to subtable #7 already crosses
+# 64 KiB. fontTools' save-time Extension promotion is meant to handle
+# this, but its overflow-error-record code crashes with
+# `AttributeError: 'OTTableWriter' object has no attribute 'name'`
+# on lookups whose writer hierarchy lacks the expected ancestors.
+# Pre-wrapping at build time means save() never enters that broken
+# recovery path: each Extension subtable carries a 32-bit offset to
+# its wrapped subtable, so wrapped data can live anywhere.
+#
+# Threshold of 4 leaves comfortable margin: with 500-rule-per-subtable
+# budgets (~10 KiB each), 4 subtables consume ~40 KiB — well under
+# 64 KiB. 5+ subtables get pre-wrapped.
+EXTENSION_WRAP_SUBTABLE_THRESHOLD = 4
+
+
+def wrap_lookup_in_extension(lookup) -> None:
+    """Convert each subtable of `lookup` into an Extension subtable
+    (Format 1) holding the original subtable in its ExtSubTable
+    field, and flip the lookup's LookupType to 7. In place.
+
+    No-op on a lookup that's already Extension or has no subtables —
+    defensive against double-wrapping.
+
+    See EXTENSION_WRAP_SUBTABLE_THRESHOLD above for when callers
+    should invoke this.
+    """
+    if lookup.LookupType == 7 or not lookup.SubTable:
+        return
+    original_type = lookup.LookupType
+    wrapped = []
+    for st in lookup.SubTable:
+        ext = otTables.ExtensionSubst()
+        ext.Format = 1
+        ext.ExtensionLookupType = original_type
+        ext.ExtSubTable = st
+        wrapped.append(ext)
+    lookup.LookupType = 7
+    lookup.SubTable = wrapped
+
+
+def maybe_wrap_lookup_in_extension(lookup) -> bool:
+    """Pre-wrap `lookup` if it has more than
+    EXTENSION_WRAP_SUBTABLE_THRESHOLD subtables. Returns True if it
+    wrapped, False if it left the lookup as-is. Safe to call on None
+    (returns False)."""
+    if lookup is None:
+        return False
+    if len(lookup.SubTable or []) <= EXTENSION_WRAP_SUBTABLE_THRESHOLD:
+        return False
+    wrap_lookup_in_extension(lookup)
+    return True
+
+
 def get_glyph_name_by_char(font, char):
     """
     Resolve a Unicode character to a glyph name via the font's best cmap.

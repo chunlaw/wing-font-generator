@@ -64,7 +64,12 @@ from fontTools.otlLib.builder import (
     ChainContextualRule,
     SingleSubstBuilder,
 )
-from utils import get_glyph_name_by_char, register_feature_lookup, step_timer
+from utils import (
+    get_glyph_name_by_char,
+    maybe_wrap_lookup_in_extension,
+    register_feature_lookup,
+    step_timer,
+)
 
 # Upper bound on the number of distinct annotations any single character
 # can have. Matches the limit enforced by csv_parser.MAX_CHAR_VARIANTS.
@@ -249,6 +254,15 @@ def buildChainSub(output_font, word_mapping, char_mapping):
             return
 
         chain_lookup = chain_builder.build()
+
+        # Big CJK mappings (Mandarin: ~40k chain rules → ~80 subtables;
+        # Cantonese: ~24k chain rules → ~50 subtables) push the
+        # cumulative subtable-offset array past uint16. Pre-wrap in
+        # Extension to avoid fontTools' broken save-time recovery
+        # (`AttributeError: 'OTTableWriter' object has no attribute
+        # 'name'`). Threshold and rationale: utils.maybe_wrap_…
+        maybe_wrap_lookup_in_extension(chain_lookup)
+
         chain_index = len(gsub.LookupList.Lookup)
         gsub.LookupList.Lookup.append(chain_lookup)
         gsub.LookupList.LookupCount = len(gsub.LookupList.Lookup)

@@ -14,13 +14,17 @@ import {
   CircularProgress,
   Divider,
   FormControlLabel,
+  IconButton,
   Slider,
   Stack,
   Switch,
   TextField,
+  Tooltip,
   Typography,
 } from "@mui/material";
-import { useEffect, useState } from "react";
+import ContentCopyIcon from "@mui/icons-material/ContentCopy";
+import CheckIcon from "@mui/icons-material/Check";
+import { useEffect, useMemo, useState } from "react";
 import { useTheme } from "@mui/material/styles";
 import opentype from "opentype.js";
 import { useGenerate } from "../GenerateContext";
@@ -28,6 +32,7 @@ import { useTranslation } from "../../../i18n/LanguageContext";
 import { useRecentFonts } from "../../../RecentFontsContext";
 import { GenerateParams } from "../types";
 import { dirForText, isRtlText } from "../../../utils/textDirection";
+import { buildCliCommand } from "../../../utils/buildCliCommand";
 
 const Step3Parameters = () => {
   const { t } = useTranslation();
@@ -42,6 +47,9 @@ const Step3Parameters = () => {
     previewText,
     setPreviewText,
     runtimeReady,
+    baseFont,
+    annoFont,
+    mappingsPresetKey,
   } = useGenerate();
 
   // ── Family-name collision detector ─────────────────────────────
@@ -86,6 +94,64 @@ const Step3Parameters = () => {
   const [showGuides, setShowGuides] = useState(false);
   const [previewMetrics, setPreviewMetrics] =
     useState<PreviewFontMetrics | null>(null);
+
+  // ── Equivalent CLI command ──────────────────────────────────────
+  //
+  // Mirrors what runner.py / wingfont_main.main() is about to do, in
+  // the canonical `python wing-font.py …` shape. Two value-adds:
+  //   * users with the repo checked out can copy + paste to reproduce
+  //     the in-browser build locally (handy for very large mappings
+  //     where Pyodide may run out of memory; the CPython path has
+  //     much more headroom);
+  //   * surfaces every dial as a flag so users can see at a glance
+  //     what their slider tweaks translate to.
+  //
+  // The string is also printed by wing-font.py's main() at the top
+  // of the Step 4 log, but that's AFTER they click Generate. Showing
+  // it here lets them sanity-check parameters before committing to a
+  // multi-minute run.
+  const cliCommand = useMemo(
+    () =>
+      buildCliCommand({
+        baseFontName: baseFont.name,
+        annoFontName: annoFont.name,
+        mappingPresetKey: mappingsPresetKey,
+        params,
+        baseAxisLocation: baseFont.axisLocation,
+        annoAxisLocation: annoFont.axisLocation,
+      }),
+    [
+      baseFont.name,
+      baseFont.axisLocation,
+      annoFont.name,
+      annoFont.axisLocation,
+      mappingsPresetKey,
+      params,
+    ],
+  );
+
+  // Two-second "Copied!" affordance on the copy button. Uses a
+  // single state value (the ms timestamp of the last successful copy)
+  // rather than a boolean so consecutive copies always re-fire the
+  // animation, even if the user clicks before the previous cycle
+  // ended.
+  const [copiedAt, setCopiedAt] = useState<number | null>(null);
+  const justCopied = copiedAt !== null && Date.now() - copiedAt < 2000;
+  useEffect(() => {
+    if (copiedAt === null) return;
+    const timer = window.setTimeout(() => setCopiedAt(null), 2000);
+    return () => window.clearTimeout(timer);
+  }, [copiedAt]);
+  const handleCopyCli = async () => {
+    try {
+      await navigator.clipboard.writeText(cliCommand);
+      setCopiedAt(Date.now());
+    } catch {
+      // Older browsers without async clipboard API silently fail —
+      // the command is still selectable for manual copy from the
+      // <pre> block.
+    }
+  };
 
   useEffect(() => {
     setPreviewMetrics(null);
@@ -349,6 +415,99 @@ const Step3Parameters = () => {
             slotProps={{ htmlInput: { inputMode: "numeric", pattern: "[0-9]*" } }}
             sx={{ maxWidth: 220 }}
           />
+
+          {/*
+            ── Equivalent CLI command ───────────────────────────────
+            Shows what the build is about to run as a copy-paste-
+            ready `python wing-font.py …` invocation. Useful for:
+            (a) sanity-checking the cumulative effect of slider /
+                checkbox tweaks before kicking off the multi-minute
+                build, and (b) escape-hatch for users who hit
+                Pyodide memory limits on very large mappings — the
+                CPython path has much more headroom.
+
+            Same string is printed at the top of the Step 4 log by
+            wing-font.py's main(), but only AFTER the user clicks
+            Generate. Surfacing it here lets users review FIRST.
+
+            The block lives under its own Divider + overline so it
+            visually groups with the other "things to copy" rather
+            than the sliders above. The file paths use placeholder
+            prefixes (input_fonts/, mappings/) matching the repo
+            layout — users substitute their actual local paths.
+          */}
+          <Divider flexItem sx={{ mt: 1 }} />
+          <Typography variant="overline" color="text.secondary" sx={{ mt: -1 }}>
+            {t("step3.cli.sectionLabel")}
+          </Typography>
+          <Box>
+            <Stack
+              direction="row"
+              spacing={1}
+              alignItems="flex-start"
+              sx={{
+                p: 1.5,
+                borderRadius: 1,
+                bgcolor: (theme) =>
+                  theme.palette.mode === "light"
+                    ? "rgba(15, 23, 42, 0.04)"
+                    : "rgba(255, 255, 255, 0.06)",
+                border: 1,
+                borderColor: "divider",
+              }}
+            >
+              <Box
+                component="pre"
+                sx={{
+                  flex: 1,
+                  minWidth: 0,
+                  m: 0,
+                  fontFamily:
+                    "ui-monospace, SFMono-Regular, Menlo, monospace",
+                  fontSize: "0.78rem",
+                  lineHeight: 1.5,
+                  // Wrap long commands rather than horizontal-
+                  // scrolling — the user is reading, not editing.
+                  // `break-word` is safer than `break-all` because
+                  // `break-all` would split inside option names
+                  // (e.g. `--anno-spacing` → `--anno-spaci\ng`).
+                  whiteSpace: "pre-wrap",
+                  wordBreak: "break-word",
+                  color: "text.primary",
+                }}
+              >
+                {cliCommand}
+              </Box>
+              <Tooltip
+                title={
+                  justCopied
+                    ? t("step3.cli.copiedTooltip")
+                    : t("step3.cli.copyTooltip")
+                }
+                placement="top"
+              >
+                <IconButton
+                  size="small"
+                  onClick={handleCopyCli}
+                  aria-label={t("step3.cli.copyAriaLabel")}
+                  sx={{ flexShrink: 0 }}
+                >
+                  {justCopied ? (
+                    <CheckIcon fontSize="small" color="success" />
+                  ) : (
+                    <ContentCopyIcon fontSize="small" />
+                  )}
+                </IconButton>
+              </Tooltip>
+            </Stack>
+            <Typography
+              variant="caption"
+              color="text.secondary"
+              sx={{ display: "block", mt: 0.5 }}
+            >
+              {t("step3.cli.helperText")}
+            </Typography>
+          </Box>
         </Box>
 
         {/* ---- Preview column (left on desktop, bottom on mobile) --- */}

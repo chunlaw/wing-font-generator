@@ -325,6 +325,20 @@ jobs:
           # above. `-as 0.25` is a starting guess — may want tuning
           # after eyeballing the first build.
           - { name: NotoSansArabic-Noto-romanization,      args: "-opt -i 'input_fonts/NotoSansArabic-VariableFont_wdth,wght.ttf' -a input_fonts/NotoSerif-Regular.ttf -m mappings/arabic-romanization.csv -as 0.25" }
+          # ── Hindi-base word-unit font (Devanagari tier) ──────────
+          # Second non-Han word-unit base, the Devanagari analogue of
+          # the Arabic font above. Each Hindi word composes into one
+          # glyph carrying its ISO 15919 romanization (with Hindi
+          # word-final schwa deletion: राम → rām). The base is a real
+          # Devanagari text face (Hind), distinct from the
+          # Xiaolai-Hind-hindi font above where Devanagari is only an
+          # ANNOTATION over Chinese. Built from the ~24k-word
+          # frequency-ranked hindi-romanization.csv (regenerate /
+          # expand via gen_hindi_romanization.py). Word-unit mode
+          # auto-extends the win metrics around the below-word
+          # annotation, so no --out-ascent is needed; -as 0.25 mirrors
+          # Arabic and can be tuned after eyeballing the build.
+          - { name: Hind-Noto-romanization,               args: "-opt -i input_fonts/Hind-Regular.ttf -a input_fonts/NotoSerif-Regular.ttf -m mappings/hindi-romanization.csv -as 0.25" }
           - { name: Xiaolai-Huninn-tailo,                  args: "-opt -i input_fonts/XiaolaiSC-Regular.ttf -a input_fonts/Huninn-Regular.ttf -m mappings/taigi-tl-toned.csv -as 0.25" }
           - { name: Xiaolai-Huninn-poj,                    args: "-opt -i input_fonts/XiaolaiSC-Regular.ttf -a input_fonts/Huninn-Regular.ttf -m mappings/taigi-poj-toned.csv -as 0.25" }
           - { name: Xiaolai-Huninn-teochew-pengim,         args: "-opt -i input_fonts/XiaolaiSC-Regular.ttf -a input_fonts/Huninn-Regular.ttf -m mappings/teochew-gdpi.csv -as 0.25" }

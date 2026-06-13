@@ -148,6 +148,38 @@ export const BUILT_IN_BASE_FONTS: BuiltInPreset[] = [
     url: "/wingfont/XiaolaiSC-Regular.ttf",
     filename: "XiaolaiSC-Regular.ttf",
   },
+  // ─ Non-Han base scripts (word-unit experimental tier) ──────────────
+  //
+  // BASE-side counterpart to the "非漢字底字 (Non-Han base scripts,
+  // experimental)" group in BUILT_IN_MAPPINGS. Pair each of these with
+  // its matching word-unit mapping:
+  //
+  //   * NotoSansArabic-VF.ttf + arabic-romanization.csv (DIN 31635)
+  //   * Hind-Regular.ttf      + hindi-romanization.csv  (ISO 15919)
+  //
+  // The pipeline composes each WORD of the base script into one glyph
+  // carrying the romanization above it (see python/word_liga_handler.py).
+  // Annotation slot wants Noto Serif Regular for both — that's what the
+  // pre-built showcase fonts (NotoSansArabic-Noto-romanization,
+  // Hind-Noto-romanization) ship with.
+  //
+  // Hind-Regular also appears in BUILT_IN_ANNO_FONTS (key `anno-hind`)
+  // for use as Devanagari ANNOTATION over Cantonese (canto-hindi.csv).
+  // Distinct preset keys keep the two picker states independent — a
+  // user who picks Hind as base shouldn't see it auto-selected as anno
+  // and vice versa.
+  {
+    key: "notosansarabic",
+    label: "Noto Sans Arabic (العربية)",
+    url: "/wingfont/NotoSansArabic-VF.ttf",
+    filename: "NotoSansArabic-VF.ttf",
+  },
+  {
+    key: "hind",
+    label: "Hind (देवनागरी Devanagari)",
+    url: "/wingfont/Hind-Regular.ttf",
+    filename: "Hind-Regular.ttf",
+  },
 ];
 
 // ---------- Annotation fonts (the "標注字" slot in Step 1) --------
@@ -440,13 +472,23 @@ export const BUILT_IN_MAPPINGS: BuiltInPreset[] = [
   // Non-Han base scripts where each mapped WORD becomes one
   // annotated glyph (not per-character). The pipeline is
   // word_liga_handler.py (see python/README.md). First curated
-  // entry is Arabic → DIN 31635; expect Thai / Devanagari to
-  // follow once their starter CSVs land.
+  // entry is Arabic → DIN 31635; Hindi → ISO 15919 follows; expect
+  // Thai to join once its starter CSV lands.
   {
     key: "arabic-romanization",
     label: "العربية (Arabic, DIN 31635)",
     url: "/wingfont/mappings/arabic-romanization.csv",
     filename: "arabic-romanization.csv",
+    group: "非漢字底字 (Non-Han base scripts, experimental)",
+  },
+  // Hindi (Devanagari) → ISO 15919, with Hindi word-final schwa
+  // deletion (राम → rām). ~24k most-frequent words from wordfreq,
+  // built via gen_hindi_romanization.py → word_liga_handler.py.
+  {
+    key: "hindi-romanization",
+    label: "हिन्दी (Hindi, ISO 15919)",
+    url: "/wingfont/mappings/hindi-romanization.csv",
+    filename: "hindi-romanization.csv",
     group: "非漢字底字 (Non-Han base scripts, experimental)",
   },
   // Taiwanese / Southern Min (河洛話) — pair these with the Noto Sans

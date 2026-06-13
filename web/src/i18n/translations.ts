@@ -282,6 +282,11 @@ export type TranslationKey =
   | "step3.triggerChar.hintDisabled"
   | "step3.outAscent.label"
   | "step3.outAscent.hint"
+  | "step3.cli.sectionLabel"
+  | "step3.cli.helperText"
+  | "step3.cli.copyTooltip"
+  | "step3.cli.copiedTooltip"
+  | "step3.cli.copyAriaLabel"
   | "step3.baseScale"
   | "step3.annoScale"
   | "step3.annoSpacing"
@@ -656,6 +661,12 @@ export const TRANSLATIONS: Record<Language, Record<TranslationKey, string>> = {
     "step3.outAscent.label": "輸出字型上緣（字單位）",
     "step3.outAscent.hint":
       "留空＝沿用底字型原本嘅 ascent。底字 ascent 較矮（如 Xiaolai 880u）配高標注（泰文、片假名、諺文：1200；烏爾都文 1300）就要填。當底字本身係上下堆疊嘅文字（泰文母音／聲調符、阿拉伯文）、標注要多啲頂部空間時亦適用。會同時調整 hhea.ascent 同 OS/2.usWinAscent，避免 Word / Pages / Canva 等程式裁切到標注頂。",
+    "step3.cli.sectionLabel": "對應 CLI 指令",
+    "step3.cli.helperText":
+      "Clone wing-font-generator 後，可以喺 python/ 入面執行呢條指令本機重現同一個 build。檔案路徑用咗 repo 內嘅版面（input_fonts/、mappings/），自備字型嘅話請替換成你本機嘅實際路徑。",
+    "step3.cli.copyTooltip": "複製指令",
+    "step3.cli.copiedTooltip": "已複製！",
+    "step3.cli.copyAriaLabel": "複製 CLI 指令",
     "step3.baseScale": "底字縮放比",
     "step3.annoScale": "標注縮放比",
     "step3.annoSpacing": "標注字距（em 比例，正值放寬、負值收緊）",
@@ -1042,6 +1053,12 @@ export const TRANSLATIONS: Record<Language, Record<TranslationKey, string>> = {
     "step3.outAscent.label": "Output ascent (font units)",
     "step3.outAscent.hint":
       "Blank = inherit from the base font. Fill in when the base has a low native ascent (e.g. Xiaolai 880u) paired with a tall annotation: 1200 for Thai / Katakana / Hangul, 1300 for Urdu Nastaliq. Also useful when the BASE itself is a tall-stacking script (Thai vowels/tone marks, Arabic) and the annotation needs extra headroom above it. Bumps hhea.ascent + OS/2.usWinAscent together so Word / Pages / Canva don't clip the top of the annotation.",
+    "step3.cli.sectionLabel": "Equivalent CLI command",
+    "step3.cli.helperText":
+      "Run this from `python/` in a wing-font-generator checkout to reproduce the same build locally. File paths use the repo layout (input_fonts/, mappings/); substitute your actual local paths for any custom-uploaded fonts.",
+    "step3.cli.copyTooltip": "Copy command",
+    "step3.cli.copiedTooltip": "Copied!",
+    "step3.cli.copyAriaLabel": "Copy CLI command",
     "step3.baseScale": "Base glyph scale",
     "step3.annoScale": "Annotation scale",
     "step3.annoSpacing": "Annotation letter-spacing (em — positive loosens, negative tightens)",
