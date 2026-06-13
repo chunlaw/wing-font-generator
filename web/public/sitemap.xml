@@ -111,4 +111,7 @@
   <url><loc>https://wing-font.chunlaw.io/specimen/SourceHanSerif-Mplus-mandarin</loc><lastmod>2026-06-11</lastmod><priority>0.4</priority></url>
   <url><loc>https://wing-font.chunlaw.io/specimen/Xiaolai-MplusRounded-mandarin</loc><lastmod>2026-06-11</lastmod><priority>0.4</priority></url>
   <url><loc>https://wing-font.chunlaw.io/specimen/Xiaolai-Huninn-mandarin</loc><lastmod>2026-06-11</lastmod><priority>0.4</priority></url>
+
+  <!-- ── Arabic-base specimens (word-unit tier) ─────────────────── -->
+  <url><loc>https://wing-font.chunlaw.io/specimen/NotoSansArabic-Noto-romanization</loc><lastmod>2026-06-11</lastmod><priority>0.4</priority></url>
 </urlset>

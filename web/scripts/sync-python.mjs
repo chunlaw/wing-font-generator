@@ -71,6 +71,11 @@ const MANIFEST = [
   ["mappings/canto-katakana.csv", "mappings/canto-katakana.csv"],
   ["mappings/canto-filipino.csv", "mappings/canto-filipino.csv"],
   ["mappings/canto-urdu.csv", "mappings/canto-urdu.csv"],
+  // Arabic-base word-unit mapping (NEW tier): each Arabic word
+  // composes into one annotated glyph with DIN 31635 romanization
+  // stacked above. Starter set of ~130 common words hand-curated;
+  // expand via gen_arabic_romanization.py.
+  ["mappings/arabic-romanization.csv", "mappings/arabic-romanization.csv"],
   // Toneless / decorative variants (tone digit stripped) — souvenir use.
   ["mappings/canto-thai-notone.csv", "mappings/canto-thai-notone.csv"],
   ["mappings/canto-korean-notone.csv", "mappings/canto-korean-notone.csv"],
@@ -161,6 +166,14 @@ const MANIFEST = [
   [
     "input_fonts/NotoNastaliqUrdu-VariableFont_wght.ttf",
     "NotoNastaliqUrdu-VF.ttf",
+  ],
+  // Noto Sans Arabic (Naskh) — used as the BASE in the experimental
+  // word-unit pipeline that pairs Arabic vocabulary with DIN 31635
+  // romanization. Variable axes (wdth + wght) collapsed to a
+  // URL-friendly "-VF" name. See arabic-romanization.csv mapping.
+  [
+    "input_fonts/NotoSansArabic-VariableFont_wdth,wght.ttf",
+    "NotoSansArabic-VF.ttf",
   ],
   // Baybayin (Tagalog script) annotation font for canto-filipino.
   // Static Regular — no rename needed.

@@ -139,6 +139,71 @@ def set_family_name(font, new_family_name):
                 )
 
 
+# Low-profile attribution: append a single line to the OpenType
+# `name` table's Description (nameID 10). Everything else — Copyright
+# (0), Manufacturer (8), Designer (9), Vendor URL (11), Version (5) —
+# is left exactly as the base font set it. This matches the design
+# intent of "respect all real design work by the base font and
+# annotation font; Wing Font is a tooling step, not a designer or
+# manufacturer."
+#
+# Wording is deliberately framed as a modification note ("Annotations
+# added via Wing Font") rather than a claim of ownership. URL is
+# included so a curious user opening the font in macOS Font Book or
+# Windows Font Properties has a one-step lookup back to the project.
+WING_FONT_PROVENANCE_NOTE = (
+    "Annotations added via Wing Font — https://wing-font.chunlaw.io"
+)
+
+
+def tag_wing_font_provenance(font):
+    """Append a low-profile Wing Font note to the output font's
+    Description (nameID 10).
+
+    For each of the two name-table records Wing Font's pipeline
+    consistently writes to (Windows-English and Mac-Roman), this:
+      * Reads the existing Description record (may be missing —
+        not every base font ships nameID 10).
+      * If present, appends our note after a blank line so visual
+        separation is preserved between the upstream description
+        and the Wing Font line.
+      * If absent, creates the record with just our note.
+
+    No other nameIDs are touched. Manufacturer / Designer /
+    Copyright / Vendor URL / Version stay exactly as the base font
+    set them — Wing Font is a tooling step in the pipeline, not a
+    designer or manufacturer of the typeface itself.
+    """
+    table = font["name"]
+    for plat_id, enc_id, lang_id in (WINDOWS_ENGLISH_IDS, MAC_ROMAN_IDS):
+        existing = table.getName(
+            nameID=10,
+            platformID=plat_id,
+            platEncID=enc_id,
+            langID=lang_id,
+        )
+        if existing is not None:
+            existing_text = existing.toUnicode()
+            # Idempotent — re-running the pipeline on an already-
+            # tagged font (e.g. a regenerate-with-different-params
+            # pass that reads a previously-built TTF) wouldn't
+            # double-stamp it. Cheap substring check; the URL is
+            # the stable signature regardless of whether we ever
+            # tweak the leading text.
+            if "wing-font.chunlaw.io" in existing_text:
+                continue
+            new_text = f"{existing_text}\n\n{WING_FONT_PROVENANCE_NOTE}"
+        else:
+            new_text = WING_FONT_PROVENANCE_NOTE
+        table.setName(
+            new_text,
+            nameID=10,
+            platformID=plat_id,
+            platEncID=enc_id,
+            langID=lang_id,
+        )
+
+
 def main(
     base_font_file,
     anno_font_file,
@@ -375,6 +440,15 @@ def main(
     if new_family_name is not None:
         # Set the new family name
         set_family_name(output_font, new_family_name)
+
+    # Append a low-profile "Annotations added via Wing Font — URL"
+    # line to the output font's Description (nameID 10). All other
+    # name-table fields stay exactly as the base font set them, so
+    # the upstream designer and manufacturer keep full attribution;
+    # Wing Font is acknowledged only as a tooling step. See
+    # tag_wing_font_provenance() above for the rationale + wording
+    # decisions.
+    tag_wing_font_provenance(output_font)
 
     # --- Phase 1: compose annotated variant glyphs -----------------------
     # generate_annotated_glyphs only handles the variant composition
@@ -632,7 +706,17 @@ def main(
     # either — apps that DO respect typo metrics inherit the base
     # font's setting (NotoSansHK / Xiaolai both have it off, so
     # winAscent is what most renderers actually use).
-    if out_ascent is not None:
+    #
+    # ── Guard type ────────────────────────────────────────────────
+    # The CLI path passes either None (default) or argparse-parsed
+    # int. The in-browser path (worker → Pyodide) hands the value
+    # in via `pyodide.toPy(params)`, where JS `null` arrives as
+    # JsNull rather than Python `None` — a naive `is not None`
+    # check lets JsNull through and the subsequent `int()` raises
+    # TypeError. Asking for a real positive number explicitly
+    # short-circuits None, JsNull, undefined, 0, "", and any other
+    # "no override" shape uniformly.
+    if isinstance(out_ascent, (int, float)) and out_ascent > 0:
         output_font["hhea"].ascent = int(out_ascent)
         output_font["OS/2"].usWinAscent = int(out_ascent)
 

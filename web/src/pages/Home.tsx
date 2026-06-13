@@ -33,6 +33,7 @@ import PaletteOutlinedIcon from "@mui/icons-material/PaletteOutlined";
 import DescriptionOutlinedIcon from "@mui/icons-material/DescriptionOutlined";
 import LanguageOutlinedIcon from "@mui/icons-material/LanguageOutlined";
 import LaptopOutlinedIcon from "@mui/icons-material/LaptopOutlined";
+import AutoStoriesOutlinedIcon from "@mui/icons-material/AutoStoriesOutlined";
 import type { SvgIconComponent } from "@mui/icons-material";
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
@@ -199,6 +200,15 @@ const Home = () => {
     { label: "Windows", bodyKey: "home.platforms.tabs.windows" },
     { label: "macOS", bodyKey: "home.platforms.tabs.macos" },
     { label: "Linux", bodyKey: "home.platforms.tabs.linux" },
+    // E-readers — collapsed into one tab in the same spirit as
+    // "Chrome / Firefox / Safari" (same install pattern across the
+    // three) and "Pages / Keynote" (same iWork mechanism). The
+    // three covered here — Kindle, Kobo, Boox — exhaust the
+    // confidence range we can credibly claim today; the tab body
+    // also names PocketBook / Tolino as "likely but untested" so
+    // readers know to try without leading them on, and skips
+    // reMarkable / older Nook where ccmp support is unlikely.
+    { label: "Kindle / Kobo / Boox", bodyKey: "home.platforms.tabs.ereader" },
   ] as const;
   const [activeTab, setActiveTab] = useState(0);
 
@@ -374,17 +384,27 @@ const Home = () => {
           {t("home.platforms.body")}
         </Typography>
         {/*
-          Chips arranged as 4 rows of 3, grouped by category. The
+          Chips arranged as 5 rows of 3, grouped by category. The
           rows are unlabeled — the icons within each row are visually
-          consistent (palette / document / globe / laptop) and the
-          brand names are universally recognised, so explicit row
-          labels would be redundant vertical noise.
+          consistent (palette / document / globe / laptop / book)
+          and the brand names are universally recognised, so explicit
+          row labels would be redundant vertical noise.
 
           Rows (left to right within each row, top to bottom across):
             1. Canva, Affinity, Adobe          — design tools
             2. Microsoft Word, Pages, Keynote  — documents & slides
             3. Chrome, Firefox, Safari         — browsers
             4. Windows, macOS, Linux           — operating systems
+            5. Kindle, Kobo, Boox              — e-readers
+
+          The e-reader row was added once we confirmed Kindle renders
+          ccmp correctly on recent firmware (HarfBuzz-based since
+          ~2018). Kobo and Boox are listed because they share the
+          same HarfBuzz-based pipeline (Kobo) or run full Android
+          (Boox) where any reader app with custom-font support picks
+          up GSUB features. See the "Kindle / Kobo / Boox" install
+          tab for device-specific steps and the caveat about other
+          e-readers (PocketBook, Tolino, reMarkable, etc.).
 
           Same icon repeats within a row. Repetition is intentional —
           it reinforces "these chips belong together" visually. The
@@ -418,6 +438,11 @@ const Home = () => {
                 { label: "Windows", Icon: LaptopOutlinedIcon },
                 { label: "macOS", Icon: LaptopOutlinedIcon },
                 { label: "Linux", Icon: LaptopOutlinedIcon },
+              ],
+              [
+                { label: "Kindle", Icon: AutoStoriesOutlinedIcon },
+                { label: "Kobo", Icon: AutoStoriesOutlinedIcon },
+                { label: "Boox", Icon: AutoStoriesOutlinedIcon },
               ],
             ] as { label: string; Icon: SvgIconComponent }[][]
           ).map((row, rowIdx) => (

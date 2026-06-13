@@ -88,6 +88,36 @@ export const TEMPLATES_BY_DIALECT: Record<string, string[]> = {
   // mandarin-tw mappings. Mix of 鄧麗君 / 王菲 / 羅大佑 / 周華健 / 五月天 / 朴樹
   // / 周深 — broad coverage across 70s–2010s 國語 pop so a reader
   // of any generation lands on something familiar.
+  // Arabic samples — phrases drawn from the hand-curated
+  // ~130-word starter set (arabic-romanization.csv). Each phrase
+  // is a real composition the matrix-built font can render with
+  // baked-in DIN 31635 romanization. Mixes greetings, common
+  // sentences, and number sequences so a viewer sees the breadth
+  // of what the font knows. Short enough to render single-line at
+  // the showcase's default 48 px font size on phone-narrow
+  // viewports without wrapping.
+  arabic: [
+    "السلام عليكم",
+    "صباح الخير",
+    "مساء الخير",
+    "كتاب جديد",
+    "بيت كبير",
+    "صديق جميل",
+    "حب وسلام",
+    "نور وظل",
+    "ماء بحر",
+    "شمس قمر",
+    "أب أم",
+    "ابن بنت",
+    "أخ أخت",
+    "يد قلب",
+    "عين فم",
+    "حياة موت",
+    "علم عقل",
+    "حرب وسلام",
+    "واحد اثنان ثلاثة",
+    "كثير قليل",
+  ],
   mandarin: [
     "夜空中最亮的星　能否聽清",
     "月亮代表我的心",
@@ -650,6 +680,33 @@ export const AVAILABLE_FONTS: FontSet = {
         displayName: "小賴字體（拼音 · 普通話）",
         name: "Xiaolai-Huninn-mandarin-cn",
         source: `url(${import.meta.env.VITE_FONT_URL}/Xiaolai-Huninn-mandarin-cn.woff2) format('woff2')`,
+      },
+    },
+  },
+  // ── Arabic-base word-unit tier (experimental) ─────────────────
+  // First curated font using the word-unit pipeline with a non-Han
+  // BASE script. Each Arabic word composes into one annotated glyph
+  // with DIN 31635 romanization (academic standard: macrons on
+  // long vowels, dots under emphatic consonants) stacked above.
+  // Build from arabic-romanization.csv via word_liga_handler.py.
+  //
+  // The "base font" here is genuinely Arabic (Noto Sans Arabic
+  // Naskh, the standard general-purpose MSA body-text style) —
+  // distinct from the Cantonese-with-Urdu-Nastaliq fonts where
+  // Arabic script appears as ANNOTATION over Chinese. The dialect
+  // key surfaces in /showcase's dropdown as a separate category so
+  // users browsing for "Arabic" find a real Arabic-text font, not
+  // a Cantonese-transliteration variant.
+  arabic: {
+    lang: {
+      zh: "阿拉伯文",
+      en: "Arabic",
+    },
+    fonts: {
+      "NotoSansArabic-Noto-romanization": {
+        displayName: "Noto Sans Arabic（DIN 31635 罗马字）",
+        name: "NotoSansArabic-Noto-romanization",
+        source: `url(${import.meta.env.VITE_FONT_URL}/NotoSansArabic-Noto-romanization.woff2) format('woff2')`,
       },
     },
   },

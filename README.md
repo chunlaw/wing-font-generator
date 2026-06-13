@@ -40,11 +40,11 @@ The `releases/latest/download/` redirect always tracks the most recent `build-<s
 
 Coverage spans:
 
-- **Cantonese (廣東話)** — LSHK Jyutping, Yale, Cangjie, Lau, Guangdong, Chishima; cross-romanization into Katakana / Hangul / Thai script.
+- **Cantonese (廣東話)** — LSHK Jyutping, Yale, Cangjie, Lau, Guangdong, Chishima; cross-script transliteration into Katakana, Hangul, Thai, Devanagari, and Urdu Nastaliq (Arabic script).
 - **Taiwanese / Southern Min (台語 / 河洛話)** — Tâi-lô, POJ, Bopomofo (TPS), Taiwanese Kana.
 - **Teochew / Min Nan (潮州話)** — Peng'im (GDPI), Pe̍h-ūe-jī.
 - **Mandarin (普通話 / 國語)** — Hanyu Pinyin with phrase-level disambiguation across the full CJK Unified Ideograph range.
-- **Arabic (العربية), Thai (ไทย) & Hindi (हिन्दी) — experimental** — word-unit annotation for Arabic-, Thai- and Devanagari-script *base* fonts: each mapped word is composed into a single annotated glyph (cursive shaping / mark stacking / conjunct formation intact), reached via GSUB ligation (boundary-guarded for spaced scripts, longest-match for unspaced Thai), with GDEF ligature carets for in-word cursor movement and per-script variant override (trailing tatweel for Arabic, digit suffix for Thai/Hindi). Per-script behaviour is a data registry, designed to extend to further scripts. See [`python/README.md`](python/README.md#word-unit-base-fonts-arabic-thai).
+- **Word-unit base scripts — experimental pipeline** — beyond CJK, the pipeline can use a non-Han script (Arabic, Thai, Devanagari, …) as the *base*: each mapped word is composed into a single annotated glyph with cursive shaping / mark stacking / conjunct formation intact, reached via GSUB ligation (boundary-guarded for spaced scripts, longest-match for unspaced Thai) with GDEF ligature carets for in-word cursor movement and per-script variant override (trailing tatweel for Arabic, digit suffix for Thai/Hindi). Per-script behaviour is a data registry (`csv_parser.WORD_SCRIPTS`) so adding a script is a small code change. **No pre-built font using this path ships yet** — the Thai / Devanagari / Urdu builds above are CJK base fonts with those scripts as *annotations*, not the other way round. Power users who want a true non-CJK-base build can author a mapping (see [`python/mappings/thai-paiboon.csv`](python/mappings/thai-paiboon.csv) for the format) and invoke `wing-font.py` directly. See [`python/README.md`](python/README.md#word-unit-base-fonts-arabic-thai) for the walkthrough.
 
 Pairings include ChironSung HK, ChironHei HK, Noto Sans HK / TC / SC, Source Han Serif, Xiaolai, and others. See [Acknowledgements](#acknowledgements) for upstream data + font sources.
 

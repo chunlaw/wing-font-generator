@@ -436,6 +436,19 @@ export const BUILT_IN_MAPPINGS: BuiltInPreset[] = [
     filename: "canto-punjab-notone.csv",
     group: "粵語拼寫・無聲調 (Cantonese, toneless / decorative)",
   },
+  // ─ Word-unit base scripts (experimental tier) ─────────────────
+  // Non-Han base scripts where each mapped WORD becomes one
+  // annotated glyph (not per-character). The pipeline is
+  // word_liga_handler.py (see python/README.md). First curated
+  // entry is Arabic → DIN 31635; expect Thai / Devanagari to
+  // follow once their starter CSVs land.
+  {
+    key: "arabic-romanization",
+    label: "العربية (Arabic, DIN 31635)",
+    url: "/wingfont/mappings/arabic-romanization.csv",
+    filename: "arabic-romanization.csv",
+    group: "非漢字底字 (Non-Han base scripts, experimental)",
+  },
   // Taiwanese / Southern Min (河洛話) — pair these with the Noto Sans
   // TC base and the Huninn annotation font. The two "-toned" CSVs use
   // diacritic tone marks (what the showcase fonts ship); the four
