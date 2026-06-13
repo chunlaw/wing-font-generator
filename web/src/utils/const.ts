@@ -161,6 +161,20 @@ export interface FontOption {
    *   "其他標注 Other scripts" — Thai / Katakana / Korean / Cangjie
    */
   group?: string;
+  /**
+   * "Built in the matrix on paper, but not yet on the CDN" marker.
+   * Used during the lag between adding a new font entry here and
+   * the corresponding CI build actually landing on
+   * wing-font.chunlaw.io/fonts/. Filtered out of:
+   *   * The /showcase FontPicker dropdown (so users don't pick a
+   *     font whose CSS @font-face will silently 404).
+   *   * `loadPickedFontsWithFreshUrls` (localStorage restore).
+   *   * `setPickedFonts` (URL `?fonts=…` restore).
+   * Remove the flag once the CDN serves the font. Idempotent:
+   * removing the flag re-exposes the entry without any other
+   * code change.
+   */
+  pending?: boolean;
 }
 
 // Group labels for Cantonese subgrouping. Exported so callers
@@ -182,9 +196,12 @@ export type FontSet = Record<
 /*
  * Showcase curation:
  *
- * The CI workflow (.github/workflows/build-fonts.yml) builds ~30 font
- * variants and deploys them all to wing-font.chunlaw.io/fonts/. The
- * showcase page surfaces only a CURATED SUBSET of those builds — 6
+ * The CI workflow (.github/workflows/deploy-pages.yml) builds ~80
+ * font variants per push (down from ~110 after the June 2026 cleanup
+ * removed stylistic-only ChironHei + ChironSung Italic/Invert
+ * variants — see the "Trimmed" list below) and deploys them all to
+ * wing-font.chunlaw.io/fonts/ + the rolling GitHub Release for TTFs.
+ * The showcase page surfaces only a CURATED SUBSET of those builds —
  * entries chosen to demonstrate maximally-distinct concepts rather
  * than visually-similar romanization variants.
  *
@@ -205,12 +222,21 @@ export type FontSet = Record<
  *
  * Built but NOT showcased (still reachable directly under /fonts/):
  *   • Chishima / Lau / Guangdong — three additional Latin romanizations,
- *     redundant with LSHK + Yale for showcase purposes.
- *   • Every *-It italic variant — same content, subtle base-font style
- *     variation that doesn't teach anything new at picker resolution.
+ *     redundant with LSHK + Yale for showcase purposes. Built for both
+ *     ChironSung Regular and NotoSansHK bases (6 fonts total).
  *
- * If you want a dropped variant re-surfaced, add it back here — the
- * file is the only place that controls what the FontPicker shows.
+ * Trimmed from the matrix (June 2026) — no longer built:
+ *   • Every ChironSung *-It italic variant (Latin + scripts; 10 fonts).
+ *   • Every ChironSung *-Invert variant (Latin + scripts; 10 fonts).
+ *   • Every ChironSung *-It-Invert variant (Latin + scripts; 10 fonts).
+ *   • Both ChironHei LSHK variants (B + B-Invert; 2 fonts).
+ *   These were stylistic-only — same linguistic content as the
+ *   Regular base fonts above. Users who need Italic or Inverted
+ *   output can regenerate via /generate with the -v flag.
+ *
+ * If you want a dropped variant re-surfaced, re-add the matrix
+ * entry to .github/workflows/deploy-pages.yml AND register the
+ * font here.
  */
 export const AVAILABLE_FONTS: FontSet = {
   cantonese: {
@@ -707,6 +733,15 @@ export const AVAILABLE_FONTS: FontSet = {
         displayName: "Noto Sans Arabic（DIN 31635 罗马字）",
         name: "NotoSansArabic-Noto-romanization",
         source: `url(${import.meta.env.VITE_FONT_URL}/NotoSansArabic-Noto-romanization.woff2) format('woff2')`,
+        // Pending CDN availability — the matrix entry exists in
+        // deploy-pages.yml but NotoSansArabic-VariableFont_wdth,wght.ttf
+        // still needs to land in the wing-font-hub gh-pages branch
+        // before CI can build + serve this font. Until then, filter
+        // out of FontPicker / restore paths so users don't pick a
+        // font whose @font-face silently 404s. Remove this flag
+        // once https://wing-font.chunlaw.io/fonts/NotoSansArabic-Noto-romanization.woff2
+        // returns a 200.
+        pending: true,
       },
     },
   },

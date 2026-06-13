@@ -218,11 +218,16 @@ export const AppContextProvider = ({ children }: { children: ReactNode }) => {
   const setPickedFonts = useCallback((names: string[]) => {
     // Build a flat lookup across all dialect groups so we can resolve
     // each name in O(1). Same pattern as the localStorage restore
-    // path — keep them aligned so any catalog rename / removal is
-    // handled identically.
+    // path — keep them aligned so any catalog rename / removal /
+    // pending-flag toggle is handled identically. Pending entries
+    // are skipped so a shared URL containing a not-yet-on-CDN font
+    // name silently drops that font (matches the FontPicker's own
+    // filter — if a user can't pick it, restoring it from a share
+    // link shouldn't sneak it past the filter either).
     const catalog: Record<string, FontOption> = {}
     for (const group of Object.values(AVAILABLE_FONTS)) {
       for (const [name, opt] of Object.entries(group.fonts)) {
+        if (opt.pending) continue
         catalog[name] = opt
       }
     }
@@ -290,7 +295,15 @@ export default AppContext;
  */
 function loadPickedFontsWithFreshUrls(): FontOption[] {
   const raw = localStorage.getItem("pickedFonts");
-  const fallback = () => [Object.values(AVAILABLE_FONTS["cantonese"].fonts)[0]];
+  // First non-pending font in the Cantonese group, used as the
+  // first-visit default. The `.find()` skips any `pending: true`
+  // entry so a font that's in the catalog but not yet on the CDN
+  // doesn't accidentally become the default.
+  const fallback = () => {
+    const cantoFonts = Object.values(AVAILABLE_FONTS["cantonese"].fonts);
+    const usable = cantoFonts.find((opt) => !opt.pending);
+    return usable ? [usable] : [];
+  };
   if (!raw) return fallback();
 
   let parsed: unknown;
@@ -302,10 +315,14 @@ function loadPickedFontsWithFreshUrls(): FontOption[] {
   if (!Array.isArray(parsed)) return fallback();
 
   // Build a quick lookup of every font in every language group so we
-  // don't have to search the nested catalog per saved entry.
+  // don't have to search the nested catalog per saved entry. Pending
+  // entries are skipped here — restoring a pending font would let it
+  // render in the fallback system face (FontFace 404s on the CDN URL)
+  // and the user would see a glyph row with no annotations.
   const catalog: Record<string, FontOption> = {};
   for (const group of Object.values(AVAILABLE_FONTS)) {
     for (const [name, opt] of Object.entries(group.fonts)) {
+      if (opt.pending) continue;
       catalog[name] = opt;
     }
   }

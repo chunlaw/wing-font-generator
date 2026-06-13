@@ -629,6 +629,20 @@ const FontShowcaseCard = ({
             fontSize: `${typoSettings.fontSizePx}px`,
             letterSpacing: `${typoSettings.letterSpacingEm}em`,
             lineHeight: 1.6,
+            // Reserve space for below-the-word annotations (Arabic /
+            // Thai word-unit fonts put the romanization row in the
+            // descender). The forced lineHeight 1.6 is shorter than
+            // those fonts' natural line box (~2.26em), so the
+            // annotation overflows past the bottom of this line box —
+            // which is exactly where the sibling <Divider/> sits — and
+            // paints *under* the divider. An em-based padding-bottom
+            // (relative to this element's own fontSize, so it scales
+            // with the size slider) pushes the divider below the
+            // annotation. Applied uniformly so the card grid stays
+            // even; above-the-character CJK fonts just gain a small,
+            // consistent bottom gap. See _auto_extend_vertical_metrics
+            // in python/wing-font.py for the matching font-side fix.
+            pb: "0.5em",
             textWrap: "nowrap" as const,
             cursor: "pointer",
             // Composed opacity drives both:

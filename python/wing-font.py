@@ -21,6 +21,16 @@ import string
 WINDOWS_ENGLISH_IDS = 3, 1, 0x409
 MAC_ROMAN_IDS = 1, 0, 0
 
+# OpenType `maxp` table stores numGlyphs as a uint16 — hard cap 65,535.
+# A font with more than that cannot be saved as TTF/OTF (struct.error
+# during pack of format 'H'). We check predicted glyph count against a
+# soft cap a touch below the absolute limit so the few structural
+# glyphs the subsetter retains (.notdef, .null, CR, space, plus a
+# handful introduced by GSUB build) don't push us over the edge
+# AFTER the check passed.
+OPENTYPE_NUMGLYPHS_CAP = 65535
+GLYPH_BUDGET_SOFT_CAP = 65000
+
 
 def _prepare_word_mode_fonts(
     base_font, output_font, base_font_file, base_axis_location
@@ -98,25 +108,47 @@ def _word_mode_keep_glyphs(base_font, char_mapping, word_components):
 
 
 def _auto_extend_vertical_metrics(output_font, word_metrics, margin=20):
-    """Extend hhea + OS/2 win metrics to the composed word glyphs'
-    actual ink (plus a small safety margin) so neither direction gets
-    clipped: the below-the-word annotation default puts ink underneath
-    the base font's descent, and the above-the-word `-v` variant can
-    poke past its ascent. sTypo* stay untouched — same rationale as
-    the --out-ascent flag (apps respecting typo metrics keep their
-    line spacing)."""
+    """Extend the output font's vertical metrics to the composed word
+    glyphs' actual ink (plus a small safety margin) so neither direction
+    gets clipped or overlaps the adjacent line: the below-the-word
+    annotation default puts ink underneath the base font's descent, and
+    the above-the-word `-v` variant can poke past its ascent.
+
+    Unlike the CJK above-the-character path (and the --out-ascent flag),
+    this extends the sTypo* metrics too, not just hhea + OS/2 win. The
+    reason is line spacing: word-unit fonts add a whole extra row of
+    annotation (a romanization line under each Arabic word, or above it
+    when inverted), and the base fonts ship with `USE_TYPO_METRICS` set,
+    so the apps that lay out multi-line text — Chrome, Firefox, Word,
+    InDesign — derive line height from sTypoAscender/Descender. If those
+    stayed at the base font's values while win/hhea grew, the reserved
+    line box would be shallower than the annotation ink and the
+    annotation row would collide with the next line as soon as line
+    spacing is tightened. We know the exact ink extent here
+    (`word_metrics`), so we set all three metric families consistently.
+
+    This only fires for word-unit builds: `min_y`/`max_y` are populated
+    solely by the word-composition path in build_glyph, so the CJK
+    single-character fonts (including the Urdu/Thai annotation-on-CJK
+    pairings) never reach these branches and keep their native line
+    spacing."""
+    os2 = output_font["OS/2"]
     if word_metrics.get("min_y") is not None:
         ink_floor = int(word_metrics["min_y"]) - margin
         if ink_floor < output_font["hhea"].descent:
             output_font["hhea"].descent = ink_floor
-        if -ink_floor > output_font["OS/2"].usWinDescent:
-            output_font["OS/2"].usWinDescent = -ink_floor
+        if -ink_floor > os2.usWinDescent:
+            os2.usWinDescent = -ink_floor
+        if ink_floor < os2.sTypoDescender:
+            os2.sTypoDescender = ink_floor
     if word_metrics.get("max_y") is not None:
         ink_top = int(word_metrics["max_y"]) + margin
         if ink_top > output_font["hhea"].ascent:
             output_font["hhea"].ascent = ink_top
-        if ink_top > output_font["OS/2"].usWinAscent:
-            output_font["OS/2"].usWinAscent = ink_top
+        if ink_top > os2.usWinAscent:
+            os2.usWinAscent = ink_top
+        if ink_top > os2.sTypoAscender:
+            os2.sTypoAscender = ink_top
 
 def set_family_name(font, new_family_name):
     table = font["name"]
@@ -204,6 +236,188 @@ def tag_wing_font_provenance(font):
         )
 
 
+def _check_glyph_count_budget(output_font, char_mapping, optimize, mapping_path):
+    """Pre-flight check: bail early if the predicted output glyph count
+    would exceed OpenType's hard 65,535 ceiling.
+
+    Why here, not at save time:
+    The composition phase (Phase 1) and the GSUB build phase (Phase 2)
+    each take many seconds to minutes on large mappings — on Pyodide,
+    saving with subset is also expensive. fontTools doesn't surface
+    the overflow until ``output_font.save(...)`` packs the maxp table,
+    by which time the user has spent minutes burning CPU on something
+    that was structurally doomed from row count alone. We can predict
+    it cheaply right after ``load_mapping`` and fail in milliseconds
+    with an actionable message instead.
+
+    Estimation:
+      * each (key, [variant1, variant2, ...]) entry in char_mapping
+        contributes ``len(variants)`` NEW glyphs — both for single-char
+        bases (the variant glyphs sit alongside the original in the
+        font) and for word-unit keys (the composed word glyph is
+        entirely new — the base font doesn't have it);
+      * with ``-opt``, fontTools.subset keeps only the glyphs Phase 4's
+        keep-list explicitly names, plus a small set of structurally
+        required ones (.notdef, .null, space, basic ASCII for fallback)
+        — call that ~1,000 as a safe overestimate;
+      * without ``-opt``, every glyph already in ``output_font`` survives
+        AS WELL AS the new ones we add.
+
+    So:
+        predicted = NEW + (1000 if optimize else existing)
+    """
+    predicted_new = sum(len(v) for v in char_mapping.values())
+    existing = output_font["maxp"].numGlyphs
+    if optimize:
+        # Subset will discard most of `existing`. The keep-list is
+        # essentially char_mapping's keys + a small structural retain
+        # set; 1,000 is a generous overestimate of "what the subsetter
+        # holds onto regardless of mapping".
+        predicted_total = predicted_new + 1000
+        budget_explanation = (
+            f"{predicted_new} new glyphs from your CSV + ~1,000 "
+            "structural glyphs kept by --optimize subset"
+        )
+    else:
+        predicted_total = existing + predicted_new
+        budget_explanation = (
+            f"{existing} glyphs already in the base font + "
+            f"{predicted_new} new glyphs from your CSV"
+        )
+    if predicted_total > GLYPH_BUDGET_SOFT_CAP:
+        # Hand the caller a concrete trim target rather than a vague
+        # "make it smaller": ROWS = predicted_new − overshoot, capped
+        # below SOFT - 1000-glyph buffer.
+        budget_remaining_for_new = GLYPH_BUDGET_SOFT_CAP - (
+            1000 if optimize else existing
+        )
+        target_row_estimate = max(0, budget_remaining_for_new)
+        # Two-step error reporting: print the long friendly diagnostic
+        # to stdout FIRST (so it lands in runner.py's tee'd progress
+        # log — Step 4 in /generate displays everything captured here),
+        # then raise a short RuntimeError to abort the pipeline.
+        #
+        # Why split it: SystemExit inherits from BaseException, not
+        # Exception, so runner.py's `except Exception: print_exc()`
+        # wouldn't catch it — the diagnostic would be lost. Using a
+        # regular Exception keeps it inside the catch, but the
+        # traceback would dwarf the message itself. Printing first
+        # solves both: the user sees the actionable explanation in
+        # the Step 4 log right where they're reading; the traceback
+        # behind it is short and unobtrusive.
+        diagnostic = (
+            f"\n[wing-font] Pre-flight glyph budget exceeded.\n"
+            f"\n"
+            f"  Predicted output glyph count: {predicted_total:,}\n"
+            f"  Computed as: {budget_explanation}.\n"
+            f"  OpenType `maxp` hard cap:     "
+            f"{OPENTYPE_NUMGLYPHS_CAP:,} (uint16).\n"
+            f"  Safe budget (with margin):    "
+            f"{GLYPH_BUDGET_SOFT_CAP:,}.\n"
+            f"\n"
+            f"Each row in the mapping CSV whose first column uses only\n"
+            f"characters present in the base font becomes its own glyph\n"
+            f"in the output (one composed glyph per word for word-unit\n"
+            f"scripts like Thai/Arabic; one variant glyph per reading\n"
+            f"for CJK). Mapping: {mapping_path}\n"
+            f"\n"
+            f"Trim the CSV so the result stays under the cap. As a\n"
+            f"rough target: keep about the top {target_row_estimate:,}\n"
+            f"rows (by weight — the third CSV column), then retry.\n"
+            f"\n"
+            f"Aborting before the {('composition + ') if not optimize else ''}"
+            f"save phase to spare you the wasted compute.\n"
+        )
+        print(diagnostic, flush=True)
+        raise RuntimeError(
+            f"Pre-flight glyph budget exceeded: predicted "
+            f"{predicted_total:,} glyphs > soft cap "
+            f"{GLYPH_BUDGET_SOFT_CAP:,} (OpenType uint16 hard cap is "
+            f"{OPENTYPE_NUMGLYPHS_CAP:,}). See the diagnostic printed "
+            f"above for the recommended fix."
+        )
+
+
+def _format_cli_invocation(
+    base_font_file,
+    anno_font_file,
+    mapping,
+    output_prefix,
+    new_family_name,
+    base_scale,
+    anno_scale,
+    anno_spacing,
+    upper_y_offset_ratio,
+    invert,
+    optimize,
+    trigger_char,
+    out_ascent,
+    base_axis_location,
+    anno_axis_location,
+):
+    """Build the equivalent `python wing-font.py ...` command from
+    the kwargs main() actually received.
+
+    Printed at the top of every run so the log shows what's about to
+    happen in a copy-paste-runnable form. For CLI invocations the
+    output is essentially the user's own command line round-tripped
+    through argparse defaults; for Pyodide / runner.py invocations
+    it's the same information but constructed from the runner's
+    kwargs, giving the user a clean fallback CLI command they can
+    run locally if Pyodide crashes mid-run (file paths will be
+    Pyodide temp dirs they'd need to substitute).
+
+    Args matching the CLI default are omitted to keep the line
+    short. Variable-font axis_location dicts have no CLI flag yet
+    and are surfaced as `# NOTE:` lines underneath.
+    """
+    import shlex
+
+    parts = [
+        "python wing-font.py",
+        f"-i {shlex.quote(str(base_font_file))}",
+        f"-a {shlex.quote(str(anno_font_file))}",
+        f"-m {shlex.quote(str(mapping))}",
+        f"-o {shlex.quote(str(output_prefix))}",
+    ]
+    if new_family_name:
+        parts.append(f"-f {shlex.quote(str(new_family_name))}")
+    if base_scale != 0.75:
+        parts.append(f"-bs {base_scale}")
+    if anno_scale != 0.25:
+        parts.append(f"-as {anno_scale}")
+    if anno_spacing != 0.0:
+        parts.append(f"--anno-spacing {anno_spacing}")
+    if upper_y_offset_ratio != 0.8:
+        parts.append(f"-y {upper_y_offset_ratio}")
+    if invert:
+        parts.append("-v")
+    if optimize:
+        parts.append("-opt")
+    if trigger_char != DEFAULT_TRIGGER_CHAR:
+        # Empty string is a legitimate value (disables the trigger
+        # + numeral path); shlex.quote handles it correctly.
+        parts.append(f"--trigger-char {shlex.quote(str(trigger_char))}")
+    if isinstance(out_ascent, (int, float)) and out_ascent > 0:
+        parts.append(f"--out-ascent {int(out_ascent)}")
+
+    # Variable-font axis pins: --base-axis TAG=VALUE / --anno-axis
+    # TAG=VALUE, repeated per axis. Mirrors the CLI flag shape so the
+    # printed command round-trips through argparse cleanly. Values
+    # are emitted as int when they have no fractional part (cleaner
+    # log) and as float otherwise.
+    def _fmt_axis(value):
+        return str(int(value)) if float(value).is_integer() else str(value)
+    if base_axis_location:
+        for tag, value in base_axis_location.items():
+            parts.append(f"--base-axis {tag}={_fmt_axis(value)}")
+    if anno_axis_location:
+        for tag, value in anno_axis_location.items():
+            parts.append(f"--anno-axis {tag}={_fmt_axis(value)}")
+
+    return " ".join(parts)
+
+
 def main(
     base_font_file,
     anno_font_file,
@@ -253,6 +467,31 @@ def main(
     # spacing as before).
     out_ascent=None,
 ):
+    # First log line: the equivalent CLI command this invocation
+    # corresponds to. Useful both for CLI users (round-tripping the
+    # canonical flag forms) and for Pyodide / runner.py callers
+    # (gives the Step 4 progress log a copy-paste-ready local-CLI
+    # fallback if Pyodide crashes mid-run — the file paths will be
+    # Pyodide temp dirs the user needs to substitute, but the
+    # numeric / boolean args are exactly what was passed).
+    print(_format_cli_invocation(
+        base_font_file=base_font_file,
+        anno_font_file=anno_font_file,
+        mapping=mapping,
+        output_prefix=output_prefix,
+        new_family_name=new_family_name,
+        base_scale=base_scale,
+        anno_scale=anno_scale,
+        anno_spacing=anno_spacing,
+        upper_y_offset_ratio=upper_y_offset_ratio,
+        invert=invert,
+        optimize=optimize,
+        trigger_char=trigger_char,
+        out_ascent=out_ascent,
+        base_axis_location=base_axis_location,
+        anno_axis_location=anno_axis_location,
+    ))
+
     # Sanity-check input font sizes before letting fontTools blow up
     # with a cryptic "bad sfntVersion" error. A common failure mode
     # is the input download silently returning an error page (e.g.
@@ -391,6 +630,15 @@ def main(
             anno_font_bytes = _f.read()
 
     word_mapping, char_mapping = load_mapping(base_font, mapping)
+
+    # ── Pre-flight: glyph count vs OpenType's uint16 ceiling ─────────
+    # Most word-unit mappings (Thai, Arabic) and the larger CJK
+    # mappings can, in principle, push the output past `maxp`'s
+    # 65,535-glyph hard cap. Without this check the failure surfaces
+    # ~4 minutes in, deep inside `output_font.save(...)`, with an
+    # opaque `struct.error: 'H' format requires 0 <= number <= 65535`.
+    # Check now so we can bail with an actionable error in milliseconds.
+    _check_glyph_count_budget(output_font, char_mapping, optimize, mapping)
 
     # ── Arabic word-unit entries ─────────────────────────────────────
     # Multi-character keys in char_mapping are joining-script (Arabic)
@@ -757,6 +1005,21 @@ if __name__ == "__main__":
     parser.add_argument('-y', '--upper_y_offset_ratio', type=float, default=0.8, help="Y offset in (percentage) for the upper string")
     parser.add_argument('-bs', '--base-scale', type=float, default=0.75, help="The scaling factor for the base font")
     parser.add_argument('-as', '--anno-scale', type=float, default=0.25, help="The scaling factor for the annotation glyphs, as a fraction of the output em (UPM-independent: same visual size regardless of the annotation font's unitsPerEm)")
+    parser.add_argument(
+        '--anno-spacing',
+        type=float,
+        default=0.0,
+        help=(
+            "Extra inter-glyph gap inside an annotation string, in em "
+            "units. 0 = natural advance (each glyph sits at its native "
+            "advance position). Positive opens up — useful for CJK "
+            "radical annotations (e.g. cangjie's 一弓十山) where the "
+            "default packing looks like a single visual blob. Negative "
+            "tightens; push too far and glyphs visibly overlap. The "
+            "in-browser /generate Step 3 'Annotation spacing' slider "
+            "drives this same parameter."
+        ),
+    )
     parser.add_argument('-v', '--invert', action='store_true', help='Invert the annotation and base glyph')
     parser.add_argument('-opt', '--optimize', action="store_true", help="Optimizing size by subsetting annotated glyph only")
     parser.add_argument(
@@ -788,11 +1051,73 @@ if __name__ == "__main__":
             "unset preserves the previous behaviour."
         ),
     )
+    # ── Variable-font axis pin ─────────────────────────────────────
+    # Both flags repeat: pass `--base-axis tag=value` once per axis
+    # you want to pin. Mirrors what the in-browser /generate Step 1
+    # axis sliders set on the base / annotation font slots.
+    # Example:
+    #   --base-axis wght=700 --base-axis ital=1
+    # Each invocation collects one string; the post-parse loop below
+    # splits the strings into a {tag: float} dict that's forwarded
+    # to main() as base_axis_location / anno_axis_location.
+    parser.add_argument(
+        '--base-axis',
+        action='append',
+        default=[],
+        metavar='TAG=VALUE',
+        help=(
+            "Pin a base-font variable axis. TAG is the 4-character "
+            "OpenType axis tag (e.g. wght, ital, opsz, wdth); VALUE "
+            "is a float within the axis's declared range. Repeat the "
+            "flag for each axis. Mirrors the per-axis sliders in "
+            "/generate Step 1. Example: --base-axis wght=700"
+        ),
+    )
+    parser.add_argument(
+        '--anno-axis',
+        action='append',
+        default=[],
+        metavar='TAG=VALUE',
+        help=(
+            "Pin an annotation-font variable axis. Same syntax as "
+            "--base-axis. Example: --anno-axis wght=500"
+        ),
+    )
     try:
         options = parser.parse_args()
     except:
         parser.print_help()
         exit()
+
+    # Parse the TAG=VALUE strings collected by --base-axis /
+    # --anno-axis into the {tag: float} dicts main() expects. None
+    # when no flag was passed so the existing "skip instancing"
+    # branch fires (matches the pre-flag default behaviour).
+    def _parse_axis_args(items, label):
+        if not items:
+            return None
+        loc = {}
+        for raw in items:
+            if "=" not in raw:
+                parser.error(
+                    f"--{label}-axis expects TAG=VALUE; got {raw!r}"
+                )
+            tag, value = raw.split("=", 1)
+            tag = tag.strip()
+            if not tag:
+                parser.error(f"--{label}-axis: empty TAG in {raw!r}")
+            try:
+                loc[tag] = float(value)
+            except ValueError:
+                parser.error(
+                    f"--{label}-axis: VALUE must be a number; "
+                    f"got {value!r} in {raw!r}"
+                )
+        return loc
+
+    base_axis_location = _parse_axis_args(options.base_axis, "base")
+    anno_axis_location = _parse_axis_args(options.anno_axis, "anno")
+
     main(
         base_font_file = options.base_font_file,
         anno_font_file = options.anno_font_file,
@@ -801,9 +1126,12 @@ if __name__ == "__main__":
         new_family_name = options.family_name,
         base_scale=options.base_scale,
         anno_scale=options.anno_scale,
+        anno_spacing=options.anno_spacing,
         upper_y_offset_ratio=options.upper_y_offset_ratio,
         invert=options.invert,
         optimize=options.optimize,
         trigger_char=options.trigger_char,
         out_ascent=options.out_ascent,
+        base_axis_location=base_axis_location,
+        anno_axis_location=anno_axis_location,
     )

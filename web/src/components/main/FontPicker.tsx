@@ -75,6 +75,14 @@ const FontPicker = () => {
   // we branch the render. Built-in fonts carry an optional `group`
   // field — preserve it so the render below can insert
   // `<ListSubheader>` rows at group boundaries.
+  //
+  // `pending: true` entries are filtered out at this layer: the
+  // matrix entry exists but the CDN doesn't serve the font yet, so
+  // exposing it would let the user pick a font that silently fails
+  // to load. The filter lives here (rather than at AVAILABLE_FONTS
+  // load time) so removing the `pending` flag in const.ts is the
+  // single switch that re-exposes the font — no other code change
+  // needed.
   const fontOptions =
     state.lang === USER_FONTS_GROUP_KEY
       ? recentEntries.map((e) => ({
@@ -82,11 +90,13 @@ const FontPicker = () => {
           displayName: e.displayName,
           group: undefined as string | undefined,
         }))
-      : Object.values(AVAILABLE_FONTS[state.lang]?.fonts ?? {}).map((opt) => ({
-          name: opt.name,
-          displayName: opt.displayName,
-          group: opt.group,
-        }));
+      : Object.values(AVAILABLE_FONTS[state.lang]?.fonts ?? {})
+          .filter((opt) => !opt.pending)
+          .map((opt) => ({
+            name: opt.name,
+            displayName: opt.displayName,
+            group: opt.group,
+          }));
 
   return (
     <Box
@@ -117,11 +127,24 @@ const FontPicker = () => {
           },
         }}
       >
-        {Object.keys(AVAILABLE_FONTS).map((key) =>
-          <MenuItem key={`${key}-option`} value={key}>
-            {getDialectLabel(key, lang)}
-          </MenuItem>
-        )}
+        {/*
+          Hide a dialect entirely if every font inside it is
+          pending CDN availability (otherwise the user picks the
+          dialect → sees an empty font dropdown → no clear next
+          step). Once any non-pending font lands, the dialect
+          re-appears automatically.
+         */}
+        {Object.keys(AVAILABLE_FONTS)
+          .filter((key) =>
+            Object.values(AVAILABLE_FONTS[key].fonts).some(
+              (opt) => !opt.pending,
+            ),
+          )
+          .map((key) =>
+            <MenuItem key={`${key}-option`} value={key}>
+              {getDialectLabel(key, lang)}
+            </MenuItem>
+          )}
         {showUserFontsGroup && [
           // ListSubheader visually separates user fonts from the
           // built-in dialect set. pointerEvents: none prevents the

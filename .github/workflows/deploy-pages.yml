@@ -106,24 +106,17 @@ jobs:
         # See the retired build-fonts.yml history for the full naming /
         # -as / -opt conventions behind each entry.
         font:
-          # === Inverted variants — ChironHei + LSHK ================
-          - { name: ChironHeiHK-Noto-lshk-B-Invert,        args: "-v -y 0.3 -opt -i input_fonts/ChironHeiHK-B.ttf  -a input_fonts/NotoSerif-Regular.ttf -m mappings/canto-lshk.csv -as 0.27" }
-          - { name: ChironHeiHK-Noto-lshk-Invert,          args: "-v -y 0.3 -opt -i input_fonts/ChironHeiHK-R.ttf  -a input_fonts/NotoSerif-Regular.ttf -m mappings/canto-lshk.csv -as 0.27" }
-          # === Inverted variants — ChironSung Regular + each Cantonese romanization
-          - { name: ChironSungHK-Noto-lshk-Invert,         args: "-v -y 0.3 -opt -i input_fonts/ChironSungHK-R.ttf -a input_fonts/NotoSerif-Regular.ttf -m mappings/canto-lshk.csv -as 0.27" }
-          - { name: ChironSungHK-Noto-yale-Invert,         args: "-v -y 0.3 -opt -i input_fonts/ChironSungHK-R.ttf -a input_fonts/NotoSerif-Regular.ttf -m mappings/canto-yale.csv -as 0.27" }
-          - { name: ChironSungHK-Noto-chishima-Invert,     args: "-v -y 0.3 -opt -i input_fonts/ChironSungHK-R.ttf -a input_fonts/NotoSerif-Regular.ttf -m mappings/canto-chishima.csv -as 0.27" }
-          - { name: ChironSungHK-Noto-guangdong-Invert,    args: "-v -y 0.3 -opt -i input_fonts/ChironSungHK-R.ttf -a input_fonts/NotoSerif-Regular.ttf -m mappings/canto-guangdong.csv -as 0.27" }
-          - { name: ChironSungHK-Noto-lau-Invert,          args: "-v -y 0.3 -opt -i input_fonts/ChironSungHK-R.ttf -a input_fonts/NotoSerif-Regular.ttf -m mappings/canto-lau.csv -as 0.27" }
-          # Cangjie skips -opt: annotation IS the base font, subsetting would break the self-reference.
-          - { name: ChironSungHK-cangjie-Invert,           args: "-v -y 0.3 -i input_fonts/ChironSungHK-R.ttf -a input_fonts/ChironSungHK-R.ttf -m mappings/cangjie.csv -as 0.25" }
-          # === Inverted variants — ChironSung Italic + each Cantonese romanization
-          - { name: ChironSungHK-Noto-lshk-It-Invert,      args: "-v -y 0.3 -opt -i input_fonts/ChironSungHK-R-It.ttf -a input_fonts/NotoSerif-Regular.ttf -m mappings/canto-lshk.csv -as 0.27" }
-          - { name: ChironSungHK-Noto-yale-It-Invert,      args: "-v -y 0.3 -opt -i input_fonts/ChironSungHK-R-It.ttf -a input_fonts/NotoSerif-Regular.ttf -m mappings/canto-yale.csv -as 0.27" }
-          - { name: ChironSungHK-Noto-chishima-It-Invert,  args: "-v -y 0.3 -opt -i input_fonts/ChironSungHK-R-It.ttf -a input_fonts/NotoSerif-Regular.ttf -m mappings/canto-chishima.csv -as 0.27" }
-          - { name: ChironSungHK-Noto-guangdong-It-Invert, args: "-v -y 0.3 -opt -i input_fonts/ChironSungHK-R-It.ttf -a input_fonts/NotoSerif-Regular.ttf -m mappings/canto-guangdong.csv -as 0.27" }
-          - { name: ChironSungHK-Noto-lau-It-Invert,       args: "-v -y 0.3 -opt -i input_fonts/ChironSungHK-R-It.ttf -a input_fonts/NotoSerif-Regular.ttf -m mappings/canto-lau.csv -as 0.27" }
-          - { name: ChironSungHK-cangjie-It-Invert,        args: "-v -y 0.3 -i input_fonts/ChironSungHK-R-It.ttf -a input_fonts/ChironSungHK-R-It.ttf -m mappings/cangjie.csv -as 0.25" }
+          # ── Trimmed in June 2026 matrix cleanup ──────────────────
+          # 32 stylistic-only variants were removed: ChironHei
+          # (2 entries — LSHK only, marginal coverage), ChironSung
+          # Latin Italic (6), ChironSung Latin Invert (6),
+          # ChironSung Latin Italic-Invert (6), and the same Italic
+          # / Invert / Italic-Invert cuts across the 4 script-
+          # specific (thai/katakana/korean/urdu) variants further
+          # below (12 more). The Regular base versions below cover
+          # the same linguistic content; users wanting Italic or
+          # Inverted output can generate via `/generate` with `-v`.
+          # See git history for the cut entries' exact args.
           # === Standard variants — ChironSung Regular ===============
           - { name: ChironSungHK-Noto-lshk,                args: "-opt -i input_fonts/ChironSungHK-R.ttf -a input_fonts/NotoSerif-Regular.ttf -m mappings/canto-lshk.csv -as 0.27" }
           - { name: ChironSungHK-Noto-yale,                args: "-opt -i input_fonts/ChironSungHK-R.ttf -a input_fonts/NotoSerif-Regular.ttf -m mappings/canto-yale.csv -as 0.27" }
@@ -131,34 +124,17 @@ jobs:
           - { name: ChironSungHK-Noto-guangdong,           args: "-opt -i input_fonts/ChironSungHK-R.ttf -a input_fonts/NotoSerif-Regular.ttf -m mappings/canto-guangdong.csv -as 0.27" }
           - { name: ChironSungHK-Noto-lau,                 args: "-opt -i input_fonts/ChironSungHK-R.ttf -a input_fonts/NotoSerif-Regular.ttf -m mappings/canto-lau.csv -as 0.27" }
           - { name: ChironSungHK-cangjie,                  args: "-i input_fonts/ChironSungHK-R.ttf -a input_fonts/ChironSungHK-R.ttf -m mappings/cangjie.csv -as 0.25" }
-          # === Standard variants — ChironSung Italic ================
-          - { name: ChironSungHK-Noto-lshk-It,             args: "-opt -i input_fonts/ChironSungHK-R-It.ttf -a input_fonts/NotoSerif-Regular.ttf -m mappings/canto-lshk.csv -as 0.27" }
-          - { name: ChironSungHK-Noto-yale-It,             args: "-opt -i input_fonts/ChironSungHK-R-It.ttf -a input_fonts/NotoSerif-Regular.ttf -m mappings/canto-yale.csv -as 0.27" }
-          - { name: ChironSungHK-Noto-chishima-It,         args: "-opt -i input_fonts/ChironSungHK-R-It.ttf -a input_fonts/NotoSerif-Regular.ttf -m mappings/canto-chishima.csv -as 0.27" }
-          - { name: ChironSungHK-Noto-guangdong-It,        args: "-opt -i input_fonts/ChironSungHK-R-It.ttf -a input_fonts/NotoSerif-Regular.ttf -m mappings/canto-guangdong.csv -as 0.27" }
-          - { name: ChironSungHK-Noto-lau-It,              args: "-opt -i input_fonts/ChironSungHK-R-It.ttf -a input_fonts/NotoSerif-Regular.ttf -m mappings/canto-lau.csv -as 0.27" }
-          - { name: ChironSungHK-cangjie-It,               args: "-i input_fonts/ChironSungHK-R-It.ttf -a input_fonts/ChironSungHK-R-It.ttf -m mappings/cangjie.csv -as 0.25" }
           # === Script-specific annotation variants =================
-          # Inverted, ChironSung Regular:
-          - { name: ChironSungHK-Google-thai-Invert,       args: "-v -y 0.3 -opt -i input_fonts/ChironSungHK-R.ttf -a 'input_fonts/GoogleSans-VariableFont_GRAD,opsz,wght.ttf' -m mappings/canto-thai.csv -as 0.22" }
-          - { name: ChironSungHK-NotoJP-katakana-Invert,   args: "-v -y 0.3 -opt -i input_fonts/ChironSungHK-R.ttf -a input_fonts/NotoSansJP-VariableFont_wght.ttf -m mappings/canto-katakana.csv -as 0.24" }
-          - { name: ChironSungHK-NotoKR-korean-Invert,     args: "-v -y 0.3 -opt -i input_fonts/ChironSungHK-R.ttf -a input_fonts/NotoSansKR-VariableFont_wght.ttf -m mappings/canto-korean.csv -as 0.24" }
-          - { name: ChironSungHK-NotoNastaliq-urdu-Invert, args: "-v -y 0.3 -opt -i input_fonts/ChironSungHK-R.ttf -a input_fonts/NotoNastaliqUrdu-VariableFont_wght.ttf -m mappings/canto-urdu.csv -as 0.16" }
-          # Inverted, ChironSung Italic:
-          - { name: ChironSungHK-Google-thai-It-Invert,    args: "-v -y 0.3 -opt -i input_fonts/ChironSungHK-R-It.ttf -a 'input_fonts/GoogleSans-VariableFont_GRAD,opsz,wght.ttf' -m mappings/canto-thai.csv -as 0.22" }
-          - { name: ChironSungHK-NotoJP-katakana-It-Invert, args: "-v -y 0.3 -opt -i input_fonts/ChironSungHK-R-It.ttf -a input_fonts/NotoSansJP-VariableFont_wght.ttf -m mappings/canto-katakana.csv -as 0.24" }
-          - { name: ChironSungHK-NotoKR-korean-It-Invert,  args: "-v -y 0.3 -opt -i input_fonts/ChironSungHK-R-It.ttf -a input_fonts/NotoSansKR-VariableFont_wght.ttf -m mappings/canto-korean.csv -as 0.24" }
-          - { name: ChironSungHK-NotoNastaliq-urdu-It-Invert, args: "-v -y 0.3 -opt -i input_fonts/ChironSungHK-R-It.ttf -a input_fonts/NotoNastaliqUrdu-VariableFont_wght.ttf -m mappings/canto-urdu.csv -as 0.16" }
-          # Standard, ChironSung Regular:
+          # ChironSung Regular base only — the Italic, Invert, and
+          # Italic-Invert variants of these 4 lines (12 fonts total)
+          # were trimmed in the June 2026 matrix cleanup along with
+          # their Latin-romanization counterparts above. See the
+          # "Trimmed" note before "Standard variants — ChironSung
+          # Regular" for the rationale.
           - { name: ChironSungHK-Google-thai,              args: "-opt -i input_fonts/ChironSungHK-R.ttf -a 'input_fonts/GoogleSans-VariableFont_GRAD,opsz,wght.ttf' -m mappings/canto-thai.csv -as 0.22" }
           - { name: ChironSungHK-NotoJP-katakana,          args: "-opt -i input_fonts/ChironSungHK-R.ttf -a input_fonts/NotoSansJP-VariableFont_wght.ttf -m mappings/canto-katakana.csv -as 0.24" }
           - { name: ChironSungHK-NotoKR-korean,            args: "-opt -i input_fonts/ChironSungHK-R.ttf -a input_fonts/NotoSansKR-VariableFont_wght.ttf -m mappings/canto-korean.csv -as 0.24" }
           - { name: ChironSungHK-NotoNastaliq-urdu,        args: "-opt -i input_fonts/ChironSungHK-R.ttf -a input_fonts/NotoNastaliqUrdu-VariableFont_wght.ttf -m mappings/canto-urdu.csv -as 0.16" }
-          # Standard, ChironSung Italic:
-          - { name: ChironSungHK-Google-thai-It,           args: "-opt -i input_fonts/ChironSungHK-R-It.ttf -a 'input_fonts/GoogleSans-VariableFont_GRAD,opsz,wght.ttf' -m mappings/canto-thai.csv -as 0.22" }
-          - { name: ChironSungHK-NotoJP-katakana-It,       args: "-opt -i input_fonts/ChironSungHK-R-It.ttf -a input_fonts/NotoSansJP-VariableFont_wght.ttf -m mappings/canto-katakana.csv -as 0.24" }
-          - { name: ChironSungHK-NotoKR-korean-It,         args: "-opt -i input_fonts/ChironSungHK-R-It.ttf -a input_fonts/NotoSansKR-VariableFont_wght.ttf -m mappings/canto-korean.csv -as 0.24" }
-          - { name: ChironSungHK-NotoNastaliq-urdu-It,     args: "-opt -i input_fonts/ChironSungHK-R-It.ttf -a input_fonts/NotoNastaliqUrdu-VariableFont_wght.ttf -m mappings/canto-urdu.csv -as 0.16" }
           # === Cantonese — Noto Sans HK base (lighter showcase set) =
           # Hong-Kong-styled Cantonese variants. Same six mappings as
           # the ChironSung set above but built on Noto Sans HK

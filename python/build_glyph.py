@@ -22,11 +22,32 @@ the old order, so callers that haven't been updated still work.
 
 from fontTools.pens.ttGlyphPen import TTGlyphPen
 from fontTools.pens.transformPen import TransformPen
+from fontTools.pens.recordingPen import DecomposingRecordingPen
 
 from mappings.csv_parser import WORD_SCRIPTS, get_word_unit_script
 from utils import get_glyph_name_by_char, step_timer
 
 GLYPH_PREFIX = "wingfont"
+
+
+def _draw_decomposed(glyph_set, glyph_name, target_pen):
+    """Draw ``glyph_name`` into ``target_pen`` with composite components
+    flattened to contours.
+
+    Drawing a *composite* source glyph straight into a TTGlyphPen (even
+    through a TransformPen) forwards ``addComponent()`` calls, which the
+    TTGlyphPen records as component references. When that glyph is one of
+    many merged into a single word/annotation glyph, the component's own
+    offset bypasses the surrounding annotation/base scale and the merged
+    glyph drops or mis-places those components. Precomposed long vowels
+    (ā/ī/ū = base letter + ``uni02C9`` macron) collapsed to a small, low
+    base glyph this way. Decomposing first resolves every component into
+    plain contours in the source coordinate space, so the surrounding
+    TransformPen scale then applies uniformly. For simple (non-composite)
+    glyphs this is a no-op: the recorded contours replay identically."""
+    rec = DecomposingRecordingPen(glyph_set)
+    glyph_set[glyph_name].draw(rec)
+    rec.replay(target_pen)
 
 
 def generate_annotated_glyphs(
@@ -333,7 +354,9 @@ def generate_annotated_glyphs(
                 anno_shaped
             ):
                 if a_name in anno_glyph_set:
-                    anno_glyph_set[a_name].draw(
+                    _draw_decomposed(
+                        anno_glyph_set,
+                        a_name,
                         TransformPen(
                             pen,
                             (
@@ -344,7 +367,7 @@ def generate_annotated_glyphs(
                                 x_position + xoff * anno_scale_eff,
                                 y_offset + yoff * anno_scale_eff,
                             ),
-                        )
+                        ),
                     )
                     x_position += round(xadv * anno_scale_eff)
                     if j < n_anno - 1:
@@ -551,7 +574,9 @@ def generate_annotated_glyphs(
                         # (deliberately NOT base_y_offset — raising
                         # the word would knock it out of alignment
                         # with surrounding un-annotated text).
-                        base_glyph_set[b_name].draw(
+                        _draw_decomposed(
+                            base_glyph_set,
+                            b_name,
                             TransformPen(
                                 pen,
                                 (
@@ -564,7 +589,7 @@ def generate_annotated_glyphs(
                                     + xoff * base_scale,
                                     yoff * base_scale,
                                 ),
-                            )
+                            ),
                         )
                         x_cursor += xadv * base_scale
 
@@ -648,10 +673,12 @@ def generate_annotated_glyphs(
                     cnt += 1
 
                 pen = TTGlyphPen(output_glyph_set)
-                base_glyph_set[glyph_name].draw(
+                _draw_decomposed(
+                    base_glyph_set,
+                    glyph_name,
                     TransformPen(
                         pen, (base_scale, 0, 0, base_scale, 0, base_y_offset)
-                    )
+                    ),
                 )
 
                 # Shape the annotation string with HarfBuzz — this

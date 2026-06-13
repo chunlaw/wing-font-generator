@@ -57,7 +57,15 @@ const Specimen = () => {
     if (family) {
       for (const group of Object.values(AVAILABLE_FONTS)) {
         if (family in group.fonts) {
-          return group.fonts[family];
+          const opt = group.fonts[family];
+          // Skip `pending` entries — the catalog row exists but
+          // the CDN doesn't serve the font yet, so the FontFace
+          // load would 404 and the page would render text in the
+          // fallback system face with no annotation visible. Fall
+          // through to the recent-fonts lookup + default below
+          // instead, which gives the user something usable rather
+          // than a silently-broken specimen.
+          if (!opt.pending) return opt;
         }
       }
       // Fallback: check the IndexedDB recent-fonts cache. User-generated
@@ -69,8 +77,17 @@ const Specimen = () => {
       const userEntry = recentEntries.find((e) => e.id === family);
       if (userEntry) return recentEntryToFontOption(userEntry);
     }
-    // No (or unknown) family param — return the first available font
-    // so the page renders something useful instead of a blank pane.
+    // No (or unknown) family param — return the first NON-PENDING
+    // font from the first dialect group so the page renders
+    // something useful instead of a blank pane (or a 404'd font).
+    for (const group of Object.values(AVAILABLE_FONTS)) {
+      const usable = Object.values(group.fonts).find((opt) => !opt.pending);
+      if (usable) return usable;
+    }
+    // Defensive: every dialect has only pending fonts (shouldn't
+    // happen in practice — at minimum one Cantonese variant should
+    // always be live). Fall back to the first entry of the first
+    // group, accepting the broken-load tradeoff over a crash.
     const firstGroup = Object.values(AVAILABLE_FONTS)[0];
     return Object.values(firstGroup.fonts)[0];
   }, [family, recentEntries]);
@@ -241,19 +258,27 @@ const Specimen = () => {
             // Apply user-tunable type controls. textWrap=wrap so
             // long sample text breaks across multiple lines on the
             // specimen page (unlike /showcase where each sample
-            // stays on one line). lineHeight bumped 1.4 → 1.6 in
-            // June 2026 to absorb the taller line cells that some
-            // fonts now ship with — specifically the Xiaolai +
-            // Thai/Katakana/Korean/Urdu builds, where --out-ascent
-            // raises the winAscent from 880u to 1200-1300u so the
-            // annotation has headroom (see deploy-pages.yml
-            // matrix). 1.6 covers the worst case (Urdu at 1300u)
-            // without making the lines feel sparse on the more
-            // typical pairings.
+            // stays on one line).
+            //
+            // lineHeight must contain the annotation row *per line*,
+            // because this is multi-line: word-unit fonts (Arabic /
+            // Thai base) put the romanization in the descender, and
+            // their natural line box is ~2.26em. At a shorter ratio
+            // each wrapped line's annotation collides with the line
+            // below it (the showcase's padding-bottom trick only
+            // rescues a single line's bottom edge, so it can't fix
+            // inter-line overlap here). 2.3 sits just above the
+            // deepest natural pitch so below-annotation lines never
+            // overlap, and it strictly exceeds the old 1.6 so the
+            // above-the-character cases (raised-winAscent Xiaolai +
+            // Thai/Katakana/Korean/Urdu builds) keep their headroom —
+            // taller leading only ever helps containment. The cost is
+            // airier spacing on plain CJK pairings, which is fine on a
+            // large single-font specimen.
             fontSize: `${typoSettings.fontSizePx}px`,
             letterSpacing: `${typoSettings.letterSpacingEm}em`,
             textWrap: "wrap" as const,
-            lineHeight: 1.6,
+            lineHeight: 2.3,
             opacity: previewOpacity,
             transition: `opacity ${FADE_MS}ms ease-in-out`,
           }}
