@@ -155,6 +155,22 @@ export const TEMPLATES_BY_DIALECT: Record<string, string[]> = {
     "朋友一生一起走",
     "我看到满片花儿的开放　隐隐约约有声歌唱",
   ],
+  // Japanese — kanji with kana furigana. Sentences are chosen to show
+  // both reading types (音読み in katakana, 訓読み in hiragana) and the
+  // 熟語 word-context disambiguation: 行 reads コウ in 銀行 / ギョウ in
+  // 行政 but いく on its own; 生 shifts セイ / なま / いきる by context.
+  japanese: [
+    "銀行員は毎朝早く会社に行く",
+    "学校で日本語と漢字を勉強する",
+    "今日はとても良い天気ですね",
+    "東京の人口は世界で一番多い",
+    "夏祭りの花火大会を見に行った",
+    "新しい生活が静かに始まる",
+    "経済成長率の数字を発表した",
+    "彼女は美しい音楽を静かに聞いた",
+    "図書館で一冊の本を借りる",
+    "山の上から海と空を眺める",
+  ],
 };
 
 /**
@@ -772,6 +788,24 @@ export const AVAILABLE_FONTS: FontSet = {
   // Hind-Noto-romanization in deploy-pages.yml). Surfaced as its own
   // /showcase category so users browsing for "Hindi" find a real
   // Hindi-text font, not a Cantonese-transliteration variant.
+  japanese: {
+    lang: {
+      zh: "日本語",
+      en: "Japanese",
+    },
+    fonts: {
+      "NotoSansJP-japanese": {
+        displayName: "思源黑體 日本（仮名 · 音訓読み）",
+        name: "NotoSansJP-japanese",
+        source: `url(${import.meta.env.VITE_FONT_URL}/NotoSansJP-japanese.woff2) format('woff2')`,
+      },
+      "Xiaolai-NotoJP-japanese": {
+        displayName: "小賴字體（仮名 · 音訓読み）",
+        name: "Xiaolai-NotoJP-japanese",
+        source: `url(${import.meta.env.VITE_FONT_URL}/Xiaolai-NotoJP-japanese.woff2) format('woff2')`,
+      },
+    },
+  },
   hindi: {
     lang: {
       zh: "印地文",

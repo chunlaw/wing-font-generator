@@ -98,6 +98,11 @@ const MANIFEST = [
   //     re-derived from the MOE 國語辭典).
   ["mappings/mandarin-cn.csv", "mappings/mandarin-cn.csv"],
   ["mappings/mandarin-tw.csv", "mappings/mandarin-tw.csv"],
+  // Japanese — kanji → kana furigana (音読み in katakana, 訓読み in
+  // hiragana) from KanjiDic2, plus 熟語 word-context rows aligned from
+  // JMdict so 行 reads コウ in 行政 but いく alone. Drives the
+  // NotoSansJP-japanese / Xiaolai-NotoJP-japanese showcase fonts.
+  ["mappings/japanese-onkun.csv", "mappings/japanese-onkun.csv"],
   // Taiwanese / Southern Min (河洛話) mappings — surfaced as Step 2
   // presets for the Noto Sans TC + Huninn pairing. The standard (優勢腔)
   // reading data is the MOE 臺灣台語常用詞辭典 (sutian / kautian.ods) via

@@ -334,17 +334,28 @@ jobs:
           # Xiaolai-Hind-hindi font above where Devanagari is only an
           # ANNOTATION over Chinese. Built from the ~24k-word
           # frequency-ranked hindi-romanization.csv (regenerate /
-          # expand via gen_hindi_romanization.py). Word-unit mode
-          # auto-extends the win metrics around the below-word
-          # annotation, so no --out-ascent is needed; -as 0.25 mirrors
-          # Arabic and can be tuned after eyeballing the build.
-          - { name: Hind-Noto-romanization,               args: "-opt -i input_fonts/Hind-Regular.ttf -a input_fonts/NotoSerif-Regular.ttf -m mappings/hindi-romanization.csv -as 0.25" }
+          # expand via gen_hindi_romanization.py).
+          #
+          # `-v -y 1.15` flips the word-unit annotation ABOVE the word
+          # (base on the bottom, ISO 15919 romanization stacked on
+          # top), the CJK-style layout — instead of the word-mode
+          # default of annotation below. Word-unit mode auto-extends
+          # the win metrics around the annotation, so no --out-ascent
+          # is needed; -as 0.25 mirrors Arabic and can be tuned after
+          # eyeballing the build.
+          - { name: Hind-Noto-romanization,               args: "-opt -v -y 1.15 -i input_fonts/Hind-Regular.ttf -a input_fonts/NotoSerif-Regular.ttf -m mappings/hindi-romanization.csv -as 0.25" }
           - { name: Xiaolai-Huninn-tailo,                  args: "-opt -i input_fonts/XiaolaiSC-Regular.ttf -a input_fonts/Huninn-Regular.ttf -m mappings/taigi-tl-toned.csv -as 0.25" }
           - { name: Xiaolai-Huninn-poj,                    args: "-opt -i input_fonts/XiaolaiSC-Regular.ttf -a input_fonts/Huninn-Regular.ttf -m mappings/taigi-poj-toned.csv -as 0.25" }
           - { name: Xiaolai-Huninn-teochew-pengim,         args: "-opt -i input_fonts/XiaolaiSC-Regular.ttf -a input_fonts/Huninn-Regular.ttf -m mappings/teochew-gdpi.csv -as 0.25" }
           - { name: Xiaolai-Huninn-teochew-puj,            args: "-opt -i input_fonts/XiaolaiSC-Regular.ttf -a input_fonts/Huninn-Regular.ttf -m mappings/teochew-duffus.csv -as 0.25" }
           - { name: Xiaolai-Huninn-mandarin-cn,            args: "-opt -i input_fonts/XiaolaiSC-Regular.ttf -a input_fonts/Huninn-Regular.ttf -m mappings/mandarin-cn.csv -as 0.25" }
           - { name: Xiaolai-Huninn-mandarin-tw,            args: "-opt -i input_fonts/XiaolaiSC-Regular.ttf -a input_fonts/Huninn-Regular.ttf -m mappings/mandarin-tw.csv -as 0.25" }
+          # Japanese — kanji annotated with kana furigana (on'yomi in
+          # katakana, kun'yomi in hiragana) plus 熟語 word-context rules.
+          # Base Noto Sans JP for native Japanese kanji glyph forms; the
+          # same face supplies the kana annotation.
+          - { name: NotoSansJP-japanese,                   args: "-opt -i input_fonts/NotoSansJP-VariableFont_wght.ttf -a input_fonts/NotoSansJP-VariableFont_wght.ttf -m mappings/japanese-onkun.csv -as 0.24" }
+          - { name: Xiaolai-NotoJP-japanese,               args: "-opt -i input_fonts/XiaolaiSC-Regular.ttf -a input_fonts/NotoSansJP-VariableFont_wght.ttf -m mappings/japanese-onkun.csv -as 0.28 --out-ascent 1200" }
 
     steps:
       - name: Check out repository code

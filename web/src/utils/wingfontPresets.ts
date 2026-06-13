@@ -91,6 +91,15 @@ export const BUILT_IN_BASE_FONTS: BuiltInPreset[] = [
     url: "/wingfont/NotoSansHK-VariableFont_wght.ttf",
     filename: "NotoSansHK-VariableFont_wght.ttf",
   },
+  // Noto Sans JP — native Japanese kanji glyph forms; the natural base
+  // for the japanese-onkun mapping (kanji + kana furigana). Shares the
+  // synced NotoSansJP-VF.ttf already used as a kana annotation font.
+  {
+    key: "notosansjp",
+    label: "思源黑體 日本 (Noto Sans JP)",
+    url: "/wingfont/NotoSansJP-VF.ttf",
+    filename: "NotoSansJP-VF.ttf",
+  },
   // Simplified-Chinese sibling of Noto Sans TC. Same `wght` variable
   // axis, same auto-instance-to-400 behaviour from wing-font.py; ship
   // it so users targeting Mandarin readers / Simplified-Chinese
@@ -715,6 +724,13 @@ export const BUILT_IN_MAPPINGS: BuiltInPreset[] = [
     url: "/wingfont/mappings/mandarin-cn.csv",
     filename: "mandarin-cn.csv",
     group: "國語 / 普通話 (Mandarin)",
+  },
+  {
+    key: "japanese-onkun",
+    label: "仮名 · 音読み / 訓読み (Kana furigana)",
+    url: "/wingfont/mappings/japanese-onkun.csv",
+    filename: "japanese-onkun.csv",
+    group: "日本語 (Japanese)",
   },
 ];
 
