@@ -171,11 +171,13 @@
 義竹鄉,Gī tik hiong
 五月節,Gōo ge̍h tsueh
 五月節,Gōo gue̍h tseh
+五日節,Gōo ji̍t tseh
 五結鄉,Gōo kiat hiong
 五間厝,Gōo king tshù
 五股坑,Gōo kóo khenn
 五股坑,Gōo kóo khinn
 五股區,Gōo kóo khu
+五日節,Gōo li̍t tsueh
 五城堡,Gōo siânn pó
 五叉水路,Gōo tshe tsuí lōo
 五塊厝,Gōo tè tshù
@@ -1030,7 +1032,7 @@
 三多商圈,Sam to Siong khuan
 三叉河,Sam tshe hô
 三芝區,Sam tsi khu
-三地門鄉,Sam tē mn̂g hiong
+三地門鄉,Sam tuē mn̂g hiong
 三灣鄉,Sam uan hiong
 山里,San lí
 山伯英台,San phik Ing tâi
@@ -1158,7 +1160,7 @@
 宣,Suan
 山佳,Suann kha
 山線,Suann suànn
-山地門,Suann tē mn̂g
+山地門,Suann tuē mn̂g
 山仔跤,Suann á kha
 山仔頂,Suann á tíng
 雪山,Suat suann
@@ -1273,6 +1275,7 @@
 體委會,Thé uí huē
 土星,Thóo tshenn
 土星,Thóo tshinn
+土地公,Thóo tī kong
 桃源區,Thô guân khu
 桃園,Thô hn̂g
 桃園區,Thô hn̂g khu
@@ -1423,7 +1426,7 @@
 樹林區,Tshiū nâ khu
 樹林口,Tshiū nâ kháu
 象鼻湖,Tshiūnn phīnn ôo
-床母,Tshn̂g bó
+床母,Tshn̂g bú
 崔,Tshui
 春日鄉,Tshun ji̍t hiong
 蔡,Tshuà
@@ -1476,6 +1479,8 @@
 石門區,Tsio̍h mn̂g khu
 石城,Tsio̍h siânn
 石碇區,Tsio̍h tīng khu
+織女,Tsit lí
+織女,Tsit lú
 周,Tsiu
 章,Tsiunn
 樟腦寮,Tsiunn nóo liâu
@@ -1752,7 +1757,7 @@
 腌臢,a tsa
 阿叔,a tsik
 阿叔仔,a tsik á
-阿姊,a tsé
+阿姊,a tsí
 阿嬸,a tsím
 阿祖,a tsóo
 阿姨,a î
@@ -1891,6 +1896,7 @@
 肉雞仔,bah ke á
 肉羹,bah kenn
 肉跤仔,bah kha á
+肉羹,bah kinn
 肉繭仔,bah kián á
 肉乾,bah kuann
 肉雞仔,bah kue á
@@ -1933,7 +1939,6 @@
 捌字,bat jī
 捌字,bat lī
 捌想,bat siūnn
-腹肚,bat tóo
 捌代誌,bat tāi tsì
 墨,ba̍k
 木,ba̍k
@@ -1980,7 +1985,6 @@
 墨水,ba̍k tsuí
 目地,ba̍k tuē
 墨斗,ba̍k táu
-目地,ba̍k tē
 密,ba̍t
 密密,ba̍t ba̍t
 密密是,ba̍t ba̍t sī
@@ -2006,6 +2010,7 @@
 覕,bih
 覕雨,bih hōo
 覕相揣,bih sio tshuē
+覕相揣,bih sio tshē
 覕鬚,bih tshiu
 覕喙,bih tshuì
 免,bián
@@ -2026,7 +2031,7 @@
 免稅,bián suè
 免稅,bián sè
 免錢飯,bián tsînn pn̄g
-免除,bián tû
+免除,bián tî
 渺,biáu
 秒,biáu
 藐,biáu
@@ -2094,6 +2099,7 @@
 莫名其妙,bo̍k bîng kî miāu
 莫非,bo̍k hui
 木魚,bo̍k hî
+木魚,bo̍k hû
 木瓜,bo̍k kue
 莫怪,bo̍k kuài
 目錄,bo̍k lo̍k
@@ -2148,8 +2154,10 @@
 磨練,buâ liān
 尾,bué
 買,bué
+買賣,bué buē
 尾牙,bué gê
 尾蝶,bué ia̍h
+尾二指,bué jī tsáinn
 尾溜,bué liu
 尾來,bué lâi
 買命,bué miā
@@ -2174,6 +2182,7 @@
 賣,buē
 袂䆀,buē bái
 袂合,buē ha̍h
+袂曉,buē hiáu
 袂曉衰,buē hiáu sue
 袂翻捙,buē huan tshia
 袂和,buē hô
@@ -2306,8 +2315,8 @@
 馬力,bé la̍t
 尾溜,bé liu
 尾來,bé lâi
-馬鈴薯,bé lîng tsî
 瑪瑙,bé ló
+尾二指,bé lī tsáinn
 馬路,bé lōo
 買命,bé miā
 尾幫車,bé pang tshia
@@ -2536,6 +2545,7 @@
 無依無倚,bô i bô uá
 無一定,bô it tīng
 無要無緊,bô iàu bô kín
+無要緊,bô iàu kín
 無影,bô iánn
 無影無跡,bô iánn bô tsiah
 無緣,bô iân
@@ -2575,6 +2585,9 @@
 無半絲,bô puànn si
 無盤,bô puânn
 無步,bô pōo
+無啥貨,bô sannh huè
+無啥貨,bô sannh hè
+無啥物,bô sannh mih
 無聲,bô siann
 無聲無說,bô siann bô seh
 無聲無說,bô siann bô sueh
@@ -2585,9 +2598,6 @@
 無相干,bô siong kan
 無俗,bô sio̍h
 無捨施,bô siá sì
-無啥貨,bô siánn huè
-無啥貨,bô siánn hè
-無啥物,bô siánn mih
 無線,bô suànn
 無線電,bô suànn tiān
 無細膩,bô suè lī
@@ -2618,7 +2628,6 @@
 無代無誌,bô tāi bô tsì
 無底代,bô tī tāi
 無愛,bô ài
-無要緊,bô á kín
 無意無思,bô ì bô sù
 無意中,bô ì tiong
 無閒,bô îng
@@ -2645,14 +2654,12 @@
 模型,bôo hîng
 模仿,bôo hóng
 模樣,bôo iūnn
-謀殺,bôo sat
 模式,bôo sik
-謀取,bôo tshú
 模組,bôo tsoo
-謀財害命,bôo tsâi hāi bīng
 濆,bùn
 鼢,bùn
 鼢鼠,bùn tshí
+鼢鼠,bùn tshú
 侮,bú
 拇,bú
 撫,bú
@@ -2761,6 +2768,7 @@
 擸,bā
 覓,bā
 鴟,bā
+鴟鴞,bā hio̍h
 覓頭路,bā thâu lōo
 慢,bān
 曼,bān
@@ -2848,6 +2856,8 @@
 袂收山,bē siu suann
 袂輸,bē su
 袂輸講,bē su kóng
+妹婿,bē sài
+袂使,bē sái
 袂使得,bē sái tit
 袂得,bē tit
 袂得過,bē tit kuè
@@ -2894,6 +2904,7 @@
 面容,bīn iông
 面油,bīn iû
 面巾,bīn kin
+面巾,bīn kun
 面膜,bīn mo̍oh
 面貌,bīn māu
 面皮,bīn phuê
@@ -2935,7 +2946,7 @@
 墓牌,bōng pâi
 墓埕,bōng tiânn
 墓紙,bōng tsuá
-墓地,bōng tē
+墓地,bōng tuē
 忘恩背義,bōng un puē gī
 墓仔埔,bōng á poo
 募,bōo
@@ -2990,6 +3001,7 @@
 下早仔,e tsái á
 下暗,e àm
 鍋仔,e á
+萵仔菜,e á tshài
 厄,eh
 呃,eh
 喂,eh
@@ -3030,6 +3042,7 @@
 月內風,ge̍h lāi hong
 月內人,ge̍h lāi lâng
 月內房,ge̍h lāi pâng
+月娘,ge̍h niû
 月餅,ge̍h piánn
 月半,ge̍h puànn
 月色,ge̍h sik
@@ -3131,7 +3144,6 @@
 蟯桮,giô pue
 蟯仔,giô á
 搝,giú
-搝大索,giú tuā soh
 牛,giû
 驗,giām
 驗血,giām hueh
@@ -3144,7 +3156,14 @@
 殗,giān
 尿,giō
 蕎,giō
+尿桸,giō hia
+尿帕仔,giō phè á
 尿桶,giō tháng
+尿苴仔,giō tsū á
+尿苴仔𩛩,giō tsū á kauh
+尿滓,giō tái
+尿斗,giō táu
+尿道,giō tō
 尿壺,giō ôo
 獄,gi̍k
 玉,gi̍k
@@ -3157,7 +3176,6 @@
 逆子,gi̍k tsú
 玉仔,gi̍k á
 日,gi̍t
-日時,gi̍t sî
 嘓,go̍k
 愕,go̍k
 月,gua̍t
@@ -3304,7 +3322,6 @@
 外在,guā tsāi
 偌濟,guā tsē
 外地,guā tuē
-外地,guā tē
 外痔,guā tī
 外圍,guā uî
 外位,guā uī
@@ -3363,6 +3380,7 @@
 擬訂,gí tīng
 笒,gím
 錦,gím
+錦蛇,gím tsuâ
 囡,gín
 囡仔,gín á
 囡仔嬰,gín á enn
@@ -3390,7 +3408,6 @@
 疑惑,gî hi̍k
 儀器,gî khì
 疑難,gî lân
-枇杷,gî pê
 儀式,gî sik
 疑心,gî sim
 疑神疑鬼,gî sîn gî kuí
@@ -3410,7 +3427,6 @@
 銀樓,gîn lâu
 銀票,gîn phiò
 銀色,gîn sik
-人參,gîn som
 銀紙,gîn tsuá
 凝,gîng
 迎,gîng
@@ -3429,7 +3445,8 @@
 吳,gôo
 娛,gôo
 蜈,gôo
-蜈蜞,gôo khî
+吳郭魚,gôo kueh hî
+吳郭魚,gôo kueh hû
 娛樂,gôo lo̍k
 語,gú
 語文,gú bûn
@@ -3489,9 +3506,11 @@
 牛仔褲,gû á khòo
 牛仔囝,gû á kiánn
 銀幕,gûn bōo
+銀行,gûn hâng
 銀角仔,gûn kak á
 銀器,gûn khì
 銀樓,gûn lâu
+銀票,gûn phiò
 銀色,gûn sik
 銀紙,gûn tsuá
 礙,gāi
@@ -3570,9 +3589,9 @@
 五分車,gōo hun tshia
 五分仔車,gōo hun á tshia
 誤會,gōo huē
-五日節,gōo ji̍t tseh
 五子直,gōo jí ti̍t
 五筋膎,gōo kin kê
+五筋膎,gōo kun kuê
 誤解,gōo kái
 五子直,gōo lí ti̍t
 五四三,gōo sì sann
@@ -3609,6 +3628,7 @@
 番薯稜,han tsî lîng
 番薯簽,han tsî tshiam
 番薯仔囝,han tsî á kiánn
+番薯,han tsû
 番薯粉,han tsû hún
 番薯箍,han tsû khoo
 番薯簽,han tsû tshiam
@@ -4005,6 +4025,8 @@
 後輩,hiō puè
 後嗣,hiō sū
 後者,hiō tsiá
+後衛,hiō uē
+後裔,hiō è
 域,hi̍k
 惑,hi̍k
 或,hi̍k
@@ -4021,6 +4043,7 @@
 核定,hi̍k tīng
 摁,hmh
 茅,hm̂
+媒人,hm̂ lâng
 媒人公,hm̂ lâng kong
 媒人禮,hm̂ lâng lé
 媒人婆,hm̂ lâng pô
@@ -4137,6 +4160,7 @@
 風潮,hong tiâu
 風調雨順,hong tiâu ú sūn
 風蔥,hong tshang
+風吹,hong tshe
 風吹輪,hong tshe lián
 風車,hong tshia
 風吹,hong tshue
@@ -4162,7 +4186,6 @@
 呼音,hoo im
 呼籲,hoo io̍k
 呼叫,hoo kiò
-荷蘭豆,hoo lian tāu
 呼聲,hoo siann
 呼請,hoo tshiánn
 呼應,hoo ìng
@@ -4261,6 +4284,7 @@
 幡仔,huan á
 番仔,huan á
 番仔火,huan á hué
+番仔火,huan á hé
 番仔油,huan á iû
 番仔薑,huan á kiunn
 番仔樓,huan á lâu
@@ -4277,7 +4301,6 @@
 法務,huat bū
 發言,huat giân
 發源地,huat guân tuē
-發源地,huat guân tē
 發願,huat guān
 發現,huat hiān
 發揮,huat hui
@@ -4301,6 +4324,7 @@
 法規,huat kui
 發粿,huat kué
 發酵,huat kànn
+發粿,huat ké
 法警,huat kíng
 發狂,huat kông
 發輦,huat lián
@@ -4326,7 +4350,6 @@
 法術,huat su̍t
 發送,huat sàng
 發性地,huat sìng tuē
-發性地,huat sìng tē
 發達,huat ta̍t
 發展,huat tián
 法場,huat tiûnn
@@ -4498,6 +4521,7 @@
 薰頭,hun thâu
 分店,hun tiàm
 紛雜,hun tsa̍p
+薰吹,hun tshe
 分手,hun tshiú
 薰吹,hun tshue
 薰喙仔,hun tshuì á
@@ -4631,6 +4655,7 @@
 火雞,hué ke
 火雞母,hué ke bó
 火氣,hué khì
+火鉗,hué khînn
 火金蛄,hué kim koo
 火金星,hué kim tshenn
 火光,hué kng
@@ -4638,8 +4663,8 @@
 夥計,hué kì
 火警,hué kíng
 火管,hué kńg
-火熥,hué lang
 火力,hué li̍k
+火夾,hué ngeh
 火燒,hué sio
 火燒埔,hué sio poo
 火燒山,hué sio suann
@@ -4648,6 +4673,7 @@
 火山,hué suann
 賄選,hué suán
 火屎,hué sái
+火熥,hué thang
 火炭,hué thuànn
 火腿,hué thuí
 火災,hué tsai
@@ -4665,6 +4691,7 @@
 火箭,hué tsìnn
 火種,hué tsíng
 火大,hué tuā
+火箸,hué tī
 火引,hué ín
 和,huê
 回,huê
@@ -4680,6 +4707,7 @@
 回歸,huê kui
 回饋,huê kuī
 回顧,huê kòo
+荷蘭豆,huê liân tāu
 回流,huê liû
 回批,huê phue
 回報,huê pò
@@ -4708,7 +4736,7 @@
 費神,huì sîn
 廢水,huì tsuí
 廢止,huì tsí
-廢除,huì tû
+廢除,huì tî
 廢話,huì uē
 匪,huí
 悔,huí
@@ -4891,8 +4919,8 @@
 海拔,hái pua̍t
 海豹,hái pà
 海報,hái pò
-海參,hái sim
 海上,hái siōng
+海參,hái som
 海沙埔,hái sua poo
 海線,hái suànn
 海產,hái sán
@@ -4906,6 +4934,7 @@
 海蛇,hái tsuâ
 海水,hái tsuí
 海水浴場,hái tsuí i̍k tiûnn
+海豬,hái tu
 海帶,hái tuà
 海底,hái tué
 海底,hái té
@@ -4997,22 +5026,30 @@
 火薰,hé hun
 火藥,hé io̍h
 火氣,hé khì
+火鉗,hé khînn
+火金蛄,hé kim koo
 火金星,hé kim tshinn
 火光,hé kng
 火鍋,hé ko
+火雞,hé kue
 火雞母,hé kue bó
 夥計,hé kì
 火警,hé kíng
 火管,hé kńg
 火力,hé li̍k
+火夾,hé ngeh
 火燒,hé sio
 火燒埔,hé sio poo
 火燒山,hé sio suann
+火燒厝,hé sio tshù
 伙食,hé si̍t
 火山,hé suann
 火屎,hé sái
+火熥,hé thang
+火炭,hé thuànn
 火腿,hé thuí
 火災,hé tsai
+火車,hé tshia
 火車母,hé tshia bú
 火車路,hé tshia lōo
 火車頭,hé tshia thâu
@@ -5024,6 +5061,7 @@
 火箭,hé tsìnn
 火種,hé tsíng
 火大,hé tuā
+火箸,hé tū
 火引,hé ín
 攜,hê
 蝦,hê
@@ -5240,7 +5278,6 @@
 好心,hó sim
 好勢,hó sè
 好性地,hó sìng tuē
-好性地,hó sìng tē
 好死,hó sí
 好死毋死,hó sí m̄ sí
 好事,hó sū
@@ -5313,6 +5350,7 @@
 何況,hô hóng
 河溪,hô khe
 毫克,hô khik
+河溪,hô khue
 和氣,hô khì
 何苦,hô khóo
 和解,hô kái
@@ -5617,6 +5655,7 @@
 候脈,hāu me̍h
 候補,hāu póo
 後生,hāu senn
+後生,hāu sinn
 校舍,hāu sià
 候選人,hāu suán jîn
 候選人,hāu suán lîn
@@ -5654,6 +5693,7 @@
 耳屎,hī sái
 耳珠,hī tsu
 耳甕仔,hī àng á
+耳仔,hī á
 倖,hīng
 幸,hīng
 杏,hīng
@@ -5753,8 +5793,6 @@
 戶橂,hōo tīng
 互動,hōo tōng
 雨鞋,hōo uê
-後衛,hōo uē
-後裔,hōo è
 雨鞋,hōo ê
 傅,hū
 婦,hū
@@ -5900,7 +5938,6 @@
 陰,im
 音,im
 陰謀,im biô
-陰謀,im bôo
 音樂,im ga̍k
 音樂聲,im ga̍k siann
 音響,im hióng
@@ -5912,6 +5949,7 @@
 陰間,im kan
 音量,im liōng
 陰曆,im li̍k
+陰謀,im môo
 陰桮,im pue
 音色,im sik
 淹死,im sí
@@ -5922,7 +5960,6 @@
 淹水,im tsuí
 淹大水,im tuā tsuí
 陰地,im tuē
-陰地,im tē
 陰暗,im àm
 因,in
 姻,in
@@ -6276,6 +6313,7 @@
 勇敢,ióng kám
 養女,ióng lí
 養老,ióng ló
+養女,ióng lú
 養生,ióng sing
 養神,ióng sîn
 養成,ióng sîng
@@ -6412,6 +6450,7 @@
 油菜花,iû tshài hue
 油脂,iû tsi
 油炸粿,iû tsia̍h kué
+油炸粿,iû tsia̍h ké
 郵資,iû tsu
 油紙,iû tsuá
 油水,iû tsuí
@@ -6439,9 +6478,9 @@
 洋樓,iûnn lâu
 羊毛,iûnn mn̂g
 羊毛衫,iûnn mn̂g sann
-楊桃,iûnn thô
 洋蔥,iûnn tshang
 洋裝,iûnn tsong
+楊桃,iûnn tô
 羊仔,iûnn á
 羊仔目,iûnn á ba̍k
 也,iā
@@ -6450,7 +6489,6 @@
 也好,iā hó
 夜間,iā kan
 夜間部,iā kan pōo
-夜勤,iā khîn
 夜勤,iā khûn
 夜景,iā kíng
 掖秧仔,iā ng á
@@ -6469,7 +6507,7 @@
 豔色,iām sik
 偝,iāng
 煬,iāng
-偝巾,iāng kin
+偝巾,iāng kun
 焱,iānn
 颺,iānn
 颺颺飛,iānn iānn pue
@@ -6488,7 +6526,6 @@
 用心,iōng sim
 用地,iōng tuē
 用途,iōng tôo
-用地,iōng tē
 用意,iōng ì
 佑,iū
 又,iū
@@ -6601,17 +6638,11 @@
 柔軟,jiû nńg
 柔情,jiû tsîng
 柔道,jiû tō
-尿桸,jiō hia
-尿帕仔,jiō phè á
-尿苴仔,jiō tsū á
-尿苴仔𩛩,jiō tsū á kauh
-尿滓,jiō tái
-尿斗,jiō táu
-尿道,jiō tō
 讓,jiōng
 釀,jiōng
 讓渡,jiōng tōo
 揤,ji̍h
+揤電鈴,ji̍h tiān lîng
 入,ji̍p
 入木,ji̍p bo̍k
 入獄,ji̍p ga̍k
@@ -6646,6 +6677,7 @@
 日記,ji̍t kì
 日期,ji̍t kî
 日常,ji̍t siông
+日時,ji̍t sî
 日時仔,ji̍t sî á
 日頭,ji̍t thâu
 日頭花,ji̍t thâu hue
@@ -6701,6 +6733,7 @@
 人身,jîn sin
 人生,jîn sing
 人壽,jîn siū
+人參,jîn som
 人選,jîn suán
 人世,jîn sè
 人性,jîn sìng
@@ -6800,7 +6833,8 @@
 諭,jū
 潤,jūn
 閏,jūn
-韌命,jūn miā
+閏月,jūn gue̍h
+潤餅𩛩,jūn piánn kauh
 交,ka
 佳,ka
 傀,ka
@@ -6842,6 +6876,7 @@
 家教,ka kàu
 家境,ka kíng
 佳期,ka kî
+家己,ka kī
 家己人,ka kī lâng
 家具,ka kū
 加轆仔,ka lak á
@@ -6889,7 +6924,6 @@
 虼蚤,ka tsáu
 加薦仔,ka tsì á
 家庭,ka tîng
-家己,ka tī
 䘥,kah
 佮,kah
 合,kah
@@ -7019,7 +7053,6 @@
 工地,kang tuē
 工程,kang tîng
 工程師,kang tîng su
-工地,kang tē
 工仔,kang á
 公的,kang ê
 江湖,kang ôo
@@ -7072,6 +7105,7 @@
 勾結,kau kiat
 交割,kau kuah
 交關,kau kuan
+高粱酒,kau liâng tsiú
 蛟龍,kau liông
 交流,kau liû
 交繃,kau penn
@@ -7112,6 +7146,7 @@
 雞肉,ke bah
 雞摸,ke bong
 雞尾脽,ke bué tsui
+雞母,ke bó
 雞母皮,ke bó phuê
 雞母蟲,ke bó thâng
 街舞,ke bú
@@ -7125,9 +7160,10 @@
 加工,ke kang
 雞公,ke kang
 家家戶戶,ke ke hōo hōo
-雞跤爪,ke kha giáu
+雞跤爪,ke kha jiáu
 加減,ke kiám
 雞胘,ke kiān
+雞胿,ke kui
 雞胿仔,ke kui á
 雞髻,ke kuè
 加講話,ke kóng uē
@@ -7140,6 +7176,7 @@
 雞卵糕,ke nn̄g ko
 雞卵卷,ke nn̄g kńg
 雞卵清,ke nn̄g tshing
+雞僆仔,ke nuā á
 雞腹內,ke pak lāi
 雞排,ke pâi
 家婆,ke pô
@@ -7147,6 +7184,7 @@
 雞翼,ke si̍t
 雞屎運,ke sái ūn
 街頭,ke thâu
+雞桃仔,ke thô á
 雞豚仔,ke thûn á
 雞牢,ke tiâu
 雞箠,ke tshuê
@@ -7160,6 +7198,7 @@
 街仔,ke á
 雞仔,ke á
 雞仔目,ke á ba̍k
+雞仔囝,ke á kiánn
 街仔路,ke á lōo
 家後,ke āu
 嗝,keh
@@ -7258,7 +7297,6 @@
 尻脊骿,kha tsiah phiann
 尻脊後,kha tsiah āu
 跤尖手幼,kha tsiam tshiú iù
-跤指頭仔,kha tsíng thâu á
 跤底,kha tué
 跤斗,kha táu
 跤胴,kha tâng
@@ -7268,6 +7306,7 @@
 跤擋,kha tòng
 跤肚,kha tóo
 跤肚骨,kha tóo kut
+跤指頭仔,kha x thâu á
 跤仔,kha á
 跤後曲,kha āu khiau
 跤後蹬,kha āu tenn
@@ -7312,7 +7351,7 @@
 開戰,khai tsiàn
 開錢,khai tsînn
 開端,khai tuan
-開除,khai tû
+開除,khai tî
 開動,khai tōng
 開用,khai īng
 掮,khainn
@@ -7550,10 +7589,10 @@
 傾銷,khing siau
 筐仔,khing á
 坑溝,khinn kau
+坑崁,khinn khàm
 抾,khioh
 抾肉幼仔,khioh bah iù á
 抾囡仔,khioh gín á
-抾恨,khioh hīn
 抾恨,khioh hūn
 抾字紙的,khioh jī tsuá ê
 抾捔,khioh ka̍k
@@ -7645,6 +7684,7 @@
 搝,khiú
 搝搝搦搦,khiú khiú la̍k la̍k
 搝票,khiú phiò
+搝大索,khiú tuā soh
 搝後跤,khiú āu kha
 虯,khiû
 虯虯,khiû khiû
@@ -7746,7 +7786,7 @@
 箍絡,khoo lo̍h
 呼觱仔,khoo pi á
 箍半,khoo puànn
-呼噓仔,khoo su̍t á
+呼噓仔,khoo si á
 呼蛋,khoo tuann
 呼噎仔,khoo uh á
 柝,kho̍k
@@ -7809,9 +7849,9 @@
 恢復,khue ho̍k
 詼諧,khue hâi
 溪溝,khue kau
+溪哥仔,khue ko á
 溪流,khue lâu
 溪埔,khue poo
-葵扇,khue sìnn
 溪水,khue tsuí
 溪仔,khue á
 溪仔墘,khue á kînn
@@ -7942,6 +7982,7 @@
 課,khuè
 齧,khuè
 契母,khuè bú
+契兄,khuè hiann
 契約,khuè iok
 架跤,khuè kha
 契囝,khuè kiánn
@@ -7949,6 +7990,7 @@
 瘸,khuê
 葵,khuê
 瘸跤,khuê kha
+葵扇,khuê sìnn
 瘸手,khuê tshiú
 愧,khuì
 氣,khuì
@@ -7980,7 +8022,6 @@
 空,khàng
 空白,khàng pe̍h
 空地,khàng tuē
-空地,khàng tē
 叩,khàu
 哭,khàu
 扣,khàu
@@ -7992,13 +8033,13 @@
 哭路頭,khàu lōo thâu
 哭爸,khàu pē
 哭爸哭母,khàu pē khàu bú
-叩謝,khàu siā
 叩頭,khàu thâu
 扣掉,khàu tiāu
 哭調仔,khàu tiāu á
 哭呻,khàu tshan
 扣抵,khàu tí
-扣除,khàu tû
+扣除,khàu tî
+叩謝,khàu x
 巧,khá
 巧合,khá ha̍p
 凱,khái
@@ -8051,6 +8092,7 @@
 㧎,khê
 瘸,khê
 瘸跤,khê kha
+瘸手,khê tshiú
 企,khì
 去,khì
 器,khì
@@ -8090,9 +8132,9 @@
 氣質,khì tsit
 汽水,khì tsuí
 器材,khì tsâi
+去除,khì tî
 去倒,khì tò
 企圖,khì tôo
-去除,khì tû
 氣溫,khì un
 氣運,khì ūn
 慶,khìng
@@ -8153,7 +8195,6 @@
 起痟,khí siáu
 齒𣻸,khí siûnn
 起性地,khí sìng tuē
-起性地,khí sìng tē
 起訴,khí sòo
 起事,khí sū
 齒戳仔,khí thok á
@@ -8184,9 +8225,6 @@
 禽,khîm
 琴子,khîm jí
 禽獸,khîm siù
-勤務,khîn bū
-勤儉,khîn khiām
-芹菜,khîn tshài
 擎,khîng
 瓊,khîng
 窮,khîng
@@ -8205,7 +8243,6 @@
 靠,khò
 課文,khò bûn
 課業,khò gia̍p
-洘旱,khò huānn
 靠岸,khò huānn
 課本,khò pún
 靠傷,khò siong
@@ -8264,6 +8301,7 @@
 考驗,khó giām
 可疑,khó gî
 考核,khó hi̍k
+洘旱,khó huānn
 可靠,khó khò
 可見,khó kiàn
 考官,khó kuann
@@ -8273,7 +8311,6 @@
 可憐代,khó liân tāi
 洘流,khó lâu
 可能,khó lîng
-考慮,khó lī
 考慮,khó lū
 可惱,khó náu
 可怕,khó phà
@@ -8442,7 +8479,6 @@
 機制,ki tsè
 基準,ki tsún
 基地,ki tuē
-基地,ki tē
 機動,ki tōng
 枝仔冰,ki á ping
 兼,kiam
@@ -8643,7 +8679,6 @@
 跟隨,kin suî
 根節,kin tsat
 筋節,kin tsat
-弓蕉,kin tsio
 跟綴,kin tuè
 根底,kin té
 巾仔,kin á
@@ -8690,6 +8725,7 @@
 肩頭,king thâu
 供體,king thé
 經典,king tián
+弓蕉,king tsio
 弓蕉油,king tsio iû
 經濟,king tsè
 更正,king tsìng
@@ -8773,7 +8809,9 @@
 寄金簿仔,kià kim phōo á
 寄批,kià phue
 寄生蟲,kià senn thâng
+寄生仔,kià senn á
 寄生蟲,kià sinn thâng
+寄生仔,kià sinn á
 寄託,kià thok
 寄罪,kià tsuē
 寄話,kià uē
@@ -8888,6 +8926,7 @@
 鹹焗雞,kiâm ko̍k kue
 鹹粿,kiâm kué
 鹹膎,kiâm kuê
+鹹粿,kiâm ké
 鹹膎,kiâm kê
 鹹鰱魚,kiâm liân hî
 鹹鰱魚,kiâm liân hû
@@ -9082,7 +9121,6 @@
 缸,kng
 光面,kng bīn
 光源,kng guân
-扛轎,kng kioh
 扛轎,kng kiō
 光滑,kng ku̍t
 光線,kng suànn
@@ -9109,10 +9147,9 @@
 哥哥,ko koh
 高貴,ko kuì
 高架,ko kè
-高粱酒,ko liông tsiú
 高樓,ko lâu
 高麗,ko lê
-高麗參,ko lê sim
+高麗參,ko lê som
 高麗菜,ko lê tshài
 高麗菜穎仔,ko lê tshài ínn á
 高女,ko lí
@@ -9130,7 +9167,6 @@
 高地,ko tuē
 高等,ko tíng
 高檔,ko tóng
-高地,ko tē
 高溫,ko un
 糕仔,ko á
 糕仔餅,ko á piánn
@@ -9191,7 +9227,6 @@
 國際,kok tsè
 國情,kok tsîng
 各地,kok tuē
-各地,kok tē
 國道,kok tō
 國度,kok tōo
 各位,kok uī
@@ -9504,9 +9539,12 @@
 雞胸,kue hing
 雞鵤,kue kak
 雞鵤仔車,kue kak á tshia
+雞公,kue kang
+雞跤爪,kue kha niáu
 雞胘,kue kiān
 雞胿,kue kui
 雞胿仔,kue kui á
+雞髻,kue kè
 雞卷,kue kńg
 雞籠,kue lam
 瓜笠仔,kue le̍h á
@@ -9514,6 +9552,7 @@
 街路,kue lōo
 雞毛筅,kue mn̂g tshíng
 雞卵,kue nn̄g
+雞卵糕,kue nn̄g ko
 雞卵卷,kue nn̄g kńg
 雞僆仔,kue nuā á
 雞腹內,kue pak lāi
@@ -9531,9 +9570,11 @@
 雞酒,kue tsiú
 瓜子,kue tsí
 雞罩,kue tà
+雞𧉟,kue tâi
 瓜仔,kue á
 街仔,kue á
 雞仔,kue á
+雞仔目,kue á ba̍k
 雞仔囝,kue á kiánn
 街仔路,kue á lōo
 瓜仔哖,kue á nî
@@ -9648,7 +9689,6 @@
 過,kuà
 掛礙,kuà gāi
 掛號,kuà hō
-掛慮,kuà lī
 掛慮,kuà lū
 掛名,kuà miâ
 掛牌,kuà pâi
@@ -9824,6 +9864,7 @@
 季節,kuì tseh
 貴族,kuì tso̍k
 季節,kuì tsueh
+挂紙,kuì tsuá
 幾,kuí
 癸,kuí
 詭,kuí
@@ -10051,8 +10092,8 @@
 改進,kái tsìn
 改正,kái tsìng
 改造,kái tsō
+解除,kái tî
 改途,kái tôo
-解除,kái tû
 解圍,kái uî
 改換,kái uānn
 改運,kái ūn
@@ -10074,7 +10115,6 @@
 感心,kám sim
 感傷,kám siong
 感想,kám sióng
-感謝,kám siā
 感受,kám siū
 感性,kám sìng
 敢是,kám sī
@@ -10085,6 +10125,7 @@
 感情,kám tsîng
 感動,kám tōng
 感恩,kám un
+感謝,kám x
 𥴊仔,kám á
 𥴊仔店,kám á tiàm
 感應,kám ìng
@@ -10175,7 +10216,6 @@
 嫁翁,kè ang
 過目,kè ba̍k
 過敏,kè bín
-計謀,kè bôo
 過面,kè bīn
 過癮,kè giàn
 過分,kè hun
@@ -10196,11 +10236,13 @@
 過名,kè miâ
 過門,kè mn̂g
 過暝,kè mî
+計謀,kè môo
 芥藍仔,kè nâ á
 過年,kè nî
 過房,kè pâng
 過磅,kè pōng
 過心,kè sim
+過身,kè sin
 繼續,kè sio̍k
 過失,kè sit
 價數,kè siàu
@@ -10256,10 +10298,14 @@
 假象,ké siōng
 假死,ké sí
 假死假活,ké sí ké ua̍h
+粿粞,ké tshuè
 假喙齒,ké tshuì khí
 粿粽,ké tsàng
+果子,ké tsí
+果子猫,ké tsí bâ
 果子園,ké tsí hn̂g
 果子栽,ké tsí tsai
+粿仔,ké á
 粿印,ké ìn
 哽,kénn
 梗,kénn
@@ -10302,9 +10348,9 @@
 記持,kì tî
 鋸仔,kì á
 禁,kìm
+禁尿,kìm giō
 禁薰,kìm hun
 禁用,kìm iōng
-禁尿,kìm jiō
 禁區,kìm khu
 禁氣,kìm khuì
 禁忌,kìm khī
@@ -10350,7 +10396,6 @@
 舉動,kí tōng
 錦,kím
 錦標,kím piau
-錦蛇,kím tsuâ
 緊,kín
 謹,kín
 緊慢,kín bān
@@ -10403,7 +10448,6 @@
 揀茶,kíng tê
 景緻,kíng tì
 景致,kíng tì
-境地,kíng tē
 警員,kíng uân
 警衛,kíng uē
 耞,kínn
@@ -10501,7 +10545,6 @@
 過謙,kòo khiam
 固然,kòo liân
 顧人怨,kòo lâng uàn
-顧慮,kòo lī
 顧慮,kòo lū
 顧門,kòo mn̂g
 顧暝,kòo mê
@@ -10684,9 +10727,9 @@
 詬,kāu
 厚面皮,kāu bīn phuê
 厚面皮,kāu bīn phê
+厚尿,kāu giō
 厚薰,kāu hun
 厚行,kāu hīng
-厚尿,kāu jiō
 厚工,kāu kang
 厚譴損,kāu khiàn sńg
 詬詬唸,kāu kāu liām
@@ -10695,10 +10738,9 @@
 厚薄,kāu po̍h
 厚沙屑,kāu sua sap
 厚屎,kāu sái
-厚屎尿,kāu sái jiō
+厚屎尿,kāu sái giō
 厚屎尿,kāu sái liō
 厚性地,kāu sìng tuē
-厚性地,kāu sìng tē
 厚操煩,kāu tshau huân
 厚酒,kāu tsiú
 厚紙坯,kāu tsuá phe
@@ -10807,6 +10849,7 @@
 拉,la
 啦,lah
 垃,lah
+垃圾,lah sap
 垃圾鬼,lah sap kuí
 垃圾話,lah sap uē
 戮,lak
@@ -10827,7 +10870,6 @@
 郎,lang
 塌,lap
 塌落,lap lo̍h
-垃圾,lap sap
 塌底,lap tué
 塌底,lap té
 蹓,lau
@@ -10838,6 +10880,7 @@
 鱲,la̍h
 臘肉,la̍h bah
 曆日,la̍h ji̍t
+曆日,la̍h li̍t
 蠟筆,la̍h pit
 蠟條,la̍h tiâu
 蠟燭,la̍h tsik
@@ -10854,7 +10897,7 @@
 六輕,la̍k khin
 搦權,la̍k khuân
 慄慄掣,la̍k la̍k tshuah
-搦屎搦尿,la̍k sái la̍k jiō
+搦屎搦尿,la̍k sái la̍k giō
 搦屎搦尿,la̍k sái la̍k liō
 磟碡,la̍k ta̍k
 納,la̍p
@@ -10978,6 +11021,7 @@
 啉茶,lim tê
 玲,lin
 輪,lin
+玲瑯鼓,lin long kóo
 奶,ling
 奶母,ling bú
 奶母車,ling bú tshia
@@ -11015,7 +11059,6 @@
 弱點,lio̍k tiám
 弱者,lio̍k tsiá
 陸地,lio̍k tuē
-陸地,lio̍k tē
 溜,liu
 鰡,liu
 溜旋,liu suan
@@ -11129,7 +11172,7 @@
 聯手,liân tshiú
 連接,liân tsiap
 聯招,liân tsiau
-蓮蕉花,liân tsio hue
+蓮蕉花,liân tsiau hue
 蓮子,liân tsí
 聯對,liân tuì
 聯隊,liân tuī
@@ -11138,7 +11181,6 @@
 然後,liân āu
 涼,liâng
 粱,liâng
-龍眼,liâng gíng
 涼風,liâng hong
 涼腔,liâng khiang
 涼勢,liâng sè
@@ -11212,6 +11254,7 @@
 絨仔布,liông á pòo
 遛,liù
 遛皮,liù phuê
+遛皮,liù phê
 遛疕仔,liù phí á
 遛手,liù tshiú
 扭,liú
@@ -11305,12 +11348,15 @@
 料想袂到,liāu sióng bē kàu
 繚索,liāu soh
 料算,liāu sǹg
+尿桸,liō hia
 尿帕仔,liō phè á
+尿桶,liō tháng
 尿苴仔,liō tsū á
 尿苴仔𩛩,liō tsū á kauh
 尿滓,liō tái
 尿斗,liō táu
 尿道,liō tō
+尿壺,liō ôo
 亮,liōng
 冗,liōng
 諒,liōng
@@ -11405,7 +11451,9 @@
 日記,li̍t kì
 日期,li̍t kî
 日常,li̍t siông
+日時,li̍t sî
 日時仔,li̍t sî á
+日頭,li̍t thâu
 日頭花,li̍t thâu hue
 日出,li̍t tshut
 日誌,li̍t tsì
@@ -11519,13 +11567,15 @@
 攄塗機,lu thôo ki
 攄仔,lu á
 捋,luah
-捋仔,luai̍h á
 埒,lua̍h
 捋,lua̍h
 熱,lua̍h
 辣,lua̍h
 熱人,lua̍h lâng
+熱天,lua̍h thinn
 捋頭毛,lua̍h thâu mn̂g
+熱著,lua̍h tio̍h
+捋仔,lua̍h á
 劣,lua̍t
 魯,luh
 圇,lun
@@ -11601,12 +11651,12 @@
 類似,luī sū
 律,lu̍t
 率,lu̍t
-律師,lu̍t si
+律師,lu̍t su
 湳,làm
 𨂾,làm
 湳塗,làm thôo
 湳田,làm tshân
-湳仔地,làm á tē
+湳仔地,làm á tuē
 閬,làng
 閬月,làng ge̍h
 閬月,làng gue̍h
@@ -11855,8 +11905,10 @@
 女方,lí hong
 理化,lí huà
 旅費,lí huì
+鯉魚,lí hî
 履行,lí hîng
 旅行,lí hîng
+鯉魚,lí hû
 旅遊,lí iû
 理由,lí iû
 理工,lí kang
@@ -11935,6 +11987,8 @@
 離,lî
 驢,lî
 狸猫,lî bâ
+尼姑,lî koo
+尼姑庵,lî koo am
 離奇,lî kî
 籬笆,lî pa
 離散,lî sàn
@@ -11991,6 +12045,7 @@
 人身,lîn sin
 人生,lîn sing
 人壽,lîn siū
+人參,lîn som
 人選,lîn suán
 遴選,lîn suán
 人世,lîn sè
@@ -12037,6 +12092,7 @@
 靈敏,lîng bín
 靈驗,lîng giām
 能源,lîng guân
+龍眼,lîng gíng
 龍眼乾,lîng gíng kuann
 龍蝦,lîng hê
 靈魂,lîng hûn
@@ -12046,7 +12102,6 @@
 零件,lîng kiānn
 靈骨塔,lîng kut thah
 靈感,lîng kám
-龍眼,lîng kíng
 凌勒,lîng lik
 能量,lîng liōng
 能力,lîng li̍k
@@ -12075,7 +12130,6 @@
 挵門,lòng mn̂g
 挵破,lòng phuà
 挵鐘,lòng tsing
-露水,lòo tsuí
 佬,ló
 咾,ló
 惱,ló
@@ -12124,6 +12178,7 @@
 羅經,lô kenn
 勞苦,lô khóo
 勞基法,lô ki huat
+羅經,lô kinn
 勞改,lô kái
 鑼鼓,lô kóo
 勞力,lô li̍k
@@ -12160,7 +12215,6 @@
 農村,lông tshun
 農作物,lông tsok bu̍t
 農地,lông tuē
-農地,lông tē
 濃度,lông tōo
 農委會,lông uí huē
 櫳仔,lông á
@@ -12173,6 +12227,7 @@
 鸕,lôo
 蘆薈,lôo huē
 鱸魚,lôo hî
+鱸魚,lôo hû
 奴隸,lôo lē
 鱸鰻,lôo muâ
 螺絲,lôo si
@@ -12206,6 +12261,7 @@
 女兒,lú lî
 女人,lú lîn
 乳名,lú miâ
+旅社,lú siā
 女性,lú sìng
 女神,lú sîn
 女士,lú sū
@@ -12217,7 +12273,7 @@
 忍,lún
 懍,lún
 碖,lún
-忍尿,lún jiō
+忍尿,lún giō
 忍氣,lún khì
 懍場,lún tiûnn
 俞,lû
@@ -12237,6 +12293,7 @@
 如此,lû tshú
 如此如此,lû tshú lû tshú
 如同,lû tông
+驢仔,lû á
 如意,lû ì
 倫,lûn
 圇,lûn
@@ -12252,7 +12309,6 @@
 輪值,lûn ti̍t
 輪椅,lûn í
 抐,lā
-鴟鴞,lā hio̍h
 內,lāi
 利,lāi
 鴟,lāi
@@ -12264,7 +12320,6 @@
 內野,lāi iá
 內䘥仔,lāi kah á
 內科,lāi kho
-內勤,lāi khîn
 內褲,lāi khòo
 內勤,lāi khûn
 內公,lāi kong
@@ -12285,9 +12340,9 @@
 內場,lāi tiûnn
 內戰,lāi tsiàn
 內才,lāi tsâi
+內底,lāi tué
 內地,lāi tuē
 內底,lāi té
-內地,lāi tē
 濫,lām
 纜,lām
 艦,lām
@@ -12370,7 +12425,6 @@
 鱺,lē
 麗,lē
 例外,lē guā
-鯉魚,lē hî
 俐,lī
 厲,lī
 吏,lī
@@ -12383,6 +12437,7 @@
 餌,lī
 字母,lī bú
 字幕,lī bōo
+利尿,lī giō
 字眼,lī gán
 離婚,lī hun
 字型,lī hîng
@@ -12393,7 +12448,6 @@
 離緣,lī iân
 利用,lī iōng
 字樣,lī iūnn
-利尿,lī jiō
 利潤,lī jūn
 離跤手,lī kha tshiú
 離開,lī khui
@@ -12482,11 +12536,11 @@
 路尾,lōo bué
 路尾,lōo bé
 路面,lōo bīn
+蕗蕎,lōo giō
 路費,lōo huì
 路況,lōo hóng
 露營,lōo iânn
 路口,lōo kháu
-蕗蕎,lōo kioh
 路徑,lōo kìng
 露螺,lōo lê
 路標,lōo piau
@@ -12518,7 +12572,7 @@
 閏,lūn
 韌,lūn
 論文,lūn bûn
-閏月,lūn gue̍h
+閏月,lūn ge̍h
 韌命,lūn miā
 潤餅𩛩,lūn piánn kauh
 論述,lūn su̍t
@@ -12603,13 +12657,12 @@
 問,mn̄g
 問話,mn̄g uē
 物,mn̍gh
+物件,mn̍gh kiānn
 物配,mn̍gh phè
 物食,mn̍gh tsia̍h
 摸,moo
 毛,moo
-毛蟹,moo heh
 摸飛,moo hui
-毛蟹,moo hē
 𢯾,mooh
 𢯾壁鬼,mooh piah kuí
 瘼,mo̍oh
@@ -12617,6 +12670,7 @@
 幔,mua
 滿,muá
 滿面,muá bīn
+滿月,muá ge̍h
 滿月,muá gue̍h
 滿壘,muá luí
 滿滿是,muá muá sī
@@ -12684,6 +12738,8 @@
 瑪,má
 碼,má
 馬,má
+馬鈴薯,má lîng tsî
+馬鈴薯,má lîng tsû
 媽媽,má mah
 馬馬虎虎,má má hu hu
 馬耳東風,má ní tong hong
@@ -12747,6 +12803,7 @@
 魔,môo
 毛呼,môo honn
 魔法,môo huat
+毛蟹,môo hē
 蘑菇,môo koo
 魔鬼,môo kuí
 毛管,môo kńg
@@ -12756,11 +12813,14 @@
 毛筆,môo pit
 毛病,môo pēnn
 毛病,môo pīnn
+謀殺,môo sat
 魔術,môo su̍t
 魔神仔,môo sîn á
 毛毯,môo thán
 盲腸,môo tn̂g
 盲腸炎,môo tn̂g iām
+謀取,môo tshú
+謀財害命,môo tsâi hāi bīng
 嘛,mā
 罵,mā
 嘛欲,mā beh
@@ -12915,9 +12975,8 @@
 蜈,ngôo
 遨,ngôo
 鵝,ngôo
+蜈蜞,ngôo khî
 蜈蜞釘,ngôo khî ting
-吳郭魚,ngôo kueh hî
-吳郭魚,ngôo kueh hû
 梧桐,ngôo tông
 艾,ngāi
 樂,ngāu
@@ -12954,6 +13013,7 @@
 奶母,ni bú
 奶母車,ni bú tshia
 奶癌,ni gâm
+奶帕仔,ni phè á
 奶頭,ni thâu
 奶喙仔,ni tshuì á
 奶水,ni tsuí
@@ -12987,6 +13047,7 @@
 鳥鼠仔糖,niáu tshí á thn̂g
 鳥鼠仔症,niáu tshí á tsìng
 鳥鼠仔冤,niáu tshí á uan
+鳥鼠,niáu tshú
 鳥鼠擗仔,niáu tshú phia̍k á
 鳥鼠觸仔,niáu tshú tak á
 鳥鼠張,niáu tshú tng
@@ -13034,8 +13095,9 @@
 郎,nn̂g
 兩,nn̄g
 卵,nn̄g
-卵仁,nn̄g gîn
+卵仁,nn̄g jîn
 卵殼,nn̄g khak
+卵仁,nn̄g lîn
 卵包,nn̄g pau
 卵白質,nn̄g pe̍h tsit
 兩爿,nn̄g pîng
@@ -13163,7 +13225,6 @@
 吶,nā
 若,nā
 若無,nā bô
-鴟鴞,nā hio̍h
 若是,nā sī
 若準,nā tsún
 奈,nāi
@@ -13330,7 +13391,6 @@
 烏焦瘦,oo ta sán
 烏笛仔,oo ta̍t á
 烏天暗地,oo thinn àm tuē
-烏天暗地,oo thinn àm tē
 烏糖,oo thn̂g
 烏糖粿,oo thn̂g kué
 烏糖粿,oo thn̂g ké
@@ -13423,6 +13483,7 @@
 北部,pak pōo
 剝削,pak siah
 腹腸,pak tn̂g
+腹肚,pak tóo
 腹肚尾,pak tóo bué
 腹肚尾,pak tóo bé
 腹肚枵,pak tóo iau
@@ -13515,6 +13576,7 @@
 菝仔票,pa̍t á phiò
 別个,pa̍t ê
 扒,pe
+菠薐仔,pe lîng á
 扒飯,pe pn̄g
 伯,peh
 八,peh
@@ -13560,7 +13622,7 @@
 白包,pe̍h pau
 白白,pe̍h pe̍h
 白飯,pe̍h pn̄g
-白煠,pe̍h sa̍h
+白煠,pe̍h sah
 白鑠鑠,pe̍h siak siak
 白色,pe̍h sik
 白癬,pe̍h sián
@@ -13613,9 +13675,9 @@
 拍戲,phah hì
 拍字機,phah jī ki
 拍交落,phah ka la̍uh
-拍咳啾,phah ka tshiùnn
 拍結,phah kat
 拍結毬,phah kat kiû
+拍咳啾,phah kha tshiùnn
 拍尻川,phah kha tshng
 拍金仔,phah kim á
 拍球,phah kiû
@@ -13627,7 +13689,7 @@
 拍鱗,phah lân
 拍抐涼,phah lā liâng
 拍字機,phah lī ki
-拍麻雀,phah mâ tshiok
+拍麻雀,phah muâ tshiok
 拍毋見,phah m̄ kìnn
 拍拍,phah phik
 拍噗仔,phah pho̍k á
@@ -13791,7 +13853,6 @@
 朴,phoh
 樸,phoh
 粕,phoh
-駁岸,phoh huānn
 粕粕,phoh phoh
 樸實,phoh si̍t
 博,phok
@@ -13862,6 +13923,7 @@
 破腹,phuà pak
 破布子,phuà pòo tsí
 破病,phuà pēnn
+破病,phuà pīnn
 破少年,phuà siàu liân
 破相,phuà siùnn
 破鼎,phuà tiánn
@@ -13997,7 +14059,6 @@
 歹心,pháinn sim
 歹勢,pháinn sè
 歹性地,pháinn sìng tuē
-歹性地,pháinn sìng tē
 歹死,pháinn sí
 歹聽,pháinn thiann
 歹天,pháinn thinn
@@ -14139,7 +14200,7 @@
 破傷風,phò siong hong
 破產,phò sán
 破碎,phò tshuì
-破除,phò tû
+破除,phò tî
 破豆,phò tāu
 椪,phòng
 碰,phòng
@@ -14178,6 +14239,7 @@
 膀,phông
 蘋,phông
 膀胱,phông kong
+蘋果,phông kó
 蘋果檨,phông kó suāinn
 扶,phôo
 菩,phôo
@@ -14248,7 +14310,6 @@
 抱的,phō ê
 滂,phōng
 蓬,phōng
-蘋果,phōng kó
 蓬鬆,phōng song
 廍,phōo
 簿,phōo
@@ -14389,6 +14450,7 @@
 畢竟,pit kìng
 必然,pit liân
 筆錄,pit lo̍k
+伯勞仔,pit lô á
 必修,pit siu
 必需,pit su
 必須,pit su
@@ -14429,7 +14491,7 @@
 迸,piàng
 拚,piànn
 摒,piànn
-拚血,piànn hueh
+拚血,piànn hiat
 摒貨底,piànn huè té
 摒貨底,piànn hè tué
 拚命,piànn miā
@@ -14529,6 +14591,7 @@
 飯盒仔,pn̄g a̍h á
 飯坩,pn̄g khann
 飯篋仔,pn̄g kheh á
+飯篱,pn̄g luē
 飯篱,pn̄g lē
 飯包,pn̄g pau
 飯疕,pn̄g phí
@@ -14554,6 +14617,7 @@
 褒獎,po tsióng
 卜,poh
 駁,poh
+駁岸,poh huānn
 剝,pok
 北,pok
 卜,pok
@@ -14683,7 +14747,7 @@
 不便,put piān
 不比,put pí
 不平,put pîng
-不三不四,put sam put sù
+不三不四,put sam put sì
 不肖,put siàu
 不實,put si̍t
 不時,put sî
@@ -14742,7 +14806,7 @@
 半小死,puànn sió sí
 半世人,puànn sì lâng
 半數,puànn sòo
-半䖙倒,puànn the tó
+半䖙倒,puànn thenn tó
 半桶師仔,puànn tháng sai á
 半桶屎,puànn tháng sái
 半丁,puànn ting
@@ -14808,6 +14872,7 @@
 狽,puē
 背,puē
 培墓,puē bōng
+培墓,puē bōo
 佩服,puē ho̍k
 背約,puē iok
 背影,puē iánn
@@ -14944,7 +15009,7 @@
 排水,pâi tsuí
 牌子,pâi tsú
 排隊,pâi tuī
-排除,pâi tû
+排除,pâi tî
 牌仔,pâi á
 棑仔頭,pâi á thâu
 便,pân
@@ -14960,7 +15025,6 @@
 縫紩,pâng thīnn
 房市,pâng tshī
 房地產,pâng tuē sán
-房地產,pâng tē sán
 包,pâu
 壩,pè
 幣,pè
@@ -14999,8 +15063,8 @@
 平直,pênn ti̍t
 平手,pênn tshiú
 平正,pênn tsiànn
+平地,pênn tuē
 平台,pênn tâi
-平地,pênn tē
 庇,pì
 泌,pì
 痹,pì
@@ -15035,7 +15099,7 @@
 變鬼變怪,pìnn kuí pìnn kuài
 變猴弄,pìnn kâu lāng
 變弄,pìnn lāng
-變啥魍,pìnn siánn báng
+變啥魍,pìnn sannh báng
 妣,pí
 彼,pí
 比,pí
@@ -15084,6 +15148,7 @@
 琵,pî
 皮,pî
 脾,pî
+枇杷,pî pê
 琵琶,pî pê
 脾土,pî thóo
 脾胃,pî uī
@@ -15326,7 +15391,7 @@
 本文,pún bûn
 本業,pún gia̍p
 本份,pún hūn
-本居地,pún ki tē
+本居地,pún ki tuē
 本金,pún kim
 本居地,pún ku tuē
 本壘,pún luí
@@ -15349,13 +15414,11 @@
 本地,pún tuē
 本底,pún té
 本等,pún tíng
-本地,pún tē
 本意,pún ì
 匏,pû
 垺,pû
 炰,pû
 匏桸,pû hia
-葡萄,pû tô
 匏仔,pû á
 歕,pûn
 歕風,pûn hong
@@ -15364,6 +15427,7 @@
 歕雞胿,pûn ke kui
 歕雞胿仔,pûn ke kui á
 歕雞胿,pûn kue kui
+歕雞胿仔,pûn kue kui á
 歕觱仔,pûn pi á
 罷,pā
 罷免,pā bián
@@ -15389,6 +15453,7 @@
 扮演,pān ián
 辦公,pān kong
 扮公伙仔,pān kong hué á
+扮公伙仔,pān kong hé á
 辦公室,pān kong sik
 辦理,pān lí
 扮仙,pān sian
@@ -15406,7 +15471,7 @@
 斃,pē
 爸,pē
 耙,pē
-爸母,pē bó
+爸母,pē bú
 爸老囝幼,pē lāu kiánn iù
 爸仔囝,pē á kiánn
 病,pēnn
@@ -15428,7 +15493,7 @@
 病毒,pēnn to̍k
 病床,pēnn tshn̂g
 病情,pēnn tsîng
-病院,pēnn ìnn
+病院,pēnn īnn
 備,pī
 婢,pī
 被,pī
@@ -15467,6 +15532,7 @@
 病毒,pīnn to̍k
 病床,pīnn tshn̂g
 病情,pīnn tsîng
+病院,pīnn īnn
 本,pńg
 榜,pńg
 抱,pō
@@ -15590,7 +15656,7 @@
 山水,san suí
 山珍海味,san tin hái bī
 山莊,san tsong
-刪除,san tû
+刪除,san tî
 鬆,sang
 鬆軟,sang nńg
 三,sann
@@ -15611,7 +15677,7 @@
 三更半暝,sann kinn puànn mî
 三輪車,sann lián tshia
 三長兩短,sann tn̂g nn̄g té
-三除四扣,sann tû sì khàu
+三除四扣,sann tî sì khàu
 三頓,sann tǹg
 相挨相𤲍,sann ue sann khueh
 衫仔褲,sann á khòo
@@ -15622,7 +15688,13 @@
 啥,sannh
 喢,sannh
 煞,sannh
+啥貨,sannh huè
+啥貨,sannh hè
+啥款,sannh khuán
+啥人,sannh lâng
+啥物,sannh mih
 煞心,sannh sim
+啥潲,sannh siâu
 圾,sap
 屑,sap
 雪,sap
@@ -15688,9 +15760,9 @@
 雪,seh
 楔空,seh khang
 楔縫,seh phāng
-說謝,seh siā
-說多謝,seh to siā
+說多謝,seh to x
 楔手縫,seh tshiú phāng
+說謝,seh x
 雪仔柑,seh á kam
 楔後手,seh āu tshiú
 牲,senn
@@ -15742,6 +15814,7 @@
 詩,si
 鷥,si
 施壓,si ap
+噓尿,si giō
 施行,si hîng
 絲絨,si jiông
 詩人,si jîn
@@ -15750,6 +15823,7 @@
 西瓜,si kue
 詩句,si kù
 絲絨,si liông
+噓尿,si liō
 詩人,si lîn
 窸窸窣窣,si si su̍t su̍t
 施捨,si siá
@@ -15791,6 +15865,8 @@
 仙女,sian lú
 仙拚仙,sian piànn sian
 先輩,sian puè
+先生,sian sinn
+先生媽,sian sinn má
 先生娘,sian sinn niû
 仙丹,sian tan
 先天,sian thian
@@ -15885,11 +15961,12 @@
 消毒,siau to̍k
 消災解厄,siau tsai kái eh
 消水,siau tsuí
-消除,siau tû
+消除,siau tî
 夕,sia̍h
 杓,sia̍h
 石,sia̍h
 石榴,sia̍h liû
+杓仔,sia̍h á
 洩,sia̍p
 涉,sia̍p
 涉嫌,sia̍p hiâm
@@ -15898,6 +15975,7 @@
 舌,sia̍t
 爍,sih
 蟋,sih
+爍爁,sih nah
 蟋蟀仔,sih sut á
 嗇,sik
 媳,sik
@@ -15950,7 +16028,6 @@
 心火,sim hué
 心火,sim hé
 心行,sim hīng
-參茸,sim jiông
 心機,sim ki
 心驚膽嚇,sim kiann tánn hiannh
 心肝,sim kuann
@@ -15963,7 +16040,6 @@
 心狂火熱,sim kông hé lia̍t
 心狂火著,sim kông hé to̍h
 心狂燥熱,sim kông sò jia̍t
-參茸,sim liông
 心力,sim li̍k
 心理,sim lí
 森林,sim lîm
@@ -15993,8 +16069,6 @@
 心智,sim tì
 心動,sim tōng
 心愛,sim ài
-參仔,sim á
-參仔氣,sim á khuì
 心意,sim ì
 伸,sin
 先,sin
@@ -16012,6 +16086,7 @@
 身份,sin hūn
 身影,sin iánn
 新任,sin jīm
+身軀,sin khu
 身軀邊,sin khu pinn
 新款,sin khuán
 辛苦,sin khóo
@@ -16035,8 +16110,6 @@
 申辦,sin pān
 新婦,sin pū
 新婦仔,sin pū á
-先生,sin senn
-先生媽,sin senn má
 身屍,sin si
 新鮮,sin sian
 新式,sin sik
@@ -16060,7 +16133,7 @@
 身材,sin tsâi
 新進,sin tsìn
 身段,sin tuānn
-新陳代謝,sin tîn tāi siā
+新陳代謝,sin tîn tāi x
 申冤,sin uan
 身為,sin uî
 僧,sing
@@ -16086,7 +16159,6 @@
 昇華,sing huâ
 生效,sing hāu
 生育,sing io̍k
-身軀,sing khu
 升級,sing kip
 生計,sing kè
 升旗,sing kî
@@ -16108,11 +16180,14 @@
 升等,sing tíng
 生動,sing tōng
 生活,sing ua̍h
+生鍋,sinn e
+生囡仔,sinn gín á
 生份,sinn hūn
 生份人,sinn hūn lâng
 生根,sinn kin
 生囝,sinn kiánn
 生菇,sinn koo
+生粒仔,sinn lia̍p á
 生日,sinn li̍t
 生路,sinn lōo
 生卵,sinn nn̄g
@@ -16120,6 +16195,7 @@
 生鉎,sinn sian
 生癬,sinn sián
 生相,sinn siùnn
+生檨仔,sinn suāinn á
 生死,sinn sí
 生時日月,sinn sî li̍t ge̍h
 生成,sinn sîng
@@ -16129,20 +16205,20 @@
 生腸,sinn tn̂g
 生做,sinn tsuè
 生話,sinn uē
-爍爁,sinnh nah
+生仔,sinn á
 燒,sio
 相,sio
 蕭,sio
 燒肉,sio bah
 相捌,sio bat
 相挨相𤲍,sio e sio kheh
+相嚷,sio gióng
 燒香,sio hiunn
 燒唿唿,sio hut hut
 燒烘烘,sio hōng hōng
 相約,sio iok
 相偃,sio ián
 相容,sio iông
-相嚷,sio jiáng
 燒熱,sio jua̍h
 相交插,sio kau tshap
 相剋,sio khik
@@ -16162,6 +16238,7 @@
 相攬,sio lám
 燒烙,sio lō
 相瞞,sio muâ
+相罵,sio mā
 相罵,sio mē
 相罵本,sio mē pún
 相讓,sio niū
@@ -16201,6 +16278,7 @@
 燒酒螺,sio tsiú lê
 燒水,sio tsuí
 相諍,sio tsènn
+相諍,sio tsìnn
 相拄,sio tú
 相倚,sio uá
 相換,sio uānn
@@ -16316,7 +16394,6 @@
 溼溼,sip sip
 溼疹,sip tsín
 溼地,sip tuē
-溼地,sip tē
 溼度,sip tōo
 失,sit
 式,sit
@@ -16461,10 +16538,10 @@
 赦罪,sià tsuē
 卸祖公,sià tsóo kong
 滲,siàm
-滲尿,siàm jiō
+滲尿,siàm giō
 滲尿,siàm liō
 滲屎,siàm sái
-滲屎尿,siàm sái jiō
+滲屎尿,siàm sái giō
 滲屎尿,siàm sái liō
 扇,siàn
 搧,siàn
@@ -16503,6 +16580,7 @@
 寫,siá
 捨,siá
 寫字,siá jī
+寫字,siá lī
 寫生,siá sing
 寫實,siá si̍t
 捨施,siá sì
@@ -16523,12 +16601,6 @@
 仙,sián
 癬,sián
 鮮,sián
-啥貨,siánn huè
-啥貨,siánn hè
-啥款,siánn khuán
-啥人,siánn lâng
-啥物,siánn mih
-啥潲,siánn siâu
 小,siáu
 少,siáu
 痟,siáu
@@ -16711,7 +16783,6 @@
 酋,siû
 酬,siû
 囚犯,siû huān
-仇恨,siû hīn
 仇恨,siû hūn
 泅水,siû tsuí
 𣻸,siûnn
@@ -16720,26 +16791,19 @@
 射,siā
 社,siā
 麝,siā
-謝願,siā guān
 麝香,siā hiunn
 社會,siā huē
 社交,siā kau
 社區,siā khu
-謝金,siā kim
 社教,siā kàu
-謝禮,siā lé
 社論,siā lūn
 射門,siā mn̂g
-謝神,siā sîn
 社團,siā thuân
 社頭,siā thâu
 社長,siā tiúnn
-謝絕,siā tsua̍t
-謝罪,siā tsuē
 射箭,siā tsìnn
 射程,siā tîng
 社員,siā uân
-謝意,siā ì
 善,siān
 擅,siān
 禪,siān
@@ -16749,6 +16813,7 @@
 鱔,siān
 𤺪,siān
 鱔魚,siān hî
+鱔魚,siān hû
 𤺪雨,siān hōo
 善良,siān liông
 善男信女,siān lâm sìn lí
@@ -16816,6 +16881,7 @@
 壽衣,siū i
 受益,siū ik
 授權,siū khuân
+受氣,siū khì
 授課,siū khò
 受苦,siū khóo
 受困,siū khùn
@@ -16841,9 +16907,9 @@
 想欲,siūnn bueh
 想法,siūnn huat
 想空想縫,siūnn khang siūnn phāng
-受氣,siūnn khì
 想起,siūnn khí
 想講,siūnn kóng
+象桮,siūnn pue
 想東想西,siūnn tang siūnn sai
 窸,si̍h
 蝕,si̍h
@@ -16914,7 +16980,6 @@
 實情,si̍t tsîng
 實在,si̍t tsāi
 實地,si̍t tuē
-實地,si̍t tē
 實話,si̍t uē
 喪,sng
 栓,sng
@@ -16967,6 +17032,10 @@
 縮茶心,sok tê sim
 速度,sok tōo
 參,som
+參茸,som jiông
+參茸,som liông
+參仔,som á
+參仔氣,som á khuì
 喪,song
 孀,song
 桑,song
@@ -17130,7 +17199,6 @@
 山坪,suann phiânn
 山坡,suann pho
 山坡地,suann pho tuē
-山坡地,suann pho tē
 山線,suann suànn
 山勢,suann sè
 山苳蒿,suann tang o
@@ -17141,7 +17209,6 @@
 山豬,suann tu
 山地,suann tuē
 山頂,suann tíng
-山地,suann tē
 山洞,suann tōng
 山後鳥,suann āu tsiáu
 刷,suat
@@ -17162,12 +17229,13 @@
 衰弱,sue jio̍k
 衰弱,sue lio̍k
 衰潲,sue siâu
+梳頭,sue thâu
 衰退,sue thè
 梳妝打扮,sue tsng tánn pān
 衰運,sue ūn
 說,sueh
-說謝,sueh siā
-說多謝,sueh to siā
+說多謝,sueh to x
+說謝,sueh x
 斯,suh
 欶,suh
 欶管,suh kóng
@@ -17192,6 +17260,7 @@
 率,sut
 蟀,sut
 捽目尾,sut ba̍k bué
+捽目尾,sut ba̍k bé
 捽繩,sut tsîn
 捽仔,sut á
 紲,suà
@@ -17267,6 +17336,7 @@
 歲月,suè gua̍t
 稅源,suè guân
 說服,suè ho̍k
+細漢,suè hàn
 稅賦,suè hù
 說客,suè kheh
 細菌,suè khún
@@ -17285,6 +17355,7 @@
 稅制,suè tsè
 細位,suè uī
 細的,suè ê
+細姨,suè î
 洗面,sué bīn
 洗髮精,sué huat tsing
 洗浴,sué i̍k
@@ -17292,13 +17363,16 @@
 洗門風,sué mn̂g hong
 洗牌,sué pâi
 洗衫,sué sann
+洗衫枋,sué sann pang
 洗衫店,sué sann tiàm
+洗身軀,sué sin khu
 洗身軀間,sué sin khu king
 洗汰,sué thuā
 洗盪,sué tn̄g
 洗喙,sué tshuì
 洗石仔,sué tsio̍h á
 洗淨,sué tsīng
+黍仔,sué á
 垂,suê
 垂肩,suê king
 帥,suì
@@ -17333,7 +17407,7 @@
 漩,suān
 璇,suān
 訕,suān
-漩尿,suān jiō
+漩尿,suān giō
 漩尿,suān liō
 璇筆,suān pit
 訕削,suān siah
@@ -17394,9 +17468,10 @@
 掃梳笒仔,sàu sue giám á
 掃塗跤,sàu thôo kha
 掃帚,sàu tshiú
-掃帚星,sàu tsiú tshenn
+掃帚星,sàu tshiú tshenn
+掃帚星,sàu tshiú tshinn
 掃地,sàu tè
-掃除,sàu tû
+掃除,sàu tî
 灑,sá
 使,sái
 史,sái
@@ -17408,14 +17483,13 @@
 屎尾,sái bué
 屎尾,sái bé
 屎面,sái bīn
+屎尿,sái giō
 屎礐仔,sái ha̍k á
 屎礐仔蟲,sái ha̍k á thâng
-屎尿,sái jiō
 屎尿,sái liō
 使弄,sái lōng
 屎桮齒,sái pue khí
 使性地,sái sìng tuē
-使性地,sái sìng tē
 屎桶,sái tháng
 駛車,sái tshia
 駛船,sái tsûn
@@ -17441,7 +17515,6 @@
 瘦抽,sán thiu
 瘦田,sán tshân
 產地,sán tuē
-產地,sán tē
 桑,sáng
 聳,sáng
 聳勢,sáng sè
@@ -17484,6 +17557,7 @@
 世上,sè siōng
 世事,sè sū
 勢頭,sè thâu
+稅厝,sè tshù
 細節,sè tsiat
 細叔,sè tsik
 稅制,sè tsè
@@ -17507,8 +17581,8 @@
 洗衫,sé sann
 洗衫枋,sé sann pang
 洗衫店,sé sann tiàm
+洗身軀,sé sin khu
 洗身軀間,sé sin khu king
-洗身軀,sé sing khu
 洗汰,sé thuā
 洗盪,sé tn̄g
 洗喙,sé tshuì
@@ -17520,26 +17594,37 @@
 勢,sì
 四,sì
 施,sì
+四物仔,sì bu̍t á
 四面,sì bīn
 四方,sì hng
+四海,sì hái
 四跤杜定,sì kha tōo tīng
 四跤仔,sì kha á
 四跤仔泅,sì kha á siû
 四箍輾轉,sì khoo liàn tńg
 四箍圍仔,sì khoo uî á
+四肢,sì ki
 四界,sì kuè
 四界趖,sì kuè sô
+四季,sì kuì
 四界,sì kè
 四界趖,sì kè sô
 四句聯,sì kù liân
 四輪,sì lián
 四淋垂,sì lâm suî
 四破,sì phuà
+四配,sì phuè
+四配,sì phè
 四片仔,sì phìnn á
 四邊,sì pinn
 四爿,sì pîng
+四色牌,sì sik pâi
+四常,sì siông
 四秀仔,sì siù á
 四散,sì suànn
+四神湯,sì sîn thng
+四序,sì sī
+四通八達,sì thong pat ta̍t
 四正,sì tsiànn
 㽎,sìm
 信,sìn
@@ -17590,8 +17675,6 @@
 勝地,sìng tuē
 性地,sìng tuē
 聖誕,sìng tàn
-勝地,sìng tē
-性地,sìng tē
 性愛,sìng ài
 扇,sìnn
 扇面,sìnn bīn
@@ -17828,17 +17911,6 @@
 絮,sù
 肆,sù
 賜,sù
-四物仔,sù bu̍t á
-四海,sù hái
-四肢,sù ki
-四季,sù kuì
-四配,sù phuè
-四配,sù phè
-四色牌,sù sik pâi
-四常,sù siông
-四神湯,sù sîn thng
-四序,sù sī
-四通八達,sù thong pat ta̍t
 瞬,sùn
 舜,sùn
 遜,sùn
@@ -17943,7 +18015,6 @@
 剩,sīn
 慎,sīn
 腎,sīn
-象桮,sīn pue
 慎重,sīn tiōng
 乘,sīng
 倖,sīng
@@ -18038,7 +18109,6 @@
 焦涸涸,ta khok khok
 大官,ta kuann
 焦料,ta liāu
-查埔囡仔,ta poo gín á
 焦鬆,ta sang
 焦洗,ta sué
 焦洗,ta sé
@@ -18129,8 +18199,8 @@
 搭,tap
 答,tap
 答覆,tap hok
-答謝,tap siā
 答喙鼓,tap tshuì kóo
+答謝,tap x
 答案,tap àn
 兜,tau
 掜,tau
@@ -18279,9 +18349,9 @@
 梯次,the tshù
 撐船,the tsûn
 撐渡,the tōo
-䖙椅,the í
 裼,theh
 䖙,thenn
+䖙椅,thenn í
 宅,the̍h
 提,the̍h
 提囡仔,the̍h gín á
@@ -18303,7 +18373,7 @@
 拆扦,thiah tshuann
 拆食落腹,thiah tsia̍h lo̍h pak
 拆單,thiah tuann
-拆除,thiah tû
+拆除,thiah tî
 添,thiam
 添福壽,thiam hok siū
 添油香,thiam iû hiunn
@@ -18343,7 +18413,6 @@
 天真,thian tsin
 天才,thian tsâi
 天際,thian tsè
-天井,thian tsénn
 天庭,thian tîng
 天堂,thian tông
 天王,thian ông
@@ -18428,23 +18497,22 @@
 天,thinn
 添,thinn
 天反地亂,thinn huán tuē luān
-天反地亂,thinn huán tē luān
 天氣,thinn khì
 天光,thinn kng
 天公,thinn kong
 天公伯仔,thinn kong peh á
 天公生,thinn kong sinn
 天公地道,thinn kong tuē tō
-天公地道,thinn kong tē tō
 天公仔囝,thinn kong á kiánn
 天邊,thinn pinn
 添飯,thinn pn̄g
 天色,thinn sik
 天使,thinn sài
 天窗,thinn thang
+天井,thinn tsénn
+天井,thinn tsínn
 天地,thinn tuē
 天頂,thinn tíng
-天地,thinn tē
 添話,thinn uē
 天意,thinn ì
 挑,thio
@@ -18540,10 +18608,10 @@
 湯頭,thng thâu
 傳,thn̂g
 糖,thn̂g
+糖尿病,thn̂g giō pēnn
 傳香煙,thn̂g hiunn ian
 傳後嗣,thn̂g hiō sū
 糖粉,thn̂g hún
-糖尿病,thn̂g jiō pēnn
 糖甘蜜甜,thn̂g kam bi̍t tinn
 糖膏,thn̂g ko
 糖粿,thn̂g kué
@@ -18581,7 +18649,6 @@
 通用,thong iōng
 通譯,thong i̍k
 通姦,thong kan
-通勤,thong khîn
 通勤,thong khûn
 通關,thong kuan
 通過,thong kuè
@@ -18891,12 +18958,13 @@
 頭到,thâu kàu
 頭旗,thâu kî
 頭人,thâu lâng
-頭腦,thâu ló
 頭路,thâu lōo
 頭名,thâu miâ
+頭毛,thâu mn̂g
 頭毛鋏仔,thâu mn̂g giap á
 頭毛菜,thâu mn̂g tshài
-頭毛,thâu moo
+頭腦,thâu náu
+頭腦,thâu nóo
 頭帛,thâu pe̍h
 頭麩,thâu phoo
 頭皮,thâu phuê
@@ -19122,8 +19190,6 @@
 吐舌,thóo tsi̍h
 吐大氣,thóo tuā khuì
 土地,thóo tuē
-土地,thóo tē
-土地公,thóo tī kong
 土話,thóo uē
 桃,thô
 迌,thô
@@ -19193,12 +19259,12 @@
 坉錢,thūn tsînn
 燙,thǹg
 褪,thǹg
-褪腹裼,thǹg bat theh
 褪殼,thǹg khak
 褪齒,thǹg khí
 褪褲,thǹg khòo
 褪褲𡳞,thǹg khòo lān
 褪毛,thǹg mn̂g
+褪腹裼,thǹg pak theh
 褪皮,thǹg phuê
 褪皮,thǹg phê
 褪衫,thǹg sann
@@ -19388,6 +19454,7 @@
 甜言蜜語,tinn giân bi̍t gú
 甜瓜,tinn kue
 甜粿,tinn kué
+甜粿,tinn ké
 甜路,tinn lōo
 甜湯,tinn thng
 甜茶,tinn tê
@@ -19408,7 +19475,6 @@
 中校,tiong hāu
 忠厚,tiong hōo
 中醫,tiong i
-中央,tiong iang
 中音,tiong im
 中央,tiong iong
 中藥,tiong io̍h
@@ -19660,7 +19726,6 @@
 場合,tiûnn ha̍p
 場所,tiûnn sóo
 場地,tiûnn tuē
-場地,tiûnn tē
 墊,tiām
 恬,tiām
 恬去,tiām khì
@@ -19899,6 +19964,7 @@
 斷路,tn̄g lōo
 斷奶,tn̄g ni
 斷腦筋,tn̄g náu kin
+斷腦筋,tn̄g náu kun
 斷訊,tn̄g sìn
 斷頭,tn̄g thâu
 搪著,tn̄g tio̍h
@@ -19920,13 +19986,13 @@
 刀柄,to pènn
 刀柄,to pìnn
 多少,to siáu
-多謝,to siā
 多數,to sòo
 多事,to sū
 刀砧,to tiam
 刀喙,to tshuì
 刀石,to tsio̍h
 多情,to tsîng
+多謝,to x
 刀仔,to á
 佗,toh
 卓,toh
@@ -19944,7 +20010,6 @@
 桌頭,toh thâu
 桌頂,toh tíng
 桌帷,toh uî
-佗位,toh uī
 桌仔,toh á
 㧻,tok
 剁,tok
@@ -19977,7 +20042,6 @@
 當前,tong tsiân
 當地,tong tuē
 當代,tong tāi
-當地,tong tē
 都,too
 都合,too ha̍p
 都會,too huē
@@ -20027,6 +20091,7 @@
 昨暝,tsa mê
 昨暝,tsa mî
 查埔,tsa poo
+查埔囡仔,tsa poo gín á
 查埔囝,tsa poo kiánn
 查埔人,tsa poo lâng
 查埔祖,tsa poo tsóo
@@ -20074,7 +20139,7 @@
 節,tsat
 紮,tsat
 節力,tsat la̍t
-節脈,tsat meh
+節脈,tsat me̍h
 㷮,tsau
 糟,tsau
 蹧,tsau
@@ -20252,6 +20317,7 @@
 炊粉,tshe hún
 初一,tshe it
 差教,tshe kà
+吹狗螺,tshe káu lê
 炊粿,tshe ké
 妻舅,tshe kū
 淒涼,tshe liâng
@@ -20289,6 +20355,7 @@
 生疏,tshenn soo
 青恂恂,tshenn sún sún
 生頭凊面,tshenn thâu tshìn bīn
+青苔,tshenn thî
 青竹絲,tshenn tik si
 腥臊,tshenn tshau
 青翠,tshenn tshuì
@@ -20298,10 +20365,10 @@
 青草仔店,tshenn tsháu á tiàm
 青草仔茶,tshenn tsháu á tê
 生真,tshenn tsin
-青苔,tshenn tî
 菁仔,tshenn á
 菁仔欉,tshenn á tsâng
 青紅燈,tshenn âng ting
+親姆,tshenn ḿ
 親姆婆,tshenn ḿ pô
 嗤,tshi
 悽,tshi
@@ -20442,7 +20509,7 @@
 切片,tshiat phìnn
 切斷,tshiat tn̄g
 切手,tshiat tshiú
-切除,tshiat tû
+切除,tshiat tî
 切換,tshiat uānn
 搜,tshiau
 超,tshiau
@@ -20600,7 +20667,7 @@
 清淨,tshing tsīng
 清單,tshing tuann
 清茶,tshing tê
-清除,tshing tû
+清除,tshing tî
 清閒,tshing îng
 清運,tshing ūn
 清,tshinn
@@ -20616,11 +20683,15 @@
 生狂,tshinn kông
 生冷,tshinn líng
 清明,tshinn miâ
+青盲,tshinn mî
 青盲牛,tshinn mî gû
 青磅白磅,tshinn pōng pe̍h pōng
+青色,tshinn sik
 生疏,tshinn soo
 青恂恂,tshinn sún sún
 生頭凊面,tshinn thâu tshìn bīn
+青苔,tshinn thî
+青竹絲,tshinn tik si
 鮮沢,tshinn tshioh
 青翠,tshinn tshuì
 生菜,tshinn tshài
@@ -20636,7 +20707,9 @@
 親姆婆,tshinn ḿ pô
 俏,tshio
 𪁎,tshio
+𪁎雞,tshio ke
 𪁎哥,tshio ko
+𪁎雞,tshio kue
 𪁎趒,tshio tiô
 尺,tshioh
 沢,tshioh
@@ -20828,13 +20901,14 @@
 手銬,tshiú khàu
 手機仔,tshiú ki á
 手巾仔,tshiú kin á
+手巾仔,tshiú kun á
 手骨,tshiú kut
 手稿,tshiú kó
 手股,tshiú kóo
 手股頭,tshiú kóo thâu
 手爪賤,tshiú liáu tsiān
 手橐仔,tshiú lok á
-手囊,tshiú lôm
+手囊,tshiú lông
 手路,tshiú lōo
 手路菜,tshiú lōo tshài
 手爪,tshiú niáu
@@ -20864,7 +20938,6 @@
 手摺簿仔,tshiú tsih phōo á
 手賤,tshiú tsiān
 手指,tshiú tsí
-手指頭仔,tshiú tsíng thâu á
 手底,tshiú tué
 手蹄仔,tshiú tuê á
 手段,tshiú tuānn
@@ -20875,6 +20948,7 @@
 手動,tshiú tōng
 手腕,tshiú uánn
 手腕骨,tshiú uánn kut
+手指頭仔,tshiú x thâu á
 手印,tshiú ìn
 手後曲,tshiú āu khiau
 手䘼,tshiú ńg
@@ -20912,6 +20986,7 @@
 樹葉,tshiū hio̍h
 樹枝,tshiū ki
 樹根,tshiū kin
+樹根,tshiū kun
 樹絡,tshiū le
 樹奶,tshiū ling
 樹奶束仔,tshiū ling sok á
@@ -20942,7 +21017,6 @@
 上青苔,tshiūnn tshinn thî
 上水,tshiūnn tsuí
 蠘,tshi̍h
-揤電鈴,tshi̍h tiān lîng
 蠘仔,tshi̍h á
 摵,tshi̍k
 踔,tshi̍k
@@ -21119,7 +21193,6 @@
 出氣,tshut khuì
 出口,tshut kháu
 出去,tshut khì
-出勤,tshut khîn
 出勤,tshut khûn
 出擊,tshut kik
 出腳,tshut kioh
@@ -21170,6 +21243,7 @@
 出喙,tshut tshuì
 出酒,tshut tsiú
 出租,tshut tsoo
+出珠,tshut tsu
 出水,tshut tsuí
 出在,tshut tsāi
 出庭,tshut tîng
@@ -21220,7 +21294,6 @@
 喙白,tshuì pe̍h
 喙䫌,tshuì phué
 喙䫌肉,tshuì phué bah
-喙䫌,tshuì phé
 碎片,tshuì phìnn
 喙桮,tshuì pue
 喙水,tshuì suí
@@ -21240,7 +21313,7 @@
 泄,tshuā
 𤆬,tshuā
 娶某,tshuā bóo
-泄尿,tshuā jiō
+泄尿,tshuā giō
 泄尿,tshuā liō
 𤆬路,tshuā lōo
 𤆬路雞,tshuā lōo ke
@@ -21285,6 +21358,7 @@
 菜蟲,tshài thâng
 菜頭,tshài thâu
 菜頭粿,tshài thâu kué
+菜頭粿,tshài thâu ké
 菜砧,tshài tiam
 菜店,tshài tiàm
 菜店查某,tshài tiàm tsa bóo
@@ -21316,6 +21390,7 @@
 藏水沬,tshàng tsuí bī
 臭,tshàu
 臭面,tshàu bīn
+臭尿薟,tshàu giō hiam
 臭薟薟,tshàu hiam hiam
 臭香,tshàu hiunn
 臭羶,tshàu hiàn
@@ -21326,6 +21401,7 @@
 臭火薰,tshàu hé hun
 臭火燒,tshàu hé sio
 臭火焦,tshàu hé ta
+臭耳聾,tshàu hī lâng
 臭耳甕仔,tshàu hī àng á
 臭耳聾,tshàu hīnn lâng
 臭耳甕仔,tshàu hīnn àng á
@@ -21334,7 +21410,6 @@
 臭油餲,tshàu iû ai
 臭油垢,tshàu iû káu
 臭煬,tshàu iāng
-臭尿薟,tshàu jiō hiam
 臭溝仔,tshàu kau á
 臭跤液,tshàu kha sio̍h
 臭柿仔,tshàu khī á
@@ -21395,6 +21470,7 @@
 草,tsháu
 草蝦,tsháu hê
 草魚,tsháu hî
+草魚,tsháu hû
 草絪,tsháu in
 草藥,tsháu io̍h
 草鍥仔,tsháu keh á
@@ -21419,9 +21495,6 @@
 草地,tsháu tuē
 草地人,tsháu tuē lâng
 草地倯,tsháu tuē sông
-草地,tsháu tē
-草地人,tsháu tē lâng
-草地倯,tsháu tē sông
 草鞋,tsháu uê
 草仔,tsháu á
 草仔粿,tsháu á kué
@@ -21473,22 +21546,22 @@
 殘,tshân
 田,tshân
 蠶,tshân
+田嬰,tshân enn
 田園,tshân hn̂g
 田岸,tshân huānn
 田岸路,tshân huānn lōo
+田嬰,tshân inn
 田蛤仔,tshân kap á
 田契,tshân khuè
 田契,tshân khè
 田僑仔,tshân kiâu á
 田螺,tshân lê
-田嬰,tshân ne
 田佃,tshân tiān
 殘殘,tshân tshân
 田庄,tshân tsng
 田租,tshân tsoo
 田地,tshân tuē
 蠶豆,tshân tāu
-田地,tshân tē
 撨徙,tshâu suá
 切,tshè
 廁,tshè
@@ -21554,6 +21627,7 @@
 衝,tshìng
 銃,tshìng
 銃空,tshìng khang
+擤鼻,tshìng phīnn
 銃殺,tshìng sat
 銃手,tshìng tshiú
 銃子,tshìng tsí
@@ -21671,7 +21745,6 @@
 厝主,tshù tsú
 厝地,tshù tuē
 厝頂,tshù tíng
-厝地,tshù tē
 吋,tshùn
 寸,tshùn
 寸尺,tshùn tshioh
@@ -21740,7 +21813,6 @@
 跙一倒,tshū tsi̍t tó
 跙倒,tshū tó
 串,tshǹg
-擤鼻,tshǹg phīnn
 串仔,tshǹg á
 之,tsi
 支,tsi
@@ -22142,7 +22214,6 @@
 執業,tsip gia̍p
 執法,tsip huat
 執行,tsip hîng
-執勤,tsip khîn
 執勤,tsip khûn
 執筆,tsip pit
 執照,tsip tsiàu
@@ -22168,7 +22239,6 @@
 質料,tsit liāu
 質量,tsit liōng
 職能,tsit lîng
-織女,tsit lú
 質問,tsit mn̄g
 這馬,tsit má
 職籃,tsit nâ
@@ -22184,7 +22254,6 @@
 這站,tsit tsām
 這陣,tsit tsūn
 質地,tsit tuē
-質地,tsit tē
 職員,tsit uân
 職位,tsit uī
 鯽仔魚,tsit á hî
@@ -22234,7 +22303,6 @@
 占用,tsiàm iōng
 占領,tsiàm niá
 占地,tsiàm tuē
-占地,tsiàm tē
 僭話,tsiàm uē
 僭位,tsiàm uī
 戰,tsiàn
@@ -22635,6 +22703,7 @@
 租厝,tsoo tshù
 組織,tsoo tsit
 昨,tso̍h
+昨日,tso̍h ji̍t
 昨日,tso̍h li̍t
 族,tso̍k
 鏃,tso̍k
@@ -22845,6 +22914,7 @@
 做議量,tsuè gī niū
 做風颱,tsuè hong thai
 做法,tsuè huat
+做伙,tsuè hé
 做戲,tsuè hì
 做工,tsuè kang
 做客,tsuè kheh
@@ -22852,6 +22922,7 @@
 做竅,tsuè khiò
 做功德,tsuè kong tik
 做鬼,tsuè kuí
+做忌,tsuè kī
 最近,tsuè kīn
 最近,tsuè kūn
 做人,tsuè lâng
@@ -22860,6 +22931,7 @@
 做歹,tsuè pháinn
 做司公,tsuè sai kong
 做色,tsuè sik
+做生理,tsuè sing lí
 做生日,tsuè sinn li̍t
 做瘦氣,tsuè sán khuì
 做旬,tsuè sûn
@@ -22868,9 +22940,11 @@
 做親情,tsuè tshin tsiânn
 做出,tsuè tshut
 做臭人,tsuè tshàu lâng
+做醮,tsuè tsiò
 做莊,tsuè tsong
 做水,tsuè tsuí
 做對,tsuè tuì
+做大水,tsuè tuā tsuí
 做陣,tsuè tīn
 做為,tsuè uî
 最後,tsuè āu
@@ -22908,6 +22982,7 @@
 水餃,tsuí kiáu
 水缸,tsuí kng
 水龜,tsuí ku
+水雞,tsuí kue
 水雞泅,tsuí kue siû
 水櫃,tsuí kuī
 水垢,tsuí káu
@@ -23044,6 +23119,7 @@
 早,tsá
 早慢,tsá bān
 早日,tsá ji̍t
+早起,tsá khí
 早起時仔,tsá khí sî á
 早起頓,tsá khí tǹg
 早睏,tsá khùn
@@ -23058,7 +23134,6 @@
 早晏,tsá uànn
 早暗,tsá àm
 早,tsái
-早起,tsái khí
 宰,tsáinn
 指,tsáinn
 滓,tsáinn
@@ -23094,9 +23169,10 @@
 走學,tsáu o̍h
 走腹,tsáu pak
 走標,tsáu pio
-走相逐,tsáu sann giok
 走色,tsáu sik
+走相逐,tsáu sio giok
 走相掠,tsáu sio lia̍h
+走相逐,tsáu sio lip
 走赦馬,tsáu sià bé
 走閃,tsáu siám
 走私,tsáu su
@@ -23199,7 +23275,6 @@
 諍,tsènn
 諍喙,tsènn tshuì
 姊,tsé
-姊夫,tsé hu
 井,tsénn
 井水,tsénn tsuí
 臍,tsê
@@ -23314,8 +23389,10 @@
 黹,tsí
 指模,tsí bôo
 指紋,tsí bûn
+姊妹,tsí bē
 姊妹仔伴,tsí bē á phuānn
 紫外線,tsí guā suànn
+姊夫,tsí hu
 止血,tsí hueh
 指揮,tsí hui
 止血,tsí huih
@@ -23374,17 +23451,11 @@
 腫,tsíng
 整合,tsíng ha̍p
 整型,tsíng hîng
-指甲,tsíng kah
-指甲眉,tsíng kah bâi
-指甲花,tsíng kah hue
-指甲扦,tsíng kah tshuann
 整建,tsíng kiàn
 整個,tsíng kò
 整理,tsíng lí
 整修,tsíng siu
 整數,tsíng sòo
-指頭拇公,tsíng thâu bú kong
-指頭仔,tsíng thâu á
 整體,tsíng thé
 種族,tsíng tso̍k
 整齊,tsíng tsê
@@ -23440,13 +23511,13 @@
 情人,tsîng lîn
 前任,tsîng līm
 情報,tsîng pò
-前謝,tsîng siā
 情勢,tsîng sè
 前世,tsîng sì
 前世人,tsîng sì lâng
 情緒,tsîng sū
 情節,tsîng tsiat
 情治,tsîng tī
+前謝,tsîng x
 情愛,tsîng ài
 情意,tsîng ì
 前後,tsîng āu
@@ -23688,6 +23759,7 @@
 存戶,tsûn hōo
 存款,tsûn khuán
 船期,tsûn kî
+前年,tsûn nî
 船桮,tsûn pue
 存心,tsûn sim
 船頭,tsûn thâu
@@ -23722,8 +23794,6 @@
 在地,tsāi tuē
 在地人,tsāi tuē lâng
 在膽,tsāi tánn
-在地,tsāi tē
-在地人,tsāi tē lâng
 站,tsām
 鏨,tsām
 鏨頭,tsām thâu
@@ -23838,7 +23908,6 @@
 自來水,tsū lâi tsuí
 自認,tsū līn
 自我,tsū ngóo
-前年,tsū nî
 自卑,tsū pi
 自排,tsū pâi
 自保,tsū pó
@@ -23888,35 +23957,44 @@
 株,tu
 蛛,tu
 豬肉,tu bah
+豬母,tu bó
 豬母奶仔,tu bó ni á
 豬母菜,tu bó tshài
 豬母癲,tu bú tian
 㧣風,tu hong
+豬血,tu huih
 豬血粿,tu huih ké
 豬肺,tu hì
 豬油,tu iû
 豬油粕仔,tu iû phoh á
+豬公,tu kang
+豬跤,tu kha
 豬跤箍,tu kha khoo
 豬跤麵線,tu kha mī suànn
+豬哥,tu ko
 豬哥牙,tu ko gê
 豬哥神,tu ko sîn
 豬公,tu kong
 豬肝,tu kuann
 豬肝色,tu kuann sik
 豬狗精牲,tu káu tsing sinn
+豬胚仔,tu phe á
 豬鋪,tu phoo
 豬心,tu sim
+豬頭皮,tu thâu phê
 豬頭肥,tu thâu puî
 豬頭爿,tu thâu pîng
 豬砧,tu tiam
 豬牢,tu tiâu
 豬腸仔,tu tn̂g á
 豬菜,tu tshài
+豬舌,tu tsi̍h
 豬灶,tu tsàu
 豬槽,tu tsô
 豬屠,tu tôo
 豬肚,tu tōo
 豬仔,tu á
+豬仔囝,tu á kiánn
 掇,tuah
 端,tuan
 端正,tuan tsìng
@@ -23985,6 +24063,7 @@
 底系,tué hē
 底價,tué kè
 底片,tué phìnn
+貯飯,tué pn̄g
 底盤,tué puânn
 底部,tué pōo
 底薪,tué sin
@@ -24047,7 +24126,6 @@
 捶心肝,tuî sim kuann
 大,tuā
 舵,tuā
-大腹肚,tuā bat tóo
 大目,tuā ba̍k
 大目孔,tuā ba̍k khóng
 大賣,tuā buē
@@ -24090,7 +24168,6 @@
 大官虎,tuā kuann hóo
 大寒,tuā kuânn
 大港,tuā káng
-杜猴,tuā kâu
 大廣絃,tuā kóng hiân
 大鼓,tuā kóo
 大妗,tuā kīm
@@ -24109,6 +24186,7 @@
 大娘姑,tuā niû koo
 大嚨喉空,tuā nâ âu khang
 大百,tuā pah
+大腹肚,tuā pak tóo
 大伯,tuā peh
 大伯仔,tuā peh á
 大批,tuā phe
@@ -24203,6 +24281,8 @@
 地,tuē
 地面,tuē bīn
 地獄,tuē ga̍k
+地牛翻身,tuē gû huan sin
+地方,tuē hng
 地形,tuē hîng
 地下,tuē hā
 地下室,tuē hā sik
@@ -24220,6 +24300,7 @@
 地理師,tuē lí su
 地利,tuē lī
 地名,tuē miâ
+地皮,tuē phuê
 地皮,tuē phê
 地標,tuē piau
 地表,tuē piáu
@@ -24239,6 +24320,7 @@
 地段,tuē tuānn
 地帶,tuē tài
 地圖,tuē tôo
+地動,tuē tāng
 地位,tuē uī
 苧仔,tuē á
 兌,tuī
@@ -24284,6 +24366,7 @@
 頕,tàm
 頕低,tàm kē
 頕垂,tàm suê
+頕頭,tàm thâu
 擲,tàn
 旦,tàn
 蛋,tàn
@@ -24390,7 +24473,6 @@
 談論,tâm lūn
 談判,tâm phuànn
 澹水地,tâm tsuí tuē
-澹水地,tâm tsuí tē
 談話,tâm uē
 壇,tân
 彈,tân
@@ -24452,6 +24534,7 @@
 締,tè
 諦,tè
 綴會仔,tè hē á
+綴轎後的,tè kiō āu ê
 帝國,tè kok
 綴人走,tè lâng tsáu
 綴路,tè lōo
@@ -24542,16 +24625,15 @@
 致身命,tì sin miā
 智商,tì siong
 戴小鬼仔殼,tì siáu kuí á khak
-致謝,tì siā
 致使,tì sú
 致詞,tì sû
 致辭,tì sû
 蒂頭,tì thâu
+致謝,tì x
 致意,tì ì
 致蔭,tì ìm
 抌,tìm
 掂,tìm
-頕頭,tìm thâu
 鎮,tìn
 鎮壓,tìn ap
 鎮民,tìn bîn
@@ -24640,6 +24722,10 @@
 鋤,tî
 除,tî
 馳,tî
+除非,tî hui
+除權,tî khuân
+除了,tî liáu
+除名,tî miâ
 鋤頭,tî thâu
 遲到,tî tò
 沉,tîm
@@ -24741,6 +24827,7 @@
 倒店,tó tiàm
 佗一个,tó tsi̍t ê
 倒擔,tó tànn
+佗位,tó uī
 懂,tóng
 檔,tóng
 董,tóng
@@ -24790,7 +24877,6 @@
 鴕鳥,tô tsiáu
 逃走,tô tsáu
 淘井,tô tsénn
-廚子,tô tsí
 淘井,tô tsínn
 丼,tôm
 同,tông
@@ -24849,6 +24935,7 @@
 圖書館,tôo su kuán
 圖示,tôo sī
 圖騰,tôo thîng
+廚子,tôo tsí
 徒弟,tôo tē
 圖案,tôo àn
 注,tù
@@ -24881,10 +24968,6 @@
 廚,tû
 櫥,tû
 躇,tû
-除非,tû hui
-除權,tû khuân
-除了,tû liáu
-除名,tû miâ
 廚房,tû pâng
 櫥窗,tû thang
 鋤頭,tû thâu
@@ -24935,7 +25018,6 @@
 代步,tāi pōo
 代銷,tāi siau
 代先,tāi sing
-代謝,tāi siā
 代書,tāi su
 大師,tāi su
 大雪,tāi suat
@@ -24959,7 +25041,7 @@
 大地,tāi tuē
 大同,tāi tông
 大同仔,tāi tông á
-大地,tāi tē
+代謝,tāi x
 𩸙仔,tāi á
 大王,tāi ông
 啖,tām
@@ -24999,18 +25081,20 @@
 脰,tāu
 讀,tāu
 豆,tāu
-豆乳,tāu gí
 豆花,tāu hue
 豆腐,tāu hū
 豆腐鯊,tāu hū sua
 豆油,tāu iû
 豆油膏,tāu iû ko
+豆乳,tāu jú
 豆箍,tāu khoo
 豆鹹,tāu kiâm
 豆乾,tāu kuann
 豆乾糋,tāu kuann tsìnn
 豆奶,tāu ling
+豆乳,tāu lú
 豆莢,tāu ngeh
+豆奶,tāu ni
 豆粕,tāu phoh
 豆皮,tāu phuê
 豆皮,tāu phê
@@ -25030,6 +25114,7 @@
 豆仔魚,tāu á hî
 豆仔魚,tāu á hû
 豆仔薯,tāu á tsî
+豆仔薯,tāu á tsû
 豆餡,tāu ānn
 代,tē
 弟,tē
@@ -25037,55 +25122,13 @@
 苧,tē
 袋,tē
 遞,tē
-地面,tē bīn
-地獄,tē ga̍k
-地牛翻身,tē gû huan sin
-地方,tē hng
-地形,tē hîng
-地下,tē hā
-地下室,tē hā sik
-地下鐵,tē hā thih
-地下道,tē hā tō
-地陷,tē hām
-地號名,tē hō miâ
 弟婦仔,tē hū á
 第一,tē it
 第二春,tē jī tshun
-地區,tē khu
-地基,tē ki
-地球,tē kiû
-地界,tē kài
-地價,tē kè
-地雷,tē luî
-地理,tē lí
-地理師,tē lí su
-地利,tē lī
 第二春,tē lī tshun
-地名,tē miâ
-地皮,tē phuê
-地標,tē piau
-地表,tē piáu
-地盤,tē puânn
-地板,tē pán
-地步,tē pōo
 第三者,tē sann tsiá
-地產,tē sán
 第四台,tē sì tâi
-地毯,tē thán
-地頭,tē thâu
-地點,tē tiám
-地支,tē tsi
-地質,tē tsit
-地租,tē tsoo
-地層,tē tsân
-地址,tē tsí
-地主,tē tsú
 弟子,tē tsú
-地段,tē tuānn
-地帶,tē tài
-地圖,tē tôo
-地動,tē tāng
-地位,tē uī
 苧仔,tē á
 袋仔,tē á
 捏,tēnn
@@ -25122,7 +25165,6 @@
 陣容,tīn iông
 陣頭,tīn thâu
 陣地,tīn tuē
-陣地,tīn tē
 定,tīng
 橂,tīng
 碇,tīng
@@ -25245,6 +25287,8 @@
 度過,tōo kuè
 渡過,tōo kuè
 渡假,tōo ká
+杜猴,tōo kâu
+杜蚓仔,tōo kún á
 度量,tōo liōng
 杜伯仔,tōo peh á
 度小月,tōo sió ge̍h
@@ -25252,13 +25296,12 @@
 度數,tōo sòo
 渡頭,tōo thâu
 肚腸,tōo tn̂g
-度針,tōo tsam
+度針,tōo tsiam
 渡鳥,tōo tsiáu
 肚臍,tōo tsâi
 度晬,tōo tsè
 渡船,tōo tsûn
 杜定,tōo tīng
-杜蚓仔,tōo ún á
 嘟,tū
 駐,tū
 箸籠,tū lāng
@@ -25289,7 +25332,7 @@
 蛙,ua
 歪,uai
 歪哥,uai ko
-歪膏揤斜,uai ko tshi̍h tshua̍h
+歪膏揤斜,uai ko ji̍h tshua̍h
 歪斜,uai tshua̍h
 歪喙,uai tshuì
 冤,uan
@@ -25391,7 +25434,6 @@
 怨言,uàn giân
 怨恨,uàn hūn
 怨天怨地,uàn thinn uàn tuē
-怨天怨地,uàn thinn uàn tē
 怨嘆,uàn thàn
 怨慼,uàn tsheh
 怨慼,uàn tshueh
@@ -25431,6 +25473,7 @@
 碗糕,uánn ko
 碗公,uánn kong
 碗粿,uánn kué
+碗粿,uánn ké
 碗盤,uánn puânn
 碗頭仔,uánn thâu á
 碗斗,uánn táu
@@ -25463,7 +25506,6 @@
 完全,uân tsuân
 完整,uân tsíng
 園地,uân tuē
-園地,uân tē
 丸仔,uân á
 原仔,uân á
 穢,uè
@@ -25481,6 +25523,7 @@
 喂,uê
 鞋抿仔,uê bín á
 鞋油,uê iû
+鞋拔仔,uê pue̍h á
 鞋苴,uê tsū
 鞋帶,uê tuà
 對,uì
@@ -25629,6 +25672,19 @@
 謝,x
 頭,x
 顎,x
+謝願,x guān
+指甲,x kah
+指甲眉,x kah bâi
+指甲花,x kah hue
+指甲扦,x kah tshuann
+謝金,x kim
+謝禮,x lé
+謝神,x sîn
+指頭拇公,x thâu bú kong
+指頭仔,x thâu á
+謝絕,x tsua̍t
+謝罪,x tsuē
+謝意,x ì
 隘寮溪,Ài liâu khe
 隘寮下,Ài liâu ē
 晏,Àn
@@ -25809,19 +25865,21 @@
 紅牙,âng gê
 紅霞,âng hê
 紅莧菜,âng hīng tshài
+紅嬰仔,âng inn á
 紅藥水,âng io̍h tsuí
 紅魽,âng kam
 紅柿,âng khī
 紅膏赤蠘,âng ko tshiah tshi̍h
 紅龜,âng ku
 紅龜粿,âng ku kué
+紅龜粿,âng ku ké
 紅記記,âng kì kì
 紅絳絳,âng kòng kòng
 紅鰱魚,âng liân hî
 紅鰱魚,âng liân hû
 紅利,âng lī
 紅露酒,âng lōo tsiú
-紅毛塗,âng moo thôo
+紅毛塗,âng mn̂g thôo
 紅包,âng pau
 紅牌,âng pâi
 紅色,âng sik
@@ -26186,6 +26244,7 @@
 後山埤,Āu suann pi
 後庄,Āu tsng
 偝,āinn
+偝巾,āinn kin
 頷,ām
 頷巾,ām kin
 頷胿,ām kui
@@ -26210,13 +26269,11 @@
 後母面,āu bú bīn
 後面,āu bīn
 後月日,āu ge̍h li̍t
-後日,āu gi̍t
 後月日,āu gue̍h ji̍t
 後驛,āu ia̍h
 後日,āu ji̍t
 後跤,āu kha
 後擴,āu khok
-後勤,āu khîn
 後勤,āu khûn
 後過,āu kuè
 後過,āu kè
@@ -26231,7 +26288,6 @@
 後擺,āu pái
 後爸,āu pē
 後步,āu pōo
-後謝,āu siā
 後岫,āu siū
 後山,āu suann
 後世人,āu sì lâng
@@ -26247,6 +26303,7 @@
 後斗,āu táu
 後台,āu tâi
 後代,āu tāi
+後謝,āu x
 下營區,Ē iânn khu
 下林仔,Ē nâ á
 下埤頭,Ē pi thâu
@@ -26256,12 +26313,10 @@
 下面,ē bīn
 下𦜆,ē ham
 會曉,ē hiáu
-下頦,ē huâi
 下頦,ē hâi
 下跤,ē kha
 下跤手人,ē kha tshiú lâng
 會堪得,ē kham tit
-下顎,ē kok
 下港,ē káng
 會記得,ē kì tit
 下晡,ē poo
@@ -26284,6 +26339,7 @@
 下晝,ē tàu
 下晝頓,ē tàu tǹg
 下底,ē té
+下顎,ē x
 下勻,ē ûn
 會用得,ē īng tit
 奕,ī
@@ -26338,12 +26394,13 @@
 旺盛,ōng sīng
 芋,ōo
 芋莖,ōo huâinn
-芋稈,ōo kuáinn
 芋粿,ōo kué
 芋粿曲,ōo kué khiau
 芋粿,ōo ké
+芋粿曲,ōo ké khiau
 芋泥,ōo nî
 芋冰,ōo ping
+芋稈,ōo x
 芋仔,ōo á
 芋圓,ōo înn
 有,ū

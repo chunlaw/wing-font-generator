@@ -81,3 +81,27 @@ The ods is complementary, not a drop-in replacement:
    泉腔 flavour is intentional.
 4. **Keep the current char-level file for coverage** — it covers ~1,100 single
    characters the sutian word list does not expose individually.
+
+## Native-speaker feedback vs. the MOE 語音差異 (kept faithful)
+
+Native reviewers flagged two reading classes where the MOE 語音差異 table
+records a vowel shift they say their accent does not actually use:
+
+- **臺南 `-iunn` → `-ionn`** (17 single chars: 香 hiunn→hionn, 張 tiunn→tionn,
+  章, 腔, 傷, 槍, 樟, 漿, 箱, 羌, …). Reviewer: 臺南 keeps `-iunn`.
+- **宜蘭 syllabic `-ng` → `-uinn`** (e.g. 飯 pn̄g→puīnn, 光 kng→kuinn,
+  酸 sng→suinn, 磚, 荒, 昏, 穿, …). Reviewer: 宜蘭 keeps `-ng` (飯 = pn̄g).
+
+**Decision: keep the MOE readings as-is.** These values are exactly what the
+教育部《臺灣台語常用詞辭典》 records for those survey points, and the project's
+policy is to stay faithful to the authoritative source rather than layer in
+per-speaker corrections. The dispute is genuine (MOE's 臺南 `-ionn` in
+particular is contested), so it's recorded here; if we later decide to honour
+the corrections, the clean way is a small documented override file applied on
+top of the MOE base in `gen_moe_standard.py`, not hand-edits to the CSVs.
+
+> Separately fixed (not an MOE dispute, a generator bug): per-腔 readings now
+> apply to syllables **inside multi-character words**, not just standalone
+> characters — so e.g. 鹿港/三峽 去 is `khìr` in 無去 / 去了了, not just alone.
+> Previously words fell back to the 優勢腔 standard, which erased the accent in
+> connected text.

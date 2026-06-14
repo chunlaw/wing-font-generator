@@ -35,7 +35,9 @@ import csv, re, os, unicodedata
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 SRC = os.path.join(HERE, "dialects", "sutian_source.csv")
-OUT_PKG = os.path.normpath(os.path.join(HERE, "..", "python", "mappings"))
+OUT_PKG = os.path.normpath(
+    os.path.join(HERE, "..", "python", "mappings", "taiwanese")
+)
 OUT_DIAL = os.path.join(HERE, "dialects")
 
 # 9 representative accent points (MOE 綜合比較 order), file slug, 腔 description.
@@ -210,6 +212,32 @@ def main():
             return None
         return " ".join(sf(s) for s in syls)
 
+    # ── Pass 1: per-character accent substitution map ────────────────
+    # The 語音差異 table is keyed per single character, so a naive build
+    # only varies *standalone* characters by accent — inside a word every
+    # syllable falls back to the 優勢腔 standard (e.g. 鹿港 去 = khìr alone
+    # but 無去 = bô khì). Build {(accent, char, std_syllable) -> accent
+    # syllable} from the single-char rows so Pass 2 can apply each
+    # character's accent reading to the matching syllable inside words
+    # too. Keyed on the standard syllable so 文/白 readings stay distinct:
+    # 香 hiunn→hionn (台南) only fires on the white reading, not 文 hiong.
+    accent_sub = {}
+    for r in rows:
+        han = r["HanLoTaibunKip"].strip()
+        if len(han) != 1:
+            continue
+        dia = r["KipDictDialects"]
+        if not dia.strip():
+            continue
+        std_alts = alts(r["KipUnicode"])
+        if not std_alts:
+            continue
+        std = std_alts[0]
+        for cn, _slug, _ in ACCENTS:
+            rds = accent_reading(dia, cn, han)
+            if rds and rds[0] != std:
+                accent_sub[(cn, han, std)] = rds[0]
+
     std = {fn: {} for fn in SCHEMES}
     dial = {slug: {} for _, slug, _ in ACCENTS}
     skipped = 0
@@ -227,15 +255,33 @@ def main():
                         skipped += 1
                     continue
                 std[fname].setdefault((han, out), None)
-        # nine 腔 (Tâi-lô toned): accent reading where 語音差異 records one
+        # nine 腔 (Tâi-lô toned)
         dia_field = r["KipDictDialects"]
         kip_std = alts(r["KipUnicode"])
         for cn, slug, _ in ACCENTS:
-            rds = accent_reading(dia_field, cn, han) if dia_field.strip() else None
-            for rd in (rds or kip_std):
-                out = render(han, rd, sf_toned)
-                if out is not None:
-                    dial[slug].setdefault((han, out), None)
+            if len(han) == 1:
+                # single char: use its full 語音差異 reading(s) verbatim
+                rds = (
+                    accent_reading(dia_field, cn, han)
+                    if dia_field.strip()
+                    else None
+                )
+                for rd in (rds or kip_std):
+                    out = render(han, rd, sf_toned)
+                    if out is not None:
+                        dial[slug].setdefault((han, out), None)
+            else:
+                # word: take the standard syllables and substitute each
+                # character's accent reading where the 語音差異 records one
+                for rd in kip_std:
+                    syls = split_syllables(rd)
+                    if len(syls) != len(han) or not all(is_cjk(c) for c in han):
+                        continue
+                    out_syls = [
+                        accent_sub.get((cn, han[i], syls[i]), syls[i])
+                        for i in range(len(han))
+                    ]
+                    dial[slug].setdefault((han, " ".join(out_syls)), None)
 
     def write(path, entries):
         rowset = sorted(entries.keys(), key=lambda x: (x[1], x[0]))

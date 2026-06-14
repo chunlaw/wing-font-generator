@@ -21,7 +21,7 @@ the 語音差異 table; KipUnicode holds the standard (優勢腔) reading.
 import csv, re, os, collections
 
 SRC = os.path.join(os.path.dirname(__file__), "sutian_source.csv")
-OUTDIR = os.path.join(os.path.dirname(__file__), "dialects")
+OUTDIR = os.path.dirname(__file__)
 os.makedirs(OUTDIR, exist_ok=True)
 
 # 9 representative accent points, in MOE 綜合比較 order, with their 腔 description.

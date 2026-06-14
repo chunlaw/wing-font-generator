@@ -1,11 +1,18 @@
 # -*- coding: utf-8 -*-
-import csv, shutil
-SRC="/sessions/confident-wonderful-dijkstra/mnt/wing-font-generator/python/mappings/mandarin.csv"
-DEST="/sessions/confident-wonderful-dijkstra/mnt/wing-font-generator/python/mappings"
-OUT="/sessions/confident-wonderful-dijkstra/mnt/outputs/regionalize"
+import csv, os, shutil
+
+# Paths are resolved relative to this script so it runs anywhere.
+#   HERE        = python/mappings/regional-build/   (holds classA_safe.csv)
+#   MANDARIN    = python/mappings/mandarin/         (region variants live here)
+# mandarin-cn.csv is the canonical PRC 普通話 source (the former mandarin.csv);
+# CN = SG = MY by design, and TW is re-derived from the classA overrides.
+HERE = os.path.dirname(os.path.abspath(__file__))
+MANDARIN = os.path.normpath(os.path.join(HERE, "..", "mandarin"))
+SRC = os.path.join(MANDARIN, "mandarin-cn.csv")
+OVERRIDES = os.path.join(HERE, "classA_safe.csv")
 
 ov={}
-with open(f"{OUT}/classA_safe.csv",encoding='utf-8') as f:
+with open(OVERRIDES,encoding='utf-8') as f:
     for row in csv.DictReader(f):
         ov[row['char']]=(row['prc_default'].strip(), row['tw_reading'].strip())
 
@@ -34,13 +41,13 @@ for row in rows:
     else:
         tw_rows.append(row)
 
-for region in ('cn','sg','my'):
-    shutil.copyfile(SRC, f"{DEST}/mandarin-{region}.csv")
-    shutil.copyfile(SRC, f"{OUT}/mandarin-{region}.csv")
-for path in (f"{DEST}/mandarin-tw.csv", f"{OUT}/mandarin-tw.csv"):
-    with open(path,'w',encoding='utf-8',newline='') as f:
-        csv.writer(f).writerows(tw_rows)
+# SG and MY adopt the PRC standard, so they are byte-identical copies of the
+# CN source. CN itself IS the source (mandarin-cn.csv) and is left untouched.
+for region in ('sg','my'):
+    shutil.copyfile(SRC, os.path.join(MANDARIN, f"mandarin-{region}.csv"))
+with open(os.path.join(MANDARIN, "mandarin-tw.csv"),'w',encoding='utf-8',newline='') as f:
+    csv.writer(f).writerows(tw_rows)
 
 print("overrides applied:",len(ov))
 print("TW total rows:",len(tw_rows),"(source 95380)")
-print("written to", DEST)
+print("written to", MANDARIN)
