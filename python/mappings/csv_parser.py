@@ -9,6 +9,10 @@ import re
 MAX_base_chars = 7
 # 每個單字的最大註音變體數量限制
 MAX_CHAR_VARIANTS = 10
+# Tokens that mark a MUTED character inside a word (e.g. 毋 in the 合音
+# 拍毋見). "_" is canonical; "-", "∅", and the ideographic space are
+# accepted as aliases. All are normalised to the empty annotation.
+_MUTE_MARKERS = {"_", "-", "∅", "　"}
 
 # --- Word-unit script entries (Arabic, Thai, …) -------------------------
 #
@@ -264,7 +268,17 @@ def load_mapping(font, csv_file):
             if len(row) >= 2:
                 base_chars = row[0]
                 anno_str_raw = row[1]
-                anno_strs = anno_str_raw.split(' ')
+                # MUTED-character marker for a character inside a word
+                # (e.g. 毋 in the 合音 拍毋見 → "phàng _ kiàn"). A visible,
+                # non-whitespace token is used so it survives CSV editors /
+                # round-trips that would collapse a literal double-space.
+                # "_" is the canonical marker; the others are accepted as
+                # aliases. All normalise to the empty token, which the rest
+                # of the pipeline treats as "blank annotation".
+                anno_strs = [
+                    "" if a in _MUTE_MARKERS else a
+                    for a in anno_str_raw.split(" ")
+                ]
                 # 詞條權重：如果第三欄是數字則取其值，否則默認為 1
                 weight = int(row[2]) if len(row) > 2 and row[2].isdigit() else 1
 

@@ -23,7 +23,7 @@ fewer syllables than characters) are aligned to the characters so the absorbed
 character renders blank — e.g. 拍毋見 emits `phàng  kiàn` (毋 muted), exactly
 like 畫畫 carrying two readings. See align_haunim().
 
-Emits into python/mappings/ (and a local copy here):
+Emits into this folder (python/mappings/taiwanese/):
   Standard (優勢腔), 6 schemes:
     taigi-tl-toned / taigi-poj-toned / taigi-tl / taigi-poj /
     taigi-tlpa / taigi-bp
@@ -39,12 +39,12 @@ Usage: python gen_moe_standard.py
 """
 import csv, re, os, unicodedata
 
+# This generator lives in python/mappings/taiwanese/ alongside the CSVs it
+# produces and the sutian_source.csv it reads — same pattern as
+# python/mappings/teochew/ and python/mappings/regional-build/.
 HERE = os.path.dirname(os.path.abspath(__file__))
-SRC = os.path.join(HERE, "dialects", "sutian_source.csv")
-OUT_PKG = os.path.normpath(
-    os.path.join(HERE, "..", "python", "mappings", "taiwanese")
-)
-OUT_DIAL = os.path.join(HERE, "dialects")
+SRC = os.path.join(HERE, "sutian_source.csv")
+OUT_PKG = HERE
 
 # 9 representative accent points (MOE 綜合比較 order), file slug, 腔 description.
 ACCENTS = [
@@ -293,7 +293,11 @@ def main():
                 if can_align:
                     a = align_haunim(full_syls, syls)
                     if a:
-                        joined = " ".join(sf(s) if s else "" for s in a)
+                        # muted character -> "_" placeholder (visible,
+                        # non-whitespace, easy to type, robust vs. CSV
+                        # whitespace collapsing); csv_parser maps it back
+                        # to the empty/blank annotation.
+                        joined = " ".join(sf(s) if s else "_" for s in a)
                         outs.append((joined, HAUNIM_WEIGHT if is_hau else 1))
             elif len(syls) == len(han):
                 o = render(han, reading, sf)
@@ -403,14 +407,12 @@ def main():
     print("Standard (優勢腔):")
     for fname, entries in std.items():
         n = write(os.path.join(OUT_PKG, fname), entries)
-        write(os.path.join(HERE, fname), entries)  # local copy
         print(f"  {fname:22s} {n:6d} rows")
     print(f"  (skipped {skipped} unalignable standard readings)")
     print("Nine 腔 (Tâi-lô toned):")
     for cn, slug, desc in ACCENTS:
         fname = f"taigi-tl-{slug}.csv"
         n = write(os.path.join(OUT_PKG, fname), dial[slug])
-        write(os.path.join(OUT_DIAL, fname), dial[slug])
         print(f"  {fname:24s} {n:6d} rows  ({cn} {desc})")
 
 
