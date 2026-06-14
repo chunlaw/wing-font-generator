@@ -160,6 +160,7 @@ export type TranslationKey =
   | "showcase.share"
   | "showcase.shareCopied"
   | "showcase.shareFailed"
+  | "showcase.refreshFonts"
   | "showcase.upload"
   | "showcase.uploadAdded"
   | "showcase.uploadBadFormat"
@@ -533,6 +534,7 @@ export const TRANSLATIONS: Record<Language, Record<TranslationKey, string>> = {
     "showcase.share": "分享連結",
     "showcase.shareCopied": "已複製連結到剪貼簿",
     "showcase.shareFailed": "未能複製，請手動複製網址列",
+    "showcase.refreshFonts": "重新載入字型",
     "showcase.upload": "上載字型",
     "showcase.uploadAdded": "已加入 {name}",
     "showcase.uploadBadFormat":
@@ -933,6 +935,7 @@ export const TRANSLATIONS: Record<Language, Record<TranslationKey, string>> = {
     "showcase.share": "Share link",
     "showcase.shareCopied": "Link copied to clipboard",
     "showcase.shareFailed": "Couldn't copy — please copy the URL bar manually",
+    "showcase.refreshFonts": "Refresh fonts",
     "showcase.upload": "Upload font",
     "showcase.uploadAdded": "Added {name}",
     "showcase.uploadBadFormat":

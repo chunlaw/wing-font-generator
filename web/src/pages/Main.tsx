@@ -8,7 +8,17 @@ import {
   TextField,
   Typography,
 } from "@mui/material";
-import { Share as ShareIcon } from "@mui/icons-material";
+import {
+  Refresh as RefreshIcon,
+  Share as ShareIcon,
+} from "@mui/icons-material";
+
+// Workbox runtime cache name for fonts. Must stay in sync with
+// `cacheName` in vite.config.ts's VitePWA → runtimeCaching block.
+// If the SW config ever splits fonts across multiple cache names
+// (e.g. one for hub-hosted, one for same-origin), refresh below
+// has to iterate all of them.
+const FONT_CACHE_NAME = "wing-font-fonts-v1";
 import { useContext, useEffect, useRef, useState } from "react";
 import AppContext from "../AppContext";
 import { useNavigate, useSearchParams } from "react-router-dom";
@@ -165,6 +175,49 @@ const Main = () => {
     } catch {
       setSnackbarKey("showcase.shareFailed");
     }
+  };
+
+  // ── Refresh-fonts affordance ──────────────────────────────────────
+  // Drops the Service Worker's font cache and hard-reloads the page,
+  // forcing every pre-generated font to be re-fetched from the CDN on
+  // the next render.
+  //
+  // Why this is needed at all:
+  // Pre-generated fonts (e.g. NotoSansArabic-Noto-romanization.woff2)
+  // are served under `StaleWhileRevalidate` (see vite.config.ts). That
+  // gives users an instant cache hit and quietly revalidates the bytes
+  // in the background — so an updated build lands on visit N+1 rather
+  // than visit N. That's the right default for casual readers, but a
+  // designer / maintainer verifying "did my deploy actually ship?"
+  // wants the new bytes NOW, not on the next page load. Without this
+  // button their only options were a hard-reload (Cmd+Shift+R, which
+  // not every user knows) or DevTools → Application → Storage → Clear
+  // (which most users wouldn't know to find).
+  //
+  // The operation is non-destructive: user-uploaded / generated fonts
+  // live in IndexedDB (via `RecentFontsContext`), NOT in the SW cache,
+  // so wiping the font cache only loses transient HTTP responses that
+  // re-download on the very next request. No confirmation dialog —
+  // the button click is the confirmation.
+  const handleRefreshFonts = async () => {
+    // `caches` is only available in secure contexts and where the SW
+    // registered. Both true for production but worth guarding
+    // defensively so a dev console / older browser doesn't throw.
+    if (typeof caches !== "undefined") {
+      try {
+        await caches.delete(FONT_CACHE_NAME);
+      } catch {
+        // Cache deletion can fail (rare, e.g. private-browsing
+        // restrictions). The reload below still wipes the in-memory
+        // FontFace registrations and re-fetches via the SWR path
+        // which itself re-validates — so we still make forward
+        // progress even if the cache delete didn't take.
+      }
+    }
+    // Hard navigation rather than .reload(true): the boolean overload
+    // of reload was deprecated in modern browsers. window.location's
+    // assignment behaves like a navigation, which is what we want.
+    window.location.reload();
   };
 
   // ── URL ↔ pickedFonts synchronisation ─────────────────────────────
@@ -376,6 +429,26 @@ const Main = () => {
             addPickedFontOption(recentEntryToFontOption(entry));
           }}
         />
+        {/*
+          Refresh-fonts button. Same text variant + pill shape as
+          Share so the secondary-actions row reads as a single
+          stylistic family. Positioned BEFORE Share because the
+          Share button is the row's terminator: it's a single-tap
+          publish action, so it naturally sits flush-right.
+          Refresh is more of a "fix things if they look wrong"
+          escape hatch and belongs left of the primary action,
+          mirroring the convention in document apps where Undo /
+          Refresh sit before Save / Share.
+        */}
+        <Button
+          size="small"
+          variant="text"
+          startIcon={<RefreshIcon />}
+          onClick={handleRefreshFonts}
+          sx={{ borderRadius: "9999px", px: 1.5 }}
+        >
+          {t("showcase.refreshFonts")}
+        </Button>
         <Button
           size="small"
           variant="text"
