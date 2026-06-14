@@ -727,7 +727,7 @@ export const BUILT_IN_MAPPINGS: BuiltInPreset[] = [
   },
   {
     key: "japanese-onkun",
-    label: "仮名 · 音読み / 訓読み (Kana furigana)",
+    label: "ふりがな (Hiragana furigana)",
     url: "/wingfont/mappings/japanese-onkun.csv",
     filename: "japanese-onkun.csv",
     group: "日本語 (Japanese)",

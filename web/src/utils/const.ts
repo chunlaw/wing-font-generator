@@ -155,10 +155,9 @@ export const TEMPLATES_BY_DIALECT: Record<string, string[]> = {
     "朋友一生一起走",
     "我看到满片花儿的开放　隐隐约约有声歌唱",
   ],
-  // Japanese — kanji with kana furigana. Sentences are chosen to show
-  // both reading types (音読み in katakana, 訓読み in hiragana) and the
-  // 熟語 word-context disambiguation: 行 reads コウ in 銀行 / ギョウ in
-  // 行政 but いく on its own; 生 shifts セイ / なま / いきる by context.
+  // Japanese — kanji with hiragana furigana. Sentences are chosen to show
+  // the 熟語 word-context disambiguation: 行 reads こう in 銀行 / ぎょう in
+  // 行政 but いく on its own; 生 shifts せい / なま / いきる by context.
   japanese: [
     "銀行員は毎朝早く会社に行く",
     "学校で日本語と漢字を勉強する",
