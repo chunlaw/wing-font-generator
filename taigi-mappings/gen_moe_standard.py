@@ -17,6 +17,12 @@ own reading + frequency. Headwords whose syllable count doesn't match the
 character count, or that contain non-Han characters, are skipped (≈2%, mostly
 loanwords / place-names with 仔 suffixes).
 
+Alternate readings from the `KipUnicodeOthers` / `PojUnicodeOthers` columns are
+ingested too: 又音 / 文白 (1:1) become extra readings, and 合音 (contractions,
+fewer syllables than characters) are aligned to the characters so the absorbed
+character renders blank — e.g. 拍毋見 emits `phàng  kiàn` (毋 muted), exactly
+like 畫畫 carrying two readings. See align_haunim().
+
 Emits into python/mappings/ (and a local copy here):
   Standard (優勢腔), 6 schemes:
     taigi-tl-toned / taigi-poj-toned / taigi-tl / taigi-poj /
@@ -64,6 +70,56 @@ def is_cjk(ch):
 
 def clean(s):
     return PAREN.sub("", s).strip().rstrip("。 ").strip()
+
+
+# Onset (leading consonant cluster) — for aligning 合音 syllables to the
+# full reading. Covers Tâi-lô (ts/tsh) and POJ (ch/chh) initials.
+_ONSET = re.compile(r"^(tsh|ts|chh|ch|kh|ph|th|ng|[ptkbgmnlhsj])", re.I)
+
+
+def onset(syl):
+    m = _ONSET.match(syl)
+    return m.group(1).lower() if m else ""
+
+
+def parse_others(field):
+    """Parse a *Others column into [(reading, is_haunim), ...]. Splits
+    alternates on '/', variant readings on 、,;；, and strips the
+    (又唸作)/(文)/(白)/(俗)/(替)/(合音唸作) markers."""
+    out = []
+    for alt in field.split("/"):
+        if not alt.strip():
+            continue
+        is_hau = "合音" in alt
+        for piece in re.split(r"[、,;；]", PAREN.sub("", alt)):
+            piece = piece.strip().rstrip("。 ").strip()
+            if piece:
+                out.append((piece, is_hau))
+    return out
+
+
+def align_haunim(full_syls, hau_syls):
+    """Align a 合音 (contracted) reading to characters: each 合音 syllable
+    sits on the character it begins, and characters whose syllable is
+    absorbed into a neighbour become '' (muted). E.g. 拍毋見
+    full=[phah,m̄,kìnn] + 合音=[phàng,kiàn] -> ['phàng','','kiàn'] so the
+    pipeline renders 拍=phàng, 毋=(blank), 見=kiàn. Returns a list
+    len==len(full_syls), or None if it can't align cleanly."""
+    M, N = len(full_syls), len(hau_syls)
+    if N == 0 or N >= M:
+        return None
+    res = [""] * M
+    i = j = 0
+    while j < N and i < M:
+        res[i] = hau_syls[j]
+        i += 1
+        j += 1
+        while i < M and (j >= N or onset(full_syls[i]) != onset(hau_syls[j])):
+            res[i] = ""
+            i += 1
+    if i != M or sum(1 for x in res if x) != N:
+        return None
+    return res
 
 
 def alts(field):
@@ -212,6 +268,31 @@ def main():
             return None
         return " ".join(sf(s) for s in syls)
 
+    # Alternate readings from the *Others columns: 1:1 又音/文白 add extra
+    # readings; 合音 (contractions, fewer syllables than characters) are
+    # aligned so the absorbed character renders blank — e.g. 拍毋見 gets
+    # "phàng  kiàn" (毋 muted), the way 畫畫 carries two readings.
+    OTHERS_COL = {
+        "KipUnicode": "KipUnicodeOthers",
+        "PojUnicode": "PojUnicodeOthers",
+    }
+
+    def others_outputs(han, full_syls, others, sf):
+        outs = []
+        can_align = len(full_syls) == len(han) and all(is_cjk(c) for c in han)
+        for reading, is_hau in others:
+            syls = split_syllables(reading)
+            if is_hau or (0 < len(syls) < len(han)):
+                if can_align:
+                    a = align_haunim(full_syls, syls)
+                    if a:
+                        outs.append(" ".join(sf(s) if s else "" for s in a))
+            elif len(syls) == len(han):
+                o = render(han, reading, sf)
+                if o is not None:
+                    outs.append(o)
+        return outs
+
     # ── Pass 1: per-character accent substitution map ────────────────
     # The 語音差異 table is keyed per single character, so a naive build
     # only varies *standalone* characters by accent — inside a word every
@@ -246,18 +327,25 @@ def main():
         han = r["HanLoTaibunKip"].strip()
         if not han:
             continue
-        # standard, every scheme
+        # standard, every scheme — primary reading(s) + *Others alternates
         for fname, (col, sf) in SCHEMES.items():
-            for rd in alts(r[col]):
+            prim = alts(r[col])
+            for rd in prim:
                 out = render(han, rd, sf)
                 if out is None:
                     if fname == "taigi-tl-toned.csv":
                         skipped += 1
                     continue
                 std[fname].setdefault((han, out), None)
+            full_syls = split_syllables(prim[0]) if prim else []
+            others = parse_others(r[OTHERS_COL[col]])
+            for out in others_outputs(han, full_syls, others, sf):
+                std[fname].setdefault((han, out), None)
         # nine 腔 (Tâi-lô toned)
         dia_field = r["KipDictDialects"]
         kip_std = alts(r["KipUnicode"])
+        kip_full = split_syllables(kip_std[0]) if kip_std else []
+        kip_others = parse_others(r["KipUnicodeOthers"])
         for cn, slug, _ in ACCENTS:
             if len(han) == 1:
                 # single char: use its full 語音差異 reading(s) verbatim
@@ -282,6 +370,10 @@ def main():
                         for i in range(len(han))
                     ]
                     dial[slug].setdefault((han, " ".join(out_syls)), None)
+            # 又音 / 合音 from KipUnicodeOthers are not accent-specific —
+            # add them verbatim to every 腔 (incl. the muted-char 合音).
+            for out in others_outputs(han, kip_full, kip_others, sf_toned):
+                dial[slug].setdefault((han, out), None)
 
     def write(path, entries):
         rowset = sorted(entries.keys(), key=lambda x: (x[1], x[0]))
