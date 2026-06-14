@@ -61,6 +61,10 @@ ALT_SEP = re.compile(r"[;；]\s*")
 IDEO_SPACE = "　"
 TONE_MARKS = {"́": "2", "̀": "3", "̂": "5", "̌": "6", "̄": "7", "̍": "8", "̋": "9"}
 KEEP_COMBINING = {"͘"}                  # POJ o͘ dot (not a tone mark)
+# Weight for 合音 (contracted) word readings. csv_parser sorts a word's
+# readings by weight (desc) to pick its default, so >1 makes the 合音 the
+# default reading shown in running text, ahead of the 主音讀 (full form).
+HAUNIM_WEIGHT = 2
 
 
 def is_cjk(ch):
@@ -278,6 +282,9 @@ def main():
     }
 
     def others_outputs(han, full_syls, others, sf):
+        """-> [(rendered, weight), ...]. 合音 get HAUNIM_WEIGHT so they
+        outrank the 主音讀 as the word's default reading; 又音/文白 stay
+        weight 1 (extra selectable readings, default unchanged)."""
         outs = []
         can_align = len(full_syls) == len(han) and all(is_cjk(c) for c in han)
         for reading, is_hau in others:
@@ -286,11 +293,12 @@ def main():
                 if can_align:
                     a = align_haunim(full_syls, syls)
                     if a:
-                        outs.append(" ".join(sf(s) if s else "" for s in a))
+                        joined = " ".join(sf(s) if s else "" for s in a)
+                        outs.append((joined, HAUNIM_WEIGHT if is_hau else 1))
             elif len(syls) == len(han):
                 o = render(han, reading, sf)
                 if o is not None:
-                    outs.append(o)
+                    outs.append((o, 1))
         return outs
 
     # ── Pass 1: per-character accent substitution map ────────────────
@@ -319,6 +327,11 @@ def main():
             if rds and rds[0] != std:
                 accent_sub[(cn, han, std)] = rds[0]
 
+    def bump(d, key, wt):
+        """Record reading `key` keeping the highest weight seen."""
+        if wt > d.get(key, 0):
+            d[key] = wt
+
     std = {fn: {} for fn in SCHEMES}
     dial = {slug: {} for _, slug, _ in ACCENTS}
     skipped = 0
@@ -336,11 +349,11 @@ def main():
                     if fname == "taigi-tl-toned.csv":
                         skipped += 1
                     continue
-                std[fname].setdefault((han, out), None)
+                bump(std[fname], (han, out), 1)
             full_syls = split_syllables(prim[0]) if prim else []
             others = parse_others(r[OTHERS_COL[col]])
-            for out in others_outputs(han, full_syls, others, sf):
-                std[fname].setdefault((han, out), None)
+            for out, wt in others_outputs(han, full_syls, others, sf):
+                bump(std[fname], (han, out), wt)
         # nine 腔 (Tâi-lô toned)
         dia_field = r["KipDictDialects"]
         kip_std = alts(r["KipUnicode"])
@@ -357,7 +370,7 @@ def main():
                 for rd in (rds or kip_std):
                     out = render(han, rd, sf_toned)
                     if out is not None:
-                        dial[slug].setdefault((han, out), None)
+                        bump(dial[slug], (han, out), 1)
             else:
                 # word: take the standard syllables and substitute each
                 # character's accent reading where the 語音差異 records one
@@ -369,18 +382,22 @@ def main():
                         accent_sub.get((cn, han[i], syls[i]), syls[i])
                         for i in range(len(han))
                     ]
-                    dial[slug].setdefault((han, " ".join(out_syls)), None)
+                    bump(dial[slug], (han, " ".join(out_syls)), 1)
             # 又音 / 合音 from KipUnicodeOthers are not accent-specific —
             # add them verbatim to every 腔 (incl. the muted-char 合音).
-            for out in others_outputs(han, kip_full, kip_others, sf_toned):
-                dial[slug].setdefault((han, out), None)
+            for out, wt in others_outputs(han, kip_full, kip_others, sf_toned):
+                bump(dial[slug], (han, out), wt)
 
     def write(path, entries):
         rowset = sorted(entries.keys(), key=lambda x: (x[1], x[0]))
         with open(path, "w", encoding="utf-8", newline="") as f:
             w = csv.writer(f, lineterminator="\n")
             for han, reading in rowset:
-                w.writerow([han, reading])
+                wt = entries[(han, reading)]
+                # 3rd column only when the weight is non-default (合音);
+                # csv_parser reads it as the word-default priority.
+                w.writerow([han, reading, wt] if wt and wt != 1
+                           else [han, reading])
         return len(rowset)
 
     print("Standard (優勢腔):")

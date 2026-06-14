@@ -239,6 +239,10 @@ def _find_problematic_entries(csv_file, cmap, char, discarded_annos_set):
 def load_mapping(font, csv_file):
     cmap = font.getBestCmap()
     char_cnt = defaultdict(lambda: defaultdict(int))
+    # Characters that appear with an EMPTY annotation inside a word — i.e.
+    # muted characters, as in the 合音 拍毋見 → "phàng  kiàn" where 毋 is
+    # silent. They get a '' variant appended last (see below).
+    blank_chars = set()
 
     # raw_word_entries 用於生成最終的 "詞組" 映射 (word_mapping)
     raw_word_entries = []
@@ -301,6 +305,11 @@ def load_mapping(font, csv_file):
                     for base_char, anno_str in zip(base_chars, anno_strs):
                         if anno_str != '':
                             char_cnt[base_char][anno_str] += weight
+                        elif len(base_chars) > 1:
+                            # empty token inside a word → this character is
+                            # muted here (合音); remember to give it a blank
+                            # variant after the real readings are ranked.
+                            blank_chars.add(base_char)
                             
     # --- char_mapping 的排序與截斷邏輯 ---
     char_mapping_raw = {}
@@ -352,6 +361,18 @@ def load_mapping(font, csv_file):
             sorted_cnts = kept_variants
         
         char_mapping_raw[char] = {k: None for k, v in sorted_cnts}
+
+    # --- Blank (muted) annotation variant -----------------------------
+    # Characters muted inside a 合音 word get a '' annotation appended
+    # LAST — so it is never the default reading (variant 0), but is a
+    # selectable variant. build_glyph composes it as the bare base glyph
+    # (an empty annotation string shapes to nothing), and the
+    # chain-context lookup substitutes the character to this bare glyph
+    # in the word — so e.g. 毋 in 拍毋見 renders with nothing above it
+    # (phàng-∅-kiàn) rather than its default m̄.
+    for char in blank_chars:
+        if char in char_mapping_raw and '' not in char_mapping_raw[char]:
+            char_mapping_raw[char][''] = None
 
     # --- [核心修正] word_mapping 的排序邏輯 ---
     # (這部分不需要修改，它仍然正確地使用 raw_word_entries 來生成 "詞組" 映射)
