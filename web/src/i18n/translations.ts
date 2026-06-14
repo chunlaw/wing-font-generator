@@ -22,8 +22,15 @@ export type TranslationKey =
   | "header.title"
   | "header.cta.generate"
   | "header.cta.showcase"
+  | "header.cta.notes"
   | "header.cta.learnMore"
   | "header.cta.sponsor"
+  | "notes.title"
+  | "notes.subtitle"
+  | "notes.help.text"
+  | "notes.help.link"
+  | "notes.contact.text"
+  | "notes.contact.link"
   | "header.lang.toggle"
   | "header.theme.toggle"
   // Mobile drawer — the left-side nav surface that replaced the
@@ -162,6 +169,11 @@ export type TranslationKey =
   | "specimen.reportError"
   | "showcase.userFonts.zh"
   | "showcase.userFonts.en"
+  | "picker.dialect"
+  | "picker.font"
+  | "picker.noOptions"
+  | "picker.addAriaLabel"
+  | "specimen.editorAriaLabel"
   // Step 1 — recent (user-generated) fonts cache
   | "step1.recentFonts.title"
   | "step1.recentFonts.pin"
@@ -335,7 +347,14 @@ export const TRANSLATIONS: Record<Language, Record<TranslationKey, string>> = {
     "header.title": "Wing Font",
     "header.cta.generate": "自製字體",
     "header.cta.showcase": "字體展示",
+    "header.cta.notes": "語言註記",
     "header.cta.learnMore": "了解更多！",
+    "notes.title": "語言註記",
+    "notes.subtitle": "各語言嘅註音方式、拼音方案、資料來源同限制。",
+    "notes.help.text": "呢啲註音由社群維護。發現錯讀，或者想為你熟悉嘅語言出一分力？",
+    "notes.help.link": "協助改善",
+    "notes.contact.text": "你係母語者或者語言學專家？想協助修正或者補充某種語言嘅註音，歡迎搵我哋。",
+    "notes.contact.link": "喺 Instagram 聯絡 @wingfont",
     "header.cta.sponsor": "捐助",
     "header.lang.toggle": "切換語言",
     "header.theme.toggle": "切換主題",
@@ -518,13 +537,18 @@ export const TRANSLATIONS: Record<Language, Record<TranslationKey, string>> = {
     "showcase.uploadAdded": "已加入 {name}",
     "showcase.uploadBadFormat":
       "唔識讀呢個檔案格式（要 .ttf / .otf / .woff / .woff2）",
-    "showcase.uploadTooLarge": "檔案太大（上限 30 MB）",
+    "showcase.uploadTooLarge": "檔案太大（上限 100 MB）",
     "showcase.uploadReadFailed": "讀取檔案失敗",
     "showcase.emptyHint": "揀個字型開始對比吧。",
     "specimen.reportError":
       "發現標注有錯？歡迎[喺 GitHub 報告](https://github.com/chunlaw/wing-font-generator/issues/new?title=Annotation%20error%20in%20{name})",
     "showcase.userFonts.zh": "自家字型",
     "showcase.userFonts.en": "Your fonts",
+    "picker.dialect": "方言／類別",
+    "picker.font": "字型",
+    "picker.noOptions": "搵唔到",
+    "picker.addAriaLabel": "加入字型到比較",
+    "specimen.editorAriaLabel": "字型試寫區",
     "step1.recentFonts.title": "近期字型",
     "step1.recentFonts.pin": "釘住",
     "step1.recentFonts.unpin": "解除釘住",
@@ -718,7 +742,14 @@ export const TRANSLATIONS: Record<Language, Record<TranslationKey, string>> = {
     "header.title": "Wing Font",
     "header.cta.generate": "Make Your Font",
     "header.cta.showcase": "Showcase",
+    "header.cta.notes": "Notes",
     "header.cta.learnMore": "Learn More",
+    "notes.title": "Language notes",
+    "notes.subtitle": "How each language's annotations are built — schemes, sources, and limitations.",
+    "notes.help.text": "These annotations are community-maintained. Spotted a wrong reading, or want to help with a language you know?",
+    "notes.help.link": "Help improve",
+    "notes.contact.text": "Are you a native speaker or linguist? If you'd like to help correct or extend the readings for a language you know, get in touch.",
+    "notes.contact.link": "Message us on Instagram @wingfont",
     "header.cta.sponsor": "Sponsor",
     "header.lang.toggle": "Switch language",
     "header.theme.toggle": "Switch theme",
@@ -906,13 +937,18 @@ export const TRANSLATIONS: Record<Language, Record<TranslationKey, string>> = {
     "showcase.uploadAdded": "Added {name}",
     "showcase.uploadBadFormat":
       "Doesn't look like a font (expected .ttf / .otf / .woff / .woff2)",
-    "showcase.uploadTooLarge": "File too large (30 MB max)",
+    "showcase.uploadTooLarge": "File too large (100 MB max)",
     "showcase.uploadReadFailed": "Couldn't read the file",
     "showcase.emptyHint": "Pick a font to start comparing.",
     "specimen.reportError":
       "Spot an annotation error? Please [report it on GitHub](https://github.com/chunlaw/wing-font-generator/issues/new?title=Annotation%20error%20in%20{name}).",
     "showcase.userFonts.zh": "自家字型",
     "showcase.userFonts.en": "Your fonts",
+    "picker.dialect": "Script / category",
+    "picker.font": "Font",
+    "picker.noOptions": "No matches",
+    "picker.addAriaLabel": "Add font to comparison",
+    "specimen.editorAriaLabel": "Type or paste text in this font",
     "step1.recentFonts.title": "Recent fonts",
     "step1.recentFonts.pin": "Pin",
     "step1.recentFonts.unpin": "Unpin",

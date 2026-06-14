@@ -87,6 +87,7 @@ const Header = () => {
     () => [
       { value: "/generate", label: t("header.cta.generate"), to: "/generate" },
       { value: "/showcase", label: t("header.cta.showcase"), to: "/showcase" },
+      { value: "/notes", label: t("header.cta.notes"), to: "/notes" },
       { value: "/about", label: t("header.cta.learnMore"), to: "/about" },
       {
         value: "sponsor",

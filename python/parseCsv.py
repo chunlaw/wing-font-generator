@@ -27,6 +27,6 @@ def load_mapping(csv_file):
     return (word_mapping, char_mapping)
 
 if __name__ == "__main__":
-    wp, lshk_char_mapping = load_mapping("mappings/canto-lshk.csv")
+    wp, lshk_char_mapping = load_mapping("mappings/cantonese/canto-lshk.csv")
     for char, v in lshk_char_mapping.items():
         print(v)

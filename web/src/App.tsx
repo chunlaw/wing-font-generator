@@ -3,6 +3,7 @@ import Layout from "./components/layouts/Layout";
 import About from "./pages/About";
 import Acknowledgements from "./pages/Acknowledgements";
 import Home from "./pages/Home";
+import Notes from "./pages/Notes";
 import Showcase from "./pages/Main";
 import Privacy from "./pages/Privacy";
 import Specimen from "./pages/Specimen";
@@ -33,6 +34,7 @@ function App() {
           <Route path="about" element={<About />} />
           <Route path="credits" element={<Acknowledgements />} />
           <Route path="generate" element={<Generate />} />
+          <Route path="notes" element={<Notes />} />
           <Route path="specimen/:family" element={<Specimen />} />
           <Route path="showcase" element={<Showcase />} />
           <Route path="terms" element={<Terms />} />

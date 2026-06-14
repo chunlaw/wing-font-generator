@@ -55,6 +55,10 @@ DEVANAGARI_RANGES = (
     (0x0900, 0x097F),   # Devanagari (consonants, matras, digits ०-९)
 )
 
+SIDDHAM_RANGES = (
+    (0x11580, 0x115FF),  # Siddham (悉曇文字; abugida, supplementary plane)
+)
+
 
 class WordScript(NamedTuple):
     """Everything that differs between word-unit scripts, as data.
@@ -129,6 +133,15 @@ WORD_SCRIPTS = {
     # word_liga_handler.py for the per-syllable shaping caveats.
     "deva": WordScript(
         "deva", DEVANAGARI_RANGES, True, "digits", None, "basic", "calt"
+    ),
+    # Experimental — Siddhaṃ (悉曇文字). Structurally a Brahmic abugida
+    # like Devanagari, but HarfBuzz shapes it with the Universal Shaping
+    # Engine (USE), not the legacy Indic shaper, and the block lives in
+    # the supplementary plane (>U+FFFF). The "basic"/"pres" config below
+    # mirrors deva as a starting point; the shaping mode may need tuning
+    # once a Siddham base font (e.g. Noto Sans Siddham) is wired in.
+    "sidd": WordScript(
+        "sidd", SIDDHAM_RANGES, True, "digits", None, "basic", "pres"
     ),
 }
 

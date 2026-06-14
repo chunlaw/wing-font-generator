@@ -92,6 +92,26 @@ export interface BuildCliCommandInput {
  * `_format_cli_invocation` token-for-token modulo line breaks (single
  * line here; the caller can soft-wrap visually).
  */
+// Built-in mapping CSVs live in per-language subfolders under
+// python/mappings/ (cantonese/, taiwanese/, …). The preset key prefix
+// identifies the folder; cangjie and uploaded mappings stay at the root.
+function mappingDirFor(key: string): string {
+  const dirs: [string, string][] = [
+    ["canto", "cantonese/"],
+    ["taigi", "taiwanese/"],
+    ["teochew", "teochew/"],
+    ["mandarin", "mandarin/"],
+    ["japanese", "japanese/"],
+    ["thai", "thai/"],
+    ["hindi", "hindi/"],
+    ["arabic", "arabic/"],
+  ];
+  for (const [prefix, dir] of dirs) {
+    if (key.startsWith(prefix)) return dir;
+  }
+  return "";
+}
+
 export function buildCliCommand({
   baseFontName,
   annoFontName,
@@ -106,7 +126,7 @@ export function buildCliCommand({
   const basePath = `input_fonts/${baseFontName || "<base-font>.ttf"}`;
   const annoPath = `input_fonts/${annoFontName || "<anno-font>.ttf"}`;
   const mappingPath = mappingPresetKey
-    ? `mappings/${mappingPresetKey}.csv`
+    ? `mappings/${mappingDirFor(mappingPresetKey)}${mappingPresetKey}.csv`
     : "mappings/<your-mapping>.csv";
 
   // Output prefix derived from family name, sanitised for filesystem

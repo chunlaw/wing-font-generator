@@ -47,15 +47,26 @@ import {
 } from "./recentFonts";
 
 /**
- * Browser-side file-size ceiling. Even with IndexedDB's generous
- * quota, a 50 MB CJK font dragged onto the page can lock up the
- * main thread during the FontFace.load() call. 30 MB covers every
- * normal CJK font (Source Han Sans VF is ~25 MB compressed, Noto
- * Sans CJK static masters are 4-15 MB) while rejecting absurd
- * inputs early. The user gets a clear error rather than a
- * mysterious freeze.
+ * Browser-side file-size ceiling. Not a storage limit (IndexedDB
+ * quotas are GB-scale) and not a network limit (upload is local) —
+ * the constraint is that `FontFace.load()` runs ON THE MAIN THREAD
+ * and decompresses + parses the sfnt synchronously. At ~100 MB
+ * that's a 2-4 second UI freeze on a typical laptop and a real OOM
+ * risk on low-RAM phones; past that the experience degrades fast.
+ *
+ * 100 MB accepts every commonly-seen font with comfortable margin:
+ *   * Source Han Sans VF (~25 MB compressed)
+ *   * Noto Sans CJK static masters (4-15 MB each)
+ *   * Wing Font output for big mappings (full Mandarin pinyin runs
+ *     can land at 30-50 MB depending on variant count + base font)
+ *   * Custom multi-master / superset builds users sometimes drag in
+ * while still rejecting clearly-absurd inputs early so the user
+ * gets a clear error rather than a mysterious freeze.
+ *
+ * Was 30 MB; raised after users reported wing-font-generator output
+ * fonts approaching the ceiling on large-mapping builds.
  */
-const MAX_UPLOAD_BYTES = 30 * 1024 * 1024;
+const MAX_UPLOAD_BYTES = 100 * 1024 * 1024;
 
 /**
  * Signature classifier. Maps the first 4 bytes of an OpenType-family

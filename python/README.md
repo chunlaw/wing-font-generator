@@ -115,7 +115,7 @@ Then generate one font from a Cantonese-LSHK mapping:
 python wing-font.py \
   -i input_fonts/ChironSungHK-R.ttf \
   -a input_fonts/NotoSerif-Regular.ttf \
-  -m mappings/canto-lshk.csv \
+  -m mappings/cantonese/canto-lshk.csv \
   -o ChironSungHK-Noto-lshk \
   -opt -as 0.27
 ```
@@ -146,7 +146,7 @@ Recommended pairings:
 python wing-font.py \
   -i input_fonts/XiaolaiSC-Regular.ttf \
   -a 'input_fonts/GoogleSans-VariableFont_GRAD,opsz,wght.ttf' \
-  -m mappings/canto-thai.csv \
+  -m mappings/cantonese/canto-thai.csv \
   -o Xiaolai-Google-thai \
   -opt -as 0.26 --out-ascent 1200
 
@@ -154,7 +154,7 @@ python wing-font.py \
 python wing-font.py \
   -i input_fonts/XiaolaiSC-Regular.ttf \
   -a input_fonts/NotoNastaliqUrdu-VariableFont_wght.ttf \
-  -m mappings/canto-urdu.csv \
+  -m mappings/cantonese/canto-urdu.csv \
   -o Xiaolai-NotoNastaliq-urdu \
   -opt -as 0.22 --out-ascent 1300
 ```

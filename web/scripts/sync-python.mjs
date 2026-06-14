@@ -61,31 +61,31 @@ const MANIFEST = [
   // both should reference the same set of files.
   ["mappings/__init__.py", "mappings/__init__.py"],
   ["mappings/csv_parser.py", "mappings/csv_parser.py"],
-  ["mappings/canto-lshk.csv", "mappings/canto-lshk.csv"],
-  ["mappings/canto-yale.csv", "mappings/canto-yale.csv"],
-  ["mappings/canto-lau.csv", "mappings/canto-lau.csv"],
-  ["mappings/canto-guangdong.csv", "mappings/canto-guangdong.csv"],
-  ["mappings/canto-chishima.csv", "mappings/canto-chishima.csv"],
-  ["mappings/canto-thai.csv", "mappings/canto-thai.csv"],
-  ["mappings/canto-korean.csv", "mappings/canto-korean.csv"],
-  ["mappings/canto-katakana.csv", "mappings/canto-katakana.csv"],
-  ["mappings/canto-filipino.csv", "mappings/canto-filipino.csv"],
-  ["mappings/canto-urdu.csv", "mappings/canto-urdu.csv"],
+  ["mappings/cantonese/canto-lshk.csv", "mappings/canto-lshk.csv"],
+  ["mappings/cantonese/canto-yale.csv", "mappings/canto-yale.csv"],
+  ["mappings/cantonese/canto-lau.csv", "mappings/canto-lau.csv"],
+  ["mappings/cantonese/canto-guangdong.csv", "mappings/canto-guangdong.csv"],
+  ["mappings/cantonese/canto-chishima.csv", "mappings/canto-chishima.csv"],
+  ["mappings/cantonese/canto-thai.csv", "mappings/canto-thai.csv"],
+  ["mappings/cantonese/canto-korean.csv", "mappings/canto-korean.csv"],
+  ["mappings/cantonese/canto-katakana.csv", "mappings/canto-katakana.csv"],
+  ["mappings/cantonese/canto-filipino.csv", "mappings/canto-filipino.csv"],
+  ["mappings/cantonese/canto-urdu.csv", "mappings/canto-urdu.csv"],
   // Arabic-base word-unit mapping (NEW tier): each Arabic word
   // composes into one annotated glyph with DIN 31635 romanization
   // stacked above. Starter set of ~130 common words hand-curated;
   // expand via gen_arabic_romanization.py.
-  ["mappings/arabic-romanization.csv", "mappings/arabic-romanization.csv"],
+  ["mappings/arabic/arabic-romanization.csv", "mappings/arabic-romanization.csv"],
   // Toneless / decorative variants (tone digit stripped) — souvenir use.
-  ["mappings/canto-thai-notone.csv", "mappings/canto-thai-notone.csv"],
-  ["mappings/canto-korean-notone.csv", "mappings/canto-korean-notone.csv"],
-  ["mappings/canto-katakana-notone.csv", "mappings/canto-katakana-notone.csv"],
-  ["mappings/canto-filipino-notone.csv", "mappings/canto-filipino-notone.csv"],
-  ["mappings/canto-urdu-notone.csv", "mappings/canto-urdu-notone.csv"],
-  ["mappings/canto-hindi.csv", "mappings/canto-hindi.csv"],
-  ["mappings/canto-punjab.csv", "mappings/canto-punjab.csv"],
-  ["mappings/canto-hindi-notone.csv", "mappings/canto-hindi-notone.csv"],
-  ["mappings/canto-punjab-notone.csv", "mappings/canto-punjab-notone.csv"],
+  ["mappings/cantonese/canto-thai-notone.csv", "mappings/canto-thai-notone.csv"],
+  ["mappings/cantonese/canto-korean-notone.csv", "mappings/canto-korean-notone.csv"],
+  ["mappings/cantonese/canto-katakana-notone.csv", "mappings/canto-katakana-notone.csv"],
+  ["mappings/cantonese/canto-filipino-notone.csv", "mappings/canto-filipino-notone.csv"],
+  ["mappings/cantonese/canto-urdu-notone.csv", "mappings/canto-urdu-notone.csv"],
+  ["mappings/cantonese/canto-hindi.csv", "mappings/canto-hindi.csv"],
+  ["mappings/cantonese/canto-punjab.csv", "mappings/canto-punjab.csv"],
+  ["mappings/cantonese/canto-hindi-notone.csv", "mappings/canto-hindi-notone.csv"],
+  ["mappings/cantonese/canto-punjab-notone.csv", "mappings/canto-punjab-notone.csv"],
   ["mappings/cangjie.csv", "mappings/cangjie.csv"],
   // Mandarin — Hanyu Pinyin in numeric-tone form (e.g. `ling2`,
   // `yuan2`). Two regional variants, each ~95k rows / ~3 MB covering
@@ -96,53 +96,53 @@ const MANIFEST = [
   //   • mandarin-cn.csv — Mainland 普通話 (also Singapore / Malaysia).
   //   • mandarin-tw.csv — Taiwan 國語 (753 single-char defaults
   //     re-derived from the MOE 國語辭典).
-  ["mappings/mandarin-cn.csv", "mappings/mandarin-cn.csv"],
-  ["mappings/mandarin-tw.csv", "mappings/mandarin-tw.csv"],
+  ["mappings/mandarin/mandarin-cn.csv", "mappings/mandarin-cn.csv"],
+  ["mappings/mandarin/mandarin-tw.csv", "mappings/mandarin-tw.csv"],
   // Japanese — kanji → kana furigana (音読み in katakana, 訓読み in
   // hiragana) from KanjiDic2, plus 熟語 word-context rows aligned from
   // JMdict so 行 reads コウ in 行政 but いく alone. Drives the
   // NotoSansJP-japanese / Xiaolai-NotoJP-japanese showcase fonts.
-  ["mappings/japanese-onkun.csv", "mappings/japanese-onkun.csv"],
+  ["mappings/japanese/japanese-onkun.csv", "mappings/japanese-onkun.csv"],
   // Taiwanese / Southern Min (河洛話) mappings — surfaced as Step 2
   // presets for the Noto Sans TC + Huninn pairing. The standard (優勢腔)
   // reading data is the MOE 臺灣台語常用詞辭典 (sutian / kautian.ods) via
   // ChhoeTaigi — KipUnicode→Tâi-lô, PojUnicode→POJ, TLPA/BP derived. Word
   // entries are space-separated per character so they drive 多音字
   // disambiguation. Two diacritic schemes + four numeric-tone schemes.
-  ["mappings/taigi-tl-toned.csv", "mappings/taigi-tl-toned.csv"],
-  ["mappings/taigi-poj-toned.csv", "mappings/taigi-poj-toned.csv"],
-  ["mappings/taigi-tl.csv", "mappings/taigi-tl.csv"],
-  ["mappings/taigi-poj.csv", "mappings/taigi-poj.csv"],
-  ["mappings/taigi-tlpa.csv", "mappings/taigi-tlpa.csv"],
-  ["mappings/taigi-bp.csv", "mappings/taigi-bp.csv"],
+  ["mappings/taiwanese/taigi-tl-toned.csv", "mappings/taigi-tl-toned.csv"],
+  ["mappings/taiwanese/taigi-poj-toned.csv", "mappings/taigi-poj-toned.csv"],
+  ["mappings/taiwanese/taigi-tl.csv", "mappings/taigi-tl.csv"],
+  ["mappings/taiwanese/taigi-poj.csv", "mappings/taigi-poj.csv"],
+  ["mappings/taiwanese/taigi-tlpa.csv", "mappings/taigi-tlpa.csv"],
+  ["mappings/taiwanese/taigi-bp.csv", "mappings/taigi-bp.csv"],
   // Nine 腔 (accent) variants in Tâi-lô, from the same sutian 語音差異
   // table — one reading per accent survey point. Tâi-lô tone-diacritic.
-  ["mappings/taigi-tl-taipak.csv", "mappings/taigi-tl-taipak.csv"],
-  ["mappings/taigi-tl-sannkiap.csv", "mappings/taigi-tl-sannkiap.csv"],
-  ["mappings/taigi-tl-sintik.csv", "mappings/taigi-tl-sintik.csv"],
-  ["mappings/taigi-tl-taitiong.csv", "mappings/taigi-tl-taitiong.csv"],
-  ["mappings/taigi-tl-lokkang.csv", "mappings/taigi-tl-lokkang.csv"],
-  ["mappings/taigi-tl-tailam.csv", "mappings/taigi-tl-tailam.csv"],
-  ["mappings/taigi-tl-kohiong.csv", "mappings/taigi-tl-kohiong.csv"],
-  ["mappings/taigi-tl-gilan.csv", "mappings/taigi-tl-gilan.csv"],
-  ["mappings/taigi-tl-manking.csv", "mappings/taigi-tl-manking.csv"],
+  ["mappings/taiwanese/taigi-tl-taipak.csv", "mappings/taigi-tl-taipak.csv"],
+  ["mappings/taiwanese/taigi-tl-sannkiap.csv", "mappings/taigi-tl-sannkiap.csv"],
+  ["mappings/taiwanese/taigi-tl-sintik.csv", "mappings/taigi-tl-sintik.csv"],
+  ["mappings/taiwanese/taigi-tl-taitiong.csv", "mappings/taigi-tl-taitiong.csv"],
+  ["mappings/taiwanese/taigi-tl-lokkang.csv", "mappings/taigi-tl-lokkang.csv"],
+  ["mappings/taiwanese/taigi-tl-tailam.csv", "mappings/taigi-tl-tailam.csv"],
+  ["mappings/taiwanese/taigi-tl-kohiong.csv", "mappings/taigi-tl-kohiong.csv"],
+  ["mappings/taiwanese/taigi-tl-gilan.csv", "mappings/taigi-tl-gilan.csv"],
+  ["mappings/taiwanese/taigi-tl-manking.csv", "mappings/taigi-tl-manking.csv"],
   // Non-Latin Taiwanese annotation: 方音符號 (TPS, bopomofo-extended —
   // pair with a Bopomofo-covering CJK font like Noto Sans TC) and
   // 台灣語假名 (Taiwanese kana — pair with Noto Sans JP). Derived from
   // ButTaiwan/taigivs (Apache-2.0; readings from MOE 教典).
-  ["mappings/taigi-tps.csv", "mappings/taigi-tps.csv"],
-  ["mappings/taigi-kana.csv", "mappings/taigi-kana.csv"],
+  ["mappings/taiwanese/taigi-tps.csv", "mappings/taigi-tps.csv"],
+  ["mappings/taiwanese/taigi-kana.csv", "mappings/taigi-kana.csv"],
   // Teochew / Min Nan (潮州話) mappings — surfaced as Step 2 presets for
   // the Noto Sans TC + Huninn pairing. Two diacritic schemes (tlo,
   // duffus) plus four numeric-tone schemes (gdpi, ggnn, dieghv, sinwz).
   // Source: learn-teochew teochew_scrape.json readings, converted with
   // the parsetc parser. Keep in sync with BUILT_IN_MAPPINGS.
-  ["mappings/teochew-gdpi.csv", "mappings/teochew-gdpi.csv"],
-  ["mappings/teochew-duffus.csv", "mappings/teochew-duffus.csv"],
-  ["mappings/teochew-tlo.csv", "mappings/teochew-tlo.csv"],
-  ["mappings/teochew-ggnn.csv", "mappings/teochew-ggnn.csv"],
-  ["mappings/teochew-dieghv.csv", "mappings/teochew-dieghv.csv"],
-  ["mappings/teochew-sinwz.csv", "mappings/teochew-sinwz.csv"],
+  ["mappings/teochew/teochew-gdpi.csv", "mappings/teochew-gdpi.csv"],
+  ["mappings/teochew/teochew-duffus.csv", "mappings/teochew-duffus.csv"],
+  ["mappings/teochew/teochew-tlo.csv", "mappings/teochew-tlo.csv"],
+  ["mappings/teochew/teochew-ggnn.csv", "mappings/teochew-ggnn.csv"],
+  ["mappings/teochew/teochew-dieghv.csv", "mappings/teochew-dieghv.csv"],
+  ["mappings/teochew/teochew-sinwz.csv", "mappings/teochew-sinwz.csv"],
 
   // Built-in fonts surfaced as preset options in Step 1. Keep in sync
   // with `BUILT_IN_BASE_FONTS` in wingfontPresets.ts. The Chiron fonts

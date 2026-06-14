@@ -19,6 +19,7 @@ import {
 } from "../utils/hooks";
 import { FontHeader } from "../components/components/FonttHeader";
 import FontPicker from "../components/main/FontPicker";
+import LinguistHelpMemo from "../components/LinguistHelpMemo";
 import { useTranslation } from "../i18n/LanguageContext";
 import {
   FontOption,
@@ -419,6 +420,14 @@ const Main = () => {
           />
         ))
       )}
+
+      {/*
+        Community-help memo. The showcase presents several languages at
+        once, so this lists them all, each deep-linking to its /notes tab.
+      */}
+      <Box sx={{ width: "100%", maxWidth: 720, mt: 1 }}>
+        <LinguistHelpMemo />
+      </Box>
 
       {/*
         Share-confirmation Snackbar. Anchored bottom-centre with

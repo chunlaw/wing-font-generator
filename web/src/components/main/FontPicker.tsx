@@ -1,33 +1,161 @@
-import { Box, IconButton, ListSubheader, MenuItem, TextField } from "@mui/material"
-import { useCallback, useContext, useEffect, useState } from "react"
-import AppContext from "../../AppContext"
+/**
+ * FontPicker — two cascading Autocompletes for the /showcase page:
+ *
+ *   ┌─────────────┐ ┌─────────────┐ ┌─┐
+ *   │  Dialect    │ │  Font       │ │+│
+ *   └─────────────┘ └─────────────┘ └─┘
+ *
+ * Why Autocomplete instead of Select:
+ *   • The dialect list grew past 10 entries and the font list per
+ *     dialect can reach 30+ — scrolling through them on a mobile
+ *     dropdown is painful.
+ *   • Type-to-filter cuts the path to a known font from "scroll +
+ *     squint" to one or two keystrokes.
+ *   • Autocomplete's mobile experience opens with the input focused
+ *     and the keyboard up, which the native <select> derivative
+ *     emphatically doesn't do.
+ *
+ * Why React.memo:
+ *   The parent /showcase page (Main.tsx) owns a 5-second sharedTick
+ *   that drives the per-card sample-text rotation. Without
+ *   memoization, every tick re-rendered this component and the open
+ *   Autocomplete listbox lost its scroll position mid-browse. The
+ *   FontPicker takes NO props, so memoization is a strict win: it
+ *   simply never re-renders due to a parent update; only its own
+ *   AppContext / RecentFontsContext / useTranslation reads can
+ *   cause a re-render.
+ *
+ * Why useMemo on the option arrays:
+ *   Belt-and-braces for the same reason. Even with React.memo, if
+ *   the dialect option list got recreated on a context update that
+ *   ISN'T related to the options themselves, Autocomplete would
+ *   reset its filter / scroll. Memoizing keeps the array reference
+ *   stable across renders where the underlying data hasn't changed.
+ */
+import { useCallback, useContext, useEffect, useMemo, useState, memo } from "react";
+import {
+  Autocomplete,
+  Box,
+  IconButton,
+  ListSubheader,
+  TextField,
+} from "@mui/material";
+import { AddCircleOutline } from "@mui/icons-material";
+import AppContext from "../../AppContext";
 import {
   AVAILABLE_FONTS,
   getDialectLabel,
   USER_FONTS_GROUP_KEY,
-} from "../../utils/const"
-import { useRecentFonts } from "../../RecentFontsContext"
-import { AddCircleOutline } from "@mui/icons-material"
-import { useTranslation } from "../../i18n/LanguageContext"
+} from "../../utils/const";
+import { useRecentFonts } from "../../RecentFontsContext";
+import { useTranslation } from "../../i18n/LanguageContext";
+
+interface DialectOption {
+  value: string;
+  label: string;
+}
+
+interface FontPickOption {
+  /** Stable id used as the value when picked + as the React key. */
+  name: string;
+  /** Display copy shown in the listbox + the input. */
+  displayName: string;
+  /** Optional grouping label for Autocomplete's `groupBy`. */
+  group?: string;
+}
 
 interface FontPickerState {
-  lang: string,
-  fontName: string,
+  lang: string;
+  fontName: string;
 }
 
 const FontPicker = () => {
-  const { addPickedFont } = useContext(AppContext)
-  const { lang } = useTranslation()
-  const { entries: recentEntries } = useRecentFonts()
+  const { addPickedFont } = useContext(AppContext);
+  const { t, lang } = useTranslation();
+  const { entries: recentEntries } = useRecentFonts();
 
-  const [state, setState] = useState<FontPickerState>(DEFAULT_STATE)
+  const [state, setState] = useState<FontPickerState>(() => ({
+    lang: "cantonese",
+    fontName:
+      Object.keys(AVAILABLE_FONTS.cantonese.fonts).find(
+        (k) => !AVAILABLE_FONTS.cantonese.fonts[k].pending,
+      ) ?? "",
+  }));
 
-  // Whenever the recent-fonts list changes (e.g. the user just
-  // generated a font and the chip row added a new entry), keep the
-  // picker's fontName in sync: if the selected lang is the
-  // user-fonts group, default to the first available entry so the
-  // dropdown doesn't show a stale id that no longer maps to
-  // anything renderable.
+  // ── Dialect options ───────────────────────────────────────────────
+  // The built-in catalogue is always present; the user-fonts group is
+  // only exposed once the user has at least one uploaded / generated
+  // font. Hide any dialect whose every font is pending CDN
+  // availability — exposing it would surface an empty font list.
+  const dialectOptions = useMemo<DialectOption[]>(() => {
+    const fromCatalog = Object.keys(AVAILABLE_FONTS)
+      .filter((key) =>
+        Object.values(AVAILABLE_FONTS[key].fonts).some(
+          (opt) => !opt.pending,
+        ),
+      )
+      .map((key) => ({ value: key, label: getDialectLabel(key, lang) }));
+
+    if (recentEntries.length > 0) {
+      fromCatalog.push({
+        value: USER_FONTS_GROUP_KEY,
+        label: getDialectLabel(USER_FONTS_GROUP_KEY, lang),
+      });
+    }
+    return fromCatalog;
+    // `lang` is the UI language (zh-yue / en) — labels are
+    // language-keyed via getDialectLabel. recentEntries.length is the
+    // boolean that decides whether the user-fonts group renders, so
+    // it's the only relevant axis of recentEntries we track here.
+  }, [lang, recentEntries.length]);
+
+  // ── Font options for the currently-selected dialect ───────────────
+  // User-fonts entries don't live in AVAILABLE_FONTS so they go down
+  // a different branch. Built-in entries carry an optional `group`
+  // field that Autocomplete's `groupBy` consumes to render
+  // <ListSubheader>s at runs of matching options.
+  //
+  // The `pending: true` filter lives at this layer so removing the
+  // flag in const.ts is the single switch that re-exposes the font.
+  const fontOptions = useMemo<FontPickOption[]>(() => {
+    if (state.lang === USER_FONTS_GROUP_KEY) {
+      return recentEntries.map((e) => ({
+        name: e.id,
+        displayName: e.displayName,
+      }));
+    }
+    const dialect = AVAILABLE_FONTS[state.lang];
+    if (!dialect) return [];
+    return Object.values(dialect.fonts)
+      .filter((opt) => !opt.pending)
+      .map((opt) => ({
+        name: opt.name,
+        displayName: opt.displayName,
+        group: opt.group,
+      }));
+  }, [state.lang, recentEntries]);
+
+  // Selected option objects derived from the keys in state — fed back
+  // into Autocomplete's controlled `value`. `null` when the saved id
+  // no longer maps to anything (recent fonts list shrank, dialect
+  // catalogue changed) so Autocomplete shows an empty input rather
+  // than the previous selection's label.
+  // `?? undefined` (not null) because `disableClearable` narrows
+  // Autocomplete's value type to `T | undefined` — null would type-
+  // error. In practice these `find`s land hits virtually always
+  // because state.lang / state.fontName are seeded from the catalog
+  // itself; the fallback only kicks in transiently when the user
+  // fonts list mutates under us before the dependent useEffect runs.
+  const selectedDialect =
+    dialectOptions.find((d) => d.value === state.lang) ?? undefined;
+  const selectedFont =
+    fontOptions.find((f) => f.name === state.fontName) ?? undefined;
+
+  // Keep `state.fontName` valid when the user-fonts list mutates
+  // under us (most commonly: user just generated a new font, which
+  // gets prepended; or deleted one that was selected). If the saved
+  // id no longer exists, fall back to the first available entry so
+  // the + button stays click-enabled.
   useEffect(() => {
     if (
       state.lang === USER_FONTS_GROUP_KEY &&
@@ -40,206 +168,125 @@ const FontPicker = () => {
     }
   }, [recentEntries, state.lang, state.fontName]);
 
-  const handleLangChange = useCallback((value: string) => {
-    setState(prev => {
-      if (value === USER_FONTS_GROUP_KEY) {
+  const handleDialectChange = useCallback(
+    (value: string) => {
+      setState(() => {
+        if (value === USER_FONTS_GROUP_KEY) {
+          return {
+            lang: value,
+            fontName: recentEntries[0]?.id ?? "",
+          };
+        }
+        const firstAvailable = Object.values(AVAILABLE_FONTS[value].fonts).find(
+          (opt) => !opt.pending,
+        );
         return {
-          ...prev,
           lang: value,
-          fontName: recentEntries[0]?.id ?? "",
+          fontName: firstAvailable?.name ?? "",
         };
-      }
-      return {
-        ...prev,
-        lang: value,
-        fontName: Object.keys(AVAILABLE_FONTS[value].fonts)[0],
-      };
-    })
-  }, [recentEntries])
+      });
+    },
+    [recentEntries],
+  );
 
-  const handleFontNameChange = useCallback((value: string) => {
-    setState(prev => ({
-      ...prev,
-      fontName: value,
-    }))
-  }, [])
-
-  // Show the user-fonts group as an extra lang option only when at
-  // least one user font exists. No point exposing an empty group on
-  // first-time visits — the dropdown stays simpler until earned.
-  const showUserFontsGroup = recentEntries.length > 0;
-  const userFontsLabel = getDialectLabel(USER_FONTS_GROUP_KEY, lang);
-
-  // The font-name dropdown's options depend on which lang is
-  // selected. User-fonts entries don't live in AVAILABLE_FONTS so
-  // we branch the render. Built-in fonts carry an optional `group`
-  // field — preserve it so the render below can insert
-  // `<ListSubheader>` rows at group boundaries.
-  //
-  // `pending: true` entries are filtered out at this layer: the
-  // matrix entry exists but the CDN doesn't serve the font yet, so
-  // exposing it would let the user pick a font that silently fails
-  // to load. The filter lives here (rather than at AVAILABLE_FONTS
-  // load time) so removing the `pending` flag in const.ts is the
-  // single switch that re-exposes the font — no other code change
-  // needed.
-  const fontOptions =
-    state.lang === USER_FONTS_GROUP_KEY
-      ? recentEntries.map((e) => ({
-          name: e.id,
-          displayName: e.displayName,
-          group: undefined as string | undefined,
-        }))
-      : Object.values(AVAILABLE_FONTS[state.lang]?.fonts ?? {})
-          .filter((opt) => !opt.pending)
-          .map((opt) => ({
-            name: opt.name,
-            displayName: opt.displayName,
-            group: opt.group,
-          }));
+  const handleFontChange = useCallback((value: string) => {
+    setState((prev) => ({ ...prev, fontName: value }));
+  }, []);
 
   return (
-    <Box
-      width="100%"
-      display="flex"
-      gap={1}
-    >
-      <TextField
-        select
-        value={state.lang}
-        onChange={({target: {value}}) => handleLangChange(value)}
-        fullWidth
-        // disableScrollLock stops MUI's Modal from adding
-        // compensating `padding-right` to <body> when the dropdown
-        // opens. On viewports with a visible scrollbar (most
-        // desktops) that padding prevents reflow when body scroll
-        // is locked; on viewports without one (mobile) it gets
-        // added anyway and visibly shifts the whole page right by
-        // ~15 px, so an open-close cycle reads as a layout shake.
-        // Disabling the lock removes the shake; the trade-off
-        // (page can scroll behind an open dropdown) is benign —
-        // touch-scroll inside the menu doesn't propagate to the
-        // page on mobile, and the menu auto-closes on outside-
-        // click on desktop.
-        slotProps={{
-          select: {
-            MenuProps: { disableScrollLock: true },
-          },
+    <Box width="100%" display="flex" gap={1} alignItems="center">
+      {/*
+        Dialect picker. `disableClearable` because the picker only
+        makes sense with a dialect selected — clearing it would
+        require special-casing the font picker as "no options" and
+        the + button as "disabled-no-selection", neither of which
+        improves UX. `disablePortal=false` (the MUI default) keeps
+        the popper above the surrounding card without z-index
+        gymnastics.
+      */}
+      <Autocomplete
+        sx={{ flex: 1, minWidth: 0 }}
+        size="small"
+        options={dialectOptions}
+        value={selectedDialect}
+        onChange={(_, value) => {
+          if (value) handleDialectChange(value.value);
         }}
-      >
-        {/*
-          Hide a dialect entirely if every font inside it is
-          pending CDN availability (otherwise the user picks the
-          dialect → sees an empty font dropdown → no clear next
-          step). Once any non-pending font lands, the dialect
-          re-appears automatically.
-         */}
-        {Object.keys(AVAILABLE_FONTS)
-          .filter((key) =>
-            Object.values(AVAILABLE_FONTS[key].fonts).some(
-              (opt) => !opt.pending,
-            ),
+        getOptionLabel={(opt) => opt.label}
+        isOptionEqualToValue={(opt, value) => opt.value === value.value}
+        disableClearable
+        autoHighlight
+        // openOnFocus surfaces options on first tap (mobile) /
+        // first focus (desktop) without requiring the user to type
+        // — important because most users browse rather than search.
+        openOnFocus
+        renderInput={(params) => (
+          <TextField {...params} label={t("picker.dialect")} />
+        )}
+      />
+      {/*
+        Font picker. groupBy emits ListSubheaders for matching runs of
+        options (same look as the old Select had via flatMap +
+        ListSubheader). Disabled when the current dialect has no
+        non-pending fonts — shouldn't usually happen because we
+        filter empty dialects out of `dialectOptions` above, but a
+        belt-and-braces guard keeps the picker from rendering an
+        un-resolvable selection.
+      */}
+      <Autocomplete
+        sx={{ flex: 1.5, minWidth: 0 }}
+        size="small"
+        options={fontOptions}
+        value={selectedFont}
+        onChange={(_, value) => {
+          if (value) handleFontChange(value.name);
+        }}
+        getOptionLabel={(opt) => opt.displayName}
+        isOptionEqualToValue={(opt, value) => opt.name === value.name}
+        groupBy={(opt) => opt.group ?? ""}
+        renderGroup={(params) =>
+          // Suppress the ListSubheader entirely for ungrouped options
+          // (empty `group` string). Without this, Autocomplete would
+          // render an empty header band above the un-grouped run,
+          // visually identical to a strange dotted line.
+          params.group ? (
+            <li key={params.key}>
+              <ListSubheader
+                sx={{ pointerEvents: "none", lineHeight: 2.2 }}
+              >
+                {params.group}
+              </ListSubheader>
+              <ul style={{ padding: 0 }}>{params.children}</ul>
+            </li>
+          ) : (
+            <ul key={params.key} style={{ padding: 0 }}>
+              {params.children}
+            </ul>
           )
-          .map((key) =>
-            <MenuItem key={`${key}-option`} value={key}>
-              {getDialectLabel(key, lang)}
-            </MenuItem>
-          )}
-        {showUserFontsGroup && [
-          // ListSubheader visually separates user fonts from the
-          // built-in dialect set. pointerEvents: none prevents the
-          // header itself from acting as a Select target.
-          <ListSubheader
-            key="user-fonts-header"
-            sx={{ pointerEvents: "none", lineHeight: 2.2 }}
-          >
-            {userFontsLabel}
-          </ListSubheader>,
-          <MenuItem
-            key={`${USER_FONTS_GROUP_KEY}-option`}
-            value={USER_FONTS_GROUP_KEY}
-            sx={{ pl: 4 }}
-          >
-            {userFontsLabel}
-          </MenuItem>,
-        ]}
-      </TextField>
-      <TextField
-        select
-        value={state.fontName}
-        onChange={({target: {value}}) => handleFontNameChange(value)}
-        fullWidth
+        }
+        disableClearable
+        autoHighlight
+        openOnFocus
         disabled={fontOptions.length === 0}
-        // Same disableScrollLock fix as the dialect Select above —
-        // see that comment for rationale. The font Select is the
-        // more visible offender because it carries 20-30 entries
-        // (Cantonese in particular), so its dropdown is taller and
-        // the shake-on-open / unshake-on-close is more noticeable
-        // here than on the shorter dialect Select.
-        slotProps={{
-          select: {
-            MenuProps: { disableScrollLock: true },
-          },
-        }}
-      >
-        {/*
-          Render options with optional ListSubheader rows separating
-          adjacent entries that belong to different `group`s. Same
-          look-and-feel as the Step 2 mapping picker (see
-          Step2Mappings.tsx → BUILT_IN_MAPPINGS flatMap pattern).
-          A subheader is emitted whenever the current entry's group
-          differs from the previous one's group AND the current
-          group is non-empty.
-
-          pointerEvents:none + lineHeight bump on the subheader
-          prevents MUI's Select from treating the row as a clickable
-          option — without those, clicking the subheader would close
-          the menu without selecting anything.
-        */}
-        {fontOptions.flatMap((opt, idx, arr) => {
-          const prevGroup = idx > 0 ? arr[idx - 1].group : undefined;
-          const headerNeeded =
-            opt.group !== undefined && opt.group !== prevGroup;
-          return [
-            ...(headerNeeded
-              ? [
-                  // Key folds in `idx` because the SAME group label
-                  // legitimately recurs in non-contiguous runs — each
-                  // base-font family (Noto Sans HK / ChironSung /
-                  // Xiaolai) repeats the "其他標注 Other scripts" etc.
-                  // groups, so a label-only key collides. `idx` is the
-                  // unique position of the following MenuItem.
-                  <ListSubheader
-                    key={`group-${idx}-${opt.group}`}
-                    sx={{ pointerEvents: "none", lineHeight: 2.2 }}
-                  >
-                    {opt.group}
-                  </ListSubheader>,
-                ]
-              : []),
-            <MenuItem
-              key={`${opt.name}-option`}
-              value={opt.name}
-              sx={opt.group ? { pl: 4 } : undefined}
-            >
-              {opt.displayName}
-            </MenuItem>,
-          ];
-        })}
-      </TextField>
+        renderInput={(params) => (
+          <TextField {...params} label={t("picker.font")} />
+        )}
+        noOptionsText={t("picker.noOptions")}
+      />
       <IconButton
         onClick={() => addPickedFont(state.lang, state.fontName)}
         disabled={!state.fontName}
+        aria-label={t("picker.addAriaLabel")}
       >
         <AddCircleOutline />
       </IconButton>
     </Box>
-  )
-}
+  );
+};
 
-export default FontPicker
-
-const DEFAULT_STATE: FontPickerState = {
-  lang: "cantonese",
-  fontName: Object.keys(AVAILABLE_FONTS["cantonese"].fonts)[0],
-}
+// React.memo with no comparator: FontPicker takes no props, so the
+// default shallow-equality check (which trivially passes when there
+// are no props) keeps the parent's 5-second tick from triggering a
+// re-render. Internal context / state updates still re-render
+// normally, which is what we want for the dialect / font selection.
+export default memo(FontPicker);

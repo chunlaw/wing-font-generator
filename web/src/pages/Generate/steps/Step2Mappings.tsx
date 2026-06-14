@@ -54,6 +54,8 @@ import { FixedSizeList, ListChildComponentProps } from "react-window";
 import { useGenerate } from "../GenerateContext";
 import { useTranslation } from "../../../i18n/LanguageContext";
 import { BUILT_IN_MAPPINGS } from "../../../utils/wingfontPresets";
+import LinguistHelpMemo from "../../../components/LinguistHelpMemo";
+import { mappingKeyToLanguage } from "../../../utils/languageNotes";
 import { MappingRow } from "../types";
 
 // Two row heights — phones get taller rows because we stack the data
@@ -363,6 +365,10 @@ const Step2Mappings = () => {
           {t("step2.description")}
         </Typography>
       </Box>
+
+      {mappingKeyToLanguage(activePreset?.key) && (
+        <LinguistHelpMemo language={mappingKeyToLanguage(activePreset?.key)} />
+      )}
 
       {importError && <Alert severity="error">{importError}</Alert>}
 
