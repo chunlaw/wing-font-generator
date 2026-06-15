@@ -32,6 +32,7 @@ import FontPicker from "../components/main/FontPicker";
 import LinguistHelpMemo from "../components/LinguistHelpMemo";
 import { useTranslation } from "../i18n/LanguageContext";
 import {
+  AVAILABLE_FONTS,
   FontOption,
   USER_FONTS_GROUP_KEY,
   findDialectKey,
@@ -179,45 +180,86 @@ const Main = () => {
   };
 
   // ── Refresh-fonts affordance ──────────────────────────────────────
-  // Drops the Service Worker's font cache and hard-reloads the page,
-  // forcing every pre-generated font to be re-fetched from the CDN on
-  // the next render.
+  // Drops the Service Worker's font cache, then force-refetches every
+  // pre-built font from network (bypassing both the SW cache and the
+  // BROWSER HTTP cache), then hard-reloads so in-memory FontFace
+  // registrations re-resolve from the freshly-populated SW cache.
   //
   // Why this is needed at all:
   // Pre-generated fonts (e.g. NotoSansArabic-Noto-romanization.woff2)
-  // are served under `StaleWhileRevalidate` (see vite.config.ts). That
-  // gives users an instant cache hit and quietly revalidates the bytes
-  // in the background — so an updated build lands on visit N+1 rather
-  // than visit N. That's the right default for casual readers, but a
-  // designer / maintainer verifying "did my deploy actually ship?"
-  // wants the new bytes NOW, not on the next page load. Without this
-  // button their only options were a hard-reload (Cmd+Shift+R, which
-  // not every user knows) or DevTools → Application → Storage → Clear
-  // (which most users wouldn't know to find).
+  // are served under StaleWhileRevalidate (see vite.config.ts). That
+  // gives users an instant cache hit and quietly revalidates in the
+  // background — updated builds land on visit N+1 rather than N. The
+  // right default for casual readers, but a designer / maintainer
+  // verifying "did my deploy actually ship?" wants the new bytes NOW.
   //
-  // The operation is non-destructive: user-uploaded / generated fonts
-  // live in IndexedDB (via `RecentFontsContext`), NOT in the SW cache,
-  // so wiping the font cache only loses transient HTTP responses that
-  // re-download on the very next request. No confirmation dialog —
-  // the button click is the confirmation.
+  // The earlier version of this handler just did
+  // `caches.delete(...)` + `window.location.reload()`. That didn't
+  // actually refresh anything — `window.location.reload()` does NOT
+  // bypass the browser's HTTP cache (the old boolean overload that
+  // did has been deprecated), so the post-reload request flow was:
+  //
+  //   FontFace.load() → SW (empty cache) → SW's internal fetch()
+  //     → BROWSER HTTP CACHE (still has stale .woff2 from a long
+  //     Cache-Control: max-age) → returns stale → SW caches stale →
+  //     user sees the same old font.
+  //
+  // The fix is `cache: "reload"` on the page-side fetches we do
+  // BEFORE reloading. That cache mode propagates through to the SW's
+  // internal fetch (Workbox's StaleWhileRevalidate forwards the
+  // request object verbatim), telling the browser to skip its HTTP
+  // cache and go to network. The fresh bytes land in the SW cache;
+  // the post-reload FontFace.load() finds them already there.
+  //
+  // The operation is non-destructive: user-uploaded / generated
+  // fonts live in IndexedDB (via RecentFontsContext), NOT in the SW
+  // cache, so wiping the font cache only loses transient HTTP
+  // responses we then immediately re-download fresh.
   const handleRefreshFonts = async () => {
-    // `caches` is only available in secure contexts and where the SW
-    // registered. Both true for production but worth guarding
-    // defensively so a dev console / older browser doesn't throw.
+    // 1. Drop the SW cache so old entries are gone before we refill.
     if (typeof caches !== "undefined") {
       try {
         await caches.delete(FONT_CACHE_NAME);
       } catch {
-        // Cache deletion can fail (rare, e.g. private-browsing
-        // restrictions). The reload below still wipes the in-memory
-        // FontFace registrations and re-fetches via the SWR path
-        // which itself re-validates — so we still make forward
-        // progress even if the cache delete didn't take.
+        // Cache deletion can fail (rare; private-browsing
+        // restrictions). The cache: "reload" prefetch below still
+        // refills with fresh bytes — caches.put on an existing
+        // entry overwrites, so the delete failure isn't fatal.
       }
     }
-    // Hard navigation rather than .reload(true): the boolean overload
-    // of reload was deprecated in modern browsers. window.location's
-    // assignment behaves like a navigation, which is what we want.
+
+    // 2. Enumerate every pre-built font URL. We refresh ALL fonts
+    // (not just the picked ones) because the user is likely to
+    // pick others next — caching them now means the next pick is
+    // instant rather than waiting for another network round-trip.
+    // `pending: true` entries are skipped (the CDN doesn't serve
+    // them yet; fetch would 404 and the prefetch would needlessly
+    // log a console error).
+    const fontBaseUrl =
+      (import.meta.env.VITE_FONT_URL as string | undefined) ?? "/fonts";
+    const fontUrls: string[] = [];
+    for (const group of Object.values(AVAILABLE_FONTS)) {
+      for (const opt of Object.values(group.fonts)) {
+        if (opt.pending) continue;
+        fontUrls.push(`${fontBaseUrl}/${opt.name}.woff2`);
+      }
+    }
+
+    // 3. Force-fetch each URL with `cache: "reload"` — the key
+    // ingredient. This tells the browser AND the SW to bypass every
+    // intermediate cache and go to network. We don't await responses
+    // beyond completion (no need to inspect them; we just want the
+    // SW's cache.put side-effect to land). Errors are swallowed so
+    // one unreachable URL doesn't block the others.
+    await Promise.all(
+      fontUrls.map((url) =>
+        fetch(url, { cache: "reload" }).catch(() => null),
+      ),
+    );
+
+    // 4. Reload — in-memory FontFace registrations are dropped on
+    // navigation, and the next FontFace.load() inside AppContext
+    // hits a SW cache that's now full of fresh bytes.
     window.location.reload();
   };
 
