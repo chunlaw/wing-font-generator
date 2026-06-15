@@ -237,7 +237,41 @@ const Header = () => {
               anchor="left"
               open={drawerOpen}
               onClose={closeDrawer}
-              slotProps={{ paper: { sx: { width: 280 } } }}
+              // `100dvh` (Dynamic Viewport Height) is the modern unit
+              // that tracks the *visible* viewport on mobile as the
+              // URL bar collapses and re-expands. Without this, MUI's
+              // default `height: 100%` on the Drawer's Paper can
+              // resolve taller than the visible area (the page below
+              // is scrollable, the URL bar's height oscillates), and
+              // the social-icons row at the bottom of the drawer
+              // ends up below the fold — visible only if the user
+              // scrolls inside the drawer (which they wouldn't think
+              // to do).
+              //
+              // `100vh` is the fallback for browsers without dvh
+              // support (iOS < 15.4). Browsers that DO support dvh
+              // take the second declaration so we get the dynamic
+              // behaviour on modern devices.
+              slotProps={{
+                paper: {
+                  sx: {
+                    width: 280,
+                    // `100vh` is the older universal-support unit;
+                    // `100dvh` (Dynamic Viewport Height) tracks the
+                    // *visible* viewport as mobile URL bars collapse.
+                    // Browsers without dvh support (iOS < 15.4) fall
+                    // through to the 100vh declaration above.
+                    // `@supports` is the correct fallback mechanism
+                    // — MUI's array syntax (`["100vh", "100dvh"]`)
+                    // would instead bind those to breakpoints
+                    // (xs/sm), which isn't what we want.
+                    height: "100vh",
+                    "@supports (height: 100dvh)": {
+                      height: "100dvh",
+                    },
+                  },
+                },
+              }}
             >
               <Box
                 sx={{
@@ -272,6 +306,27 @@ const Header = () => {
                 </Box>
                 <Divider />
 
+                {/*
+                  Scrollable middle region — holds the primary nav,
+                  theme toggle, and "More" links. If the drawer's
+                  content is taller than the viewport (small phones
+                  with many "More" links), this Box scrolls
+                  internally while the brand row at top and the
+                  social-icons row at bottom stay anchored.
+
+                  CSS pattern:
+                    * `flex: 1` claims the remaining vertical space
+                      between the brand row and the social row.
+                    * `overflowY: auto` provides the native scroll
+                      bar when content exceeds the box.
+                    * `minHeight: 0` is the load-bearing rule: by
+                      default flex children have an implicit
+                      min-content height; without `minHeight: 0`
+                      the Box would grow to fit content instead of
+                      claiming a bounded share of the flex parent,
+                      and `overflowY: auto` would never engage.
+                */}
+                <Box sx={{ flex: 1, overflowY: "auto", minHeight: 0 }}>
                 {/* Primary navigation — same 4 items as the desktop
                     Tabs, rendered as full-width ListItemButtons so
                     each row has a generous tap target. The active
@@ -386,11 +441,17 @@ const Header = () => {
                     </ListItem>
                   ))}
                 </List>
-
-                {/* Spacer pushes the social icons to the very
-                    bottom of the drawer no matter how much
-                    vertical room is left over. */}
-                <Box sx={{ flexGrow: 1 }} />
+                </Box>
+                {/*
+                  Close of the scrollable middle Box. Anything BELOW
+                  this line stays pinned to the bottom of the
+                  drawer's viewport, anything above scrolls inside
+                  the middle Box if it overflows. The old explicit
+                  `<Box sx={{ flexGrow: 1 }} />` spacer that used to
+                  push the social row to the bottom is no longer
+                  needed — the scrollable Box's own `flex: 1`
+                  already claims the remaining space.
+                */}
                 <Divider />
 
                 {/* Social icons — bottom of drawer. Mirror of the
