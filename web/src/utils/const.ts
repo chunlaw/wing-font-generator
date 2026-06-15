@@ -56,7 +56,7 @@ export const TEMPLATES_BY_DIALECT: Record<string, string[]> = {
     "望春風　夜半三更",
     "天頂的月娘　知影我的心",
     "一支小雨傘　雙人來行",
-    "酒矸倘賣無",
+    "酒矸通賣無",
     "愛拼才會贏",
     "阮若打開心內的門窗",
     "孤女的願望",
