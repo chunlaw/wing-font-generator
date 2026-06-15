@@ -12,7 +12,7 @@
  * The markdown is imported as a raw string (Vite `?raw`) so the docs stay
  * plain markdown a linguist can edit, with no JSX duplication.
  */
-import InstagramIcon from "@mui/icons-material/Instagram";
+import TelegramIcon from "@mui/icons-material/Telegram";
 import {
   Alert,
   Box,
@@ -115,7 +115,7 @@ export default function Notes() {
       <Alert
         severity="info"
         variant="outlined"
-        icon={<InstagramIcon fontSize="inherit" />}
+        icon={<TelegramIcon fontSize="inherit" />}
         sx={{ mt: 4 }}
       >
         <Box
@@ -129,7 +129,7 @@ export default function Notes() {
         >
           <span>{t("notes.contact.text")}</span>
           <MuiLink
-            href="https://www.instagram.com/wingfont"
+            href="https://t.me/wingfont"
             target="_blank"
             rel="noopener noreferrer"
             sx={{ fontWeight: 600, whiteSpace: "nowrap" }}

@@ -7,6 +7,12 @@ on:
     paths:
       - 'web/**'
       - 'python/**'
+      # Documentation-only changes under python/ (README.md,
+      # per-mapping *-NOTES.md) don't affect the build output, so
+      # skip the PR gate for them. Mirrors the deploy-pages.yml
+      # font-cache key exclusion — keeps the rule "markdown never
+      # invalidates a build" consistent across both workflows.
+      - '!python/**/*.md'
       - '.github/workflows/build-demo.yml'
   workflow_dispatch:
 

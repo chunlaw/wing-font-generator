@@ -78,7 +78,16 @@ jobs:
         # invalidates the cache correctly. If you ever want
         # binary-content-level invalidation, fold a per-font hash
         # file into the input-fonts repo and hash it here too.
-        run: echo "key=fonts-${{ hashFiles('python/**', '.github/workflows/deploy-pages.yml') }}" >> "$GITHUB_OUTPUT"
+        #
+        # `!python/**/*.md` is load-bearing: markdown files in
+        # python/ are pure documentation (README.md, per-mapping
+        # *-NOTES.md). Edits to them don't change what wing-font.py
+        # produces, so they shouldn't invalidate the 46-font cache
+        # and trigger a ~10-20 min full rebuild. GitHub Actions
+        # `hashFiles()` honours `!` exclusion patterns relative to
+        # the preceding include pattern; the rest of python/**
+        # still drives the key normally.
+        run: echo "key=fonts-${{ hashFiles('python/**', '!python/**/*.md', '.github/workflows/deploy-pages.yml') }}" >> "$GITHUB_OUTPUT"
       - name: Probe fonts cache
         id: probe
         uses: actions/cache/restore@v4
