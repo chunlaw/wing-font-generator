@@ -281,12 +281,18 @@ def main():
         "PojUnicode": "PojUnicodeOthers",
     }
 
-    def others_outputs(han, full_syls, others, sf):
+    def others_outputs(han, full_syls, others, sf, accent=None):
         """-> [(rendered, weight), ...]. 合音 get HAUNIM_WEIGHT so they
         outrank the 主音讀 as the word's default reading; 又音/文白 stay
-        weight 1 (extra selectable readings, default unchanged)."""
+        weight 1 (extra selectable readings, default unchanged). When
+        `accent` is set (the 腔 files), 1:1 alternate readings are run
+        through that accent's per-character substitution too, so a
+        standard-form 又音 like 欲 beh/bueh becomes the 鹿港 berh rather
+        than leaking the 優勢腔 spelling into the accent. 合音 stay
+        verbatim (contractions aren't accent-specific)."""
         outs = []
-        can_align = len(full_syls) == len(han) and all(is_cjk(c) for c in han)
+        cjk = all(is_cjk(c) for c in han)
+        can_align = len(full_syls) == len(han) and cjk
         for reading, is_hau in others:
             syls = split_syllables(reading)
             if is_hau or (0 < len(syls) < len(han)):
@@ -300,7 +306,13 @@ def main():
                         joined = " ".join(sf(s) if s else "_" for s in a)
                         outs.append((joined, HAUNIM_WEIGHT if is_hau else 1))
             elif len(syls) == len(han):
-                o = render(han, reading, sf)
+                if accent and cjk:
+                    o = " ".join(
+                        sf(accent_sub.get((accent, han[i], syls[i]), syls[i]))
+                        for i in range(len(han))
+                    )
+                else:
+                    o = render(han, reading, sf)
                 if o is not None:
                     outs.append((o, 1))
         return outs
@@ -325,11 +337,17 @@ def main():
         std_alts = alts(r["KipUnicode"])
         if not std_alts:
             continue
-        std = std_alts[0]
+        # Map EVERY primary spelling of this row to the accent reading —
+        # MOE lists spelling variants of the same morpheme together (e.g.
+        # 欲 = beh/bueh), and the 語音差異 (鹿港 berh) applies to all of
+        # them, so both beh→berh and bueh→berh.
         for cn, _slug, _ in ACCENTS:
             rds = accent_reading(dia, cn, han)
-            if rds and rds[0] != std:
-                accent_sub[(cn, han, std)] = rds[0]
+            if not rds:
+                continue
+            for std in std_alts:
+                if rds[0] != std:
+                    accent_sub[(cn, han, std)] = rds[0]
 
     def bump(d, key, wt):
         """Record reading `key` keeping the highest weight seen."""
@@ -387,9 +405,12 @@ def main():
                         for i in range(len(han))
                     ]
                     bump(dial[slug], (han, " ".join(out_syls)), 1)
-            # 又音 / 合音 from KipUnicodeOthers are not accent-specific —
-            # add them verbatim to every 腔 (incl. the muted-char 合音).
-            for out, wt in others_outputs(han, kip_full, kip_others, sf_toned):
+            # 又音 from KipUnicodeOthers get the accent's per-character
+            # substitution (so 欲 beh/bueh → 鹿港 berh, not the 優勢腔
+            # spelling); 合音 are added verbatim (accent-general).
+            for out, wt in others_outputs(
+                han, kip_full, kip_others, sf_toned, accent=cn
+            ):
                 bump(dial[slug], (han, out), wt)
 
     def write(path, entries):
