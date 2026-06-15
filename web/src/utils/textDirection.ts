@@ -77,3 +77,63 @@ export function isRtlText(text: string): boolean {
 export function dirForText(text: string): "rtl" | "ltr" {
   return isRtlText(text) ? "rtl" : "ltr";
 }
+
+/**
+ * Dialect keys whose base script reads right-to-left. Used by
+ * `effectiveDir()` as a fallback signal when the actual text content
+ * carries no strong directional codepoint (typically the empty
+ * field on first paint, or an editor cleared back to empty after
+ * the user deletes their typed text).
+ *
+ * Keep in sync with `AVAILABLE_FONTS` keys in utils/const.ts —
+ * adding a new RTL-script dialect group (Hebrew, Thaana, …) means
+ * listing its key here so an empty editor on a specimen page for
+ * that font starts in the expected direction.
+ */
+const RTL_DIALECT_KEYS: ReadonlySet<string> = new Set([
+  "arabic",
+  // Future: "hebrew", "thaana", "syriac" when the catalog grows.
+]);
+
+/**
+ * The `dir` attribute value to apply to an editable / displayed
+ * preview surface, given:
+ *
+ *   * `text` — what's currently in the surface (user input or sample).
+ *   * `fontDialectKey` — optional hint about the picked font's base
+ *     script, used only as a tie-breaker when `text` has no strong
+ *     direction signal.
+ *
+ * Decision order:
+ *   1. If `text` contains a strong-RTL codepoint → `"rtl"`.
+ *   2. Else if `text` contains any non-RTL ASCII letter, CJK glyph,
+ *      etc., the implicit LTR-ness wins → `"ltr"`. (We don't have
+ *      to detect this explicitly — falling through to step 4 with
+ *      no dialect hint yields `"ltr"`.)
+ *   3. Else if `text` is empty / neutral AND `fontDialectKey` names
+ *      a known RTL-base dialect → `"rtl"`. This is the
+ *      "Arabic-base specimen page on first paint" case: caret on
+ *      the right is what an Arabic typist expects.
+ *   4. Default → `"ltr"`.
+ *
+ * Trade-off: empty Arabic specimen + first keystroke is Latin →
+ * the field flips from `rtl` to `ltr`, causing a one-keystroke
+ * caret jump. Accepted as a rare case — the common case is the
+ * user picks an Arabic font and types Arabic, where directions
+ * agree before and after the first character.
+ */
+export function effectiveDir(
+  text: string,
+  fontDialectKey?: string,
+): "rtl" | "ltr" {
+  if (isRtlText(text)) return "rtl";
+  // `text` is empty or contains only LTR / neutral codepoints. The
+  // dialect hint only kicks in for the empty case; an LTR string
+  // explicitly typed into an Arabic specimen pulls direction
+  // toward LTR, which is what the user is asking for via their
+  // keystrokes.
+  if (text === "" && fontDialectKey && RTL_DIALECT_KEYS.has(fontDialectKey)) {
+    return "rtl";
+  }
+  return "ltr";
+}

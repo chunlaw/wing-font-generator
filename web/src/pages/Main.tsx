@@ -19,7 +19,7 @@ import {
 // (e.g. one for hub-hosted, one for same-origin), refresh below
 // has to iterate all of them.
 const FONT_CACHE_NAME = "wing-font-fonts-v1";
-import { useContext, useEffect, useRef, useState } from "react";
+import { useContext, useEffect, useMemo, useRef, useState } from "react";
 import AppContext from "../AppContext";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import {
@@ -50,6 +50,7 @@ import TypographyControls, {
   LETTER_SPACING_MIN,
   type TypographySettings,
 } from "../components/TypographyControls";
+import { effectiveDir } from "../utils/textDirection";
 
 // Showcase-specific default: 48 px — matches the previous
 // md-breakpoint rendering, generous enough that the annotation
@@ -394,6 +395,12 @@ const Main = () => {
         value={msg}
         onChange={({ target: { value } }) => setMsg(value)}
         fullWidth
+        // This input feeds every card below, so its direction
+        // tracks the typed text only — no font-dialect hint. An
+        // empty field is LTR; the first strong-RTL keystroke flips
+        // it to RTL. effectiveDir is cheap on short inputs; for the
+        // "Try it" field the text rarely exceeds a few words.
+        slotProps={{ htmlInput: { dir: effectiveDir(msg) } }}
       />
       <FontPicker />
       {/*
@@ -598,6 +605,19 @@ const FontShowcaseCard = ({
   // falls back to the global flat TEMPLATES list.
   const msgShown = useTemplateRotation(msg, builtInDialectKey, sharedTick);
 
+  // Per-card writing direction. Drives the Typography render below
+  // so a card showing an Arabic-base font right-anchors the prose
+  // and lays glyphs right-to-left, even when this card is empty
+  // (the card's dialect is the tie-breaker). Memoized because
+  // effectiveDir codepoint-scans `msgShown`; the parent fires a
+  // tick every 5s but msgShown only changes when the rotated
+  // sample swaps, so memoization elides the scan on the in-between
+  // ticks plus the FADE_MS-driven re-renders mid-rotation.
+  const cardDir = useMemo(
+    () => effectiveDir(msgShown, builtInDialectKey),
+    [msgShown, builtInDialectKey],
+  );
+
   // ── Fade transition between rotations ────────────────────────────
   // When the shared tick advances, `msgShown` changes synchronously
   // with the re-render. Without easing, the text would snap from
@@ -740,6 +760,14 @@ const FontShowcaseCard = ({
             transition: `opacity ${FADE_MS}ms ease-in-out`,
           }}
           fontFamily={pickedFont.name}
+          // `dir` right-anchors RTL prose to the right edge of the
+          // card and lays glyphs right-to-left. For LTR prose
+          // (CJK / Latin) this is a no-op so plain Cantonese
+          // / Mandarin cards render exactly as before. The
+          // browser bidi algorithm still resolves in-line mixed
+          // script within the run, so a Latin word inside an
+          // Arabic sentence remains correctly oriented.
+          dir={cardDir}
           onClick={() => navigate(`/specimen/${pickedFont.name}`)}
         >
           {displayedMsg}

@@ -28,6 +28,7 @@ import TypographyControls, {
   useTypographySettings,
   type TypographySettings,
 } from "../components/TypographyControls";
+import { effectiveDir } from "../utils/textDirection";
 
 // Specimen-specific default: 56 px (the original md-breakpoint
 // rendering) — bigger than the showcase default (36 px) because
@@ -167,12 +168,37 @@ const Specimen = () => {
     loadFont(fontOption);
   }, [fontOption, loadFont]);
 
+  // Effective writing direction for the editor — drives both
+  // typing direction (caret on the right for Arabic) AND display
+  // alignment (right-anchored prose). Memoized because effectiveDir
+  // walks `msg` codepoint-by-codepoint to find a strong-RTL
+  // character, and on a long pasted paragraph that's O(n) per
+  // render. With memoization the scan only fires when `msg` or the
+  // picked dialect actually changes.
+  //
+  // Empty-state special case: when `msg` is empty AND the font is
+  // an Arabic-base specimen, this resolves to "rtl" so the caret
+  // starts on the right — matches what an Arabic typist expects
+  // before they've typed anything. See effectiveDir's docstring
+  // for the full decision rules.
+  const editorDir = useMemo(
+    () => effectiveDir(msg, dialectKey),
+    [msg, dialectKey],
+  );
+
   return (
     <Box
       display="flex"
       flexDirection="column"
       width="100%"
-      height="100vh"
+      // No `height` constraint — the editor below grows with its
+      // content (MUI's TextareaAutosize behaviour), so the page
+      // length is whatever the prose + chrome adds up to. The
+      // browser viewport scrolls naturally once the page exceeds
+      // it. `minHeight: 100vh` keeps the page at least one viewport
+      // tall on first paint so the background extends through the
+      // empty space when the user hasn't typed anything yet.
+      minHeight="100vh"
       gap={2}
       py={2}
     >
@@ -240,14 +266,30 @@ const Specimen = () => {
       />
       {/*
         ── Editable specimen area ────────────────────────────────────
-        The single biggest change to /specimen from the old layout:
-        the previously-separate "tiny TextField input + large read-
+        The previously-separate "tiny TextField input + large read-
         only Typography render" pair collapses into one large
         multiline TextField. The input element itself uses the
         specimen's font / size / letter spacing / line height — so
         the user TYPES IN the actual font and gets immediate WYSIWYG
         feedback. No more typing in a system-font field above and
         inferring the look from a separate echo below.
+
+        Sizing model — TextareaAutosize / page scrolls:
+        `multiline` + `minRows` (no `maxRows`) makes MUI wrap the
+        underlying <textarea> in TextareaAutosize, which grows the
+        textarea's intrinsic height with content. There is NO
+        scrollbar inside the field — the user always sees their
+        entire prose laid out. When the textarea's natural height
+        exceeds the viewport, the BROWSER VIEWPORT scrolls; the
+        outer page-column wrapper above has `minHeight: 100vh` (not
+        `height: 100vh`) so it can grow past the viewport without
+        clipping.
+
+        That's the inverse of the earlier "fixed-height field with
+        internal scroll" attempt: this matches what designers
+        actually want when authoring at the specimen's size —
+        scrolling the page reveals more of THEIR own document, not
+        a window into a hidden middle.
 
         Discovery affordance — the dialect-matched rotating sample
         (`msgShown`) is wired into the textarea's `placeholder`.
@@ -261,109 +303,78 @@ const Specimen = () => {
 
         Style notes:
         - `variant="outlined"` gives a soft border around the
-          editor area; the outline keeps the editor visually
-          contained (esp. on mobile where the page background and
-          textarea background are otherwise indistinguishable).
-        - `minRows={6}` ensures the editor is tall enough for prose
-          on first paint even on short viewports; the wrapping Box
-          claims `flex={1}` so the textarea expands to fill any
-          extra vertical space available below.
+          editor area so its boundary is legible against the page
+          background.
+        - `minRows={6}` ensures the editor starts at a comfortable
+          ~6-line floor even when empty — gives visual weight to
+          the empty state (where the placeholder rotation lives).
+          No `maxRows`, so growth is unbounded.
         - `lineHeight: 2.3` is the same value the old Typography
-          render used — see the long comment that lived there
-          (preserved below) for why: word-unit fonts (Arabic /
-          Thai base) put the romanization in the descender and
-          need leading that contains the annotation per line.
+          render used. Word-unit fonts (Arabic / Thai base) put
+          the romanization in the descender — the natural line box
+          is ~2.26em. 2.3 sits just above that so below-annotation
+          lines never overlap, and it strictly exceeds the old 1.6
+          so the above-the-character cases (Xiaolai + Thai /
+          Katakana / Korean / Urdu with raised winAscent) keep
+          their headroom. Cost: airier spacing on plain CJK
+          pairings, which is fine on a large single-font specimen.
         - `opacity` on the input only — the outline border is
           unchanged during loading, so the "dim while loading"
           state reads as content-dim, not field-dim.
-        - `::placeholder` selector inherits font family from its
-          input by default, so we don't have to repeat the font
-          styles inside it; we only adjust opacity to mute the
+        - `::placeholder` selector inherits fontFamily etc. from
+          the input by default; we only adjust opacity to mute the
           placeholder relative to typed text.
-        - `resize: none` on the underlying textarea — the wrapping
-          Box already handles vertical sizing and a user-drag
-          handle would conflict with the controlled minRows.
+        - `resize: vertical` is the deliberate trade-off — letting
+          the user shrink the field if they want a compact view
+          for a short snippet — but since the autosize already
+          tracks content height, the resize handle is mostly
+          cosmetic; leaving it as `none` is also fine and avoids
+          a visual handle on the bottom-right corner.
       */}
-      <Box flex={1} display="flex" width="100%" minHeight={0}>
-        <TextField
-          value={msg}
-          onChange={({ target: { value } }) => setMsg(value)}
-          placeholder={msgShown}
-          multiline
-          // `rows={1}` (NOT minRows) is load-bearing: with minRows /
-          // maxRows MUI wraps the textarea in TextareaAutosize, which
-          // measures the content and grows the element's intrinsic
-          // height unbounded. The wrapping flex Box has no way to
-          // constrain a child whose intrinsic height keeps expanding,
-          // so a long prose paste pushes the textarea past the
-          // viewport and the text visibly bleeds below the field's
-          // outline (and past the report-error link at the page
-          // bottom). With `rows={1}` MUI emits a plain `<textarea>`
-          // with no autosize wrapper; we then force its height to
-          // 100 % of the flex container below in `sx`, and native
-          // textarea overflow handles the scroll bar.
-          rows={1}
-          fullWidth
-          variant="outlined"
-          aria-label={t("specimen.editorAriaLabel")}
-          sx={{
-            flex: 1,
-            display: "flex",
-            // Stretch the InputBase wrapper to fill the column,
-            // and lay it out as a column itself so the inner
-            // textarea can be told to fill it.
-            "& .MuiInputBase-root": {
-              flex: 1,
-              height: "100%",
-              alignItems: "stretch",
-            },
-            // Apply user-tunable type controls directly to the
-            // input element so the user types in the actual font
-            // at the actual size.
-            //
-            // lineHeight must contain the annotation row *per line*
-            // for word-unit fonts (Arabic / Thai base) whose
-            // romanization sits in the descender — the natural
-            // line box is ~2.26em. 2.3 sits just above that so
-            // below-annotation lines never overlap, and it
-            // strictly exceeds the old 1.6 so the above-the-
-            // character cases (Xiaolai + Thai/Katakana/Korean/Urdu
-            // with raised winAscent) keep their headroom. Cost:
-            // airier spacing on plain CJK pairings, which is fine
-            // on a large single-font specimen.
-            "& .MuiInputBase-input": {
-              // `!important` overrides the inline `height` MUI sets
-              // on the textarea from `rows={1}`. Without this the
-              // element renders as a single line of glyphs and the
-              // text caret jumps as the field wraps internally.
-              height: "100% !important",
-              // Native textarea scroll once content overflows the
-              // fixed field height — keeps the rest of the page
-              // (chip row, header, controls, report-error link)
-              // anchored in place while the prose scrolls inside.
-              overflow: "auto !important",
-              fontFamily: fontOption.name,
-              fontSize: `${typoSettings.fontSizePx}px`,
-              letterSpacing: `${typoSettings.letterSpacingEm}em`,
-              lineHeight: 2.3,
-              textWrap: "wrap" as const,
-              opacity: previewOpacity,
-              transition: `opacity ${PREVIEW_OPACITY_TRANSITION_MS}ms ease-in-out`,
-              // Hide the native resize handle (bottom-right
-              // corner). The wrapping flex Box handles sizing.
-              resize: "none",
-            },
-            "& .MuiInputBase-input::placeholder": {
-              // Placeholder inherits fontFamily, fontSize, etc.
-              // from the input by default. We only need to mute
-              // it relative to typed text so the empty-state
-              // rotation reads as discovery hint, not as user
-              // content.
-              opacity: 0.45,
-            },
-          }}
-        />
-      </Box>
+      <TextField
+        value={msg}
+        onChange={({ target: { value } }) => setMsg(value)}
+        placeholder={msgShown}
+        multiline
+        minRows={6}
+        fullWidth
+        variant="outlined"
+        aria-label={t("specimen.editorAriaLabel")}
+        // `dir` on the underlying <textarea> drives both typing
+        // direction (caret + line wrapping) and display direction
+        // (right-anchoring for RTL prose). The MUI bidi algorithm
+        // still handles in-line mixed-script resolution within the
+        // run, so a Latin word inside an Arabic sentence renders
+        // correctly without further wrapping.
+        slotProps={{ htmlInput: { dir: editorDir } }}
+        sx={{
+          // Apply user-tunable type controls directly to the input
+          // element so the user types in the actual font at the
+          // actual size. No height / overflow overrides — the
+          // textarea autosizes to its content and the outer page
+          // viewport scrolls when content overflows.
+          "& .MuiInputBase-input": {
+            fontFamily: fontOption.name,
+            fontSize: `${typoSettings.fontSizePx}px`,
+            letterSpacing: `${typoSettings.letterSpacingEm}em`,
+            lineHeight: 2.3,
+            textWrap: "wrap" as const,
+            opacity: previewOpacity,
+            transition: `opacity ${PREVIEW_OPACITY_TRANSITION_MS}ms ease-in-out`,
+            // Hide the native resize handle (bottom-right corner).
+            // The textarea autosizes to content, so a drag handle
+            // would just fight the autoresize on next keypress.
+            resize: "none",
+          },
+          "& .MuiInputBase-input::placeholder": {
+            // Placeholder inherits fontFamily etc. from the input
+            // by default. We only mute it relative to typed text
+            // so the empty-state rotation reads as discovery hint,
+            // not as user content.
+            opacity: 0.45,
+          },
+        }}
+      />
       {/*
         Per-font correction CTA. Lives at the bottom of the
         specimen page because that's the moment a reader has
