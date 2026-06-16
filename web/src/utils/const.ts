@@ -284,21 +284,41 @@ export const AVAILABLE_FONTS: FontSet = {
       zh: "廣東話",
       en: "Cantonese",
     },
-    // Cantonese showcase defaults switched from ChironSungHK to
-    // Noto Sans HK in June 2026. Reasons (in order of importance):
-    //   * Roughly halves the WOFF size per font (~700-900 KB →
-    //     ~350-450 KB), so the 6-font /showcase loads in ~half the
-    //     time on a slow connection.
-    //   * Noto Sans HK uses Hong-Kong-locale glyph forms (字 / 為 /
-    //     起 / 緣 / 緊 etc.), which is more authentic for HK
-    //     readers than ChironSung's font but also more authentic
-    //     than Noto Sans TC's Taiwan-locale forms.
-    //   * Variable weight axis exposes the Step 1 weight slider.
-    // The ChironSungHK-* fonts are still built by the CI matrix and
-    // downloadable via direct URL — only the showcase default
-    // changed. External bookmarks to ChironSungHK-Noto-lshk.woff
-    // (etc.) keep working.
+    // The Cantonese showcase default is the FIRST entry below
+    // (loadPickedFontsWithFreshUrls picks the first non-pending
+    // FontOption in this dialect group as the empty-state default).
+    // Order matters; do not alphabetise.
+    //
+    // History of the default:
+    //   * ChironSungHK-Noto-lshk           — original (HK-serif)
+    //   * NotoSansHK-Noto-lshk             — June 2026 (smaller
+    //                                        WOFF, HK-locale Han)
+    //   * NotoSansTC-Huninn-Regular-tonemark — current default. The
+    //     pairing renders the LSHK tone digits as purpose-drawn
+    //     diacritic glyphs (via the Huninn-tonemark anno font's
+    //     combining-mark designs) instead of the default Noto
+    //     Serif numerals — strictly better legibility at the
+    //     ~36 px showcase size. Base is NotoSansTC (Taiwan-locale
+    //     Han); HK-locale readers who specifically prefer 字 / 為
+    //     / 起 in the HK forms can pick NotoSansHK-Noto-lshk below.
+    //
+    // Every previously-default font is still built by CI and
+    // downloadable via direct URL — only the showcase first-paint
+    // changes. External bookmarks keep working.
     fonts: {
+      // ─ Current default ──────────────────────────────────────────
+      // NotoSansTC + the Huninn-tonemark anno variant: the LSHK
+      // Jyutping mapping rendered with Huninn's purpose-drawn
+      // tone-mark glyphs (as opposed to combining-mark fallbacks
+      // when paired with the standard Huninn-Regular). Sits in the
+      // FIRST slot so it's the first-visit default — see comment
+      // block above.
+      "NotoSansTC-Huninn-Regular-tonemark": {
+        displayName: "思源黑體（粵拼・Huninn 調符）",
+        name: "NotoSansTC-Huninn-Regular-tonemark",
+        source: `url(${import.meta.env.VITE_FONT_URL}/NotoSansTC-Huninn-Regular-tonemark.woff2) format('woff2')`,
+        group: CANTO_GROUP_ROMANIZATION,
+      },
       "NotoSansHK-Noto-lshk": {
         displayName: "思源黑體 香港（香港語言學會）",
         name: "NotoSansHK-Noto-lshk",

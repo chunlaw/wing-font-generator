@@ -65,6 +65,12 @@ FONT_FILES: list[str] = [
     "ChironSungHK-R.ttf",
     "GoogleSans-VariableFont_GRAD,opsz,wght.ttf",
     "Huninn-Regular.ttf",
+    # Huninn variant that ships with tone-mark glyph designs intended
+    # for Cantonese / Taiwanese tonemark-romanization output (the
+    # base Huninn-Regular above renders tone diacritics via its
+    # standard combining-mark behaviour; this variant has
+    # purpose-drawn marks). Pair as the ANNOTATION font.
+    "Huninn-Regular-tonemark.ttf",
     "MPLUSRounded1c-Regular.ttf",
     "NotoSansJP-VariableFont_wght.ttf",
     "NotoSansHK-VariableFont_wght.ttf",

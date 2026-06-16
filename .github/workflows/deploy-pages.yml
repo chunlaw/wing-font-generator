@@ -164,6 +164,18 @@ jobs:
           - { name: NotoSansHK-Google-thai,                args: "-opt -i input_fonts/NotoSansHK-VariableFont_wght.ttf -a 'input_fonts/GoogleSans-VariableFont_GRAD,opsz,wght.ttf' -m mappings/cantonese/canto-thai.csv -as 0.22" }
           - { name: NotoSansHK-NotoJP-katakana,            args: "-opt -i input_fonts/NotoSansHK-VariableFont_wght.ttf -a input_fonts/NotoSansJP-VariableFont_wght.ttf -m mappings/cantonese/canto-katakana.csv -as 0.24" }
           - { name: NotoSansHK-NotoKR-korean,              args: "-opt -i input_fonts/NotoSansHK-VariableFont_wght.ttf -a input_fonts/NotoSansKR-VariableFont_wght.ttf -m mappings/cantonese/canto-korean.csv -as 0.24" }
+          # === Cantonese — Noto Sans TC + Huninn tonemark ===========
+          # New pairing: NotoSansTC base (Taiwan-locale Han glyphs)
+          # paired with the Huninn variant that ships purpose-drawn
+          # tone-mark glyphs (Huninn-Regular-tonemark.ttf). Mapping is
+          # LSHK Jyutping — the tonemark anno font's whole reason to
+          # exist is rendering the diacritic tones in the
+          # romanization row.
+          # -as 0.23 (smaller than the 0.25/0.27 NotoSerif pairings) +
+          # --anno-spacing 0.01 tuned by the user during preview;
+          # adjust here if a future change to the tonemark font's
+          # vertical metrics asks for it.
+          - { name: NotoSansTC-Huninn-Regular-tonemark,    args: "-opt -i input_fonts/NotoSansTC-VariableFont_wght.ttf -a input_fonts/Huninn-Regular-tonemark.ttf -m mappings/cantonese/canto-lshk.csv -as 0.23 --anno-spacing 0.01" }
           # Urdu (Nastaʿlīq, RTL). -as 0.16 — smaller than the other
           # transliterations for TWO reasons: (1) Nastaliq cascades far
           # more vertically, and (2) the output inherits NotoSansHK's
