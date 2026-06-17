@@ -249,9 +249,43 @@ def _auto_fit_ascent(output_font, char_metrics, margin=AUTO_ASCENT_MARGIN):
 
 
 def set_family_name(font, new_family_name):
+    """Rewrite the output font's identifying name-table records so the
+    font reads as a NEW distinct face — not as a variant of the base.
+
+    Touched records (per OpenType `name` table spec):
+      * 1  Font Family
+      * 3  Unique Font Identifier  ← critical for Word
+      * 4  Full Name
+      * 6  PostScript Name
+      * 16 Typographic Family (Preferred Family)
+
+    Why NameID 3 matters
+    --------------------
+    DirectWrite (Word, Edge, Excel, PowerPoint, …) uses **NameID 3 as
+    its font-cache key**. Without rewriting it, our output inherits the
+    base font's Unique ID — e.g. a NotoSansTC-derived build keeps
+    `"2.004;ADBO;NotoSansTC-Thin;ADOBE"`, because
+    `instantiateVariableFont` carried the THIN master's identifier
+    through instancing.
+
+    The collision shows up as "works in browsers, breaks in Word":
+    HarfBuzz keys on bytes + family name; DirectWrite, seeing two
+    fonts claim the same Unique ID, may pull the wrong glyphs from
+    its cache, mix glyphs between the two faces, or apply the
+    Thin-master's style metadata to the Regular outlines we shipped.
+    Setting NameID 3 to the new family name (guaranteed unique by
+    our family-name convention) defuses this entirely.
+
+    Other name records (Copyright 0, Manufacturer 8, Designer 9,
+    Vendor URL 11, License 13, Version 5, …) are deliberately
+    untouched — Wing Font is a tooling step, not the typeface's
+    designer, so upstream attribution stays intact. The Description
+    (10) gets a low-profile Wing Font note via
+    ``tag_wing_font_provenance`` separately.
+    """
     table = font["name"]
     for plat_id, enc_id, lang_id in (WINDOWS_ENGLISH_IDS, MAC_ROMAN_IDS):
-        for name_id in (1, 4, 6, 16):
+        for name_id in (1, 3, 4, 6, 16):
             family_name_rec = table.getName(
                 nameID=name_id,
                 platformID=plat_id,
@@ -259,7 +293,7 @@ def set_family_name(font, new_family_name):
                 langID=lang_id,
             )
             if family_name_rec is not None:
-                print(f"Changing family name from '{family_name_rec.toUnicode()}' to '{new_family_name}'")
+                print(f"Changing name record {name_id} from '{family_name_rec.toUnicode()}' to '{new_family_name}'")
                 table.setName(
                     new_family_name,
                     nameID=name_id,
@@ -804,12 +838,27 @@ def main(
         output_font = instantiateVariableFont(
             output_font, base_axis_location, inplace=True
         )
+        # `instantiateVariableFont` drops fvar/gvar/HVAR/MVAR/avar
+        # cleanly but leaves STAT (Style Attributes Table) in place.
+        # STAT only makes sense for variable fonts — it declares axis
+        # values for the design space — so the residue is meaningless
+        # after instancing and can confuse downstream tools (Word's
+        # font-info dialog has been observed to read its `Italic` /
+        # `Bold` flags from STAT instead of OS/2 when both are
+        # present, occasionally mis-styling the rendered text). Drop
+        # it to keep the output font's table set clean.
+        for f in (base_font, output_font):
+            if "STAT" in f:
+                del f["STAT"]
 
     if anno_axis_location and "fvar" in anno_font:
         from fontTools.varLib.instancer import instantiateVariableFont
         anno_font = instantiateVariableFont(
             anno_font, anno_axis_location, inplace=True
         )
+        # Same STAT-residue cleanup as the base-instance path above.
+        if "STAT" in anno_font:
+            del anno_font["STAT"]
 
     # Raw annotation-font bytes for HarfBuzz. Two paths:
     #   • If the anno font was instanced, the on-disk bytes are
