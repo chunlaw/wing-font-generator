@@ -21,6 +21,24 @@ import string
 WINDOWS_ENGLISH_IDS = 3, 1, 0x409
 MAC_ROMAN_IDS = 1, 0, 0
 
+# Maximum length of a Windows GDI `LOGFONT.lfFaceName` — 32 bytes
+# including the null terminator, so 31 effective characters. Family
+# names (NameID 1 / 4 / 6) longer than this get silently truncated
+# by Windows' font registry, which breaks DirectWrite lookups that
+# bind to LOGFONT. Specifically, Word's per-codepoint font-fallback
+# table (the HKSCS / Cantonese routing path) won't recognise an
+# overflowing-name font as valid for the strict CJK path and falls
+# back to Microsoft JhengHei UI for every HKSCS-extension char (啲
+# 嘅 嗰 噉 嚟 咗 唔 攞 …). The font otherwise installs and renders
+# normally — making this a particularly silent bug to spot, since
+# /showcase (which uses HarfBuzz via the browser's FontFace API)
+# doesn't hit the LOGFONT path at all.
+#
+# `set_family_name` enforces this at build time so a future matrix
+# entry with a too-long name fails the build with a clear message
+# rather than shipping a font that's mysteriously broken in Word.
+LF_FACESIZE_LIMIT = 31
+
 # OpenType `maxp` table stores numGlyphs as a uint16 — hard cap 65,535.
 # A font with more than that cannot be saved as TTF/OTF (struct.error
 # during pack of format 'H'). We check predicted glyph count against a
@@ -249,43 +267,33 @@ def _auto_fit_ascent(output_font, char_metrics, margin=AUTO_ASCENT_MARGIN):
 
 
 def set_family_name(font, new_family_name):
-    """Rewrite the output font's identifying name-table records so the
-    font reads as a NEW distinct face — not as a variant of the base.
+    """Rewrite the output font's family-identifying name records.
 
-    Touched records (per OpenType `name` table spec):
-      * 1  Font Family
-      * 3  Unique Font Identifier  ← critical for Word
-      * 4  Full Name
-      * 6  PostScript Name
-      * 16 Typographic Family (Preferred Family)
+    Touched records: 1 (Family), 4 (Full Name), 6 (PostScript),
+    16 (Typographic Family).
 
-    Why NameID 3 matters
-    --------------------
-    DirectWrite (Word, Edge, Excel, PowerPoint, …) uses **NameID 3 as
-    its font-cache key**. Without rewriting it, our output inherits the
-    base font's Unique ID — e.g. a NotoSansTC-derived build keeps
-    `"2.004;ADBO;NotoSansTC-Thin;ADOBE"`, because
-    `instantiateVariableFont` carried the THIN master's identifier
-    through instancing.
+    NOT touched — and previously tried, then reverted:
+      * NameID 3 (Unique Font Identifier). On paper, leaving NameID 3
+        with the base font's value (e.g. "2.004;ADBO;NotoSansTC-Thin;
+        ADOBE") sets up a Word/DirectWrite cache-key collision and
+        smells like the right thing to fix. In practice, rewriting it
+        regressed Word rendering harder than leaving it alone: it
+        ended up classifying the output font as Latin-only and routing
+        every CJK character to Microsoft JhengHei. We don't yet have
+        a full root cause; until we do, NameID 3 stays untouched and
+        carries the base font's identifier through. Re-attempt only
+        with an end-to-end Word test on the build.
 
-    The collision shows up as "works in browsers, breaks in Word":
-    HarfBuzz keys on bytes + family name; DirectWrite, seeing two
-    fonts claim the same Unique ID, may pull the wrong glyphs from
-    its cache, mix glyphs between the two faces, or apply the
-    Thin-master's style metadata to the Regular outlines we shipped.
-    Setting NameID 3 to the new family name (guaranteed unique by
-    our family-name convention) defuses this entirely.
-
-    Other name records (Copyright 0, Manufacturer 8, Designer 9,
-    Vendor URL 11, License 13, Version 5, …) are deliberately
-    untouched — Wing Font is a tooling step, not the typeface's
-    designer, so upstream attribution stays intact. The Description
-    (10) gets a low-profile Wing Font note via
-    ``tag_wing_font_provenance`` separately.
+    Length guard:
+      The actual check lives at the top of `main()` (search for
+      LF_FACESIZE_LIMIT) so a too-long name fails in milliseconds
+      instead of after the multi-minute composition + GSUB phases.
+      By the time `set_family_name` is called, the name has already
+      been validated.
     """
     table = font["name"]
     for plat_id, enc_id, lang_id in (WINDOWS_ENGLISH_IDS, MAC_ROMAN_IDS):
-        for name_id in (1, 3, 4, 6, 16):
+        for name_id in (1, 4, 6, 16):
             family_name_rec = table.getName(
                 nameID=name_id,
                 platformID=plat_id,
@@ -293,7 +301,7 @@ def set_family_name(font, new_family_name):
                 langID=lang_id,
             )
             if family_name_rec is not None:
-                print(f"Changing name record {name_id} from '{family_name_rec.toUnicode()}' to '{new_family_name}'")
+                print(f"Changing family name from '{family_name_rec.toUnicode()}' to '{new_family_name}'")
                 table.setName(
                     new_family_name,
                     nameID=name_id,
@@ -727,6 +735,41 @@ def main(
         anno_axis_location=anno_axis_location,
     ))
 
+    # ── Family-name length check (very early fail) ────────────────
+    # Windows GDI caps `LOGFONT.lfFaceName` at 32 bytes including the
+    # null terminator (31 effective characters). Family names over
+    # the limit install on Windows fine but Word's font registry
+    # silently truncates them, breaking the strict CJK / HKSCS
+    # routing path so chars like 啲 嘅 嗰 噉 嚟 咗 唔 攞 fall back
+    # to Microsoft JhengHei UI instead of rendering through our
+    # font. The browser (/showcase) doesn't hit the LOGFONT path
+    # so the bug is invisible there.
+    #
+    # Run this BEFORE the multi-minute composition + GSUB phases —
+    # a typo in the matrix entry's `name:` should be caught in
+    # milliseconds, not after 5+ minutes of wasted compute.
+    if new_family_name is not None and len(new_family_name) > LF_FACESIZE_LIMIT:
+        raise SystemExit(
+            f"\n[wing-font] Family name overflow: "
+            f"{new_family_name!r}\n"
+            f"\n"
+            f"  Length: {len(new_family_name)} characters\n"
+            f"  Windows GDI LF_FACESIZE limit: "
+            f"{LF_FACESIZE_LIMIT} characters\n"
+            f"\n"
+            f"Names over the limit install on Windows fine but get\n"
+            f"silently truncated in Word's font registry. The truncated\n"
+            f"name then fails the Word per-codepoint font-fallback\n"
+            f"table's strict CJK check, and Word routes HKSCS-extension\n"
+            f"Cantonese characters (啲 嘅 嗰 噉 嚟 咗 唔 攞 …) to\n"
+            f"Microsoft JhengHei UI even though the font's cmap has\n"
+            f"them. The browser (/showcase) doesn't hit this code\n"
+            f"path so the bug is invisible there.\n"
+            f"\n"
+            f"Shorten the matrix entry's `name:` (or the `-f` CLI arg)\n"
+            f"to {LF_FACESIZE_LIMIT} characters or fewer and retry.\n"
+        )
+
     # Sanity-check input font sizes before letting fontTools blow up
     # with a cryptic "bad sfntVersion" error. A common failure mode
     # is the input download silently returning an error page (e.g.
@@ -838,27 +881,19 @@ def main(
         output_font = instantiateVariableFont(
             output_font, base_axis_location, inplace=True
         )
-        # `instantiateVariableFont` drops fvar/gvar/HVAR/MVAR/avar
-        # cleanly but leaves STAT (Style Attributes Table) in place.
-        # STAT only makes sense for variable fonts — it declares axis
-        # values for the design space — so the residue is meaningless
-        # after instancing and can confuse downstream tools (Word's
-        # font-info dialog has been observed to read its `Italic` /
-        # `Bold` flags from STAT instead of OS/2 when both are
-        # present, occasionally mis-styling the rendered text). Drop
-        # it to keep the output font's table set clean.
-        for f in (base_font, output_font):
-            if "STAT" in f:
-                del f["STAT"]
+        # Note: instancing leaves a STAT (Style Attributes Table)
+        # residue from the variable design space. On paper it's
+        # meaningless once fvar / gvar are gone, and dropping it
+        # produces a "cleaner" font; in practice doing so regressed
+        # Word rendering harder than the base. Keep STAT in place
+        # until we have a verified Word-side test that proves a
+        # specific edit makes it safe to remove.
 
     if anno_axis_location and "fvar" in anno_font:
         from fontTools.varLib.instancer import instantiateVariableFont
         anno_font = instantiateVariableFont(
             anno_font, anno_axis_location, inplace=True
         )
-        # Same STAT-residue cleanup as the base-instance path above.
-        if "STAT" in anno_font:
-            del anno_font["STAT"]
 
     # Raw annotation-font bytes for HarfBuzz. Two paths:
     #   • If the anno font was instanced, the on-disk bytes are
@@ -1156,28 +1191,38 @@ def main(
         # lookups (notably the wingfont* variants). Unscaled extras are
         # rare and visually minor.
         with step_timer("font subset") as timer:
-            # Keep the base font's OS/2 ulUnicodeRange / ulCodePageRange
-            # bits. The defaults (prune_unicode_ranges /
-            # prune_codepage_ranges = True) RECOMPUTE these from the
-            # reduced cmap and, for a CJK subset, drop the "CJK Unified
-            # Ideographs (4E00-9FFF)" Unicode-range bit and the Big5/JIS
-            # codepage bits. Microsoft Word decides whether a font covers
-            # a CJK character from THESE bits, not the cmap — so a pruned
-            # font makes Word treat outliers like 啲 嘅 喺 (present in the
-            # cmap but in no advertised range/codepage) as uncovered and
-            # substitute a system CJK font, dropping the annotation. The
-            # output font is derived from the full base, so disabling
-            # pruning preserves the base's correct coverage advertisement.
-            sub_opts = subset.Options()
-            sub_opts.prune_unicode_ranges = False
-            sub_opts.prune_codepage_ranges = False
-            subsetter = subset.Subsetter(options=sub_opts)
+            # NB: a previous edit set sub_opts.prune_unicode_ranges =
+            # False + .prune_codepage_ranges = False, intending to
+            # preserve the base font's coverage advertisement through
+            # subset so Word would route HKSCS-extension chars (啲 嘅
+            # 嗰 噉) correctly. User bisection (commit 5b50600)
+            # showed that disabling pruning has the OPPOSITE
+            # net effect: Word treats the resulting "claims more
+            # than the cmap delivers" mismatch as a sign the font
+            # is broken and falls back to system CJK for ALL CJK
+            # codepoints, not just HKSCS. The pruned defaults (True)
+            # produce a font whose advertised coverage matches its
+            # actual cmap, which Word trusts.
+            #
+            # HKSCS rendering needs a different fix path — separately
+            # investigated; tracking outside this block.
+            subsetter = subset.Subsetter()
             subsetter.populate(
                 glyphs=valid_glyphs_to_keep,
                 unicodes=sorted(ivs_unicodes),
             )
             subsetter.subset(output_font)
             timer.note(f"{len(valid_glyphs_to_keep)} glyphs kept")
+        # NB: an earlier edit downgraded OS/2 from v4 to v3 here in
+        # the belief that Word's HKSCS routing keyed on the version
+        # field. A/B testing eventually showed the actual gate is
+        # Windows GDI's LF_FACESIZE = 32 cap on NameID 1 — names
+        # over 31 chars get truncated in the font registry and break
+        # the strict CJK path. The v3 downgrade just happened to be
+        # one of several structural perturbations that ALSO worked
+        # in the test fixture; it wasn't the cause. Reverted because
+        # the name-length guard at the top of `set_family_name` is
+        # the real fix (see LF_FACESIZE_LIMIT at module top).
     else:
         # Un-optimised path keeps the original behaviour: every glyph in
         # the base font's glyph order gets scaled so an un-subset output

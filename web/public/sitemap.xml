@@ -102,7 +102,7 @@
   <url><loc>https://wing-font.chunlaw.io/specimen/Xiaolai-Huninn-poj</loc><lastmod>2026-06-11</lastmod><priority>0.4</priority></url>
 
   <!-- ── Teochew / Min Nan (潮州話) specimens ───────────────────── -->
-  <url><loc>https://wing-font.chunlaw.io/specimen/NotoSansTC-Huninn-teochew-pengim</loc><lastmod>2026-06-11</lastmod><priority>0.4</priority></url>
+  <url><loc>https://wing-font.chunlaw.io/specimen/NotoSansTC-Huninn-pengim</loc><lastmod>2026-06-11</lastmod><priority>0.4</priority></url>
   <url><loc>https://wing-font.chunlaw.io/specimen/NotoSansTC-Huninn-teochew-puj</loc><lastmod>2026-06-11</lastmod><priority>0.4</priority></url>
   <url><loc>https://wing-font.chunlaw.io/specimen/Xiaolai-Huninn-teochew-pengim</loc><lastmod>2026-06-11</lastmod><priority>0.4</priority></url>
   <url><loc>https://wing-font.chunlaw.io/specimen/Xiaolai-Huninn-teochew-puj</loc><lastmod>2026-06-11</lastmod><priority>0.4</priority></url>
@@ -113,5 +113,5 @@
   <url><loc>https://wing-font.chunlaw.io/specimen/Xiaolai-Huninn-mandarin</loc><lastmod>2026-06-11</lastmod><priority>0.4</priority></url>
 
   <!-- ── Arabic-base specimens (word-unit tier) ─────────────────── -->
-  <url><loc>https://wing-font.chunlaw.io/specimen/NotoSansArabic-Noto-romanization</loc><lastmod>2026-06-11</lastmod><priority>0.4</priority></url>
+  <url><loc>https://wing-font.chunlaw.io/specimen/NotoSansArabic-Noto-DIN31635</loc><lastmod>2026-06-11</lastmod><priority>0.4</priority></url>
 </urlset>

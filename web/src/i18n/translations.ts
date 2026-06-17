@@ -191,6 +191,7 @@ export type TranslationKey =
   | "step1.recentFonts.daysAgo"
   | "step1.recentFonts.viewSpecimen"
   | "step3.family.collisionHint"
+  | "step3.family.tooLong"
   // Typography controls (shared across /showcase + /specimen)
   | "displayOptions.toggle"
   | "displayOptions.fontSize"
@@ -568,6 +569,8 @@ export const TRANSLATIONS: Record<Language, Record<TranslationKey, string>> = {
     "step1.recentFonts.viewSpecimen": "查看示範",
     "step3.family.collisionHint":
       "你嘅近期生成裡面已經有同名嘅字型。如果你打算將兩個一齊安裝到電腦或者 Word，建議改個唔同名字避免衝突。",
+    "step3.family.tooLong":
+      "{n} / {max} 字 — 太長。Windows 字型登記簿會將超過 {max} 字嘅家族名靜默截斷，導致 Word 將粵語 HKSCS 字（啲、嘅、嗰、咗、噉、嚟、唔、攞）轉去用 Microsoft 正黑體渲染。請縮短到 {max} 字以內。",
     "displayOptions.toggle": "顯示選項",
     "displayOptions.fontSize": "字體大小",
     "displayOptions.letterSpacing": "字距",
@@ -969,6 +972,8 @@ export const TRANSLATIONS: Record<Language, Record<TranslationKey, string>> = {
     "step1.recentFonts.viewSpecimen": "View specimen",
     "step3.family.collisionHint":
       "You've already generated a font with this family name. If you plan to install both on your OS or in Word, consider a distinct name to avoid font-table conflicts.",
+    "step3.family.tooLong":
+      "{n} / {max} characters — too long. Windows' font registry silently truncates family names over {max} characters, which makes Word route HKSCS Cantonese characters (啲, 嘅, 嗰, 咗, 噉, 嚟, 唔, 攞) to Microsoft JhengHei UI instead of your font. Shorten to {max} characters or fewer.",
     "displayOptions.toggle": "Display options",
     "displayOptions.fontSize": "Font size",
     "displayOptions.letterSpacing": "Letter spacing",

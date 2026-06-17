@@ -34,6 +34,18 @@ import { GenerateParams } from "../types";
 import { dirForText, isRtlText } from "../../../utils/textDirection";
 import { buildCliCommand } from "../../../utils/buildCliCommand";
 
+// Maximum length of a Windows GDI LOGFONT.lfFaceName — 32 bytes
+// including null terminator, so 31 effective characters. Family
+// names over this limit install on Windows fine but get silently
+// truncated in Word's font registry, breaking the per-codepoint
+// font-fallback path so HKSCS-extension Cantonese characters (啲 嘅
+// 嗰 噉 嚟 咗 唔 攞) end up rendered in Microsoft JhengHei UI
+// instead of the user's font. Mirrors the same constant in
+// python/wing-font.py — the Python pipeline hard-fails any family
+// name that overflows, so surfacing it here saves the user a
+// multi-minute round-trip just to discover the limit.
+const LF_FACESIZE_LIMIT = 31;
+
 const Step3Parameters = () => {
   const { t } = useTranslation();
   const {
@@ -66,6 +78,13 @@ const Step3Parameters = () => {
   // case-insensitive (macOS Font Book matches "myfont" and
   // "MyFont" as the same font).
   const { entries: recentFontEntries } = useRecentFonts();
+  // Family-name length overflow — see LF_FACESIZE_LIMIT comment at
+  // module top for why this matters (silent Word HKSCS breakage).
+  // We surface the count proactively whenever the user gets close
+  // so they have a chance to shorten before hitting the cap.
+  const familyLen = params.familyName?.length ?? 0;
+  const familyTooLong = familyLen > LF_FACESIZE_LIMIT;
+  const familyApproachingLimit = familyLen >= LF_FACESIZE_LIMIT - 5;
   const hasFamilyCollision = (() => {
     const typed = params.familyName?.trim().toLowerCase();
     if (!typed) return false;
@@ -257,7 +276,23 @@ const Step3Parameters = () => {
 
           <TextField
             label={t("step3.family")}
-            helperText={t("step3.familyHint")}
+            // helperText shape:
+            //   * over limit  → red error + "N / 31 — too long, …"
+            //   * 26-31 chars → neutral hint + " (N / 31)" counter
+            //   * 0-25 chars  → plain hint
+            // The counter appears proactively in the warning zone so
+            // a paste that lands at exactly 31 doesn't look mysterious
+            // (the user sees how close they are to the cap).
+            helperText={
+              familyTooLong
+                ? t("step3.family.tooLong")
+                    .replace("{n}", String(familyLen))
+                    .replace("{max}", String(LF_FACESIZE_LIMIT))
+                : familyApproachingLimit
+                  ? `${t("step3.familyHint")}  (${familyLen} / ${LF_FACESIZE_LIMIT})`
+                  : t("step3.familyHint")
+            }
+            error={familyTooLong}
             value={params.familyName}
             onChange={(e) => setParam("familyName", e.target.value)}
             fullWidth

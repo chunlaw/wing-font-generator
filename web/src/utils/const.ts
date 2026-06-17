@@ -290,33 +290,44 @@ export const AVAILABLE_FONTS: FontSet = {
     // Order matters; do not alphabetise.
     //
     // History of the default:
-    //   * ChironSungHK-Noto-lshk           — original (HK-serif)
-    //   * NotoSansHK-Noto-lshk             — June 2026 (smaller
-    //                                        WOFF, HK-locale Han)
-    //   * NotoSansTC-Huninn-Regular-tonemark — current default. The
-    //     pairing renders the LSHK tone digits as purpose-drawn
-    //     diacritic glyphs (via the Huninn-tonemark anno font's
-    //     combining-mark designs) instead of the default Noto
-    //     Serif numerals — strictly better legibility at the
-    //     ~36 px showcase size. Base is NotoSansTC (Taiwan-locale
-    //     Han); HK-locale readers who specifically prefer 字 / 為
-    //     / 起 in the HK forms can pick NotoSansHK-Noto-lshk below.
+    //   * ChironSungHK-Noto-lshk             — original (HK-serif)
+    //   * NotoSansHK-Noto-lshk               — June 2026 (smaller
+    //                                          WOFF, HK-locale Han)
+    //   * NotoSansTC-Huninn-Regular-tonemark — attempted briefly;
+    //     rolled back. NotoSansTC's family-name signal made Word's
+    //     font fallback re-route HKSCS-extension Cantonese chars
+    //     (啲 / 嘅 / 嗰 / 噉 / 嚟 / 咗 / 唔 …) to Microsoft JhengHei.
+    //     The glyphs were physically in the font; Word ignored them
+    //     based on the "TC = Taiwan locale" signal alone. Browsers
+    //     (HarfBuzz) don't apply this fallback, so the bug was
+    //     invisible on /showcase but broken in Word.
+    //   * NotoSansHK-Huninn-tonemark — current default. Same
+    //     Huninn-tonemark anno (purpose-drawn diacritic glyphs for
+    //     LSHK tone marks) on the NotoSansHK base (HK-locale Han
+    //     forms 字 / 為 / 起 / 緣 / 緊). Originally shipped as
+    //     `NotoSansHK-Huninn-Regular-tonemark` (34 chars), which
+    //     overflowed Windows GDI's LF_FACESIZE = 32 limit and broke
+    //     Word's HKSCS routing for 啲 嘅 嗰 噉 嚟 咗 唔 攞. Renamed
+    //     to `NotoSansHK-Huninn-tonemark` (26 chars) to stay under
+    //     the limit. The build pipeline now hard-fails any family
+    //     name exceeding 31 chars (see LF_FACESIZE_LIMIT in
+    //     python/wing-font.py).
     //
     // Every previously-default font is still built by CI and
     // downloadable via direct URL — only the showcase first-paint
     // changes. External bookmarks keep working.
     fonts: {
       // ─ Current default ──────────────────────────────────────────
-      // NotoSansTC + the Huninn-tonemark anno variant: the LSHK
+      // NotoSansHK + the Huninn-tonemark anno variant: the LSHK
       // Jyutping mapping rendered with Huninn's purpose-drawn
       // tone-mark glyphs (as opposed to combining-mark fallbacks
       // when paired with the standard Huninn-Regular). Sits in the
       // FIRST slot so it's the first-visit default — see comment
       // block above.
-      "NotoSansTC-Huninn-Regular-tonemark": {
-        displayName: "思源黑體（粵拼・Huninn 調符）",
-        name: "NotoSansTC-Huninn-Regular-tonemark",
-        source: `url(${import.meta.env.VITE_FONT_URL}/NotoSansTC-Huninn-Regular-tonemark.woff2) format('woff2')`,
+      "NotoSansHK-Huninn-tonemark": {
+        displayName: "思源黑體 香港（粵拼・Huninn 調符）",
+        name: "NotoSansHK-Huninn-tonemark",
+        source: `url(${import.meta.env.VITE_FONT_URL}/NotoSansHK-Huninn-tonemark.woff2) format('woff2')`,
         group: CANTO_GROUP_ROMANIZATION,
       },
       "NotoSansHK-Noto-lshk": {
@@ -517,10 +528,10 @@ export const AVAILABLE_FONTS: FontSet = {
         source: `url(${import.meta.env.VITE_FONT_URL}/Xiaolai-NotoJP-katakana-notone.woff2) format('woff2')`,
         group: CANTO_GROUP_TONELESS,
       },
-      "Xiaolai-NotoTagalog-baybayin-notone": {
+      "Xiaolai-Tagalog-baybayin-notone": {
         displayName: "小賴字體（貝貝因・無聲調）",
-        name: "Xiaolai-NotoTagalog-baybayin-notone",
-        source: `url(${import.meta.env.VITE_FONT_URL}/Xiaolai-NotoTagalog-baybayin-notone.woff2) format('woff2')`,
+        name: "Xiaolai-Tagalog-baybayin-notone",
+        source: `url(${import.meta.env.VITE_FONT_URL}/Xiaolai-Tagalog-baybayin-notone.woff2) format('woff2')`,
         group: CANTO_GROUP_TONELESS,
       },
       "Xiaolai-NotoNastaliq-urdu-notone": {
@@ -789,10 +800,10 @@ export const AVAILABLE_FONTS: FontSet = {
       en: "Arabic",
     },
     fonts: {
-      "NotoSansArabic-Noto-romanization": {
+      "NotoSansArabic-Noto-DIN31635": {
         displayName: "Noto Sans Arabic（DIN 31635 罗马字）",
-        name: "NotoSansArabic-Noto-romanization",
-        source: `url(${import.meta.env.VITE_FONT_URL}/NotoSansArabic-Noto-romanization.woff2) format('woff2')`,
+        name: "NotoSansArabic-Noto-DIN31635",
+        source: `url(${import.meta.env.VITE_FONT_URL}/NotoSansArabic-Noto-DIN31635.woff2) format('woff2')`,
       },
     },
   },
