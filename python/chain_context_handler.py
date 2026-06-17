@@ -49,7 +49,8 @@ That whole apparatus is now replaced by
 We still keep ownership of:
 
   * Building the per-variant ``SingleSubstBuilder`` lookups (one per
-    variant index, 0..MAX_VARIANT_LOOKUPS-1).
+    variant index that actually appears in the mapping; lazy-built
+    on demand — see ``_get_builder`` inside ``buildChainSub``).
   * Appending the built ``Lookup`` objects onto the existing
     ``gsub.LookupList`` — feaLib would clobber the source font's 82
     other lookups, so we deliberately use the lower-level builders and
@@ -71,10 +72,19 @@ from utils import (
     step_timer,
 )
 
-# Upper bound on the number of distinct annotations any single character
-# can have. Matches the limit enforced by csv_parser.MAX_CHAR_VARIANTS.
-# Variant index 0 is the "default" reading; 1..N-1 are alternates.
-MAX_VARIANT_LOOKUPS = 10
+# Per-variant SingleSubstBuilder lookups used to live in a
+# pre-allocated fixed-size list capped at 10 — historical assumption
+# that no character has more than 10 readings. That holds for
+# Cantonese / Mandarin (max ~5 readings on common 多音字) but breaks
+# on Japanese on-kun mappings, where high-frequency kanji can have
+# 10+ on + kun readings (csv_parser caps at MAX_CHAR_VARIANTS = 240).
+# Indexing the fixed list with `variant >= 10` raised `IndexError:
+# list index out of range` deep inside the chain-build phase.
+#
+# The current implementation lazy-allocates one builder per
+# distinct variant index actually encountered (see buildChainSub
+# below). No hard ceiling here — the upstream cap in csv_parser is
+# the single source of truth.
 
 # Maximum number of rules per chain-context subtable before we force a
 # subtable break. OpenType subtable offsets are uint16, so any single
@@ -121,11 +131,24 @@ def buildChainSub(output_font, word_mapping, char_mapping):
         # word_mapping iteration this is a free win.
         glyph_order_set = set(glyph_order)
 
-        # One SingleSubst lookup per variant slot. Lazily built into a
-        # fixed-size array so the index math below stays trivial.
-        single_sub_builders = [
-            SingleSubstBuilder(output_font, None) for _ in range(MAX_VARIANT_LOOKUPS)
-        ]
+        # One SingleSubst lookup per variant index actually seen in
+        # the mapping. Stored as a dict so we can grow it on demand
+        # (variant indices range over 1..MAX_CHAR_VARIANTS-1, but
+        # most fonts use only a handful). Variant 0 never lands here
+        # — it's the "default reading" and the `if variant > 0`
+        # guard below filters it before the dict is touched.
+        single_sub_builders: dict = {}
+
+        def _get_builder(variant: int):
+            """Lazy-allocate the SingleSubstBuilder for `variant`.
+            Idempotent — repeated calls for the same variant return
+            the same builder instance, so its `.mapping` accumulates
+            entries from every word that references that variant."""
+            b = single_sub_builders.get(variant)
+            if b is None:
+                b = SingleSubstBuilder(output_font, None)
+                single_sub_builders[variant] = b
+            return b
 
         chain_builder = ChainContextSubstBuilder(output_font, None)
 
@@ -178,7 +201,7 @@ def buildChainSub(output_font, word_mapping, char_mapping):
                 # the no-op filter below), so its mapping would be
                 # dead weight in the output GSUB.
                 if variant > 0:
-                    single_sub_builders[variant].mapping[glyph_name] = target_glyph_name
+                    _get_builder(variant).mapping[glyph_name] = target_glyph_name
                 per_position_variant.append(variant)
 
             if not is_buildable:
@@ -204,6 +227,10 @@ def buildChainSub(output_font, word_mapping, char_mapping):
             # Build rule_lookups, treating variant-0 positions as
             # passthroughs (None) so the shaper skips them and so the
             # subset closure has fewer references to chase.
+            # Every v > 0 here was registered by the loop above
+            # (`_get_builder(variant)`), so dict lookup is safe
+            # without a default. v == 0 / v is None go to the
+            # passthrough branch.
             rule_lookups = [
                 [single_sub_builders[v]] if v is not None and v > 0 else None
                 for v in per_position_variant
@@ -234,8 +261,17 @@ def buildChainSub(output_font, word_mapping, char_mapping):
         # (LookupListIndex), and those references are resolved from each
         # builder's `.lookup_index` attribute. So we have to
         # append → assign `.lookup_index` → build the chain in that order.
+        # Iterate variants in ascending order so the rule lookups
+        # we built above (which reference builders by their dict
+        # entry, not by lookup_index yet) get LookupListIndices
+        # assigned deterministically — useful for binary diffs
+        # against earlier builds. Builders with empty `.mapping`
+        # (variant index added by an earlier word but its glyphs
+        # later filtered out) are skipped the same way the old
+        # list iteration did.
         next_index = len(gsub.LookupList.Lookup)
-        for builder in single_sub_builders:
+        for variant in sorted(single_sub_builders):
+            builder = single_sub_builders[variant]
             if not builder.mapping:
                 continue
             lookup = builder.build()
