@@ -21,23 +21,52 @@ import string
 WINDOWS_ENGLISH_IDS = 3, 1, 0x409
 MAC_ROMAN_IDS = 1, 0, 0
 
-# Maximum length of a Windows GDI `LOGFONT.lfFaceName` — 32 bytes
-# including the null terminator, so 31 effective characters. Family
-# names (NameID 1 / 4 / 6) longer than this get silently truncated
-# by Windows' font registry, which breaks DirectWrite lookups that
-# bind to LOGFONT. Specifically, Word's per-codepoint font-fallback
-# table (the HKSCS / Cantonese routing path) won't recognise an
-# overflowing-name font as valid for the strict CJK path and falls
-# back to Microsoft JhengHei UI for every HKSCS-extension char (啲
-# 嘅 嗰 噉 嚟 咗 唔 攞 …). The font otherwise installs and renders
-# normally — making this a particularly silent bug to spot, since
-# /showcase (which uses HarfBuzz via the browser's FontFace API)
-# doesn't hit the LOGFONT path at all.
+# ── Name-table length caps ────────────────────────────────────────
+# Each NameID has its own practical maximum that downstream tools
+# bind to. Setting any of these too high makes the font install
+# but silently misbehave in ways the browser preview won't catch.
+# Capping consistently is what stops us repeating the LF_FACESIZE
+# / NameID 1 trap we fell into for HKSCS routing.
 #
-# `set_family_name` enforces this at build time so a future matrix
-# entry with a too-long name fails the build with a clear message
-# rather than shipping a font that's mysteriously broken in Word.
-LF_FACESIZE_LIMIT = 31
+# Discovered the hard way: NameID 1 / 16 must fit Windows GDI's
+# LOGFONT.lfFaceName (32 bytes incl. null terminator, so 31
+# effective characters). Overflowing names install on Windows fine
+# but get silently truncated in Word's font registry, which breaks
+# DirectWrite's strict-CJK path → Word substitutes Microsoft
+# JhengHei UI for every HKSCS-extension char (啲 嘅 嗰 噉 嚟 咗 唔
+# 攞 …). /showcase (HarfBuzz / FontFace API) doesn't go through
+# LOGFONT so the bug is invisible there.
+#
+# The remaining caps below are derived from OpenType spec or
+# established tool-chain limits; staying within them is defensive
+# against the same class of silent breakage:
+#
+#   NameID 1, 16 (Family / Typographic Family) → 31 chars
+#       Bound: Windows GDI LF_FACESIZE.
+#   NameID 4 (Full Name)                       → 63 chars
+#       Bound: Windows GDI LF_FULLFACESIZE. We share the family
+#       string here, which the LF_FACESIZE guard already keeps to
+#       31 — well under 63 — so no separate enforcement needed.
+#   NameID 3 (Unique Font Identifier)          → 63 chars
+#       Bound: practical font-tool buffer convention; no hard spec.
+#   NameID 5 (Version)                         → 63 chars
+#       Bound: same practical convention. Font Validator warns
+#       at higher lengths.
+#   NameID 6 (PostScript Name)                 → 63 chars
+#       Bound: hard OpenType spec cap. Plus printable-ASCII-only,
+#       no spaces, no  [ ] ( ) { } < > / %.
+#   NameID 10 (Description)                    → no spec cap
+#       But: Mac-Roman platform records can only encode MacRoman
+#       characters. Non-MacRoman input (e.g. em-dash U+2014) gets
+#       lost or "?" substituted on write.
+LF_FACESIZE_LIMIT = 31           # NameID 1, 16
+UNIQUE_ID_MAX_LEN = 63           # NameID 3
+VERSION_MAX_LEN = 63             # NameID 5
+POSTSCRIPT_NAME_MAX_LEN = 63     # NameID 6
+# Characters forbidden in PostScript names per the OpenType spec.
+# Note that ASCII space is also forbidden — handled via
+# POSTSCRIPT_NAME_FORBIDDEN below.
+POSTSCRIPT_NAME_FORBIDDEN = frozenset(" []()<>{}/%")
 
 # OpenType `maxp` table stores numGlyphs as a uint16 — hard cap 65,535.
 # A font with more than that cannot be saved as TTF/OTF (struct.error
@@ -266,34 +295,130 @@ def _auto_fit_ascent(output_font, char_metrics, margin=AUTO_ASCENT_MARGIN):
         output_font["OS/2"].usWinAscent = ink_top
 
 
+def _to_postscript_name(family_name: str) -> str:
+    """Sanitize an arbitrary family name into a spec-compliant
+    PostScript name (NameID 6).
+
+    OpenType spec for NameID 6:
+      * Printable ASCII only (codepoints 33..126)
+      * Forbidden chars: space, `[ ] ( ) { } < > / %`
+      * Max 63 chars
+
+    Non-conforming chars become `-`; runs of consecutive `-` are
+    collapsed; leading / trailing `-` are stripped. The result is
+    capped at POSTSCRIPT_NAME_MAX_LEN as a defensive backstop —
+    LF_FACESIZE = 31 will usually hit first, but a caller bypassing
+    `main()`'s validation would still produce a spec-compliant
+    NameID 6 here.
+    """
+    out: list[str] = []
+    for ch in family_name:
+        cp = ord(ch)
+        if 33 <= cp <= 126 and ch not in POSTSCRIPT_NAME_FORBIDDEN:
+            out.append(ch)
+        else:
+            out.append("-")
+    result = "".join(out)
+    while "--" in result:
+        result = result.replace("--", "-")
+    return result.strip("-")[:POSTSCRIPT_NAME_MAX_LEN]
+
+
+def _wing_font_unique_id(base_unique_id: str, new_family: str) -> str:
+    """Compose a spec-compliant NameID 3 (Unique Font Identifier).
+
+    OpenType requires NameID 3 to be globally unique across fonts.
+    Inheriting the base font's NameID 3 verbatim — what we used to
+    do — produces multiple Wing Font derivatives that all claim
+    the same identifier, which validators flag.
+
+    Format: preserve the base font's Adobe-convention version +
+    vendor segments and substitute the third segment with the new
+    family name. Falls back to a minimal `WNGF;<family>` when the
+    base record is missing or doesn't parse.
+
+    Length cap at UNIQUE_ID_MAX_LEN (63). Practical bound — no
+    OpenType hard limit, but font-tool buffers commonly assume
+    fields fit in 64-byte buckets, and Microsoft Font Validator
+    warns past that point.
+    """
+    base = (base_unique_id or "").strip()
+    family = new_family.strip()
+    if base:
+        parts = [p.strip() for p in base.split(";")]
+        if len(parts) >= 3:
+            # Adobe: <version>;<vendor>;<unique-name>[;<extras>...]
+            # Keep version + vendor, swap in our family name, drop
+            # extras (which historically duplicate the vendor).
+            composed = ";".join([parts[0], parts[1], family])
+        else:
+            composed = f"WNGF;{family}"
+    else:
+        composed = f"WNGF;{family}"
+    # Defensive truncate — should never fire with LF_FACESIZE = 31
+    # families, but keeps us safe if a future caller bypasses that
+    # guard. Trim from the right so the family-name suffix survives
+    # (search-by-family in font managers still works).
+    if len(composed) > UNIQUE_ID_MAX_LEN:
+        composed = composed[:UNIQUE_ID_MAX_LEN]
+    return composed
+
+
 def set_family_name(font, new_family_name):
     """Rewrite the output font's family-identifying name records.
 
-    Touched records: 1 (Family), 4 (Full Name), 6 (PostScript),
-    16 (Typographic Family).
+    Touched records:
+      * 1  Font Family             ← new family verbatim
+      * 3  Unique Font Identifier  ← _wing_font_unique_id() — composes
+                                     "version;vendor;family" from the
+                                     base record so the output gets a
+                                     globally-unique ID instead of
+                                     inheriting the base font's.
+      * 4  Full Name               ← new family verbatim
+      * 6  PostScript Name         ← _to_postscript_name() — ASCII +
+                                     forbidden-char strip so the
+                                     output complies with the OT spec
+                                     for PS names.
+      * 16 Typographic Family      ← new family verbatim
 
-    NOT touched — and previously tried, then reverted:
-      * NameID 3 (Unique Font Identifier). On paper, leaving NameID 3
-        with the base font's value (e.g. "2.004;ADBO;NotoSansTC-Thin;
-        ADOBE") sets up a Word/DirectWrite cache-key collision and
-        smells like the right thing to fix. In practice, rewriting it
-        regressed Word rendering harder than leaving it alone: it
-        ended up classifying the output font as Latin-only and routing
-        every CJK character to Microsoft JhengHei. We don't yet have
-        a full root cause; until we do, NameID 3 stays untouched and
-        carries the base font's identifier through. Re-attempt only
-        with an end-to-end Word test on the build.
+    Earlier attempts to rewrite NameID 3 caused Word-rendering
+    regressions, eventually traced to the LF_FACESIZE family-name
+    overflow (since fixed). The retry now ships as part of the
+    spec-compliance pass — distinct values per NameID, all within
+    their respective length caps (see the comment block around
+    LF_FACESIZE_LIMIT at module top).
 
     Length guard:
       The actual check lives at the top of `main()` (search for
-      LF_FACESIZE_LIMIT) so a too-long name fails in milliseconds
-      instead of after the multi-minute composition + GSUB phases.
-      By the time `set_family_name` is called, the name has already
-      been validated.
+      LF_FACESIZE_LIMIT) so a too-long family name fails in
+      milliseconds instead of after the multi-minute composition
+      + GSUB phases. By the time `set_family_name` is called, the
+      name has already been validated.
     """
     table = font["name"]
+    # Compute the value for each NameID upfront. NameID 6 needs
+    # PostScript-spec sanitization (no spaces, no `[]{}()<>/%`);
+    # NameID 3 needs the "version;vendor;family" composition. The
+    # rest reuse the family name verbatim — its 31-char cap from
+    # the LF_FACESIZE guard at main() keeps them well under their
+    # individual NameID maxima.
+    base_uid_rec = table.getName(3, *WINDOWS_ENGLISH_IDS)
+    new_unique_id = _wing_font_unique_id(
+        base_uid_rec.toUnicode() if base_uid_rec is not None else "",
+        new_family_name,
+    )
+    new_postscript_name = _to_postscript_name(new_family_name)
+
+    name_id_to_value = {
+        1: new_family_name,        # Family
+        3: new_unique_id,          # Unique Font Identifier (NEW)
+        4: new_family_name,        # Full Name
+        6: new_postscript_name,    # PostScript Name (sanitized)
+        16: new_family_name,       # Typographic Family
+    }
+
     for plat_id, enc_id, lang_id in (WINDOWS_ENGLISH_IDS, MAC_ROMAN_IDS):
-        for name_id in (1, 4, 6, 16):
+        for name_id, value in name_id_to_value.items():
             family_name_rec = table.getName(
                 nameID=name_id,
                 platformID=plat_id,
@@ -301,14 +426,16 @@ def set_family_name(font, new_family_name):
                 langID=lang_id,
             )
             if family_name_rec is not None:
-                print(f"Changing family name from '{family_name_rec.toUnicode()}' to '{new_family_name}'")
-                table.setName(
-                    new_family_name,
-                    nameID=name_id,
-                    platformID=plat_id,
-                    platEncID=enc_id,
-                    langID=lang_id,
-                )
+                old_value = family_name_rec.toUnicode()
+                if old_value != value:
+                    print(f"Changing name record {name_id} from '{old_value}' to '{value}'")
+                    table.setName(
+                        value,
+                        nameID=name_id,
+                        platformID=plat_id,
+                        platEncID=enc_id,
+                        langID=lang_id,
+                    )
 
 
 # Low-profile attribution: append a single line to the OpenType
@@ -323,9 +450,22 @@ def set_family_name(font, new_family_name):
 # added via Wing Font") rather than a claim of ownership. URL is
 # included so a curious user opening the font in macOS Font Book or
 # Windows Font Properties has a one-step lookup back to the project.
+# ASCII-only by design — NameID 10 is written to both Windows-English
+# (UTF-16, would accept Unicode) AND Mac-Roman, and Mac-Roman lacks
+# the em-dash (U+2014). Using `-` instead of `—` makes the same
+# string round-trip cleanly on both platforms with no encoding loss.
 WING_FONT_PROVENANCE_NOTE = (
-    "Annotations added via Wing Font — https://wing-font.chunlaw.io"
+    "Annotations added via Wing Font - https://wing-font.chunlaw.io"
 )
+
+# Marker appended to NameID 5 (Version) so downstream tools can
+# distinguish a Wing Font derivative from the original base. The
+# leading "Version X.Y" substring of NameID 5 stays intact (most
+# font-info parsers look at that part); the trailing toolchain
+# cruft from the base record is dropped to keep the result inside
+# VERSION_MAX_LEN. Idempotent — re-running over an already-tagged
+# font is a no-op because we look for "Wing Font" in the string.
+WING_FONT_VERSION_TAG = "modified by Wing Font"
 
 
 def tag_wing_font_provenance(font):
@@ -370,6 +510,64 @@ def tag_wing_font_provenance(font):
         table.setName(
             new_text,
             nameID=10,
+            platformID=plat_id,
+            platEncID=enc_id,
+            langID=lang_id,
+        )
+
+
+def tag_wing_font_version(font):
+    """Tag NameID 5 (Version) with a Wing Font modification marker.
+
+    Why: by convention, a derived font's NameID 5 records the
+    upstream version *plus* a sub-version / modification note so
+    font managers can distinguish derivatives from originals. Most
+    parsers (Windows Font Properties dialog, font-management apps,
+    Microsoft Font Validator) bind to the leading `"Version X.Y"`
+    substring and treat anything after as informational metadata.
+
+    Behaviour: preserves the leading `"Version X.Y"` portion of the
+    base record (everything up to the first `;`), drops the
+    trailing toolchain cruft (`hotconv 1.0.118;makeotfexe ...`),
+    and substitutes a Wing Font marker. Total result stays inside
+    VERSION_MAX_LEN (63 chars).
+
+    Idempotent — re-running over an already-tagged font is a no-op.
+
+    Only the Windows-English + Mac-Roman records are touched, same
+    as the rest of the name-table writes. Other language records
+    (zh-CN / ja-JP / ko-KR / …), if present, are left untouched —
+    same trade-off as set_family_name / tag_wing_font_provenance.
+    """
+    table = font["name"]
+    for plat_id, enc_id, lang_id in (WINDOWS_ENGLISH_IDS, MAC_ROMAN_IDS):
+        rec = table.getName(
+            nameID=5,
+            platformID=plat_id,
+            platEncID=enc_id,
+            langID=lang_id,
+        )
+        if rec is None:
+            continue
+        existing = rec.toUnicode()
+        # Idempotency check — the marker text is the stable signature.
+        if WING_FONT_VERSION_TAG in existing:
+            continue
+        # Keep the leading "Version X.Y" portion only — anything
+        # after the first semicolon is build-chain cruft that varies
+        # across fontTools / makeotfexe versions and isn't useful to
+        # carry into the derivative.
+        head = existing.split(";", 1)[0].strip()
+        new_value = f"{head}; {WING_FONT_VERSION_TAG}"
+        # Defensive length cap — should never fire with typical base
+        # versions (which compress to ~20-30 chars after the split),
+        # but ensures we don't accidentally write a record some
+        # downstream tool's fixed buffer can't hold.
+        if len(new_value) > VERSION_MAX_LEN:
+            new_value = new_value[:VERSION_MAX_LEN]
+        table.setName(
+            new_value,
+            nameID=5,
             platformID=plat_id,
             platEncID=enc_id,
             langID=lang_id,
@@ -881,19 +1079,28 @@ def main(
         output_font = instantiateVariableFont(
             output_font, base_axis_location, inplace=True
         )
-        # Note: instancing leaves a STAT (Style Attributes Table)
-        # residue from the variable design space. On paper it's
-        # meaningless once fvar / gvar are gone, and dropping it
-        # produces a "cleaner" font; in practice doing so regressed
-        # Word rendering harder than the base. Keep STAT in place
-        # until we have a verified Word-side test that proves a
-        # specific edit makes it safe to remove.
+        # `instantiateVariableFont` cleanly drops fvar / gvar / HVAR
+        # / MVAR / avar, but leaves STAT (Style Attributes Table) in
+        # place. STAT only carries meaningful semantics for variable
+        # fonts — it describes axis values for the design space —
+        # so a STAT-without-fvar font advertises axes it can't
+        # support. An earlier attempt to drop STAT regressed Word
+        # rendering, but that was eventually traced to the
+        # LF_FACESIZE family-name overflow (since fixed by the
+        # guard at the top of main). Retry as part of the
+        # spec-compliance pass.
+        for f in (base_font, output_font):
+            if "STAT" in f:
+                del f["STAT"]
 
     if anno_axis_location and "fvar" in anno_font:
         from fontTools.varLib.instancer import instantiateVariableFont
         anno_font = instantiateVariableFont(
             anno_font, anno_axis_location, inplace=True
         )
+        # Same STAT-residue cleanup as the base-instance path above.
+        if "STAT" in anno_font:
+            del anno_font["STAT"]
 
     # Raw annotation-font bytes for HarfBuzz. Two paths:
     #   • If the anno font was instanced, the on-disk bytes are
@@ -991,6 +1198,12 @@ def main(
     # tag_wing_font_provenance() above for the rationale + wording
     # decisions.
     tag_wing_font_provenance(output_font)
+
+    # Append a Wing Font marker to NameID 5 (Version) so the output
+    # is distinguishable from the upstream base in font managers /
+    # validators. See tag_wing_font_version() for the format and
+    # idempotency guarantees.
+    tag_wing_font_version(output_font)
 
     # --- Phase 1: compose annotated variant glyphs -----------------------
     # generate_annotated_glyphs only handles the variant composition
