@@ -68,6 +68,7 @@ def generate_annotated_glyphs(
     ligature_carets: dict | None = None,
     word_metrics: dict | None = None,
     word_components: dict | None = None,
+    char_metrics: dict | None = None,
 ):
     """
     Compose annotated variant glyphs (former Part 1 of generate_glyphs).
@@ -167,6 +168,22 @@ def generate_annotated_glyphs(
         GSUB-less Arabic font would instead trigger HarfBuzz's
         legacy presentation-forms fallback, so Arabic deliberately
         stays on per-codepoint cmap resolution.
+
+    Single-char (CJK) ink metrics
+    -----------------------------
+
+    When `char_metrics` (a dict) is passed, its ``"min_y"`` / ``"max_y"``
+    keys are updated with the extreme ink Y of the composed
+    SINGLE-character glyphs (base + above/below annotation). The caller
+    uses ``max_y`` to auto-fit the output font's clipping ascent
+    (hhea.ascent + OS/2.usWinAscent) so a tall annotation — Thai marks,
+    Hangul jamo, Urdu Nastaliq on a low-ascent base like Xiaolai — isn't
+    truncated by winAscent-honouring apps (Word, Pages, Keynote, Canva)
+    without the user having to guess a `--out-ascent` value. This is the
+    single-char counterpart to `word_metrics`; they are kept separate
+    because the word path also extends the typo + descent metrics (it
+    adds a whole annotation row), whereas the CJK path widens only the
+    clipping ascent (see wing-font.py's `_auto_fit_ascent`).
     """
     # Lazy import so the module loads cheaply on hosts that don't run
     # the composition path (test scripts, etc.). The Pyodide worker
@@ -720,7 +737,23 @@ def generate_annotated_glyphs(
                         )
                     ),
                 )
-                out_glyf[new_glyph_name] = pen.glyph()
+                composed_glyph = pen.glyph()
+                # Track the composed glyph's ink extent so the caller can
+                # auto-fit the output ascent to the tallest annotation
+                # (see char_metrics in the docstring). TTGlyphPen emits a
+                # simple glyph with a flat `coordinates` array; empty for
+                # ink-less glyphs (skip those).
+                if char_metrics is not None:
+                    coords = getattr(composed_glyph, "coordinates", None)
+                    if coords is not None and len(coords):
+                        ys = [y for _x, y in coords]
+                        char_metrics["max_y"] = max(
+                            char_metrics.get("max_y", 0), max(ys)
+                        )
+                        char_metrics["min_y"] = min(
+                            char_metrics.get("min_y", 0), min(ys)
+                        )
+                out_glyf[new_glyph_name] = composed_glyph
                 output_glyph_name_used[new_glyph_name] = True
                 mapping[base_char][anno_str] = (new_glyph_name, i)
                 if i == 0:

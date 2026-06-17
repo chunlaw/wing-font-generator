@@ -25,6 +25,14 @@
  *   AppContext / RecentFontsContext / useTranslation reads can
  *   cause a re-render.
  *
+ * Why the filename caption + filename search:
+ *   Catalogue fonts have a Chinese-only `displayName`, opaque to a user
+ *   who doesn't read Chinese. Each option therefore also shows its Latin
+ *   filename (`name`, e.g. NotoSansHK-NotoKR-korean) as a dimmed caption
+ *   line, and that filename is folded into the Autocomplete filter so
+ *   typing "korean" / "thai" finds the font without Chinese input. Both
+ *   are gated to catalogue fonts — user fonts' `name` is an opaque id.
+ *
  * Why useMemo on the option arrays:
  *   Belt-and-braces for the same reason. Even with React.memo, if
  *   the dialect option list got recreated on a context update that
@@ -36,9 +44,11 @@ import { useCallback, useContext, useEffect, useMemo, useState, memo } from "rea
 import {
   Autocomplete,
   Box,
+  createFilterOptions,
   IconButton,
   ListSubheader,
   TextField,
+  Typography,
 } from "@mui/material";
 import { AddCircleOutline } from "@mui/icons-material";
 import AppContext from "../../AppContext";
@@ -151,6 +161,29 @@ const FontPicker = () => {
   const selectedFont =
     fontOptions.find((f) => f.name === state.fontName) ?? undefined;
 
+  // Built-in catalogue fonts carry a Chinese-only `displayName`
+  // (e.g. 思源黑體 香港（諺文標注）) — unreadable to a user who doesn't
+  // read Chinese. The `name` is the Latin filename
+  // (NotoSansHK-NotoKR-korean), which encodes base font + annotation +
+  // variant and is far more guessable. We surface it as a dimmed
+  // caption line under each option (see renderOption below) AND fold it
+  // into the search text here, so typing "korean" / "thai" reaches the
+  // font even without Chinese input.
+  //
+  // User fonts are excluded from both: their `name` is an opaque id, not
+  // a filename, so a caption / search match on it would be noise.
+  const isUserFontsDialect = state.lang === USER_FONTS_GROUP_KEY;
+  const filterFontOptions = useMemo(
+    () =>
+      createFilterOptions<FontPickOption>({
+        stringify: (opt) =>
+          isUserFontsDialect
+            ? opt.displayName
+            : `${opt.displayName} ${opt.name}`,
+      }),
+    [isUserFontsDialect],
+  );
+
   // Keep `state.fontName` valid when the user-fonts list mutates
   // under us (most commonly: user just generated a new font, which
   // gets prepended; or deleted one that was selected). If the saved
@@ -243,7 +276,51 @@ const FontPicker = () => {
         }}
         getOptionLabel={(opt) => opt.displayName}
         isOptionEqualToValue={(opt, value) => opt.name === value.name}
+        // Match on displayName + Latin filename (see filterFontOptions)
+        // so the font is reachable without typing Chinese.
+        filterOptions={filterFontOptions}
         groupBy={(opt) => opt.group ?? ""}
+        // Two-line option: the (Chinese) displayName, plus a dimmed
+        // monospace caption with the filename so a foreign user can
+        // guess what the font is. Caption suppressed for user fonts
+        // (their `name` is an opaque id). The input box still shows
+        // only displayName via getOptionLabel.
+        renderOption={(props, option) => {
+          // MUI v6 puts `key` in `props`; it must be passed directly,
+          // not spread, or React warns.
+          const { key, ...optionProps } = props;
+          return (
+            <Box
+              component="li"
+              key={key}
+              {...optionProps}
+              sx={{
+                // Override Autocomplete's default centered row so the
+                // two lines stack, left-aligned.
+                flexDirection: "column",
+                alignItems: "flex-start !important",
+                gap: 0,
+              }}
+            >
+              <Typography variant="body2" component="span">
+                {option.displayName}
+              </Typography>
+              {!isUserFontsDialect && (
+                <Typography
+                  variant="caption"
+                  component="span"
+                  sx={{
+                    color: "text.secondary",
+                    fontFamily: "monospace",
+                    lineHeight: 1.3,
+                  }}
+                >
+                  {option.name}
+                </Typography>
+              )}
+            </Box>
+          );
+        }}
         renderGroup={(params) =>
           // Suppress the ListSubheader entirely for ungrouped options
           // (empty `group` string). Without this, Autocomplete would

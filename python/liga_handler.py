@@ -1,7 +1,35 @@
 """
 liga_handler — emit Ligature Substitution lookups that let the user
-manually pick a variant by typing ``<char><digit>`` (or, as a fallback
+manually pick a variant by typing ``<char><number>`` (or, as a fallback
 for IMEs that don't easily type Latin digits, ``<char>丅<chinese-numeral>``).
+
+Multi-digit selection
+---------------------
+
+The number after the character is read in full decimal, so a character
+with more than nine variants is still reachable from the keyboard:
+``行1`` → variant 1, ``行11`` → variant 11, ``行111`` → variant 111, and
+``行0`` resets to the default reading. This works because every variant
+is emitted as a ligature whose components spell its index
+(``(行,1,1) -> variant 11``), and fontTools orders the ligatures in a set
+longest-first, so the longest valid number wins (``行11`` matches the
+3-component rule before the 2-component ``行1``).
+
+The ligature always STARTS from the character's default glyph (the glyph
+the bare character maps to), and the whole number is typed in one run
+after it. An earlier design also registered each variant glyph as a
+ligature start so a trailing digit could "re-pick" from whatever was
+already showing; that's incompatible with reading a multi-digit number
+(``行12`` would mean "variant 1, then re-pick 2" instead of "variant
+12"), so it was removed. Re-picking still works the ordinary way — the
+text run reshapes from the base character, so editing the trailing
+number re-selects. A number with no matching variant resolves its
+longest matching prefix and leaves the leftover digits as literal text.
+
+The ``丅 + chinese-numeral`` fallback and the IVS (``<base> + variation
+selector``) path remain single-step per variant; for variants past the
+9th that you'd rather not type as a multi-digit number, the IVS path
+(ivs_handler) addresses up to 240 variants directly.
 
 Filename keeps the historical "liga_handler" prefix because the LOOKUP
 TYPE is still GSUB Type 4 (Ligature Substitution) — that part hasn't
@@ -27,9 +55,10 @@ user-facing toggle and no script-suppression list. Trade-off: users
 lose the ability to disable annotation overrides via app settings.
 For an annotation font that's a feature, not a bug.
 
-The lookup body is unchanged — same ``LigatureSubstBuilder``, same
-2-component (char+digit) and 3-component (char+trigger+numeral)
-rules. Only the feature registration changed.
+The lookup stays GSUB Type 4 (``LigatureSubstBuilder``): char+digit
+rules (now 2-or-more components, one per decimal digit of the variant
+number — see "Multi-digit selection") and char+trigger+numeral rules
+(3 components). The feature registration is ``ccmp``, not ``liga``.
 
 This file no longer manages the OpenType ScriptList/LangSys plumbing
 inline — that's centralised in ``utils.register_feature_lookup``.
@@ -75,10 +104,14 @@ def buildLiga(
     register it under the ``ccmp`` feature. See module docstring for
     why ``ccmp`` and not ``liga``.
 
-    For each character with N annotations the builder emits:
-      - ``(any-variant, '0')   -> default glyph``
-      - ``(any-variant, 'i')   -> variant-i glyph`` for i in 1..N-1
-      - ``(any-variant, <trigger>, 零/一/二/...) -> default/variant-i`` as fallback
+    For each character with N annotations the builder emits, all
+    starting from the character's default glyph:
+      - ``(default, '0')                    -> default glyph``
+      - ``(default, <decimal digits of i>)  -> variant-i glyph`` for
+        i in 1..N-1 (single component for 1–9, multi-component for ≥10 —
+        see _add_digit_rules / the module docstring)
+      - ``(default, <trigger>, 零/一/二/...) -> default/variant-i`` as a
+        single-numeral fallback (1–9)
 
     Args:
         output_font: TTFont being mutated.
@@ -142,37 +175,41 @@ def buildLiga(
             # *target* glyph by index, not by annotation string.
             resolved = [t for t in anno_strs_dict.values() if isinstance(t, tuple)]
             index_to_glyph = {idx: name for name, idx in resolved}
-            all_variant_glyphs = [name for name, _ in resolved]
 
-            # Each variant can be the *starting* glyph of a ligature
-            # (so a second digit overrides whatever the first sub picked).
-            for base_glyph in all_variant_glyphs:
-                before = len(liga_builder.ligatures)
-                _add_digit_rules(
+            # The ligature start is ALWAYS the character's default
+            # (variant-0) glyph — i.e. the glyph the bare character cmaps
+            # to. The whole number is typed in one run after it
+            # (`行11` → [行, 1, 1]), so longest-match picks the variant
+            # directly from the default base; we no longer register each
+            # variant glyph as its own ligature start. See the module
+            # docstring ("Multi-digit selection") for why that override
+            # was dropped.
+            before = len(liga_builder.ligatures)
+            _add_digit_rules(
+                liga_builder,
+                base_glyph=default_glyph_name,
+                default_glyph=default_glyph_name,
+                index_to_glyph=index_to_glyph,
+                digit_glyphs=digit_glyphs,
+            )
+            if trigger_glyph and numeral_glyphs:
+                _add_chinese_numeral_rules(
                     liga_builder,
-                    base_glyph=base_glyph,
+                    base_glyph=default_glyph_name,
                     default_glyph=default_glyph_name,
                     index_to_glyph=index_to_glyph,
-                    digit_glyphs=digit_glyphs,
+                    trigger_glyph=trigger_glyph,
+                    numeral_glyphs=numeral_glyphs,
                 )
-                if trigger_glyph and numeral_glyphs:
-                    _add_chinese_numeral_rules(
-                        liga_builder,
-                        base_glyph=base_glyph,
-                        default_glyph=default_glyph_name,
-                        index_to_glyph=index_to_glyph,
-                        trigger_glyph=trigger_glyph,
-                        numeral_glyphs=numeral_glyphs,
-                    )
-                rules_in_subtable += len(liga_builder.ligatures) - before
+            rules_in_subtable += len(liga_builder.ligatures) - before
 
-                # Insert a subtable break between *characters*, never
-                # mid-base, so a single character's variants stay
-                # coverage-grouped.
-                if rules_in_subtable >= _LIGATURES_PER_SUBTABLE:
-                    liga_builder.add_subtable_break(subtable_break_counter)
-                    subtable_break_counter += 1
-                    rules_in_subtable = 0
+            # Insert a subtable break between *characters*, never
+            # mid-character, so a single character's variants stay
+            # coverage-grouped.
+            if rules_in_subtable >= _LIGATURES_PER_SUBTABLE:
+                liga_builder.add_subtable_break(subtable_break_counter)
+                subtable_break_counter += 1
+                rules_in_subtable = 0
 
         # Count excludes the sentinel break entries (their keys start
         # with the SUBTABLE_BREAK_ marker, which is a string not a
@@ -229,6 +266,21 @@ def _resolve_chinese_numerals(font) -> Dict[int, str]:
     return glyphs
 
 
+def _digit_components(index: int, digit_glyphs: Dict[int, str]):
+    """Glyph names spelling `index` in decimal, or None if any required
+    digit glyph is missing from the font.
+
+    e.g. 7 -> ['seven'], 11 -> ['one', 'one'], 111 -> ['one','one','one'].
+    """
+    components = []
+    for ch in str(index):
+        glyph = digit_glyphs.get(int(ch))
+        if glyph is None:
+            return None
+        components.append(glyph)
+    return components
+
+
 def _add_digit_rules(
     builder: LigatureSubstBuilder,
     *,
@@ -237,13 +289,40 @@ def _add_digit_rules(
     index_to_glyph: Dict[int, str],
     digit_glyphs: Dict[int, str],
 ) -> None:
-    """Emit (base, digit) -> variant rules for one character's variants."""
-    for num_index, digit_glyph in digit_glyphs.items():
-        # Digit '0' resets to the character's default reading; digits 1..9
-        # pick the corresponding variant if it exists.
-        target = default_glyph if num_index == 0 else index_to_glyph.get(num_index)
-        if target:
-            builder.ligatures[(base_glyph, digit_glyph)] = target
+    """Emit ``(base, <decimal digits of i>) -> variant_i`` rules so the
+    user picks variant *i* by typing its number after the character.
+
+    Single-digit indices (1–9) produce a 2-component ligature
+    ``(base, 'i')`` exactly as before; indices ≥ 10 produce a
+    multi-component ligature, e.g. variant 11 -> ``(base, '1', '1')`` and
+    variant 111 -> ``(base, '1', '1', '1')``. fontTools orders the
+    ligatures within a set longest-first (``_getLigatureSortKey`` returns
+    ``-len(components)``), so for ``行11`` the 3-component ``(行,1,1)``
+    rule is tried before the 2-component ``(行,1)`` — the longest valid
+    number wins. A number with no matching variant falls back to its
+    longest matching prefix and leaves the remaining digits as literal
+    text (e.g. ``行19`` with only variant 1 present → variant 1 then a
+    literal ``9``).
+
+    ``(base, '0')`` resets to the default reading. Because the reset
+    target is the default glyph — which is itself the character's base —
+    a leading-zero sequence like ``行01`` naturally re-enters and
+    resolves to variant 1.
+    """
+    zero_glyph = digit_glyphs.get(0)
+    if zero_glyph is not None:
+        # '0' resets to the character's default reading.
+        builder.ligatures[(base_glyph, zero_glyph)] = default_glyph
+    for num_index, target in index_to_glyph.items():
+        if num_index < 1:
+            continue
+        components = _digit_components(num_index, digit_glyphs)
+        if components is None:
+            # A digit glyph needed to spell this index is missing; the
+            # variant stays reachable via the IVS path, just not by
+            # typing its number.
+            continue
+        builder.ligatures[(base_glyph, *components)] = target
 
 
 def _add_chinese_numeral_rules(

@@ -46,7 +46,8 @@ HERE = Path(__file__).resolve().parent
 # Reuse the canonical script ranges + provenance vocabulary so the
 # validator can never drift from what the parser / generator use.
 from csv_parser import (  # noqa: E402
-    ARABIC_RANGES, THAI_RANGES, DEVANAGARI_RANGES, is_word_unit_word,
+    ARABIC_RANGES, THAI_RANGES, DEVANAGARI_RANGES, MALAYALAM_RANGES,
+    is_word_unit_word,
 )
 
 _LATIN = set("abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ")
@@ -65,6 +66,7 @@ SCRIPT_RANGES = {
     "Arabic": ARABIC_RANGES,
     "Thai": THAI_RANGES,
     "Devanagari": DEVANAGARI_RANGES,
+    "Malayalam": MALAYALAM_RANGES,
     "CJK": CJK_RANGES,
 }
 

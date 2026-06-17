@@ -26,8 +26,11 @@ disambiguated through two layers of OpenType GSUB rules, both registered
 under the `ccmp` (Glyph Composition / Decomposition) feature: chain-context
 substitution picks the right reading when the character appears in a known
 word (e.g. `銀行` → `行/hong4`, `行人` → `行/hang4`), and ligature
-substitution lets the user manually pick a variant by typing `字1` / `字2`
-/ … or the IME-friendly `字丅一` / `字丅二` fallback. The lookup _types_
+substitution lets the user manually pick a variant by typing the variant
+number after the character — `字1`, `字2`, … and, for characters with
+more than nine readings, the full multi-digit number `字11` / `字111`
+(`字0` resets to the default) — or the IME-friendly `字丅一` / `字丅二`
+fallback. The lookup _types_
 differ (Type 6 ChainContextSubst vs Type 4 LigatureSubst), but the feature
 _tag_ is the same — `ccmp`, not `calt` or `liga`. We pick `ccmp` because
 it's required-by-spec (every shaper applies it, no user toggle) and because
@@ -126,7 +129,7 @@ to the working directory. Drop the WOFF2 into a page with
 Chinese text using mapped characters will render with romanization
 stacked above.
 
-### Tall annotations on low-ascent bases — use `--out-ascent`
+### Tall annotations on low-ascent bases — `--out-ascent` (auto by default)
 
 When the base font has a low native ascent (e.g. Xiaolai at 880u — vs.
 NotoSansHK's 1160u) and the annotation cascades far above the base
@@ -136,21 +139,35 @@ the top of the annotation past Xiaolai's `winAscent` line. Browsers
 will overflow gracefully, but apps that strictly clip at `winAscent`
 (Word, Pages, Keynote, Canva) silently truncate the tallest glyphs.
 
-Fix: pass `--out-ascent` to bump the output font's `hhea.ascent` +
-`OS/2.usWinAscent` (font units, UPM=1000). For Xiaolai paired with
-Thai/Katakana/Korean, `1200` is enough; for Urdu Nastaliq, use `1300`.
-Recommended pairings:
+By default this is handled automatically: `--out-ascent auto` (the
+default) measures the tallest composed glyph's ink during the build and
+raises the output font's `hhea.ascent` + `OS/2.usWinAscent` just enough
+to clear it (+20u), so nothing is clipped and you don't have to guess a
+value. `sTypoAscender` is left untouched, so apps that honour typo
+metrics keep the base font's line spacing. The raise is widen-only — a
+base font with a generous ascent (NotoSansHK) is left as-is.
+
+You only need to touch the flag to override the automatic behaviour:
+
+- `--out-ascent INT` pins an exact value and disables auto-fit (e.g.
+  for a deliberately roomier line height). Historically `1200` was used
+  for Xiaolai + Thai/Katakana/Korean and `1300` for Urdu Nastaliq;
+  auto-fit now reaches a tighter value (~1050) that still clears the
+  ink.
+- `--out-ascent off` keeps the base font's ascent unchanged (the
+  pre-auto-fit behaviour) — useful if you specifically want the base
+  font's metrics and accept that the tallest glyphs may clip.
 
 ```sh
-# Xiaolai + Thai (Google Sans Thai)
+# Xiaolai + Urdu Nastaliq — auto-fit (no flag needed)
 python wing-font.py \
   -i input_fonts/XiaolaiSC-Regular.ttf \
-  -a 'input_fonts/GoogleSans-VariableFont_GRAD,opsz,wght.ttf' \
-  -m mappings/cantonese/canto-thai.csv \
-  -o Xiaolai-Google-thai \
-  -opt -as 0.26 --out-ascent 1200
+  -a input_fonts/NotoNastaliqUrdu-VariableFont_wght.ttf \
+  -m mappings/cantonese/canto-urdu.csv \
+  -o Xiaolai-NotoNastaliq-urdu \
+  -opt -as 0.22
 
-# Xiaolai + Urdu Nastaliq (Noto Nastaliq Urdu)
+# Same pairing, but pin an exact (roomier) ascent
 python wing-font.py \
   -i input_fonts/XiaolaiSC-Regular.ttf \
   -a input_fonts/NotoNastaliqUrdu-VariableFont_wght.ttf \
@@ -159,12 +176,11 @@ python wing-font.py \
   -opt -as 0.22 --out-ascent 1300
 ```
 
-You can leave `--out-ascent` unset for typical pairings (CJK + Latin
-romanization, NotoSansHK base): the legacy "inherit from base" default
-gives the right line heights everywhere with no clipping. See the
-[`deploy-pages.yml`](../.github/workflows/deploy-pages.yml) matrix for
-the canonical `-as` / `--out-ascent` pairings shipped to
-<https://wing-font.chunlaw.io/>.
+See the [`deploy-pages.yml`](../.github/workflows/deploy-pages.yml)
+matrix for the canonical `-as` pairings shipped to
+<https://wing-font.chunlaw.io/>. Those still pass explicit
+`--out-ascent` values; they remain valid (explicit pins are honoured),
+and can be dropped to let auto-fit pick the value.
 
 The same lever is exposed in the in-browser pipeline at `/generate` →
 Step 3 → Advanced → "Output ascent (font units)", so you can iterate
@@ -184,7 +200,7 @@ on a value visually before committing to a CLI invocation.
 | `-y` | `--upper_y_offset_ratio` | `0.8` | Where to put the annotation (fraction of em) |
 | `-v` | `--invert` | off | Swap positions: annotation below, base above |
 | `-opt` | `--optimize` | off | Subset the output to just glyphs we actually use (drops it from ~30 MB to ~200–500 KB per font) |
-| | `--trigger-char` | `丅` (U+4E05) | Override-trigger character for the IME-friendly variant selection path (`<base><trigger><numeral>`). Pass an empty string to disable the trigger+numeral path while keeping the digit-suffix path (`<base><1-9>`) intact. |
+| | `--trigger-char` | `丅` (U+4E05) | Override-trigger character for the IME-friendly variant selection path (`<base><trigger><numeral>`). Pass an empty string to disable the trigger+numeral path while keeping the digit-suffix path (`<base><number>`, e.g. `行1` … `行11`) intact. |
 | | `--out-ascent` | inherit | Override the output font's `hhea.ascent` + `OS/2.usWinAscent` (font units, UPM=1000). Pairings whose annotation cascades far above the base — Urdu Nastaliq, tall Thai marks, Hangul jamo on low-ascent bases like Xiaolai (880u) — need more headroom than the base provides; without this flag, apps that strictly honour `winAscent` (Word, Pages, Keynote, Canva) truncate the top of the tallest annotation. Typical values: `1200` for Xiaolai paired with Thai / Katakana / Korean, `1300` for Xiaolai paired with Urdu. Leaving unset preserves legacy behaviour. |
 
 ---
@@ -448,11 +464,22 @@ sidesteps.
 ### `liga_handler.py` — ligature substitution under `ccmp`
 
 Uses `LigatureSubstBuilder` to emit two kinds of rules per polyphonic
-character:
+character, both starting from the character's default glyph:
 
-* `(any_variant, '0')` → default reading, `(any_variant, 'N')` → variant N.
-* `(any_variant, '丅', '零/一/二/…')` → same mapping via the
-  IME-friendly trigger.
+* `(default, '0')` → default reading, and `(default, <decimal digits
+  of N>)` → variant N. Variants 1–9 are a single component (`(行,'1')`);
+  variants ≥ 10 spell the number out (`(行,'1','1')` → variant 11,
+  `(行,'1','1','1')` → variant 111). fontTools orders ligatures in a set
+  longest-first, so the longest valid number wins and a number with no
+  matching variant falls back to its longest prefix, leaving the extra
+  digits as literal text. (An earlier design made every variant glyph a
+  ligature start so a trailing digit could re-pick; that's incompatible
+  with reading a multi-digit number, so selection now always restarts
+  from the base character — editing the trailing number re-selects
+  because the whole run reshapes.)
+* `(default, '丅', '零/一/二/…')` → same mapping via the IME-friendly
+  trigger (single numeral, variants 1–9; use the digit number or IVS for
+  higher indices).
 
 The module is named `liga_handler` because the lookup *type* is still
 GSUB Type 4 (Ligature Substitution) — that hasn't changed. What changed

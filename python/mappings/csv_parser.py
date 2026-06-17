@@ -7,8 +7,24 @@ import re
 
 # 只保留長度 <= 7 的詞組 根據實際情況調整
 MAX_base_chars = 7
-# 每個單字的最大註音變體數量限制
-MAX_CHAR_VARIANTS = 10
+# Maximum number of annotation variants kept per single character.
+#
+# This used to be 10, matching the single ASCII digit (0–9) the
+# liga_handler digit-suffix selector can type: variant 0 = default
+# reading, variants 1–9 selectable as `<char>1` … `<char>9`. Readings
+# past the 10th were discarded.
+#
+# It's now 240 — the capacity of the IVS (cmap format-14) selector path
+# (ivs_handler: VS17…VS256 → variant indices 1…240). Variants beyond the
+# 9th that aren't reachable through a single-digit suffix ARE reachable
+# as `<base> + <variation selector>` on any VS-capable IME (and via the
+# multi-digit suffix `<char>11` / `<char>111` once liga_handler emits
+# those), so keeping them is useful rather than dead weight. 240 is the
+# hard ceiling of the IVS supplement range, so anything kept here stays
+# selectable by at least one mechanism; no realistic mapping has more
+# than a handful of readings for one character anyway (the truncation
+# branch below fires only a few times across the entire Mandarin set).
+MAX_CHAR_VARIANTS = 240
 # Tokens that mark a MUTED character inside a word (e.g. 毋 in the 合音
 # 拍毋見). "_" is canonical; "-", "∅", and the ideographic space are
 # accepted as aliases. All are normalised to the empty annotation.
@@ -57,6 +73,10 @@ THAI_RANGES = (
 
 DEVANAGARI_RANGES = (
     (0x0900, 0x097F),   # Devanagari (consonants, matras, digits ०-९)
+)
+
+MALAYALAM_RANGES = (
+    (0x0D00, 0x0D7F),   # Malayalam (consonants, matras, chillu, digits ൦-൯)
 )
 
 SIDDHAM_RANGES = (
@@ -137,6 +157,13 @@ WORD_SCRIPTS = {
     # word_liga_handler.py for the per-syllable shaping caveats.
     "deva": WordScript(
         "deva", DEVANAGARI_RANGES, True, "digits", None, "basic", "calt"
+    ),
+    # Experimental — Malayalam (മലയാളം). Like Devanagari it is a Brahmic
+    # abugida shaped by HarfBuzz's legacy Indic shaper, so it mirrors
+    # deva's "basic" component_mode / "calt" feature. Space-separated, so
+    # boundary_guards is True. See mappings/malayalam/NOTES.md.
+    "mlym": WordScript(
+        "mlym", MALAYALAM_RANGES, True, "digits", None, "basic", "calt"
     ),
     # Experimental — Siddhaṃ (悉曇文字). Structurally a Brahmic abugida
     # like Devanagari, but HarfBuzz shapes it with the Universal Shaping

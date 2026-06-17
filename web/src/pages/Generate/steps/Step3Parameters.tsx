@@ -374,22 +374,22 @@ const Step3Parameters = () => {
             sx={{ maxWidth: 220 }}
           />
           {/*
-            Output-ascent override — the in-browser counterpart of
-            wing-font.py's --out-ascent CLI flag and the CI matrix's
-            --out-ascent argument. Empty input keeps the base font's
-            ascent unchanged (the default for ~95 % of pairings); a
-            numeric value bumps hhea.ascent + OS/2.usWinAscent before
-            save, giving annotations headroom on low-ascent bases.
-
-            Concrete suggested values (visible in the helper copy):
-              * 1200 — Xiaolai + Thai / Katakana / Korean / Baybayin
-              * 1300 — Xiaolai + Urdu Nastaliq, or NotoSansHK + Urdu
-              * blank — every other pairing
+            Output-ascent control — the in-browser counterpart of
+            wing-font.py's --out-ascent CLI flag. Empty input is the
+            default and maps to out_ascent=null, which the Python
+            pipeline now treats as "auto": it measures the tallest
+            composed glyph's ink and raises hhea.ascent +
+            OS/2.usWinAscent just enough to clear it (sTypoAscender
+            untouched), so annotations aren't clipped on low-ascent
+            bases without anyone picking a number. A numeric value
+            pins an exact ascent and disables auto-fit — only needed
+            for a deliberately roomier line height (historically 1200
+            for Thai/Katakana/Korean, 1300 for Urdu Nastaliq).
 
             We type the input as plain text rather than `type=number`
             so an empty value is unambiguous (number inputs coerce ""
             to 0 in some browsers, which would unhelpfully change the
-            semantic). The parse path treats "" → null (inherit) and
+            semantic). The parse path treats "" → null (auto) and
             any other value → Number with a 0/NaN reject.
           */}
           <TextField

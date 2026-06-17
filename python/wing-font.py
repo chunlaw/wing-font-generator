@@ -171,6 +171,83 @@ def _auto_extend_vertical_metrics(output_font, word_metrics, margin=20):
         if ink_top > os2.sTypoAscender:
             os2.sTypoAscender = ink_top
 
+
+# Small headroom (font units, UPM=1000) added above the tallest
+# composed glyph's ink when auto-fitting the clipping ascent. Matches
+# the word-unit `_auto_extend_vertical_metrics` margin so the two paths
+# behave consistently. Just enough to clear winAscent-strict clipping
+# (Word / Pages / Keynote / Canva) without inflating line height the way
+# the old hand-tuned `--out-ascent 1200/1300` values did.
+AUTO_ASCENT_MARGIN = 20
+
+
+def _resolve_out_ascent(out_ascent):
+    """Normalise the many shapes `out_ascent` arrives in into a
+    ``(mode, explicit_value)`` pair.
+
+      * ``None``                         → ("auto", None)
+      * ``"auto"`` (any case)            → ("auto", None)
+      * ``"off"`` / ``"none"`` / ``0``   → ("off", None)
+      * a positive number or int-string → ("explicit", int(value))
+      * anything else (JsNull from the   → ("auto", None)
+        Pyodide bridge, stray types)
+
+    Modes:
+      * ``"auto"``     — widen the clipping ascent to fit the tallest
+        composed glyph (the new default). Done in `_auto_fit_ascent`.
+      * ``"explicit"`` — the caller pinned an exact ascent; set it
+        verbatim and DON'T auto-widen (respects hand-tuned CI values
+        like the Xiaolai+Urdu `--out-ascent 1300`).
+      * ``"off"``      — leave the base font's ascent untouched (the
+        pre-auto-fit legacy behaviour; opt back in with `--out-ascent
+        off`).
+    """
+    if out_ascent is None:
+        return ("auto", None)
+    if isinstance(out_ascent, str):
+        s = out_ascent.strip().lower()
+        if s in ("", "auto"):
+            return ("auto", None)
+        if s in ("off", "none"):
+            return ("off", None)
+        try:
+            v = int(float(s))
+        except ValueError:
+            return ("auto", None)
+        return ("explicit", v) if v > 0 else ("off", None)
+    if isinstance(out_ascent, (int, float)):
+        return ("explicit", int(out_ascent)) if out_ascent > 0 else ("off", None)
+    # JsNull / undefined / unexpected types from the worker bridge.
+    return ("auto", None)
+
+
+def _auto_fit_ascent(output_font, char_metrics, margin=AUTO_ASCENT_MARGIN):
+    """Widen (only) the output font's clipping ascent so the tallest
+    composed SINGLE-character glyph's ink fits with a small margin.
+
+    Touches ``hhea.ascent`` + ``OS/2.usWinAscent`` only — NOT
+    ``sTypoAscender`` — mirroring the explicit `--out-ascent` lever:
+    CJK single-char builds keep their typo-metrics line spacing (the
+    base fonts ship with USE_TYPO_METRICS off, so winAscent is what
+    renderers actually clip at). Widen-only: never lowers an ascent the
+    base font already set higher.
+
+    No-op when `char_metrics` carries no ``max_y`` — e.g. word-unit-only
+    builds, whose ascent/descent are handled by
+    `_auto_extend_vertical_metrics` instead.
+    """
+    if not char_metrics:
+        return
+    max_y = char_metrics.get("max_y")
+    if max_y is None:
+        return
+    ink_top = int(max_y) + margin
+    if ink_top > output_font["hhea"].ascent:
+        output_font["hhea"].ascent = ink_top
+    if ink_top > output_font["OS/2"].usWinAscent:
+        output_font["OS/2"].usWinAscent = ink_top
+
+
 def set_family_name(font, new_family_name):
     table = font["name"]
     for plat_id, enc_id, lang_id in (WINDOWS_ENGLISH_IDS, MAC_ROMAN_IDS):
@@ -514,8 +591,13 @@ def _format_cli_invocation(
         # Empty string is a legitimate value (disables the trigger
         # + numeral path); shlex.quote handles it correctly.
         parts.append(f"--trigger-char {shlex.quote(str(trigger_char))}")
-    if isinstance(out_ascent, (int, float)) and out_ascent > 0:
-        parts.append(f"--out-ascent {int(out_ascent)}")
+    # "auto" is the default — omit it. Surface an explicit pin or an
+    # opt-out ("off") so the printed command round-trips faithfully.
+    _asc_mode, _asc_val = _resolve_out_ascent(out_ascent)
+    if _asc_mode == "explicit":
+        parts.append(f"--out-ascent {_asc_val}")
+    elif _asc_mode == "off":
+        parts.append("--out-ascent off")
 
     # Variable-font axis pins: --base-axis TAG=VALUE / --anno-axis
     # TAG=VALUE, repeated per axis. Mirrors the CLI flag shape so the
@@ -561,26 +643,29 @@ def main(
     # entirely while leaving the universal digit-suffix path
     # (`行1`, `行2`, …) intact.
     trigger_char=DEFAULT_TRIGGER_CHAR,
-    # --- Output ascent override ------------------------------------
+    # --- Output ascent policy --------------------------------------
     #
-    # Raises the output font's hhea.ascent and OS/2.usWinAscent to
-    # the requested value (in font units, same UPM=1000 as
-    # everything else). Pairings where the annotation cascades far
-    # above the base character (Urdu Nastaliq, tall Thai marks,
-    # tall Hangul jamo) need more headroom than the base font's
-    # native ascent provides — without this lever, the annotation's
-    # top is clipped by apps that strictly honor winAscent (Word,
-    # Pages, Keynote, Canva). The cost is a slightly taller line
-    # height in those apps; the gain is the annotation actually
-    # being visible.
+    # Controls the output font's hhea.ascent and OS/2.usWinAscent (the
+    # "clipping" ascent honoured by Word, Pages, Keynote, Canva).
+    # Pairings where the annotation cascades far above the base
+    # character (Urdu Nastaliq, tall Thai marks, tall Hangul jamo) need
+    # more headroom than a low-ascent base (e.g. Xiaolai 880u) provides,
+    # or the annotation's top is clipped in those apps.
     #
-    # When None, the output keeps the BASE font's ascent unchanged
-    # (legacy behaviour — matches every build before the Xiaolai
-    # variant tuning of June 2026). When set, BOTH hhea.ascent and
-    # OS/2.usWinAscent are bumped together; sTypoAscender is left
-    # alone so the typographic baseline stays where designers
-    # expect it (apps that respect typo metrics get the same line
-    # spacing as before).
+    # Accepts (see _resolve_out_ascent):
+    #   * None / "auto"  → AUTO-FIT (default). After composition the
+    #     pipeline knows the tallest composed glyph's ink (char_metrics),
+    #     and widens hhea.ascent + usWinAscent just enough to clear it
+    #     (+AUTO_ASCENT_MARGIN). No guessing, no clipping. Widen-only —
+    #     a base font with a generous ascent is left as-is.
+    #   * a positive int → EXPLICIT pin. Sets both metrics to exactly
+    #     that value and skips auto-fit (honours hand-tuned values such
+    #     as the CI matrix's Xiaolai+Urdu 1300).
+    #   * "off"          → legacy behaviour: keep the BASE font's ascent
+    #     unchanged (matches builds before the June 2026 auto-fit).
+    #
+    # sTypoAscender is never touched here, so apps that respect typo
+    # metrics keep the base font's line spacing either way.
     out_ascent=None,
 ):
     # First log line: the equivalent CLI command this invocation
@@ -796,6 +881,12 @@ def main(
     # by buildWordLiga and the subset keep-list.
     word_components: dict = {}
 
+    # Filled with the extreme ink Y of the composed SINGLE-character
+    # glyphs (base + above/below annotation). Phase 4 uses max_y to
+    # auto-fit the output font's clipping ascent so tall annotations
+    # aren't truncated — the CJK counterpart to word_metrics.
+    char_metrics: dict = {}
+
     # ── Memory: drop CSV-parse transients before Phase 1 ─────────────
     # load_mapping does four stable sorts in succession (each allocates
     # a fresh list) plus builds char_cnt as a nested defaultdict that's
@@ -841,6 +932,7 @@ def main(
         ligature_carets=ligature_carets,
         word_metrics=word_metrics,
         word_components=word_components,
+        char_metrics=char_metrics,
     )
     # The base-font blob was only needed for HarfBuzz shaping of word
     # entries during composition; release it before the GSUB phase.
@@ -983,14 +1075,58 @@ def main(
             base_axis_location=base_axis_location,
         )
 
+        # Variation-selector codepoints for the IVS (cmap format-14)
+        # path. fontTools' subsetter drops the entire format-14 subtable
+        # unless the variation selectors are explicitly in the requested
+        # `unicodes` — a glyph-only `populate(glyphs=...)` keeps the
+        # variant *glyphs* but strips the `<base> + <VS>` mappings that
+        # reach them, silently disabling the IVS selector in every
+        # optimized (shipped) build. We mirror buildIvs's index→selector
+        # math (VS17 = U+E0100 for variant 1, capped at the U+E01EF
+        # supplement ceiling) so exactly the selectors buildIvs emitted
+        # survive the subset. Base codepoints don't need listing — their
+        # glyphs are already in the keep list, so the subsetter retains
+        # them and the UVS entries that point at retained glyphs.
+        from ivs_handler import IVS_BASE, IVS_LIMIT
+        ivs_unicodes = set()
+        for original_char, anno_strs_dict in char_mapping.items():
+            if len(original_char) != 1:
+                continue
+            for composed in anno_strs_dict.values():
+                if not isinstance(composed, tuple):
+                    continue
+                variant_index = composed[1]
+                if variant_index >= 1:
+                    vs = IVS_BASE + (variant_index - 1)
+                    if vs <= IVS_LIMIT:
+                        ivs_unicodes.add(vs)
+
         # Now apply the actual subset. The set of glyphs surviving might
         # be slightly larger than valid_glyphs_to_keep because the
         # Subsetter's GSUB closure pulls in any glyphs reachable via
         # lookups (notably the wingfont* variants). Unscaled extras are
         # rare and visually minor.
         with step_timer("font subset") as timer:
-            subsetter = subset.Subsetter()
-            subsetter.populate(glyphs=valid_glyphs_to_keep)
+            # Keep the base font's OS/2 ulUnicodeRange / ulCodePageRange
+            # bits. The defaults (prune_unicode_ranges /
+            # prune_codepage_ranges = True) RECOMPUTE these from the
+            # reduced cmap and, for a CJK subset, drop the "CJK Unified
+            # Ideographs (4E00-9FFF)" Unicode-range bit and the Big5/JIS
+            # codepage bits. Microsoft Word decides whether a font covers
+            # a CJK character from THESE bits, not the cmap — so a pruned
+            # font makes Word treat outliers like 啲 嘅 喺 (present in the
+            # cmap but in no advertised range/codepage) as uncovered and
+            # substitute a system CJK font, dropping the annotation. The
+            # output font is derived from the full base, so disabling
+            # pruning preserves the base's correct coverage advertisement.
+            sub_opts = subset.Options()
+            sub_opts.prune_unicode_ranges = False
+            sub_opts.prune_codepage_ranges = False
+            subsetter = subset.Subsetter(options=sub_opts)
+            subsetter.populate(
+                glyphs=valid_glyphs_to_keep,
+                unicodes=sorted(ivs_unicodes),
+            )
             subsetter.subset(output_font)
             timer.note(f"{len(valid_glyphs_to_keep)} glyphs kept")
     else:
@@ -1062,14 +1198,14 @@ def main(
     from fontTools.ttLib.tables.otBase import USE_HARFBUZZ_REPACKER
     output_font.cfg[USE_HARFBUZZ_REPACKER] = has_word_entries
 
-    # ── Ascent override (optional) ────────────────────────────────
-    # Bump the output font's vertical-metrics ascent values so the
-    # annotation has somewhere to grow. We touch:
+    # ── Ascent: auto-fit (default), explicit pin, or off ──────────
+    # Set the output font's clipping ascent so the annotation has
+    # somewhere to grow. We touch:
     #   * hhea.ascent      — used by macOS / iOS / CoreText layout
     #   * OS/2.usWinAscent — the "clipping" ascent honored by
     #                        Windows-derived apps (Word, Pages,
-    #                        Keynote, Canva). Without this, those
-    #                        apps clip anything above winAscent.
+    #                        Keynote, Canva). Without enough here,
+    #                        those apps clip anything above winAscent.
     # We deliberately leave OS/2.sTypoAscender unchanged: that's
     # the "designer's preferred baseline" used by apps that respect
     # typo metrics (Adobe InDesign, modern browsers in some
@@ -1080,18 +1216,23 @@ def main(
     # font's setting (NotoSansHK / Xiaolai both have it off, so
     # winAscent is what most renderers actually use).
     #
-    # ── Guard type ────────────────────────────────────────────────
-    # The CLI path passes either None (default) or argparse-parsed
-    # int. The in-browser path (worker → Pyodide) hands the value
-    # in via `pyodide.toPy(params)`, where JS `null` arrives as
-    # JsNull rather than Python `None` — a naive `is not None`
-    # check lets JsNull through and the subsequent `int()` raises
-    # TypeError. Asking for a real positive number explicitly
-    # short-circuits None, JsNull, undefined, 0, "", and any other
-    # "no override" shape uniformly.
-    if isinstance(out_ascent, (int, float)) and out_ascent > 0:
-        output_font["hhea"].ascent = int(out_ascent)
-        output_font["OS/2"].usWinAscent = int(out_ascent)
+    # `out_ascent` may be None/"auto" (auto-fit — the default), a
+    # positive int (explicit pin, no auto-fit), or "off" (legacy:
+    # leave the base ascent). `_resolve_out_ascent` normalises every
+    # shape it can arrive in — including the in-browser worker's
+    # JsNull (JS `null` through `pyodide.toPy`) — so the int() below
+    # never sees a non-numeric value.
+    out_ascent_mode, explicit_ascent = _resolve_out_ascent(out_ascent)
+    if out_ascent_mode == "explicit":
+        # Caller pinned an exact value — honour it verbatim and skip
+        # auto-fit (e.g. the CI matrix's hand-tuned Xiaolai+Urdu 1300).
+        output_font["hhea"].ascent = explicit_ascent
+        output_font["OS/2"].usWinAscent = explicit_ascent
+    elif out_ascent_mode == "auto":
+        # Widen the clipping ascent to clear the tallest composed
+        # single-char glyph's ink (no-op for word-unit-only builds —
+        # _auto_extend_vertical_metrics handles those just below).
+        _auto_fit_ascent(output_font, char_metrics)
 
     # ── Auto-extend metrics for word-unit (Arabic/Thai) outputs ───
     # Composed word glyphs can carry ink below the base font's
@@ -1155,25 +1296,24 @@ if __name__ == "__main__":
             "path: `<base><trigger><numeral>` → variant N. Default "
             f"`{DEFAULT_TRIGGER_CHAR}` (U+4E05). Pass an empty string "
             "to disable the trigger+numeral path while keeping "
-            "the digit-suffix path (`<base><1-9>`)."
+            "the digit-suffix path (`<base><number>`, e.g. `行1` … `行11`)."
         ),
     )
     parser.add_argument(
         '--out-ascent',
-        type=int,
-        default=None,
+        default="auto",
+        metavar="auto|off|INT",
         help=(
-            "Override the output font's hhea.ascent and "
-            "OS/2.usWinAscent (font units, UPM=1000). Pairings with "
-            "tall annotations (Urdu Nastaliq, tall Thai marks, "
-            "Hangul jamo on low-ascent bases like Xiaolai 880u) "
-            "need more headroom than the base font's native ascent. "
-            "Without this flag the output inherits the base font's "
-            "ascent and apps that strictly clip at winAscent (Word, "
-            "Pages, Keynote, Canva) truncate the top of the tallest "
-            "annotation. Typical values: 1200 for Xiaolai + Thai / "
-            "Katakana / Korean, 1300 for Xiaolai + Urdu. Leaving "
-            "unset preserves the previous behaviour."
+            "Output font's clipping ascent (hhea.ascent + "
+            "OS/2.usWinAscent; font units, UPM=1000). Default `auto` "
+            "fits it to the tallest composed glyph's ink so tall "
+            "annotations (Urdu Nastaliq, Thai marks, Hangul jamo on "
+            "low-ascent bases like Xiaolai 880u) aren't clipped by apps "
+            "that strictly honour winAscent (Word, Pages, Keynote, "
+            "Canva) — no manual tuning needed. Pass an integer to pin an "
+            "exact value (disables auto-fit; e.g. 1300 for Xiaolai + "
+            "Urdu). Pass `off` to keep the base font's ascent unchanged "
+            "(the pre-auto-fit behaviour)."
         ),
     )
     # ── Variable-font axis pin ─────────────────────────────────────
@@ -1242,6 +1382,20 @@ if __name__ == "__main__":
 
     base_axis_location = _parse_axis_args(options.base_axis, "base")
     anno_axis_location = _parse_axis_args(options.anno_axis, "anno")
+
+    # Validate --out-ascent up front so a typo fails loudly instead of
+    # silently falling back to auto inside main(). Accept auto / off /
+    # none / a positive integer.
+    _oa = str(options.out_ascent).strip().lower()
+    if _oa not in ("auto", "off", "none"):
+        try:
+            if int(_oa) <= 0:
+                raise ValueError
+        except ValueError:
+            parser.error(
+                f"--out-ascent expects 'auto', 'off', or a positive "
+                f"integer; got {options.out_ascent!r}"
+            )
 
     main(
         base_font_file = options.base_font_file,

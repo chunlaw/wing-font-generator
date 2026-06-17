@@ -525,7 +525,7 @@ export const TRANSLATIONS: Record<Language, Record<TranslationKey, string>> = {
       "「銀行 / 行人」中的「行」會自動切換不同讀音，源自 OpenType 的 ccmp 字體上下文替換規則。",
     "home.features.f3.title": "手動選擇變體",
     "home.features.f3.body":
-      "鍵入「字1」、「字2」可手動指定多音字的標注，方便糾正自動判斷。",
+      "鍵入「字1」、「字2」等可手動指定多音字的標注，方便糾正自動判斷（讀音超過九個的字用完整數字，例如「字11」）。",
     "home.features.f4.title": "完全本機運算",
     "home.features.f4.body":
       "你的字體與對應表全程不會離開瀏覽器，所有處理皆在本機進行。",
@@ -686,7 +686,7 @@ export const TRANSLATIONS: Record<Language, Record<TranslationKey, string>> = {
       "已停用「丅 + 中文數字」標注路徑；只能透過「字 + 0/1/2/…」的數字後綴方式手動切換多音字。",
     "step3.outAscent.label": "輸出字型上緣（字單位）",
     "step3.outAscent.hint":
-      "留空＝沿用底字型原本嘅 ascent。底字 ascent 較矮（如 Xiaolai 880u）配高標注（泰文、片假名、諺文：1200；烏爾都文 1300）就要填。當底字本身係上下堆疊嘅文字（泰文母音／聲調符、阿拉伯文）、標注要多啲頂部空間時亦適用。會同時調整 hhea.ascent 同 OS/2.usWinAscent，避免 Word / Pages / Canva 等程式裁切到標注頂。",
+      "留空＝自動（auto）：依最高嘅組合字墨水自動撐高 hhea.ascent 同 OS/2.usWinAscent，確保標注頂唔會俾 Word / Pages / Canva 等程式裁切，唔使自己估數值。sTypoAscender 維持不變，行距照舊。淨係想指定固定上緣（停用自動，例如想行距鬆啲）先至填數字。",
     "step3.cli.sectionLabel": "對應 CLI 指令",
     "step3.cli.helperText":
       "Clone wing-font-generator 後，可以喺 python/ 入面執行呢條指令本機重現同一個 build。檔案路徑用咗 repo 內嘅版面（input_fonts/、mappings/），自備字型嘅話請替換成你本機嘅實際路徑。",
@@ -926,7 +926,7 @@ export const TRANSLATIONS: Record<Language, Record<TranslationKey, string>> = {
       "Polyphonic characters auto-switch based on the surrounding word — e.g. 銀行 vs 行人 — via an OpenType Chain Contextual Substitution under the `ccmp` feature.",
     "home.features.f3.title": "Manual variant picker",
     "home.features.f3.body":
-      "Type `字1`, `字2`, etc. to manually choose a specific reading when the context isn't enough.",
+      "Type `字1`, `字2`, etc. to manually choose a specific reading when the context isn't enough (characters with more than nine readings use the full number, e.g. `字11`).",
     "home.features.f4.title": "Fully local",
     "home.features.f4.body":
       "Your fonts and mapping never leave your browser. Everything runs client-side.",
@@ -1088,10 +1088,10 @@ export const TRANSLATIONS: Record<Language, Record<TranslationKey, string>> = {
     "step3.triggerChar.hint":
       "Types as `<char><trigger><numeral>` (e.g. 行 + trigger + 一) to manually pick a variant. Default `丅` (U+4E05) is deliberately rare so it doesn't collide with normal text — replace it with whatever your IME can produce easily (e.g. `々`, `〇`).",
     "step3.triggerChar.hintDisabled":
-      "Trigger+numeral override is disabled. Users can still pick variants with the universal digit-suffix path (`<char><1-9>`).",
+      "Trigger+numeral override is disabled. Users can still pick variants with the universal digit-suffix path (`<char><number>`, e.g. `字1` … `字11`).",
     "step3.outAscent.label": "Output ascent (font units)",
     "step3.outAscent.hint":
-      "Blank = inherit from the base font. Fill in when the base has a low native ascent (e.g. Xiaolai 880u) paired with a tall annotation: 1200 for Thai / Katakana / Hangul, 1300 for Urdu Nastaliq. Also useful when the BASE itself is a tall-stacking script (Thai vowels/tone marks, Arabic) and the annotation needs extra headroom above it. Bumps hhea.ascent + OS/2.usWinAscent together so Word / Pages / Canva don't clip the top of the annotation.",
+      "Blank = auto: the build measures the tallest composed glyph and raises hhea.ascent + OS/2.usWinAscent just enough to clear it, so Word / Pages / Canva don't clip the top of the annotation — no guessing a value. sTypoAscender is left alone, so line spacing is unchanged. Fill in a number only to pin an exact ascent (disables auto-fit) — e.g. a deliberately roomier line height.",
     "step3.cli.sectionLabel": "Equivalent CLI command",
     "step3.cli.helperText":
       "Run this from `python/` in a wing-font-generator checkout to reproduce the same build locally. File paths use the repo layout (input_fonts/, mappings/); substitute your actual local paths for any custom-uploaded fonts.",

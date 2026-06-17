@@ -248,15 +248,14 @@ def generate(
     # forwards it to liga_handler.buildLiga(). Default `丅` (U+4E05);
     # empty string disables the trigger+numeral path entirely.
     trigger_char: str = "丅",
-    # Optional override of the output font's clipping ascent
-    # (hhea.ascent + OS/2.usWinAscent). Pairings where the
-    # annotation cascades far above the base character (Urdu
-    # Nastaliq, tall Thai marks, tall Hangul jamo) need more
-    # headroom than the base font's native ascent provides. None
-    # = keep the base's ascent unchanged (legacy behaviour);
-    # numeric = clamp ascent to that font-unit value before save.
-    # See wing-font.py's --out-ascent flag for the same lever
-    # exposed at the CLI.
+    # Output font's clipping ascent (hhea.ascent + OS/2.usWinAscent)
+    # policy, forwarded to main(). None (the default) means AUTO-FIT:
+    # main() raises the ascent to clear the tallest composed glyph's
+    # ink so annotations on low-ascent bases (Urdu Nastaliq, tall Thai
+    # marks, Hangul jamo) aren't clipped — no value to guess. A numeric
+    # value pins an exact ascent (disables auto-fit). See wing-font.py's
+    # --out-ascent flag / _resolve_out_ascent for the full policy
+    # (including the "off" opt-out, which the CLI exposes).
     out_ascent: int | None = None,
     progress_cb=None,
 ):

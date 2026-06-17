@@ -29,7 +29,7 @@ Multi-character rows also seed **word-context disambiguation**: because
 行 reads `hong4` in 銀行 but `hang4` alone, listing the word fixes the
 contextual reading.
 
-**Word-unit scripts (Arabic, Thai, Devanagari/Hindi) — per word.** The
+**Word-unit scripts (Arabic, Thai, Devanagari/Hindi, Malayalam) — per word.** The
 whole word becomes one glyph, and the entire second column is its
 annotation (it may contain spaces):
 
@@ -78,6 +78,7 @@ Apply the standard the file already uses; don't mix schemes within a file.
 | Arabic | `arabic-romanization` | **DIN 31635** — see `arabic-romanization-NOTES.md` |
 | Thai | `thai-paiboon` | Paiboon — see `thai-paiboon-NOTES.md` |
 | Hindi | `hindi-romanization` | **ISO 15919** with Hindi schwa deletion (राम → rām) |
+| Malayalam | `malayalam-romanization` | **ISO 15919** (short/long e·o distinguished, chillu letters; no schwa deletion) — see `malayalam/NOTES.md` |
 | Cross-script (CJK→other) | `canto-katakana`, `canto-hindi`, `canto-korean`, `canto-thai`, `canto-urdu` | Transliteration into the target script — see the per-file `*-NOTES.md` |
 
 DIN 31635 uses single-character diacritic forms (ḫ ġ ṯ ḏ š), **not**
