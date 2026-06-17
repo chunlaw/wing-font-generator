@@ -234,6 +234,18 @@ export const BUILT_IN_ANNO_FONTS: BuiltInPreset[] = [
     url: "/wingfont/Huninn-Regular.ttf",
     filename: "Huninn-Regular.ttf",
   },
+  // Huninn variant whose combining tone diacritics are purpose-drawn
+  // for tonemark-romanization output (Cantonese 粵拼 LSHK, Tâi-lô,
+  // POJ) instead of relying on the stock combining-mark behaviour.
+  // Identical glyph coverage to anno-huninn otherwise; powers the
+  // NotoSansHK-Huninn-tonemark showcase pairing. Pair with any CJK
+  // base font (Noto Sans HK / TC, ChironSung, etc.).
+  {
+    key: "anno-huninn-tonemark",
+    label: "Huninn 粉圓・調符 (粵拼 / Tâi-lô tonemark)",
+    url: "/wingfont/Huninn-Regular-tonemark.ttf",
+    filename: "Huninn-Regular-tonemark.ttf",
+  },
   {
     key: "anno-notoserif-r",
     label: "Noto Serif Regular (Latin)",

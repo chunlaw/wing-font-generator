@@ -223,6 +223,12 @@ const MANIFEST = [
     "NotoSansSC-VariableFont_wght.ttf",
   ],
   ["input_fonts/Huninn-Regular.ttf", "Huninn-Regular.ttf"],
+  // Huninn variant whose combining tone diacritics are purpose-drawn
+  // for tonemark-romanization output (粵拼 LSHK / Tâi-lô / POJ) instead
+  // of relying on the font's stock combining-mark behaviour. Powers
+  // the NotoSansHK-Huninn-tonemark showcase pairing. Pair as the
+  // ANNOTATION font alongside a CJK base like Noto Sans HK / TC.
+  ["input_fonts/Huninn-Regular-tonemark.ttf", "Huninn-Regular-tonemark.ttf"],
   // Mengshen-equivalent Mandarin pairing (普通話 pinyin). Source Han
   // Serif + M+ 1m reproduces Mengshen's Serif product; Xiaolai + M+
   // Rounded 1c reproduces its Handwritten product (M+ Rounded is an
