@@ -116,15 +116,29 @@ const Specimen = () => {
 
   const isLoading = Boolean(loadingFonts[fontOption.name]);
 
-  // SEO meta — interpolate the font's displayName into the
-  // i18n template (`meta.specimen.title` / `meta.specimen.description`
-  // contain a {name} placeholder). canonicalPath includes the
-  // family name so each specimen page has its own canonical URL,
-  // letting Google index all 28 specimen variants as distinct
-  // resources for long-tail "[font name] download" queries.
+  // SEO meta — interpolate the font's displayName AND its dialect into
+  // the i18n template (`meta.specimen.title` / `meta.specimen.description`
+  // carry {name} and {dialect} placeholders). The description introduces
+  // what the font IS (a {dialect} font with pronunciation annotations)
+  // and how it's produced (Wing Font composes open-source base +
+  // annotation fonts), so the prerendered <head> of every specimen page
+  // gives crawlers and social unfurlers font-specific, descriptive copy
+  // instead of one generic blurb. canonicalPath includes the family name
+  // so each specimen page has its own canonical URL, letting Google index
+  // every variant as a distinct resource for long-tail
+  // "[font name] download" queries.
+  //
+  // `dialectLabel` is undefined only for off-catalog / user-generated
+  // fonts (not prerendered); fall back to a generic "Chinese" / "中文"
+  // so the placeholder never leaks into the rendered tag.
+  const dialectForMeta = dialectLabel ?? (lang === "zh" ? "中文" : "Chinese");
   useDocumentMeta(
-    t("meta.specimen.title").replace("{name}", fontOption.displayName),
-    t("meta.specimen.description").replace("{name}", fontOption.displayName),
+    t("meta.specimen.title")
+      .replace("{name}", fontOption.displayName)
+      .replace("{dialect}", dialectForMeta),
+    t("meta.specimen.description")
+      .replace("{name}", fontOption.displayName)
+      .replace("{dialect}", dialectForMeta),
     { canonicalPath: `/specimen/${fontOption.name}` },
   );
 

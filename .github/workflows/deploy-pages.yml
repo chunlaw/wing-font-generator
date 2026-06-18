@@ -511,6 +511,16 @@ jobs:
           node-version: '20'
           cache: 'yarn'
           cache-dependency-path: web/yarn.lock
+      - name: Cache Puppeteer browser
+        # puppeteer's postinstall downloads a pinned Chrome-for-Testing
+        # build into ~/.cache/puppeteer (~150 MB). Cache it keyed on the
+        # lockfile so we only re-download when the puppeteer version
+        # changes, not on every run. The prerender step below launches
+        # this browser to snapshot each route.
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/puppeteer
+          key: puppeteer-${{ runner.os }}-${{ hashFiles('web/yarn.lock') }}
       - name: Install dependencies
         run: yarn install --frozen-lockfile
       - name: Type-check + Vite build
@@ -518,6 +528,14 @@ jobs:
         # mirrors Python sources into dist/wingfont for the Pyodide
         # worker — same as the old build-demo step.
         run: yarn build
+      - name: Prerender routes for SEO + social unfurling
+        # Drives headless Chrome over every URL in public/sitemap.xml and
+        # writes a static, fully-rendered .html per route into dist/ (so
+        # crawlers and social unfurlers get real per-route markup + meta
+        # instead of the empty SPA shell). Runs after the Vite build and
+        # mutates dist/ in place, so the upload below carries the
+        # prerendered files. See web/scripts/pre-rendering.mjs.
+        run: yarn prerender
       - name: Upload web dist
         uses: actions/upload-artifact@v4
         with:

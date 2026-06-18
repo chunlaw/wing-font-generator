@@ -1,3 +1,4 @@
+import { useEffect } from "react";
 import { BrowserRouter, Route, Routes } from "react-router-dom";
 import Layout from "./components/layouts/Layout";
 import About from "./pages/About";
@@ -26,6 +27,24 @@ import Generate from "./pages/Generate";
  * git churn.
  */
 function App() {
+  // ── Build-time prerender signal ────────────────────────────────────
+  // scripts/pre-rendering.mjs loads each route in headless Chrome and
+  // snapshots the DOM to a static .html file (so crawlers and social
+  // unfurlers see real per-route markup + meta instead of the empty SPA
+  // shell). It waits for `window.__PRERENDER_READY__` before snapshotting.
+  //
+  // This effect is the signal. It runs in App, the tree's root component,
+  // so React's bottom-up passive-effect ordering guarantees it fires
+  // AFTER the matched route's `useDocumentMeta` effect has already set
+  // document.title + the og/twitter/canonical tags. By the time the flag
+  // flips true, the head reflects the current route and the DOM is safe
+  // to capture. No-op in normal browsers (nothing reads the flag).
+  useEffect(() => {
+    (
+      window as unknown as { __PRERENDER_READY__?: boolean }
+    ).__PRERENDER_READY__ = true;
+  }, []);
+
   return (
     <BrowserRouter>
       <Routes>
