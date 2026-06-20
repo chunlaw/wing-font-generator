@@ -479,7 +479,7 @@ export const TRANSLATIONS: Record<Language, Record<TranslationKey, string>> = {
     // Home
     "home.hero.title": "Wing Font",
     "home.hero.tagline":
-      "在純文字裡將標注直接顯示在漢字上方 — 毋須 HTML 標記、毋須額外排版，只要載入字體就行。",
+      "純文字就將拼音、注音等標注直接顯示喺漢字上方 —— Word、Pages、Canva、Adobe、瀏覽器全部都用得，跨平台、跨系統，毋須 HTML 標記或外掛。更可自選粵拼、拼音、台羅等方案，甚至自訂規則，生成專屬字體。",
     "home.hero.sampleCaption":
       "上面是純 UTF-8 文字，標注由 Wing Font 即時渲染。",
     "home.hero.cta.generate": "自製你的字體",
@@ -882,7 +882,7 @@ export const TRANSLATIONS: Record<Language, Record<TranslationKey, string>> = {
     // Home
     "home.hero.title": "Wing Font",
     "home.hero.tagline":
-      "Show pronunciation annotations above Chinese characters in plain text — no HTML markup, no special apps, just install the font.",
+      "Show pronunciation annotations right above Chinese characters in plain text — works in Word, Pages, Canva, Adobe, and browsers, across every OS, with no HTML markup or plugins. Generate one for Jyutping, Pinyin, Tâi-lô, or your own custom scheme.",
     "home.hero.sampleCaption":
       "Plain UTF-8 text above, rendered by Wing Font itself.",
     "home.hero.cta.generate": "Generate your own font",

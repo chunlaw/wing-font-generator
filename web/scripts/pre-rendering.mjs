@@ -179,6 +179,43 @@ export async function readRoutes(sitemapPath = SITEMAP) {
   return routes;
 }
 
+/**
+ * Runs INSIDE the page (via page.evaluate) right before the snapshot to
+ * fix the flash-of-unstyled-content problem.
+ *
+ * MUI/Emotion inject their CSS through the CSSOM (`insertRule`) in
+ * production "speedy" mode, which leaves the `<style data-emotion>` tags
+ * EMPTY when the DOM is serialized — so the raw prerendered HTML would
+ * render unstyled until the SPA boots. We read the live rules straight
+ * from `document.styleSheets` (populated even in speedy mode, unlike the
+ * tags' textContent), drop the now-redundant empty emotion tags, and
+ * write one consolidated `<style data-prerender-css>` into <head>. The
+ * static file is then fully styled before any JS runs.
+ *
+ * External `<link>` stylesheets (the Vite-built CSS) are skipped — they
+ * carry an `href` and load on their own, so there's no need to inline
+ * them. Self-contained (no closure refs) so Puppeteer can serialize it.
+ */
+export function inlineRuntimeCss() {
+  let css = "";
+  for (const sheet of Array.from(document.styleSheets)) {
+    if (sheet.href) continue;
+    try {
+      for (const rule of Array.from(sheet.cssRules)) css += rule.cssText;
+    } catch {
+      // Cross-origin sheet without CORS — rules aren't readable. (The
+      // prerenderer blocks cross-origin requests anyway, so this is rare.)
+    }
+  }
+  document.querySelectorAll("style[data-emotion]").forEach((el) => el.remove());
+  if (css) {
+    const style = document.createElement("style");
+    style.setAttribute("data-prerender-css", "");
+    style.textContent = css;
+    document.head.appendChild(style);
+  }
+}
+
 /** Map a route pathname to its output file under a dist dir. */
 export function outFileFor(route, distDir = DIST) {
   if (route === "/" || route === "") return path.join(distDir, "index.html");
@@ -270,6 +307,10 @@ async function main() {
       await page.evaluate(
         () => new Promise((r) => requestAnimationFrame(() => r(null))),
       );
+
+      // Inline the runtime CSS-in-JS styles so the snapshot is fully
+      // styled (no flash of unstyled content before the SPA boots).
+      await page.evaluate(inlineRuntimeCss);
 
       const html = await page.content();
       const out = outFileFor(route);
