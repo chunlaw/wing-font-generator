@@ -186,6 +186,146 @@ def get_glyph_name_by_char(font, char):
     return None
 
 
+def ensure_trigger_char_glyph(output_font, trigger_char: str) -> bool:
+    """
+    Guarantee that ``trigger_char`` (the IME-friendly variant-picker
+    separator, default ``丅`` U+4E05) is encoded in ``output_font``'s
+    cmap. If it's missing, inject a zero-width empty glyph and add the
+    codepoint→glyph mapping to every Unicode cmap subtable that can
+    legally carry it.
+
+    Why this is necessary
+    ---------------------
+
+    ``liga_handler.buildLiga`` emits ``(base, trigger, numeral) →
+    variant`` ligature rules under the ``ccmp`` feature for IMEs that
+    can't easily type Latin digits. For the ligature to fire at runtime
+    the shaper must encounter all three components in a single shaping
+    run. If ``trigger_char`` is missing from the font's cmap, two things
+    break:
+
+      1. ``get_glyph_name_by_char(font, trigger_char)`` returns None, so
+         ``buildLiga`` silently skips the trigger-numeral path entirely.
+      2. Even if the rule were emitted, typing ``丅`` in Word would
+         trigger DirectWrite font-fallback for that one glyph, splitting
+         ``[base][丅][numeral]`` across two fonts. Ligature substitution
+         can't bridge that fallback split.
+
+    The fix is the same in both cases: make sure the font owns a glyph
+    for ``trigger_char`` so the shaper keeps all three components in one
+    run owned by us. The glyph itself doesn't need to render anything
+    meaningful — when the ligature fires it gets consumed and replaced;
+    when the user types the trigger without a numeral after it, the
+    zero-width invisible glyph keeps the text reading naturally (``呀丅``
+    visually = ``呀`` with the trigger silently held in the buffer).
+
+    NotoSansHK / NotoSansTC / Huninn / NotoSerif don't ship ``丅`` (U+4E05)
+    — only ChironHei / ChironSung do. So absent this helper, every
+    Cantonese / Taiwanese / Latin annotation font built on a Noto base
+    has a broken trigger-numeral path. That's why this runs in
+    ``wing-font.py``'s Phase 2 unconditionally.
+
+    Returns
+    -------
+    True  - the glyph was injected (caller may want to log it).
+    False - no-op (empty trigger_char, already present, or font lacks
+            a glyf table — CFF fonts hit the last case; the standard
+            pipeline only sees TTF inputs, so that path stays a warning
+            rather than an error).
+    """
+    if not trigger_char:
+        return False
+    if len(trigger_char) != 1:
+        # buildLiga's contract is single-codepoint trigger; defend here too.
+        return False
+
+    cp = ord(trigger_char)
+    # If any cmap subtable already encodes the trigger, we're done. We
+    # check the "best" cmap (the one shapers actually consult) rather
+    # than the union of every subtable — a codepoint present only in,
+    # say, a Mac-specific format-0 table wouldn't help DirectWrite, and
+    # injecting into the BMP / full-Unicode subtables fixes that.
+    best = output_font.getBestCmap() or {}
+    if cp in best:
+        return False
+
+    # CFF fonts have a "CFF " or "CFF2" outline table instead of "glyf".
+    # Injecting outlines into CFF requires a CharString builder — out of
+    # scope for the standard TTF pipeline. Warn and bail; the trigger
+    # path will stay broken for that font, but every other GSUB path
+    # still works.
+    if "glyf" not in output_font:
+        print(
+            f"Warning: ensure_trigger_char_glyph: output font has no 'glyf' "
+            f"table; cannot inject trigger char U+{cp:04X}. The "
+            f"(base, trigger, numeral) ligature path will be skipped."
+        )
+        return False
+
+    # Pick a glyph name that won't collide. The conventional Adobe Glyph
+    # List form `uniXXXX` for BMP / `uXXXXX` for non-BMP is what most
+    # tools expect, and it's exactly what the source font's own cmap
+    # uses for its CJK ideographs (e.g. uni5440 for 呀). Suffix only on
+    # collision — fontTools' glyphOrder is a flat list, name reuse
+    # would corrupt the mapping.
+    base_name = f"uni{cp:04X}" if cp <= 0xFFFF else f"u{cp:05X}"
+    glyph_order = output_font.getGlyphOrder()
+    glyph_name = base_name
+    suffix = 1
+    while glyph_name in glyph_order:
+        glyph_name = f"{base_name}.wf{suffix}"
+        suffix += 1
+
+    # Build an empty glyph — zero contours, zero advance, zero LSB. The
+    # glyf table's __setitem__ both stores the glyph AND appends the
+    # name to its OWN glyphOrder. We then sync that up to the font-
+    # level glyph order via setGlyphOrder() so downstream consumers
+    # (subsetter, CFF builders, hb-shape) see a consistent list — same
+    # pattern build_glyph.py uses after adding wingfont* glyphs.
+    from fontTools.ttLib.tables._g_l_y_f import Glyph
+    empty_glyph = Glyph()
+    empty_glyph.numberOfContours = 0
+
+    output_font["glyf"][glyph_name] = empty_glyph
+    output_font["hmtx"][glyph_name] = (0, 0)
+
+    # vmtx: only present on CJK fonts that support vertical typesetting.
+    # When present, fontTools' vmtx compiler requires an entry for every
+    # glyph in the glyph order — leaving it unset crashes save(). Match
+    # the pattern in build_glyph.py: width = units_per_em, tsb = 0.
+    if "vmtx" in output_font:
+        upm = output_font["head"].unitsPerEm
+        output_font["vmtx"][glyph_name] = (upm, 0)
+
+    # Add the codepoint→glyph mapping to every Unicode cmap subtable. We
+    # add to all of them (not just the "best") so legacy consumers that
+    # read format 4 instead of format 12 still see the trigger. The
+    # subtable formats we touch: 0 (Mac), 4 (BMP), 6 (trimmed mapping),
+    # 10 (trimmed array), 12 (segmented coverage, full Unicode), 13
+    # (many-to-one mappings). Format 14 is variation selectors only —
+    # skip; it has no .cmap dict to mutate.
+    UNICODE_CMAP_FORMATS = {0, 4, 6, 10, 12, 13}
+    for subtable in output_font["cmap"].tables:
+        if subtable.format not in UNICODE_CMAP_FORMATS:
+            continue
+        # Format-0 only covers U+0000..U+00FF — skip BMP/SMP additions
+        # that would overflow it.
+        if subtable.format == 0 and cp > 0xFF:
+            continue
+        # Format-4 is BMP only — skip non-BMP additions that would
+        # overflow its uint16 codepoints.
+        if subtable.format == 4 and cp > 0xFFFF:
+            continue
+        subtable.cmap[cp] = glyph_name
+
+    # Sync font.glyphOrder with glyf.glyphOrder (the glyf table mutates
+    # its own copy on __setitem__; the font-level copy doesn't refresh
+    # automatically). Mirrors the call at the end of
+    # generate_annotated_glyphs in build_glyph.py.
+    output_font.setGlyphOrder(output_font["glyf"].glyphOrder)
+    return True
+
+
 def clear_source_layout_lookups(output_font) -> int:
     """
     Strip the source font's existing GSUB lookups (and the feature records

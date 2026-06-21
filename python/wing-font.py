@@ -15,7 +15,7 @@ import gc
 import sys
 import argparse
 from fontTools import subset
-from utils import get_glyph_name_by_char, step_timer
+from utils import ensure_trigger_char_glyph, get_glyph_name_by_char, step_timer
 import string
 
 WINDOWS_ENGLISH_IDS = 3, 1, 0x409
@@ -1285,6 +1285,17 @@ def main(
     # digit-suffix and 丅+numeral paths in liga_handler stay as
     # human-readable fallbacks for users without VS input.
     buildChainSub(output_font, word_mapping, char_mapping)
+    # Auto-inject the trigger glyph into the output font's cmap if the
+    # base font doesn't already encode it. Without this, NotoSansHK /
+    # NotoSansTC / Huninn / NotoSerif-based outputs silently lose the
+    # (base, trigger, numeral) ligature path entirely — `丅` (U+4E05)
+    # isn't in any of those cmaps, only the Chiron pair has it. The
+    # injection is a zero-width empty glyph so the trigger reads as
+    # invisible when typed bare (clean partial-input UX) and gets
+    # consumed by the ligature when the user completes the sequence.
+    # See utils.ensure_trigger_char_glyph for the full rationale.
+    if trigger_char:
+        ensure_trigger_char_glyph(output_font, trigger_char)
     buildLiga(output_font, char_mapping, trigger_char=trigger_char)
     buildIvs(output_font, char_mapping)
 
