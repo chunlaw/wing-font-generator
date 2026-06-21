@@ -1437,6 +1437,49 @@ def main(
             )
             subsetter.subset(output_font)
             timer.note(f"{len(valid_glyphs_to_keep)} glyphs kept")
+
+        # ── Restore OS/2 cp1252 (Latin 1) codepage declaration ───────
+        #
+        # The subsetter's `prune_codepage_ranges=True` default clears
+        # bits in OS/2.ulCodePageRange1 whose codepages aren't fully
+        # covered by the surviving cmap. After subsetting, the output
+        # font keeps ~all of ASCII (94/95 chars) but only 1/96 of the
+        # Latin-1 supplement and 6/27 of the cp1252 C1 specials, so
+        # the pruner clears bit 0 (cp1252 / Western European). The
+        # source NotoSansHK had bit 0 = 1; our output has bit 0 = 0.
+        #
+        # Why that matters for Word: DirectWrite consults
+        # ulCodePageRange when itemising mixed CJK + Latin runs. With
+        # cp1252 bit = 0 the font is treated as "doesn't really cover
+        # Western text", so ASCII characters typed inside a Chinese
+        # text run get routed to the document's default Latin font
+        # (Calibri / Times) — EVEN WHEN the font has the glyphs.
+        # `呀1` becomes [呀 from our font] + [1 from Calibri], two
+        # font runs, and the (uni5440, one) → variant ligature in our
+        # ccmp lookup can't span that boundary. The user sees `呀1`
+        # rendered with the trailing `1` in a different typeface, with
+        # the ligature never firing.
+        #
+        # The ASCII portion of cp1252 IS present in our output (94/95
+        # — only U+007F DEL is missing, which is non-printable), so
+        # claiming cp1252 isn't a meaningful lie about coverage. We
+        # OR the source font's codepage bits back in rather than just
+        # forcing bit 0: same logic applies to anyone who types text
+        # from any of the other codepages the source claimed, and the
+        # CJK bits (which would have already been correct in the
+        # output) become idempotent under the OR.
+        #
+        # Distinct from ulUnicodeRange: we don't restore those bits
+        # because Unicode-range bits drive script-level font matching
+        # and lying about, say, "we have Greek" could cause Word to
+        # pick us for Greek text and render tofu. Codepage bits drive
+        # mixed-run itemisation and are safe to claim with partial
+        # coverage as long as the typical ASCII subset is present.
+        out_os2 = output_font["OS/2"]
+        src_os2 = base_font["OS/2"]
+        out_os2.ulCodePageRange1 |= src_os2.ulCodePageRange1
+        out_os2.ulCodePageRange2 |= src_os2.ulCodePageRange2
+
         # NB: an earlier edit downgraded OS/2 from v4 to v3 here in
         # the belief that Word's HKSCS routing keyed on the version
         # field. A/B testing eventually showed the actual gate is
