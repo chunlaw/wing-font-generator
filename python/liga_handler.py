@@ -79,6 +79,12 @@ from utils import get_glyph_name_by_char, register_feature_lookup, step_timer
 _CHINESE_NUMERALS = ("零", "一", "二", "三", "四", "五", "六", "七", "八", "九")
 DEFAULT_TRIGGER_CHAR = "丅"
 
+# Fullwidth digit codepoint base: U+FF10 ＝ FULLWIDTH DIGIT ZERO. Each
+# offset 0..9 from here gives the matching fullwidth digit (U+FF11 ＝ ＝
+# `１`, etc). Used by the parallel fullwidth-digit ligature path —
+# see `_resolve_fullwidth_digits` for why this exists separately.
+_FULLWIDTH_DIGIT_BASE = 0xFF10
+
 # OpenType Ligature Substitution (GSUB4) uses uint16 offsets within each
 # subtable. A subtable with thousands of ligatures will overflow that
 # 64KB budget — fontTools' auto-splitter has a bug here too
@@ -128,6 +134,21 @@ def buildLiga(
         gsub = output_font["GSUB"].table
 
         digit_glyphs = _resolve_digits(output_font)
+        # Parallel fullwidth-digit path. Empirically, DirectWrite's
+        # text itemiser keeps East-Asian-Width=Fullwidth characters in
+        # the surrounding Han shaping run, where it splits EAW=Narrow
+        # ASCII digits into a separate run. The practical consequence
+        # is that `(base, ASCII_digit) → variant` ligatures fail in
+        # Microsoft Word (run boundary breaks the ligature match) but
+        # `(base, FW_digit) → variant` ligatures fire correctly.
+        # Shipping both paths covers all shapers: HarfBuzz / CoreText
+        # / mobile merge Common script into surrounding context, so
+        # ASCII digits work there; DirectWrite needs the fullwidth
+        # path. The two paths never share a rule (`(base, FW1, ASCII1)`
+        # is intentionally NOT emitted), so a mixed-input sequence
+        # like `呀１1` falls back to the longest matching prefix
+        # (`呀１` → variant 1, followed by literal `1`).
+        fullwidth_digit_glyphs = _resolve_fullwidth_digits(output_font)
         # Empty trigger_char disables the trigger+numeral path. We still
         # honour the digit-suffix rules in that case so the user can
         # always override via the universal Latin-digit path.
@@ -138,7 +159,11 @@ def buildLiga(
         )
         numeral_glyphs = _resolve_chinese_numerals(output_font)
 
-        if not digit_glyphs and not (trigger_glyph and numeral_glyphs):
+        if (
+            not digit_glyphs
+            and not fullwidth_digit_glyphs
+            and not (trigger_glyph and numeral_glyphs)
+        ):
             timer.note("skipped — no triggers available")
             return
 
@@ -192,6 +217,20 @@ def buildLiga(
                 index_to_glyph=index_to_glyph,
                 digit_glyphs=digit_glyphs,
             )
+            # Parallel fullwidth-digit rules — same builder, same
+            # decimal-encoding logic (`(base, FW1, FW1)` for variant
+            # 11), distinct glyph tuples so the halfwidth and
+            # fullwidth coverage sets coexist without collision.
+            # `_add_digit_rules` is generic over its `digit_glyphs`
+            # arg — same function, different glyph dict.
+            if fullwidth_digit_glyphs:
+                _add_digit_rules(
+                    liga_builder,
+                    base_glyph=default_glyph_name,
+                    default_glyph=default_glyph_name,
+                    index_to_glyph=index_to_glyph,
+                    digit_glyphs=fullwidth_digit_glyphs,
+                )
             if trigger_glyph and numeral_glyphs:
                 _add_chinese_numeral_rules(
                     liga_builder,
@@ -248,6 +287,34 @@ def _resolve_digits(font) -> Dict[int, str]:
             glyphs[i] = name
     if not glyphs:
         print("Warning: no ASCII-digit glyphs found; digit-trigger rules will be skipped.")
+    return glyphs
+
+
+def _resolve_fullwidth_digits(font) -> Dict[int, str]:
+    """Resolve glyph names for FULLWIDTH digits ０..９ (U+FF10–FF19).
+
+    Parallel to `_resolve_digits` but for fullwidth digits. Unicode
+    tags these as ``Script=Common`` (same as ASCII digits) but with
+    ``East_Asian_Width=F``, and the EAW property is what DirectWrite's
+    itemiser actually uses to decide whether to merge into the
+    surrounding Han shaping run. Returning a non-empty dict here is
+    what enables `(base, fullwidth_digit_sequence) → variant`
+    ligatures to be emitted in `buildLiga` alongside the existing
+    halfwidth set. Returns an empty dict — and skips emission — for
+    fonts that don't carry the fullwidth glyphs (mostly non-CJK
+    annotation fonts that we don't ship as base fonts anyway).
+    """
+    glyphs: Dict[int, str] = {}
+    for i in range(10):
+        ch = chr(_FULLWIDTH_DIGIT_BASE + i)
+        name = get_glyph_name_by_char(font, ch)
+        if name:
+            glyphs[i] = name
+    if not glyphs:
+        print(
+            "Warning: no fullwidth-digit glyphs found; "
+            "fullwidth-digit trigger rules will be skipped."
+        )
     return glyphs
 
 

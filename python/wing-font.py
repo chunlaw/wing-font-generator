@@ -1354,6 +1354,19 @@ def main(
             + string.ascii_letters
             + '，。！？《》「」『』｛｝〖〗【】［］、……——＠＃￥％＆＊+-/“”：；‘’／'
             + '丅零一二三四五六七八九'
+            # Fullwidth digits ０..９ (U+FF10–FF19). The subsetter's
+            # cmap rebuild drops codepoints not in this keep list even
+            # when their target glyphs survive via GSUB closure (our
+            # (base, FW_digit) → variant ligatures keep the glyphs
+            # alive but the codepoint→glyph cmap entry would be
+            # discarded). Without these chars listed here Word's
+            # DirectWrite can't find U+FF10–FF19 in our font and
+            # falls back to a system font for them, which both
+            # splits the shaping run (defeating the EAW=F merge
+            # behaviour we're relying on) and renders the digit in
+            # a different typeface from the surrounding CJK. Listing
+            # them ensures both the codepoints and the glyphs survive.
+            + '０１２３４５６７８９'
         )
         for char in chars_to_keep_additionally:
             glyph_name = get_glyph_name_by_char(base_font, char)
