@@ -498,7 +498,7 @@ export const TRANSLATIONS: Record<Language, Record<TranslationKey, string>> = {
     "home.platforms.tabs.adobe":
       "1. 先在作業系統安裝字型。\n2. 關閉並重新開啟 Adobe Illustrator / Photoshop / InDesign。\n3. 字型會以家族名稱出現在字型選單，毋須額外設定即可使用。",
     "home.platforms.tabs.word":
-      "1. 先在作業系統安裝字型。\n2. 關閉並重啟 Word。\n3. 在「**常用 > 字型**」選單中找到字型，毋須額外設定。",
+      "1. 先在作業系統安裝字型。\n2. 關閉並重啟 Word。\n3. 在「**常用 > 字型**」選單中找到字型，毋須額外設定。\n\n**手動切換多音字標注（Word 特別注意）**\n\nWord 嘅文字渲染引擎（DirectWrite）會將半形數字同漢字切到唔同 shaping run，導致「字1」、「字2」呢類 ASCII 數字標注規則喺 Word 入面唔會觸發。喺 Word 入面請改用以下任一方式：\n\n- **全形數字**「字１」、「字２」、「字１１」等（推薦；同半形數字一樣係十進位編碼，只係用全形字符）\n- **IME 友善寫法**「字丅一」、「字丅二」、…、「字丅九」（用「丅」做切換鍵，啱中文輸入法用戶）\n\n兩種寫法都係用 OpenType `ccmp` 必定啟用功能，毋須喺 Word 設定任何字型選項，亦毋須開啟「字型連字」之類嘅 toggle。瀏覽器、macOS Pages／Keynote、Canva、Adobe 系列等其他工具兩種寫法都用得，連半形「字1」都仲係照樣工作。",
     "home.platforms.tabs.iwork":
       "1. 先用 macOS **字體簿**安裝字型（見 **macOS** 分頁）。\n2. 開啟 Pages 或 Keynote，字型會以家族名稱出現在「**格式 > 字型**」選單，毋須額外設定即可使用。",
     "home.platforms.tabs.web":
@@ -526,7 +526,7 @@ export const TRANSLATIONS: Record<Language, Record<TranslationKey, string>> = {
       "「銀行 / 行人」中的「行」會自動切換不同讀音，源自 OpenType 的 ccmp 字體上下文替換規則。",
     "home.features.f3.title": "手動選擇變體",
     "home.features.f3.body":
-      "鍵入「字1」、「字2」等可手動指定多音字的標注，方便糾正自動判斷（讀音超過九個的字用完整數字，例如「字11」）。",
+      "鍵入「字1」、「字2」等可手動指定多音字的標注，方便糾正自動判斷（讀音超過九個的字用完整數字，例如「字11」）。**喺 Microsoft Word**：半形數字會被 DirectWrite 文字引擎切到另一個 shaping run，標注規則跨唔到 run 邊界；請改用全形數字「字１」、「字２」等（或 IME 友善嘅「字丅一」、「字丅二」），效果一樣，但全形屬東亞寬度，會留喺漢字嘅 shaping run 入面，標注就能正常觸發。",
     "home.features.f4.title": "完全本機運算",
     "home.features.f4.body":
       "你的字體與對應表全程不會離開瀏覽器，所有處理皆在本機進行。",
@@ -684,9 +684,9 @@ export const TRANSLATIONS: Record<Language, Record<TranslationKey, string>> = {
     "step3.advancedSectionLabel": "進階",
     "step3.triggerChar.label": "標注切換字元",
     "step3.triggerChar.hint":
-      "用「字 + 此字元 + 一/二/…」手動切換多音字標注。預設「丅」（U+4E05）較為罕用、不易與正文衝突；可改成你的輸入法容易打到的字（如「々」「〇」）。",
+      "用「字 + 此字元 + 一/二/…」手動切換多音字標注（例：「行丅一」）。預設「丅」（U+4E05）較為罕用、不易與正文衝突；可改成你的輸入法容易打到的字（如「々」「〇」）。除咗呢個寫法之外，字型亦同時支援半形數字（「字1」） 同全形數字（「字１」）兩條路徑，全部三種寫法都會生成。**Microsoft Word 特別注意**：DirectWrite 會將半形數字切到唔同 shaping run，「字1」喺 Word 唔會觸發；請改用全形數字「字１」或 IME 友善嘅「字丅一」。",
     "step3.triggerChar.hintDisabled":
-      "已停用「丅 + 中文數字」標注路徑；只能透過「字 + 0/1/2/…」的數字後綴方式手動切換多音字。",
+      "已停用「丅 + 中文數字」標注路徑。仲可以用半形數字（「字1」）或全形數字（「字１」）兩條後綴路徑切換多音字。Word 用戶請用全形數字（半形喺 Word 入面唔會觸發）。",
     "step3.outAscent.label": "輸出字型上緣（字單位）",
     "step3.outAscent.hint":
       "留空＝自動（auto）：依最高嘅組合字墨水自動撐高 hhea.ascent 同 OS/2.usWinAscent，確保標注頂唔會俾 Word / Pages / Canva 等程式裁切，唔使自己估數值。sTypoAscender 維持不變，行距照舊。淨係想指定固定上緣（停用自動，例如想行距鬆啲）先至填數字。",
@@ -728,7 +728,8 @@ export const TRANSLATIONS: Record<Language, Record<TranslationKey, string>> = {
     "step5.description":
       "生成完成的字型已自動載入到下方輸入框，可即場輸入字符試效果。",
     "step5.noResult": "尚未有生成結果。請完成步驟 4。",
-    "step5.sampleText": "你好世界 — 試試輸入「銀行」、「行家」、「行1」、「畫畫」",
+    "step5.sampleText":
+      "你好世界 — 試試輸入「銀行」、「行家」、「行1」、「行１」（全形數字，Word 適用）、「行丅一」、「畫畫」",
     "step5.download.ttf": "下載 TTF",
     "step5.download.woff": "下載 WOFF",
     "step5.cssSnippet.title": "在 CSS 中使用",
@@ -740,7 +741,7 @@ export const TRANSLATIONS: Record<Language, Record<TranslationKey, string>> = {
     "step5.cssSnippet.close": "關閉",
     "step5.cssSnippet.designAppTitle": "於設計工具中使用",
     "step5.cssSnippet.designAppHint":
-      "字型的詞語對應與「字1」、「字丅一」等數字標注切換**無需任何設定**即可運作（基於 OpenType `ccmp` 必定啟用功能）。**Canva、InDesign、Word、Pages、Keynote** 等工具均能直接使用。",
+      "字型的詞語對應、半形數字（「字1」、「字11」）、全形數字（「字１」、「字１１」）以及「字丅一」等多種變體切換寫法，全部基於 OpenType `ccmp` 必定啟用功能，**無需任何設定**即可運作。**Canva、InDesign、Pages、Keynote、Adobe 系列**全部三種寫法都用得。\n\n**Microsoft Word 特別注意**：半形數字寫法（「字1」）會被 DirectWrite 切到唔同 shaping run，喺 Word 入面唔會觸發；請改用全形數字（「字１」）或「字丅一」呢類 IME 友善寫法。詞語自動切換（如「銀行 / 行人」）唔受影響，喺 Word 入面正常運作。",
   },
   en: {
     // Header
@@ -901,7 +902,7 @@ export const TRANSLATIONS: Record<Language, Record<TranslationKey, string>> = {
     "home.platforms.tabs.adobe":
       "1. Install the font through your operating system.\n2. Quit and restart Illustrator / Photoshop / InDesign.\n3. The font appears in the font menu under its family name and is ready to use — no extra settings.",
     "home.platforms.tabs.word":
-      "1. Install the font through your operating system.\n2. Quit and restart Word.\n3. Find the font under **Home > Font** and use it normally — no extra settings.",
+      "1. Install the font through your operating system.\n2. Quit and restart Word.\n3. Find the font under **Home > Font** and use it normally — no extra settings.\n\n**Manually picking a variant (Word-specific notes)**\n\nWord's text engine (DirectWrite) itemises half-width ASCII digits into a separate shaping run from adjacent CJK characters, which means the `字1` / `字2` digit-trigger overrides DON'T fire in Word — the ligature can't bridge a shaping-run boundary. Two paths work reliably in Word instead:\n\n- **Fullwidth digits** — `字１`, `字２`, `字１１` and so on (recommended; same decimal encoding as half-width, just typed with an IME's fullwidth mode)\n- **IME-friendly trigger** — `字丅一`, `字丅二`, …, `字丅九` (uses `丅` as a separator before a Chinese numeral; comfortable for Chinese-IME users)\n\nBoth ride on OpenType's mandatory `ccmp` feature, so there's no Word setting to toggle, no ligature switch to find. Browsers, macOS Pages / Keynote, Canva, the Adobe suite, etc. accept all three notations — even the half-width `字1` path works there. The fullwidth / IME notations exist specifically for Microsoft Word.",
     "home.platforms.tabs.iwork":
       "1. Install the font via macOS **Font Book** (see the **macOS** tab).\n2. Open Pages or Keynote; the font appears in **Format > Font** under its family name and is ready to use — no extra settings.",
     "home.platforms.tabs.web":
@@ -929,7 +930,7 @@ export const TRANSLATIONS: Record<Language, Record<TranslationKey, string>> = {
       "Polyphonic characters auto-switch based on the surrounding word — e.g. 銀行 vs 行人 — via an OpenType Chain Contextual Substitution under the `ccmp` feature.",
     "home.features.f3.title": "Manual variant picker",
     "home.features.f3.body":
-      "Type `字1`, `字2`, etc. to manually choose a specific reading when the context isn't enough (characters with more than nine readings use the full number, e.g. `字11`).",
+      "Type `字1`, `字2`, etc. to manually choose a specific reading when the context isn't enough (characters with more than nine readings use the full number, e.g. `字11`). **In Microsoft Word**: half-width ASCII digits get split into a separate shaping run by DirectWrite, so the ligature can't fire across the boundary — use **fullwidth digits** `字１`, `字２`, `字１１` (or the IME-friendly `字丅一`, `字丅二`) instead. Fullwidth digits are East-Asian-Width=F, which keeps them in the surrounding CJK run, and the variant fires correctly.",
     "home.features.f4.title": "Fully local",
     "home.features.f4.body":
       "Your fonts and mapping never leave your browser. Everything runs client-side.",
@@ -1091,9 +1092,9 @@ export const TRANSLATIONS: Record<Language, Record<TranslationKey, string>> = {
     "step3.advancedSectionLabel": "Advanced",
     "step3.triggerChar.label": "Variant trigger character",
     "step3.triggerChar.hint":
-      "Types as `<char><trigger><numeral>` (e.g. 行 + trigger + 一) to manually pick a variant. Default `丅` (U+4E05) is deliberately rare so it doesn't collide with normal text — replace it with whatever your IME can produce easily (e.g. `々`, `〇`).",
+      "Types as `<char><trigger><numeral>` (e.g. 行 + trigger + 一) to manually pick a variant. Default `丅` (U+4E05) is deliberately rare so it doesn't collide with normal text — replace it with whatever your IME can produce easily (e.g. `々`, `〇`). The font also ships parallel half-width digit (`字1`) and **fullwidth digit (`字１`)** trigger paths, both emitted automatically. **Microsoft Word note**: DirectWrite splits the half-width digit into a separate shaping run, so `字1` doesn't fire in Word — fullwidth `字１` or the IME-friendly `字丅一` are the Word-reliable paths.",
     "step3.triggerChar.hintDisabled":
-      "Trigger+numeral override is disabled. Users can still pick variants with the universal digit-suffix path (`<char><number>`, e.g. `字1` … `字11`).",
+      "Trigger+numeral override is disabled. Users can still pick variants via half-width digits (`字1`) or fullwidth digits (`字１`); the fullwidth path is the one that fires in Microsoft Word.",
     "step3.outAscent.label": "Output ascent (font units)",
     "step3.outAscent.hint":
       "Blank = auto: the build measures the tallest composed glyph and raises hhea.ascent + OS/2.usWinAscent just enough to clear it, so Word / Pages / Canva don't clip the top of the annotation — no guessing a value. sTypoAscender is left alone, so line spacing is unchanged. Fill in a number only to pin an exact ascent (disables auto-fit) — e.g. a deliberately roomier line height.",
@@ -1138,7 +1139,7 @@ export const TRANSLATIONS: Record<Language, Record<TranslationKey, string>> = {
       "The generated font is loaded as `@font-face` so you can type below to see it in action.",
     "step5.noResult": "No result yet. Complete Step 4 first.",
     "step5.sampleText":
-      "Hello world — try typing 銀行, 行家, 行1, or 畫畫",
+      "Hello world — try typing 銀行, 行家, 行1, 行１ (fullwidth, works in Word), 行丅一, or 畫畫",
     "step5.download.ttf": "Download TTF",
     "step5.download.woff": "Download WOFF",
     "step5.cssSnippet.title": "Use in your stylesheet",
@@ -1150,6 +1151,6 @@ export const TRANSLATIONS: Record<Language, Record<TranslationKey, string>> = {
     "step5.cssSnippet.close": "Close",
     "step5.cssSnippet.designAppTitle": "Using it in a design app",
     "step5.cssSnippet.designAppHint":
-      "All override paths — **word-context** (like 銀行/行人), **digit-suffix** (like 字1), and **trigger+numeral** (like 字丅一) — work automatically with no text-setting toggles. The font's rules ride on OpenType `ccmp`, which is mandatory — **Canva, InDesign, Word, Pages, and Keynote** all apply them out of the box.",
+      "Override paths all ride on OpenType `ccmp`, which is mandatory and applied without any text-setting toggles. **Canva, InDesign, Pages, Keynote, the Adobe suite** and modern browsers accept every form: **word-context** (`銀行/行人`), **half-width digit** (`字1`, `字11`), **fullwidth digit** (`字１`, `字１１`), and **trigger+numeral** (`字丅一`).\n\n**Microsoft Word note**: DirectWrite splits the half-width digit (`字1`) into a separate shaping run from the adjacent CJK character, so that one path doesn't fire in Word. Use fullwidth digits (`字１`) or the IME-friendly `字丅一` notation instead — both work in Word. Word-context auto-switching (`銀行 / 行人`) is unaffected and works normally.",
   },
 };
