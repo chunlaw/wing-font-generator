@@ -1616,48 +1616,36 @@ def main(
             subsetter.subset(output_font)
             timer.note(f"{len(valid_glyphs_to_keep)} glyphs kept")
 
-        # ── Restore OS/2 cp1252 (Latin 1) codepage declaration ───────
+        # ── NB: previous edits in this slot, both reverted ────────────
         #
-        # The subsetter's `prune_codepage_ranges=True` default clears
-        # bits in OS/2.ulCodePageRange1 whose codepages aren't fully
-        # covered by the surviving cmap. After subsetting, the output
-        # font keeps ~all of ASCII (94/95 chars) but only 1/96 of the
-        # Latin-1 supplement and 6/27 of the cp1252 C1 specials, so
-        # the pruner clears bit 0 (cp1252 / Western European). The
-        # source NotoSansHK had bit 0 = 1; our output has bit 0 = 0.
+        # 1. Whole-range OS/2 restore. An earlier "Fix E" did
+        #    ``ulCodePageRange1 |= src_os2.ulCodePageRange1`` to undo the
+        #    subsetter's `prune_codepage_ranges=True` default. The
+        #    intent was to make Word reuse our font's typeface for
+        #    ASCII digits typed inside CJK runs (`呀1` was rendering
+        #    its `1` in Calibri). Reverted: that OR re-introduced the
+        #    same "claims more than the cmap delivers" trap that
+        #    commit 5b50600 hit. For NotoSansJP-japanese specifically
+        #    it caused browsers to reject the font and fall back to a
+        #    system CJK font for every kanji — even the ones whose
+        #    composed-with-furigana glyph was structurally fine.
         #
-        # Why that matters for Word: DirectWrite consults
-        # ulCodePageRange when itemising mixed CJK + Latin runs. With
-        # cp1252 bit = 0 the font is treated as "doesn't really cover
-        # Western text", so ASCII characters typed inside a Chinese
-        # text run get routed to the document's default Latin font
-        # (Calibri / Times) — EVEN WHEN the font has the glyphs.
-        # `呀1` becomes [呀 from our font] + [1 from Calibri], two
-        # font runs, and the (uni5440, one) → variant ligature in our
-        # ccmp lookup can't span that boundary. The user sees `呀1`
-        # rendered with the trailing `1` in a different typeface, with
-        # the ligature never firing.
+        # 2. Bit-0-only OR. A narrowing of (1) that only OR'd back
+        #    ``ulCodePageRange1 |= 0x01`` (cp1252) when the source had
+        #    it set. Didn't regress the kanji-rendering case but also
+        #    didn't actually fix the Word `呀1` ligature: DirectWrite
+        #    still splits Han + Common into separate shaping runs
+        #    regardless of OS/2 bits, so the ligature never fires —
+        #    the bit-0 OR only made the rendered `1` cosmetically
+        #    typeface-consistent with the surrounding kanji. The
+        #    documented Word-side workaround is to type `呀１`
+        #    (fullwidth) or `呀丅一` (IME trigger); neither needs the
+        #    ASCII digit so the cp1252 bit doesn't matter for the
+        #    actually-working interactions. Removed to keep the
+        #    pipeline strictly to the subsetter's honest coverage.
         #
-        # The ASCII portion of cp1252 IS present in our output (94/95
-        # — only U+007F DEL is missing, which is non-printable), so
-        # claiming cp1252 isn't a meaningful lie about coverage. We
-        # OR the source font's codepage bits back in rather than just
-        # forcing bit 0: same logic applies to anyone who types text
-        # from any of the other codepages the source claimed, and the
-        # CJK bits (which would have already been correct in the
-        # output) become idempotent under the OR.
+        # The subsetter's pruned defaults stay in force.
         #
-        # Distinct from ulUnicodeRange: we don't restore those bits
-        # because Unicode-range bits drive script-level font matching
-        # and lying about, say, "we have Greek" could cause Word to
-        # pick us for Greek text and render tofu. Codepage bits drive
-        # mixed-run itemisation and are safe to claim with partial
-        # coverage as long as the typical ASCII subset is present.
-        out_os2 = output_font["OS/2"]
-        src_os2 = base_font["OS/2"]
-        out_os2.ulCodePageRange1 |= src_os2.ulCodePageRange1
-        out_os2.ulCodePageRange2 |= src_os2.ulCodePageRange2
-
         # NB: an earlier edit downgraded OS/2 from v4 to v3 here in
         # the belief that Word's HKSCS routing keyed on the version
         # field. A/B testing eventually showed the actual gate is
@@ -1782,15 +1770,76 @@ def main(
 
     with step_timer("TTF save"):
         output_font.save(str(output_prefix) + ".ttf")
+
+    # ── Post-build GSUB-cleanup re-subset ─────────────────────────────
+    #
+    # Empirically required: without this pass, Chrome/Firefox reject
+    # variable-base (NotoSansJP-instantiated, …) outputs and fall back
+    # to a system CJK font for every character, including glyphs whose
+    # composed-with-furigana outline IS present and structurally valid.
+    # Static-base builds (Xiaolai, ChironHei, …) don't hit the bug.
+    #
+    # The trigger isn't visible in font-table diffs — OS/2, cmap, glyf,
+    # GDEF, STAT all match a known-working build byte-for-byte at the
+    # fontTools level. What re-subsetting silently fixes is some GSUB
+    # / GPOS layout-table inconsistency that fontTools can serialise +
+    # read back fine but the browsers' OpenType layout engines reject.
+    # The likely root is something `instantiateVariableFont` leaves in
+    # the GSUB Subst-Lookup records after dropping fvar/gvar, that our
+    # downstream chain-context + ligature appends then preserve in a
+    # state that's technically inconsistent.
+    #
+    # A no-op subset (keep every surviving glyph) is enough — the
+    # cleanup happens inside Subsetter regardless of what gets stripped.
+    # `prune_unicode_ranges` / `prune_codepage_ranges` defaults stay
+    # True; idempotent on the already-pruned OS/2 we just wrote, so
+    # they're harmless.
+    #
+    # See investigation transcript dated 2026-06-25 for the bisect
+    # that landed on this. The proper fix is to find what wing-font.py
+    # produces in GSUB that browsers reject and stop producing it;
+    # until that's tracked down, the re-subset pass is the workaround.
+    #
+    # USE_HARFBUZZ_REPACKER propagation: must inherit the same value
+    # the original save used (`has_word_entries`). Default True would
+    # call hb.repack on the freshly-loaded font, which downgrades
+    # CJK chain-context Type 6 lookups to Type 5 during compaction;
+    # fontTools' fallback `splitOverflowingSubtable` doesn't implement
+    # Type 5 splitting and the recovery loop spins forever logging
+    # "Don't know how to split GSUB lookup type 5". Same fix as the
+    # primary `output_font.cfg[USE_HARFBUZZ_REPACKER] = has_word_entries`
+    # line further up — pure-Python serializer for the CJK path, hb
+    # repack ON for word-unit builds where the chain rules pre-wrap in
+    # Extension and never hit the splitter.
+    from fontTools.ttLib import TTFont as _TTFont
+    from fontTools.ttLib.tables.otBase import USE_HARFBUZZ_REPACKER as _UHR
+    with step_timer("post-build GSUB cleanup") as _t:
+        _f = _TTFont(str(output_prefix) + ".ttf")
+        _f.cfg[_UHR] = has_word_entries
+        _sub = subset.Subsetter()
+        _sub.populate(glyphs=_f.getGlyphOrder())
+        _sub.subset(_f)
+        _f.save(str(output_prefix) + ".ttf")
+        _t.note(f"{_f['maxp'].numGlyphs} glyphs preserved")
+
     if not skip_woff:
         # WOFF2 = Brotli-compressed sfnt. fontTools' encoder picks up
         # the local `brotli` (or `brotlicffi`) package automatically;
         # both are in python/requirements.txt. Encoder is lossless —
         # every GSUB lookup (including ccmp chain-context rules) is
-        # byte-preserved across the round-trip.
-        output_font.flavor = "woff2"
+        # byte-preserved across the round-trip. Re-open the cleaned-up
+        # TTF (post the subset pass above) so the WOFF2 carries the
+        # same browser-acceptable layout-table structure.
+        #
+        # Same USE_HARFBUZZ_REPACKER propagation rationale as the
+        # cleanup pass above — avoid hb.repack on the CJK path.
+        from fontTools.ttLib import TTFont as _TTFont
+        from fontTools.ttLib.tables.otBase import USE_HARFBUZZ_REPACKER as _UHR
+        _woff = _TTFont(str(output_prefix) + ".ttf")
+        _woff.cfg[_UHR] = has_word_entries
+        _woff.flavor = "woff2"
         with step_timer("WOFF2 save"):
-            output_font.save(str(output_prefix + ".woff2"))
+            _woff.save(str(output_prefix + ".woff2"))
 
     # Close the font objects. `anno_font` was already closed + deleted
     # right after Phase 1 (see the "release the annotation font ASAP"
