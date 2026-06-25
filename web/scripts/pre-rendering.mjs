@@ -248,7 +248,16 @@ async function main() {
   const localHost = new URL(origin).host;
   const browser = await puppeteer.launch({
     headless: true,
-    args: ["--no-sandbox", "--disable-setuid-sandbox"],
+    args: [
+      "--no-sandbox",
+      "--disable-setuid-sandbox",
+      // CI containers (e.g. GitHub Actions) give Chrome a 64 MB /dev/shm.
+      // After a number of pages it exhausts that shared-memory tmpfs and the
+      // browser process crashes — surfacing on the NEXT `browser.newPage()`
+      // as `Target.createTarget: Session with given id not found`. Forcing
+      // Chrome to use /tmp instead removes the cap and the crash.
+      "--disable-dev-shm-usage",
+    ],
   });
 
   console.log(`pre-rendering: ${routes.length} route(s) from sitemap.xml`);
