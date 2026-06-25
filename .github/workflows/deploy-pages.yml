@@ -127,7 +127,7 @@ jobs:
           # Inverted output can generate via `/generate` with `-v`.
           # See git history for the cut entries' exact args.
           # === Standard variants — ChironSung Regular ===============
-          - { name: ChironSungHK-Noto-lshk,                args: "-opt -i input_fonts/ChironSungHK-R.ttf -a input_fonts/NotoSerif-Regular.ttf -m mappings/cantonese/canto-lshk.csv -as 0.27" }
+          - { name: ChironSungHK-Noto-lshk,                args: "-opt -i input_fonts/ChironSungHK-R.ttf -a input_fonts/NotoSerif-Regular.ttf -m mappings/cantonese/canto-lshk.csv --diy-annotations diy-mappings/cantonese/lshk.diy-annotation.csv -as 0.27" }
           - { name: ChironSungHK-Noto-yale,                args: "-opt -i input_fonts/ChironSungHK-R.ttf -a input_fonts/NotoSerif-Regular.ttf -m mappings/cantonese/canto-yale.csv -as 0.27" }
           - { name: ChironSungHK-Noto-chishima,            args: "-opt -i input_fonts/ChironSungHK-R.ttf -a input_fonts/NotoSerif-Regular.ttf -m mappings/cantonese/canto-chishima.csv -as 0.27" }
           - { name: ChironSungHK-Noto-guangdong,           args: "-opt -i input_fonts/ChironSungHK-R.ttf -a input_fonts/NotoSerif-Regular.ttf -m mappings/cantonese/canto-guangdong.csv -as 0.27" }
@@ -151,7 +151,7 @@ jobs:
           # of the Chiron equivalents, so /showcase loads ~2× faster
           # on slow connections. Chiron variants stay built and
           # downloadable; these are the new default showcase set.
-          - { name: NotoSansHK-Noto-lshk,                  args: "-opt -i input_fonts/NotoSansHK-VariableFont_wght.ttf -a input_fonts/NotoSerif-Regular.ttf -m mappings/cantonese/canto-lshk.csv -as 0.27" }
+          - { name: NotoSansHK-Noto-lshk,                  args: "-opt -i input_fonts/NotoSansHK-VariableFont_wght.ttf -a input_fonts/NotoSerif-Regular.ttf -m mappings/cantonese/canto-lshk.csv --diy-annotations diy-mappings/cantonese/lshk.diy-annotation.csv -as 0.27" }
           - { name: NotoSansHK-Noto-yale,                  args: "-opt -i input_fonts/NotoSansHK-VariableFont_wght.ttf -a input_fonts/NotoSerif-Regular.ttf -m mappings/cantonese/canto-yale.csv -as 0.27" }
           - { name: NotoSansHK-Noto-chishima,              args: "-opt -i input_fonts/NotoSansHK-VariableFont_wght.ttf -a input_fonts/NotoSerif-Regular.ttf -m mappings/cantonese/canto-chishima.csv -as 0.27" }
           - { name: NotoSansHK-Noto-guangdong,             args: "-opt -i input_fonts/NotoSansHK-VariableFont_wght.ttf -a input_fonts/NotoSerif-Regular.ttf -m mappings/cantonese/canto-guangdong.csv -as 0.27" }
@@ -184,7 +184,7 @@ jobs:
           # --anno-spacing 0.01 tuned during preview; adjust here if a
           # future change to the tonemark font's vertical metrics
           # asks for it.
-          - { name: NotoSansHK-Huninn-tonemark,            args: "-opt -i input_fonts/NotoSansHK-VariableFont_wght.ttf -a input_fonts/Huninn-Regular-tonemark.ttf -m mappings/cantonese/canto-lshk.csv -as 0.23 --anno-spacing 0.01" }
+          - { name: NotoSansHK-Huninn-tonemark,            args: "-opt -i input_fonts/NotoSansHK-VariableFont_wght.ttf -a input_fonts/Huninn-Regular-tonemark.ttf -m mappings/cantonese/canto-lshk.csv --diy-annotations diy-mappings/cantonese/lshk.diy-annotation.csv -as 0.23 --anno-spacing 0.01" }
           # Urdu (Nastaʿlīq, RTL). -as 0.16 — smaller than the other
           # transliterations for TWO reasons: (1) Nastaliq cascades far
           # more vertically, and (2) the output inherits NotoSansHK's
@@ -288,7 +288,7 @@ jobs:
           # distinct from the existing Noto Sans HK / ChironSung
           # showcase sets, while Huninn keeps the romanizations
           # legible at small sizes.
-          - { name: Xiaolai-Huninn-lshk,                   args: "-opt -i input_fonts/XiaolaiSC-Regular.ttf -a input_fonts/Huninn-Regular.ttf -m mappings/cantonese/canto-lshk.csv -as 0.25" }
+          - { name: Xiaolai-Huninn-lshk,                   args: "-opt -i input_fonts/XiaolaiSC-Regular.ttf -a input_fonts/Huninn-Regular.ttf -m mappings/cantonese/canto-lshk.csv --diy-annotations diy-mappings/cantonese/lshk.diy-annotation.csv -as 0.25" }
           - { name: Xiaolai-Huninn-yale,                   args: "-opt -i input_fonts/XiaolaiSC-Regular.ttf -a input_fonts/Huninn-Regular.ttf -m mappings/cantonese/canto-yale.csv -as 0.25" }
           - { name: Xiaolai-Huninn-lau,                    args: "-opt -i input_fonts/XiaolaiSC-Regular.ttf -a input_fonts/Huninn-Regular.ttf -m mappings/cantonese/canto-lau.csv -as 0.25" }
           - { name: Xiaolai-Huninn-guangdong,              args: "-opt -i input_fonts/XiaolaiSC-Regular.ttf -a input_fonts/Huninn-Regular.ttf -m mappings/cantonese/canto-guangdong.csv -as 0.25" }
