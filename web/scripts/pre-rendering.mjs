@@ -49,6 +49,35 @@ const SITEMAP = path.join(WEB_DIR, "public", "sitemap.xml");
 // timeout is a backstop so a single slow/odd route can't hang the build.
 const READY_TIMEOUT_MS = 20000;
 
+// How many pages to snapshot before recycling the Chrome process.
+// Background: a single browser instance accumulates state across
+// `newPage`/`close` cycles — process memory, target IDs, file
+// descriptors, /tmp scratch space. In CI containers (GitHub Actions in
+// particular) something in that pile reliably runs out around the
+// ~15-20-page mark even with `--disable-dev-shm-usage`, surfacing as
+// `Target.createTarget: Session with given id not found` on the next
+// `browser.newPage()`. Restarting Chrome every N pages bounds the
+// accumulated state at a known size and the failure mode disappears.
+// 12 is comfortably below the empirical 19-page failure point seen on
+// the 40-route sitemap, and the per-recycle launch cost (~1s) is
+// dwarfed by the per-page render time (~3-5s), so the total build
+// time grows by only a few seconds.
+const BROWSER_RECYCLE_EVERY = 12;
+
+// Chrome launch flags used by every browser instance. Extracted so the
+// recycle path uses the exact same configuration as the first launch.
+const CHROME_LAUNCH_ARGS = [
+  "--no-sandbox",
+  "--disable-setuid-sandbox",
+  // CI containers (e.g. GitHub Actions) give Chrome a 64 MB /dev/shm.
+  // After a number of pages it exhausts that shared-memory tmpfs and the
+  // browser process crashes — surfacing on the NEXT `browser.newPage()`
+  // as `Target.createTarget: Session with given id not found`. Forcing
+  // Chrome to use /tmp instead removes the cap. Not sufficient on its
+  // own at our current sitemap size — see BROWSER_RECYCLE_EVERY above.
+  "--disable-dev-shm-usage",
+];
+
 const MIME = {
   ".html": "text/html; charset=utf-8",
   ".js": "text/javascript; charset=utf-8",
@@ -246,93 +275,145 @@ async function main() {
 
   const { server, origin } = await startServer(indexHtml);
   const localHost = new URL(origin).host;
-  const browser = await puppeteer.launch({
-    headless: true,
-    args: [
-      "--no-sandbox",
-      "--disable-setuid-sandbox",
-      // CI containers (e.g. GitHub Actions) give Chrome a 64 MB /dev/shm.
-      // After a number of pages it exhausts that shared-memory tmpfs and the
-      // browser process crashes — surfacing on the NEXT `browser.newPage()`
-      // as `Target.createTarget: Session with given id not found`. Forcing
-      // Chrome to use /tmp instead removes the cap and the crash.
-      "--disable-dev-shm-usage",
-    ],
-  });
+
+  // Snapshot a single route into its dist/ output file. Self-contained
+  // so the outer loop can call it with a fresh `browser` after a
+  // recycle without threading state through. Returns `{ ready }` so
+  // the caller can track timeout fallbacks for the summary line.
+  async function snapshotRoute(browser, route) {
+    const page = await browser.newPage();
+
+    // Skip heavy/irrelevant resources. The snapshot only needs the
+    // local HTML/JS/CSS to boot React and let the route's
+    // useDocumentMeta populate <head> — it never depends on the actual
+    // glyphs, images, or the Pyodide wasm/runtime. Blocking these is
+    // what makes prerendering fast.
+    //
+    // The big offender is the showcase/specimen fonts: const.ts builds
+    // each FontOption's `source` as an ABSOLUTE production URL
+    // (VITE_FONT_URL → https://wing-font.chunlaw.io/fonts/<name>.woff2),
+    // so a specimen page kicks off a cross-origin download of a
+    // 0.5–1 MB woff2 from the live site over the network. Worse, fonts
+    // pulled via the CSS Font Loading API (`new FontFace(...).load()`,
+    // which is how loadFont works) are NOT always tagged with the
+    // "font" resourceType by Chrome, so a resourceType-only filter
+    // misses them. We therefore block by URL/host as well:
+    //   • any request to a host other than the local prerender server
+    //     (production fonts, Google Fonts, analytics, …), and
+    //   • any font-binary or wasm URL, and the Pyodide input dir.
+    await page.setRequestInterception(true);
+    page.on("request", (r) => {
+      if (shouldBlockRequest(r.url(), r.resourceType(), localHost)) {
+        r.abort().catch(() => {});
+      } else {
+        r.continue().catch(() => {});
+      }
+    });
+
+    await page.goto(`${origin}${route}`, {
+      waitUntil: "domcontentloaded",
+      timeout: 30000,
+    });
+
+    let ready = true;
+    try {
+      await page.waitForFunction(
+        "window.__PRERENDER_READY__ === true",
+        { timeout: READY_TIMEOUT_MS },
+      );
+    } catch {
+      ready = false;
+    }
+
+    // Let one frame settle so any synchronous post-mount meta writes
+    // land in the DOM before we read it.
+    await page.evaluate(
+      () => new Promise((r) => requestAnimationFrame(() => r(null))),
+    );
+
+    // Inline the runtime CSS-in-JS styles so the snapshot is fully
+    // styled (no flash of unstyled content before the SPA boots).
+    await page.evaluate(inlineRuntimeCss);
+
+    const html = await page.content();
+    const out = outFileFor(route);
+    await mkdir(path.dirname(out), { recursive: true });
+    await writeFile(out, html, "utf8");
+    await page.close();
+
+    return { ready, out };
+  }
+
+  // Errors that mean Chrome itself is gone — closing the existing
+  // browser and launching a new one is the right recovery. Other
+  // errors (404s, JS exceptions in the snapshot, file-write failures)
+  // are real bugs and should propagate.
+  function isBrowserDeath(err) {
+    if (!err || typeof err.message !== "string") return false;
+    const msg = err.message;
+    return (
+      msg.includes("Target.createTarget") ||
+      msg.includes("Session with given id not found") ||
+      msg.includes("Target closed") ||
+      msg.includes("Protocol error") ||
+      msg.includes("Browser has been disconnected") ||
+      msg.includes("Connection closed")
+    );
+  }
 
   console.log(`pre-rendering: ${routes.length} route(s) from sitemap.xml`);
   let ok = 0;
   let timedOut = 0;
 
+  let browser = await puppeteer.launch({
+    headless: true,
+    args: CHROME_LAUNCH_ARGS,
+  });
+  let pagesSinceLaunch = 0;
+
   try {
     for (const route of routes) {
-      const page = await browser.newPage();
-
-      // Skip heavy/irrelevant resources. The snapshot only needs the
-      // local HTML/JS/CSS to boot React and let the route's
-      // useDocumentMeta populate <head> — it never depends on the actual
-      // glyphs, images, or the Pyodide wasm/runtime. Blocking these is
-      // what makes prerendering fast.
-      //
-      // The big offender is the showcase/specimen fonts: const.ts builds
-      // each FontOption's `source` as an ABSOLUTE production URL
-      // (VITE_FONT_URL → https://wing-font.chunlaw.io/fonts/<name>.woff2),
-      // so a specimen page kicks off a cross-origin download of a
-      // 0.5–1 MB woff2 from the live site over the network. Worse, fonts
-      // pulled via the CSS Font Loading API (`new FontFace(...).load()`,
-      // which is how loadFont works) are NOT always tagged with the
-      // "font" resourceType by Chrome, so a resourceType-only filter
-      // misses them. We therefore block by URL/host as well:
-      //   • any request to a host other than the local prerender server
-      //     (production fonts, Google Fonts, analytics, …), and
-      //   • any font-binary or wasm URL, and the Pyodide input dir.
-      await page.setRequestInterception(true);
-      page.on("request", (r) => {
-        if (shouldBlockRequest(r.url(), r.resourceType(), localHost)) {
-          r.abort().catch(() => {});
-        } else {
-          r.continue().catch(() => {});
-        }
-      });
-
-      await page.goto(`${origin}${route}`, {
-        waitUntil: "domcontentloaded",
-        timeout: 30000,
-      });
-
-      let ready = true;
-      try {
-        await page.waitForFunction(
-          "window.__PRERENDER_READY__ === true",
-          { timeout: READY_TIMEOUT_MS },
-        );
-      } catch {
-        ready = false;
-        timedOut += 1;
+      // Proactive recycle: bound the per-process accumulated state so
+      // we never reach Chrome's session-collapse point. Cheaper than
+      // recovering from a death because no page work is wasted.
+      if (pagesSinceLaunch >= BROWSER_RECYCLE_EVERY) {
+        await browser.close().catch(() => {});
+        browser = await puppeteer.launch({
+          headless: true,
+          args: CHROME_LAUNCH_ARGS,
+        });
+        pagesSinceLaunch = 0;
       }
 
-      // Let one frame settle so any synchronous post-mount meta writes
-      // land in the DOM before we read it.
-      await page.evaluate(
-        () => new Promise((r) => requestAnimationFrame(() => r(null))),
-      );
+      let result;
+      try {
+        result = await snapshotRoute(browser, route);
+      } catch (err) {
+        if (!isBrowserDeath(err)) throw err;
+        // Reactive recycle: Chrome died despite the proactive limit.
+        // Relaunch and retry the failed route once. If it dies again,
+        // surface the error — at that point something more fundamental
+        // is wrong than just accumulated state.
+        console.log(
+          `  ! ${route}  →  browser died, relaunching + retry: ${err.message.split("\n")[0]}`,
+        );
+        await browser.close().catch(() => {});
+        browser = await puppeteer.launch({
+          headless: true,
+          args: CHROME_LAUNCH_ARGS,
+        });
+        pagesSinceLaunch = 0;
+        result = await snapshotRoute(browser, route);
+      }
 
-      // Inline the runtime CSS-in-JS styles so the snapshot is fully
-      // styled (no flash of unstyled content before the SPA boots).
-      await page.evaluate(inlineRuntimeCss);
-
-      const html = await page.content();
-      const out = outFileFor(route);
-      await mkdir(path.dirname(out), { recursive: true });
-      await writeFile(out, html, "utf8");
-      await page.close();
-
+      pagesSinceLaunch += 1;
+      if (!result.ready) timedOut += 1;
       ok += 1;
-      const rel = path.relative(DIST, out);
-      console.log(`  ${ready ? "✓" : "·"} ${route}  →  ${rel}`);
+      const rel = path.relative(DIST, result.out);
+      console.log(`  ${result.ready ? "✓" : "·"} ${route}  →  ${rel}`);
     }
   } finally {
-    await browser.close();
+    await browser.close().catch(() => {});
     server.close();
   }
 
