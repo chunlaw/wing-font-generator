@@ -28,6 +28,15 @@ from mappings.csv_parser import WORD_SCRIPTS, get_word_unit_script
 from utils import get_glyph_name_by_char, step_timer
 
 GLYPH_PREFIX = "wingfont"
+# DIY manual-annotation mark glyphs (one per CSV-A entry). Named by their
+# Plane-15 PUA codepoint for stable, collision-free names, e.g.
+# ``wingfontmarkF0000``. See HYBRID_ANNOTATION_DESIGN.md and diy_handler.py.
+MARK_PREFIX = "wingfontmark"
+# DIY bare scaled-base glyphs (one per MAPPED char). A mapped char's
+# default glyph has its default reading baked in, so the manual path must
+# strip it to an annotation-free scaled base before stacking a mark.
+# Named by the base codepoint, e.g. ``wingfontbare00884C`` for 行.
+BARE_PREFIX = "wingfontbare"
 
 
 def _draw_decomposed(glyph_set, glyph_name, target_pen):
@@ -50,6 +59,116 @@ def _draw_decomposed(glyph_set, glyph_name, target_pen):
     rec.replay(target_pen)
 
 
+# ── Shared HarfBuzz shape/draw helpers ───────────────────────────────
+# These were closures inside generate_annotated_glyphs; lifted to module
+# scope so generate_mark_glyphs (the DIY manual-annotation path) reuses
+# the EXACT same shaping + drawing logic instead of duplicating it. The
+# composite path keeps thin wrapper closures that bind its loop-shared
+# buffer / scales and delegate here.
+
+
+def _shape_run(hb_font, hb_buffer, text, glyph_order, glyph_order_set):
+    """Shape `text` against `hb_font` using the caller's (reused)
+    `hb_buffer`. Returns a list of ``(glyph_name, cluster, x_offset,
+    y_offset, x_advance)`` tuples in the buffer's output order (visual
+    order for RTL runs — exactly the order to draw at cumulative
+    advances)."""
+    import uharfbuzz as hb
+
+    hb_buffer.clear_contents()
+    hb_buffer.add_str(text)
+    hb_buffer.guess_segment_properties()
+    hb.shape(hb_font, hb_buffer)
+    out = []
+    for info, pos in zip(hb_buffer.glyph_infos, hb_buffer.glyph_positions):
+        gid = info.codepoint  # post-shaping glyph index, not a Unicode cp
+        if 0 <= gid < len(glyph_order):
+            name = glyph_order[gid]
+            if name in glyph_order_set:
+                out.append(
+                    (
+                        name,
+                        info.cluster,
+                        pos.x_offset,
+                        pos.y_offset,
+                        pos.x_advance,
+                    )
+                )
+    return out
+
+
+def _shaped_width(anno_shaped, anno_scale_eff, anno_spacing_units):
+    """Total width the shaped annotation block occupies in OUTPUT units,
+    including the (N-1) inter-glyph `anno_spacing` gaps. Per-glyph width
+    is the post-shape x_advance, so it respects GSUB substitutions and
+    GPOS spacing adjustments."""
+    return sum(
+        round(adv * anno_scale_eff) for *_rest, adv in anno_shaped
+    ) + max(0, len(anno_shaped) - 1) * anno_spacing_units
+
+
+def _draw_shaped(
+    pen,
+    anno_shaped,
+    x_start,
+    y_offset,
+    anno_glyph_set,
+    anno_scale_eff,
+    anno_spacing_units,
+):
+    """Draw a shaped annotation run into `pen`, starting at `x_start`
+    with its baseline at `y_offset`.
+
+    Each glyph's HarfBuzz (x_offset, y_offset) is applied on top of the
+    running position — that's what places mark glyphs (Thai vowels,
+    Arabic dots, Devanagari ukar, …); the offsets are zero for plain
+    Latin so linear scripts render exactly as a naive advance walk
+    would. The cursor advances by the SHAPED x_advance (not the hmtx
+    advance — they differ when GPOS adjusts spacing or GSUB substituted a
+    glyph with different metrics), plus the inter-glyph gap after every
+    glyph except the last."""
+    n_anno = len(anno_shaped)
+    x_position = x_start
+    for j, (a_name, _cluster, xoff, yoff, xadv) in enumerate(anno_shaped):
+        if a_name in anno_glyph_set:
+            _draw_decomposed(
+                anno_glyph_set,
+                a_name,
+                TransformPen(
+                    pen,
+                    (
+                        anno_scale_eff,
+                        0,
+                        0,
+                        anno_scale_eff,
+                        x_position + xoff * anno_scale_eff,
+                        y_offset + yoff * anno_scale_eff,
+                    ),
+                ),
+            )
+            x_position += round(xadv * anno_scale_eff)
+            if j < n_anno - 1:
+                x_position += anno_spacing_units
+
+
+def _add_cmap_entry(output_font, codepoint, glyph_name):
+    """Map `codepoint` → `glyph_name` in every cmap subtable that can
+    represent it. Supplementary-plane codepoints (> U+FFFF, e.g. the
+    Plane-15 PUA used for DIY marks) only fit format 12/13 segmented
+    subtables; BMP codepoints go into all subtables. Returns True if at
+    least one subtable accepted the entry."""
+    added = False
+    for sub in output_font["cmap"].tables:
+        if codepoint > 0xFFFF:
+            if sub.format in (12, 13):
+                sub.cmap[codepoint] = glyph_name
+                added = True
+        else:
+            sub.cmap[codepoint] = glyph_name
+            added = True
+    return added
+
+
 def generate_annotated_glyphs(
     base_font,
     anno_font,
@@ -69,6 +188,8 @@ def generate_annotated_glyphs(
     word_metrics: dict | None = None,
     word_components: dict | None = None,
     char_metrics: dict | None = None,
+    emit_bare_bases: bool = False,
+    bare_base_map: dict | None = None,
 ):
     """
     Compose annotated variant glyphs (former Part 1 of generate_glyphs).
@@ -312,83 +433,33 @@ def generate_annotated_glyphs(
         hb_buffer = hb.Buffer()
 
         def _shape_with(hb_f, text, glyph_order, glyph_order_set):
-            """Shape `text` against `hb_f`, returning a list of
-            ``(glyph_name, cluster, x_offset, y_offset, x_advance)``
-            tuples in the buffer's output order (visual order for RTL
-            runs — exactly the order to draw them in at cumulative
-            advances). Reuses the loop-shared `hb_buffer`."""
-            hb_buffer.clear_contents()
-            hb_buffer.add_str(text)
-            hb_buffer.guess_segment_properties()
-            hb.shape(hb_f, hb_buffer)
-            out = []
-            for info, pos in zip(
-                hb_buffer.glyph_infos, hb_buffer.glyph_positions
-            ):
-                gid = info.codepoint  # post-shaping glyph index, not a
-                # Unicode codepoint — see the comment on the single-char
-                # path below.
-                if 0 <= gid < len(glyph_order):
-                    name = glyph_order[gid]
-                    if name in glyph_order_set:
-                        out.append(
-                            (
-                                name,
-                                info.cluster,
-                                pos.x_offset,
-                                pos.y_offset,
-                                pos.x_advance,
-                            )
-                        )
-            return out
+            """Shape `text` against `hb_f` via the loop-shared
+            `hb_buffer`. Thin wrapper over the module-level
+            `_shape_run` so the DIY mark path (`generate_mark_glyphs`)
+            shares one implementation."""
+            return _shape_run(
+                hb_f, hb_buffer, text, glyph_order, glyph_order_set
+            )
 
         def _annotation_width(anno_shaped):
-            """Total width the shaped annotation block will occupy in
-            OUTPUT units, including the (N-1) inter-glyph
-            `anno_spacing` gaps, so the centring math positions it
-            correctly. Width per glyph is the post-shape x_advance —
-            it respects substitutions and GPOS spacing adjustments."""
-            return sum(
-                round(adv * anno_scale_eff) for *_rest, adv in anno_shaped
-            ) + max(0, len(anno_shaped) - 1) * anno_spacing_units
+            """Shaped-block width in OUTPUT units — delegates to the
+            module-level `_shaped_width`."""
+            return _shaped_width(
+                anno_shaped, anno_scale_eff, anno_spacing_units
+            )
 
         def _draw_annotation(pen, anno_shaped, x_start, y_offset):
-            """Draw a shaped annotation run into `pen`, starting at
-            `x_start` with its baseline at `y_offset`.
-
-            Each glyph's HarfBuzz (x_offset, y_offset) is applied on
-            top of the running position — that's what makes mark
-            glyphs (Thai vowels, Arabic dots, Devanagari ukar, …) sit
-            in the right place; the offsets are zero for plain Latin
-            so linear scripts render exactly as a naive advance walk
-            would. The cursor advances by the SHAPED x_advance (not
-            the hmtx advance — they differ when GPOS adjusts spacing
-            or GSUB substituted a glyph with different metrics), plus
-            the inter-glyph gap after every glyph except the last."""
-            n_anno = len(anno_shaped)
-            x_position = x_start
-            for j, (a_name, _cluster, xoff, yoff, xadv) in enumerate(
-                anno_shaped
-            ):
-                if a_name in anno_glyph_set:
-                    _draw_decomposed(
-                        anno_glyph_set,
-                        a_name,
-                        TransformPen(
-                            pen,
-                            (
-                                anno_scale_eff,
-                                0,
-                                0,
-                                anno_scale_eff,
-                                x_position + xoff * anno_scale_eff,
-                                y_offset + yoff * anno_scale_eff,
-                            ),
-                        ),
-                    )
-                    x_position += round(xadv * anno_scale_eff)
-                    if j < n_anno - 1:
-                        x_position += anno_spacing_units
+            """Draw a shaped annotation run — delegates to the
+            module-level `_draw_shaped`."""
+            _draw_shaped(
+                pen,
+                anno_shaped,
+                x_start,
+                y_offset,
+                anno_glyph_set,
+                anno_scale_eff,
+                anno_spacing_units,
+            )
 
         # HarfBuzz font over the BASE font — built lazily, only when the
         # mapping actually contains word-unit (multi-char) entries.
@@ -759,6 +830,48 @@ def generate_annotated_glyphs(
                 if i == 0:
                     out_cmap[ord(base_char)] = new_glyph_name
 
+            # ── DIY bare scaled-base glyph ───────────────────────────
+            # A mapped char's default glyph (variant 0) carries its
+            # baked default reading, so the manual mark path can't stack
+            # a mark on it without colliding. Emit an annotation-free
+            # scaled base, drawn the way scale_glyphs centres an
+            # un-annotated glyph (x-centred, so a stripped base blends
+            # with surrounding un-annotated CJK and sits under the
+            # em-centred mark), and record default→bare for the strip
+            # GSUB the manual path builds later. Gated so non-DIY builds
+            # add nothing. One per base glyph (deduped on glyph_name).
+            if (
+                emit_bare_bases
+                and bare_base_map is not None
+                and glyph_name not in bare_base_map
+            ):
+                bare_name = f"{BARE_PREFIX}{ord(base_char):06X}"
+                while bare_name in output_glyph_name_used:
+                    cnt += 1
+                    bare_name = GLYPH_PREFIX + str(cnt).zfill(6)
+                bare_pen = TTGlyphPen(output_glyph_set)
+                # x-centre the scaled base (same effective placement the
+                # baked composite ends up at), so a DIY-annotated 行 sits
+                # at the same x as the automatic composite 行.
+                bare_x = (base_advance_width * (1 - base_scale)) / 2
+                _draw_decomposed(
+                    base_glyph_set,
+                    glyph_name,
+                    TransformPen(
+                        bare_pen,
+                        (base_scale, 0, 0, base_scale, bare_x, base_y_offset),
+                    ),
+                )
+                out_glyf[bare_name] = bare_pen.glyph()
+                out_hmtx[bare_name] = (
+                    base_advance_width,
+                    round(base_hmtx[glyph_name][1] * base_scale + bare_x),
+                )
+                if out_vmtx is not None and glyph_name in base_glyph_order_set:
+                    out_vmtx[bare_name] = base_font["vmtx"][glyph_name]
+                output_glyph_name_used[bare_name] = True
+                bare_base_map[glyph_name] = bare_name
+
         # Push the new wingfont* glyph names from glyf.glyphOrder
         # up into font.glyphOrder. fontTools' glyf table __setitem__
         # auto-appends new names to its OWN glyphOrder, but the
@@ -892,3 +1005,212 @@ def generate_glyphs(
         base_scale,
         skip_glyph_names=processed,
     )
+
+
+def generate_mark_glyphs(
+    anno_font,
+    anno_font_bytes,
+    output_font,
+    pua_map,
+    *,
+    anno_scale: float = 0.25,
+    anno_spacing: float = 0.0,
+    upper_y_offset_ratio: float = 0.8,
+    invert: bool = False,
+    assumed_base_advance: float | None = None,
+    mark_x_offset: float = 0.0,
+    anno_axis_location: dict | None = None,
+    base_axis_location: dict | None = None,
+    char_metrics: dict | None = None,
+):
+    """Compose one **zero-advance combining mark** glyph per DIY
+    annotation string and map it to its Plane-15 PUA codepoint.
+
+    This is the manual-annotation counterpart to
+    `generate_annotated_glyphs`: instead of baking ``base + annotation``
+    into a composite, it draws the annotation **alone**, horizontally
+    centred over the *assumed* base cell at ``upper_y_offset_ratio`` (or
+    at the baseline if ``invert``), with a **zero advance width** so it
+    stacks over whatever base precedes it — exactly how a Thai vowel mark
+    combines. The position is baked into the mark's own outline, so **no
+    GPOS mark-to-base anchors are needed** (the same robustness trade the
+    composite path makes).
+
+    ⚠ **Full-width / CJK assumption.** The mark is ONE shared glyph reused
+    after any base, so it cannot know the advance of the specific base it
+    will follow — it must assume one, via ``assumed_base_advance`` (default
+    = the output em). This is exact for full-width CJK ideographs
+    (advance == em). For variable-width bases (Latin, Thai consonants,
+    Arabic, Devanagari, …) the real advance differs and the mark sits
+    off-centre over the base by ~(real_advance − assumed)/2; the DIY typed
+    path is therefore a **CJK / full-width-base feature**. (Non-CJK *base*
+    scripts are handled instead by the word-unit composite path, which
+    bakes base+annotation into a single glyph.)
+
+    `pua_map` is ``{annotation_string: codepoint}`` from
+    `diy_handler.build_diy_inventory`. Each mark glyph is named
+    ``wingfontmark<CODEPOINT-HEX>`` (stable, collision-free) and given a
+    cmap entry at its codepoint in every format-12/13 subtable.
+
+    The shaping + drawing reuse the shared `_shape_run` / `_shaped_width`
+    / `_draw_shaped` helpers, so a DIY annotation renders identically to
+    the same string baked into a composite. `anno_scale` is normalised by
+    ``output_upm / anno_upm`` exactly as in the composite path, so the
+    two paths match visually.
+
+    When `char_metrics` (a dict) is passed, its ``"min_y"`` / ``"max_y"``
+    keys are updated with the extreme ink Y of the mark glyphs, so the
+    caller's auto-fit-ascent can keep tall marks from being clipped (the
+    mark counterpart to the composite path's `char_metrics`).
+
+    Returns the list of mark glyph names that were added (empty if
+    `pua_map` is empty). Later phases tag these GDEF class 3 (mark) and
+    build the base-strip + typed-letter ligature lookups that reach them.
+    """
+    import uharfbuzz as hb
+
+    if not pua_map:
+        return []
+
+    hb_face = hb.Face(anno_font_bytes)
+    hb_font = hb.Font(hb_face)
+    if anno_axis_location:
+        hb_font.set_variations(
+            {k: float(v) for k, v in anno_axis_location.items()}
+        )
+
+    with step_timer("diy mark glyph composition") as timer:
+        anno_glyph_set = anno_font.getGlyphSet(location=anno_axis_location)
+        output_glyph_set = output_font.getGlyphSet(location=base_axis_location)
+        anno_glyph_order = anno_font.getGlyphOrder()
+        anno_glyph_order_set = set(anno_glyph_order)
+
+        # Output UPM (the output font inherited the base font's head).
+        units_per_em = output_font["head"].unitsPerEm
+
+        # ── Assumed base advance — the full-width / CJK assumption ───────
+        # A mark is ONE shared glyph reused after ANY base, so at draw time
+        # it cannot know the advance of the specific base that will precede
+        # it; it must assume a single value. We assume the base advances by
+        # exactly one em (full-width), which is true for CJK ideographs.
+        # For variable-width bases (Latin, Thai consonants, Arabic, …) the
+        # real advance differs, so the mark — centred over this assumed
+        # advance — sits off-centre over the base by ~(real_adv − assumed)/2.
+        # The value is exposed so a caller targeting a monospaced non-em
+        # advance can override it; default = the em.
+        if assumed_base_advance is None:
+            assumed_base_advance = units_per_em
+        anno_units_per_em = anno_font["head"].unitsPerEm
+        # Same UPM normalization as generate_annotated_glyphs so a DIY
+        # mark and a baked composite of the same string are the same size.
+        anno_scale_eff = anno_scale * units_per_em / anno_units_per_em
+        anno_spacing_units = round(units_per_em * anno_spacing)
+
+        # Marks sit where the composite path puts its annotation: above
+        # the base at `upper_y_offset_ratio`, or on the baseline if the
+        # build inverts (annotation below).
+        anno_y_offset = (
+            0 if invert else round(units_per_em * upper_y_offset_ratio)
+        )
+
+        out_glyf = output_font["glyf"]
+        out_hmtx = output_font["hmtx"]
+        out_vmtx = output_font["vmtx"] if "vmtx" in output_font.keys() else None
+
+        hb_buffer = hb.Buffer()
+        mark_names: list[str] = []
+        skipped: list[str] = []
+
+        # Deterministic order (by codepoint) for stable glyph-order diffs.
+        for anno_str, cp in sorted(pua_map.items(), key=lambda kv: kv[1]):
+            mark_name = f"{MARK_PREFIX}{cp:05X}"
+
+            anno_shaped = _shape_run(
+                hb_font, hb_buffer, anno_str, anno_glyph_order,
+                anno_glyph_order_set,
+            )
+            if not anno_shaped:
+                skipped.append(anno_str)
+                continue
+
+            anno_len = _shaped_width(
+                anno_shaped, anno_scale_eff, anno_spacing_units
+            )
+
+            pen = TTGlyphPen(output_glyph_set)
+            # The mark is a TRAILING, zero-advance glyph: the shaper draws
+            # it at the cursor AFTER the preceding base, i.e. one
+            # `assumed_base_advance` to the right of the base cell's origin.
+            # To centre its ink OVER that base we draw the annotation back
+            # by that advance and centre it within it — the x-centred bare
+            # base ends up at the same centre, so the annotation lands
+            # centred over it (exactly so when the real base advance equals
+            # `assumed_base_advance`, i.e. a full-width CJK base).
+            #
+            # `mark_x_offset` is an optional renderer-compensation nudge,
+            # expressed as a fraction of the output em and applied to every
+            # mark. Default 0 keeps the geometric centre (correct in
+            # DirectWrite/Word and print). Some browsers position the
+            # orphaned cross-run mark from a pen origin ~0.125em to the right
+            # of the font's assumption; a negative offset (e.g. -0.0625em)
+            # can split that difference. It is NOT baked by default because
+            # it trades Word centring for browser centring — see
+            # HYBRID_ANNOTATION_DESIGN.md §"Cross-run positioning".
+            mark_x_start = (
+                -(assumed_base_advance + anno_len) / 2
+                + mark_x_offset * units_per_em
+            )
+            _draw_shaped(
+                pen,
+                anno_shaped,
+                mark_x_start,
+                anno_y_offset,
+                anno_glyph_set,
+                anno_scale_eff,
+                anno_spacing_units,
+            )
+
+            glyph = pen.glyph()
+            # Zero advance → combining behaviour; lsb tracks the real ink
+            # xMin (TTGlyphPen emits a simple glyph with a flat
+            # `coordinates` array — empty for ink-less strings, skipped).
+            lsb = 0
+            coords = getattr(glyph, "coordinates", None)
+            if coords is not None and len(coords):
+                xs = [x for x, _y in coords]
+                ys = [y for _x, y in coords]
+                lsb = round(min(xs))
+                if char_metrics is not None:
+                    char_metrics["max_y"] = max(
+                        char_metrics.get("max_y", 0), max(ys)
+                    )
+                    char_metrics["min_y"] = min(
+                        char_metrics.get("min_y", 0), min(ys)
+                    )
+
+            out_glyf[mark_name] = glyph
+            out_hmtx[mark_name] = (0, lsb)
+            if out_vmtx is not None:
+                out_vmtx[mark_name] = (units_per_em, 0)
+
+            # NO cmap entry: marks are reached ONLY through the typed
+            # full-width input ligature (mark_input_handler). The codepoint
+            # `cp` is used purely as a stable, unique glyph-name suffix —
+            # there is no PUA "type the codepoint" route (it isn't
+            # user-typable, and the typed full-width sequence already
+            # survives copy-paste).
+
+            mark_names.append(mark_name)
+
+        # Sync glyf.glyphOrder → font.glyphOrder so the subsetter and any
+        # later table builders see the new mark names (mirrors the tail
+        # of generate_annotated_glyphs).
+        output_font.setGlyphOrder(output_font["glyf"].glyphOrder)
+
+        if skipped:
+            print(
+                f"[diy] {len(skipped)} annotation(s) produced no glyphs "
+                f"and were skipped (e.g. {skipped[0]!r})"
+            )
+        timer.note(f"{len(mark_names)} mark glyphs")
+        return mark_names

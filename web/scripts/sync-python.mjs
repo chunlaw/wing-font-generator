@@ -52,6 +52,9 @@ const MANIFEST = [
   ["ivs_handler.py", "ivs_handler.py"],
   ["liga_handler.py", "liga_handler.py"],
   ["word_liga_handler.py", "word_liga_handler.py"],
+  ["diy_handler.py", "diy_handler.py"], // DIY manual-annotation inventory (CSV A → PUA)
+  ["mark_input_handler.py", "mark_input_handler.py"], // DIY typed-romanization ligatures
+  ["mark_strip_handler.py", "mark_strip_handler.py"], // DIY base-strip chain sub + GDEF mark class
   ["utils.py", "utils.py"],
   ["runner.py", "runner.py"],
 

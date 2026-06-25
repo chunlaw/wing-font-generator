@@ -10,7 +10,14 @@ from chain_context_handler import buildChainSub
 from ivs_handler import buildIvs
 from liga_handler import buildLiga, DEFAULT_TRIGGER_CHAR
 from word_liga_handler import buildWordLiga, buildLigCarets
-from build_glyph import generate_annotated_glyphs, scale_glyphs
+from build_glyph import (
+    generate_annotated_glyphs,
+    scale_glyphs,
+    generate_mark_glyphs,
+)
+from diy_handler import build_diy_inventory
+from mark_input_handler import buildMarkInputLiga
+from mark_strip_handler import buildBareStripLiga, tagMarksAsGdefMarks
 import gc
 import sys
 import argparse
@@ -574,7 +581,9 @@ def tag_wing_font_version(font):
         )
 
 
-def _check_glyph_count_budget(output_font, char_mapping, optimize, mapping_path):
+def _check_glyph_count_budget(
+    output_font, char_mapping, optimize, mapping_path, diy_pua_map=None
+):
     """Pre-flight check: bail early if the predicted output glyph count
     would exceed OpenType's hard 65,535 ceiling.
 
@@ -606,21 +615,35 @@ def _check_glyph_count_budget(output_font, char_mapping, optimize, mapping_path)
     """
     predicted_new = sum(len(v) for v in char_mapping.values())
     existing = output_font["maxp"].numGlyphs
+    # DIY adds one mark glyph per distinct annotation plus one bare
+    # scaled-base per single-char mapped entry. Both survive --optimize
+    # (kept explicitly in the subset keep-list), so count them in either
+    # branch.
+    diy_marks = len(diy_pua_map or {})
+    diy_bares = (
+        sum(1 for k in char_mapping if len(k) == 1) if diy_pua_map else 0
+    )
+    diy_extra = diy_marks + diy_bares
+    diy_note = (
+        f" + {diy_marks} DIY marks + {diy_bares} bare bases"
+        if diy_extra
+        else ""
+    )
     if optimize:
         # Subset will discard most of `existing`. The keep-list is
         # essentially char_mapping's keys + a small structural retain
         # set; 1,000 is a generous overestimate of "what the subsetter
         # holds onto regardless of mapping".
-        predicted_total = predicted_new + 1000
+        predicted_total = predicted_new + 1000 + diy_extra
         budget_explanation = (
             f"{predicted_new} new glyphs from your CSV + ~1,000 "
-            "structural glyphs kept by --optimize subset"
+            f"structural glyphs kept by --optimize subset{diy_note}"
         )
     else:
-        predicted_total = existing + predicted_new
+        predicted_total = existing + predicted_new + diy_extra
         budget_explanation = (
             f"{existing} glyphs already in the base font + "
-            f"{predicted_new} new glyphs from your CSV"
+            f"{predicted_new} new glyphs from your CSV{diy_note}"
         )
     if predicted_total > GLYPH_BUDGET_SOFT_CAP:
         # Hand the caller a concrete trim target rather than a vague
@@ -659,12 +682,21 @@ def _check_glyph_count_budget(output_font, char_mapping, optimize, mapping_path)
             f"scripts like Thai/Arabic; one variant glyph per reading\n"
             f"for CJK). Mapping: {mapping_path}\n"
             f"\n"
-            f"Trim the CSV so the result stays under the cap. As a\n"
-            f"rough target: keep about the top {target_row_estimate:,}\n"
-            f"rows (by weight — the third CSV column), then retry.\n"
-            f"\n"
-            f"Aborting before the {('composition + ') if not optimize else ''}"
-            f"save phase to spare you the wasted compute.\n"
+            + (
+                "DIY build: re-run with --optimize (-opt). Subsetting keeps\n"
+                "only the glyphs your mapping reaches plus the DIY marks /\n"
+                "bare bases, which fits — whereas un-subsetted the ~50k-glyph\n"
+                "base font alone already overflows. DIY annotation then\n"
+                "works for any character present in the mapping.\n\n"
+                if (diy_pua_map and not optimize)
+                else (
+                    f"Trim the CSV so the result stays under the cap. As a\n"
+                    f"rough target: keep about the top {target_row_estimate:,}\n"
+                    f"rows (by weight — the third CSV column), then retry.\n\n"
+                )
+            )
+            + f"Aborting before the {('composition + ') if not optimize else ''}"
+            + f"save phase to spare you the wasted compute.\n"
         )
         print(diagnostic, flush=True)
         raise RuntimeError(
@@ -907,6 +939,29 @@ def main(
     # sTypoAscender is never touched here, so apps that respect typo
     # metrics keep the base font's line spacing either way.
     out_ascent=None,
+    # --- DIY manual-annotation inventory ---------------------------
+    #
+    # Optional path to CSV `A` (`input,annotation` per line): the
+    # bounded set of annotations a user may suffix onto ANY base
+    # character via the manual mark path (see
+    # HYBRID_ANNOTATION_DESIGN.md). None disables the DIY path
+    # entirely — the automatic ccmp output is unaffected either way.
+    # Phase 1 parses the file and assigns each annotation a stable
+    # Plane-15 PUA id (internal mark naming only — there is no cmap /
+    # PUA-typing route and no sidecar file). Later phases consume this
+    # inventory to compose the shared mark glyphs.
+    diy_annotations=None,
+    # --- DIY mark horizontal offset --------------------------------
+    #
+    # Renderer-compensation nudge for the DIY shared mark, as a
+    # fraction of the output em. Default 0.0 keeps the geometric
+    # centre, which is correct in DirectWrite/Word and print. Some
+    # browsers position the orphaned cross-run mark from a pen origin
+    # ~0.125em right of the font's assumption; set e.g. -0.0625 to
+    # split that difference, or -0.125 to favour the browser. Trades
+    # Word centring for browser centring — see
+    # HYBRID_ANNOTATION_DESIGN.md §"Cross-run positioning".
+    mark_x_offset=0.0,
 ):
     # First log line: the equivalent CLI command this invocation
     # corresponds to. Useful both for CLI users (round-tripping the
@@ -932,6 +987,40 @@ def main(
         base_axis_location=base_axis_location,
         anno_axis_location=anno_axis_location,
     ))
+
+    # ── DIY inventory: parse `A`, assign internal PUA mark ids ─────
+    # Done up front so a malformed file or an oversized inventory
+    # fails in milliseconds rather than after the multi-minute
+    # composition phase. Phase 1 only produces the in-memory inventory
+    # (pua_map + typed inputs); the mark-glyph composition that
+    # consumes `diy_pua_map` is wired in a later phase.
+    diy_pua_map = {}
+    diy_inputs = []
+    if diy_annotations:
+        _diy = build_diy_inventory(diy_annotations)
+        diy_pua_map = _diy.pua_map
+        diy_inputs = _diy.inputs
+        print(
+            f"[diy] inventory: {len(diy_pua_map):,} annotation(s), "
+            f"{len(diy_inputs):,} typed input(s)"
+        )
+        # DIY needs --optimize, not the opposite. A full CJK base font is
+        # ~50k glyphs on its own, so an UN-subsetted build of any large
+        # mapping already overflows the 65,535 cap before DIY adds a
+        # single mark. With --optimize the subsetter keeps only
+        # mapping-reached glyphs (+ the DIY marks / bare bases / typed
+        # inputs we add to the keep-list below), which fits comfortably.
+        # The trade-off: DIY annotation then works for any character that
+        # SURVIVES the subset — i.e. anything in the mapping — which for a
+        # comprehensive mapping like canto-lshk is every common character.
+        # See HYBRID_ANNOTATION_DESIGN.md §5.
+        if not optimize:
+            print(
+                "[diy] note: DIY builds normally need --optimize (-opt) — a "
+                "full CJK base alone is ~50k glyphs, so an un-subsetted "
+                "build overflows the 65,535-glyph cap. Re-run with -opt if "
+                "the pre-flight budget check below aborts."
+            )
 
     # ── Family-name length check (very early fail) ────────────────
     # Windows GDI caps `LOGFONT.lfFaceName` at 32 bytes including the
@@ -1130,7 +1219,9 @@ def main(
     # ~4 minutes in, deep inside `output_font.save(...)`, with an
     # opaque `struct.error: 'H' format requires 0 <= number <= 65535`.
     # Check now so we can bail with an actionable error in milliseconds.
-    _check_glyph_count_budget(output_font, char_mapping, optimize, mapping)
+    _check_glyph_count_budget(
+        output_font, char_mapping, optimize, mapping, diy_pua_map=diy_pua_map
+    )
     # Same spirit, different ceiling: guard word-unit mappings against
     # the pure-Python save blow-up when uharfbuzz is missing.
     _check_word_unit_save_budget(char_mapping, mapping)
@@ -1177,6 +1268,14 @@ def main(
     # auto-fit the output font's clipping ascent so tall annotations
     # aren't truncated — the CJK counterpart to word_metrics.
     char_metrics: dict = {}
+
+    # ── DIY manual-annotation state (empty unless --diy-annotations) ──
+    # `bare_base_map` is filled by generate_annotated_glyphs
+    # (emit_bare_bases) with {default_base_glyph: bare_base_glyph};
+    # `diy_mark_names` is returned by generate_mark_glyphs. Both feed the
+    # base-strip + GDEF wiring in the GSUB phase.
+    bare_base_map: dict = {}
+    diy_mark_names: list = []
 
     # ── Memory: drop CSV-parse transients before Phase 1 ─────────────
     # load_mapping does four stable sorts in succession (each allocates
@@ -1230,10 +1329,33 @@ def main(
         word_metrics=word_metrics,
         word_components=word_components,
         char_metrics=char_metrics,
+        emit_bare_bases=bool(diy_pua_map),
+        bare_base_map=bare_base_map,
     )
     # The base-font blob was only needed for HarfBuzz shaping of word
     # entries during composition; release it before the GSUB phase.
     del base_font_bytes
+
+    # ── DIY: compose the shared mark glyphs (route A + route B target) ──
+    # Must run while the annotation font is still alive (it's closed just
+    # below). Adds one zero-advance combining mark per inventory entry,
+    # mapped to its Plane-15 PUA codepoint. Tall marks feed the same
+    # char_metrics that drives the ascent auto-fit.
+    if diy_pua_map:
+        diy_mark_names = generate_mark_glyphs(
+            anno_font,
+            anno_font_bytes,
+            output_font,
+            diy_pua_map,
+            anno_scale=anno_scale,
+            anno_spacing=anno_spacing,
+            upper_y_offset_ratio=upper_y_offset_ratio,
+            invert=invert,
+            mark_x_offset=mark_x_offset,
+            anno_axis_location=anno_axis_location,
+            base_axis_location=base_axis_location,
+            char_metrics=char_metrics,
+        )
 
     # ── Memory: release the annotation font ASAP ────────────────────
     # After composition completes, anno_font + anno_font_bytes are
@@ -1284,6 +1406,33 @@ def main(
     # macOS Character Viewer, Adobe Glyphs panel). The existing
     # digit-suffix and 丅+numeral paths in liga_handler stay as
     # human-readable fallbacks for users without VS input.
+
+    # Step 2(0) — DIY manual-annotation GSUB, built FIRST (lowest lookup
+    # indices) so the (base, ０) → bare strip wins over liga's
+    # (base, ０) → default-reading reset rule (lower index fires first and
+    # consumes the ０). All plain ccmp ligatures — no chain-context
+    # probe-compile, so no glyph-ID overflow on the pre-subset font, and
+    # the subset's GSUB closure keeps the referenced DIY glyphs. The user
+    # types e.g. 行０ｚａａ１ → bare 行 + zaa1: the full-width ０ (script
+    # Common) strips in the Han run, while the full-width letters (script
+    # Latin) form the mark in their own run and overprint the bare base.
+    # See mark_strip_handler for why the explicit ０ trigger is required.
+    if diy_pua_map:
+        buildBareStripLiga(output_font, bare_base_map)
+        buildMarkInputLiga(output_font, diy_inputs)
+        # Tag the marks GDEF class 3 (mark). This is what tells a shaper
+        # the zero-advance glyph is a COMBINING mark that overlaps the
+        # preceding base rather than a spacing glyph. It matters when the
+        # base and the mark land in DIFFERENT runs — browsers itemise by
+        # Unicode script, so `ｚａａ１` (Latin) splits off from the Han
+        # `行０`; without the mark tag the browser does not treat the
+        # trailing zero-advance mark as combining and the annotation
+        # drifts right. Word keeps everything in one run (EAW=Fullwidth),
+        # so it was already correct either way. There is no GPOS anchor on
+        # these marks, so engines fall back to the glyph's own (baked −em)
+        # outline for the position — no double-shift.
+        tagMarksAsGdefMarks(output_font, diy_mark_names)
+
     buildChainSub(output_font, word_mapping, char_mapping)
     # Auto-inject the trigger glyph into the output font's cmap if the
     # base font doesn't already encode it. Without this, NotoSansHK /
@@ -1380,6 +1529,22 @@ def main(
                 )
             )
 
+        # DIY: keep the mark glyphs and bare scaled-base glyphs through the
+        # subset. Marks are reached via the typed-input ligature and bare
+        # bases via the (base,０) ligature; listing them explicitly
+        # guarantees survival regardless of GSUB-closure quirks. The
+        # typed-input codepoints (the full-width letters/digits the user
+        # types) go into `unicodes` below so their cmap entries — and the
+        # full-width input glyphs they map to — aren't pruned. (There is no
+        # PUA route: marks carry no cmap entry.)
+        diy_unicodes: set = set()
+        if diy_pua_map:
+            glyphs_to_be_kept.extend(diy_mark_names)
+            glyphs_to_be_kept.extend(bare_base_map.values())
+            diy_unicodes |= {
+                ord(ch) for inp, _cp in diy_inputs for ch in inp
+            }
+
         valid_glyphs_to_keep = list(
             set(g for g in glyphs_to_be_kept if g is not None)
         )
@@ -1446,7 +1611,7 @@ def main(
             subsetter = subset.Subsetter()
             subsetter.populate(
                 glyphs=valid_glyphs_to_keep,
-                unicodes=sorted(ivs_unicodes),
+                unicodes=sorted(ivs_unicodes | diy_unicodes),
             )
             subsetter.subset(output_font)
             timer.note(f"{len(valid_glyphs_to_keep)} glyphs kept")
@@ -1663,6 +1828,44 @@ if __name__ == "__main__":
     parser.add_argument('-v', '--invert', action='store_true', help='Invert the annotation and base glyph')
     parser.add_argument('-opt', '--optimize', action="store_true", help="Optimizing size by subsetting annotated glyph only")
     parser.add_argument(
+        '--diy-annotations',
+        dest='diy_annotations',
+        default=None,
+        metavar='A.csv',
+        help=(
+            "Optional CSV `A` of annotations a user may suffix onto ANY "
+            "base character (the bounded DIY manual-annotation inventory). "
+            "Two columns per line, `input,annotation` (e.g. `ｚａａ１,zaa1`): "
+            "column 1 is what the user types, column 2 is what renders. A "
+            "single column is also accepted (the full-width input is then "
+            "derived from it). Blank lines and `#` comments are skipped. "
+            "Omit to disable the DIY path; the automatic ccmp output is "
+            "unaffected either way. Note: a DIY-enabled build REQUIRES "
+            "--optimize (-opt) — an un-subsetted full CJK base alone "
+            "(~50k glyphs) already overflows the 65,535-glyph cap. With "
+            "-opt the subsetter keeps the mapping-reached glyphs plus the "
+            "DIY marks/bare bases, so annotation works for any character "
+            "in the mapping. See HYBRID_ANNOTATION_DESIGN.md."
+        ),
+    )
+    parser.add_argument(
+        '--mark-x-offset',
+        dest='mark_x_offset',
+        type=float,
+        default=0.0,
+        help=(
+            "Horizontal offset for the DIY shared mark, as a fraction of "
+            "the output em. Default 0.0 = geometric centre (correct in "
+            "Word/DirectWrite and print). Browsers position the orphaned "
+            "cross-run mark from a pen origin ~0.125em right of the font's "
+            "assumption, so the mark looks shifted right there; pass a "
+            "negative value (e.g. -0.0625 to split the difference, -0.125 "
+            "to favour the browser) to compensate. This trades Word "
+            "centring for browser centring — see "
+            "HYBRID_ANNOTATION_DESIGN.md §'Cross-run positioning'."
+        ),
+    )
+    parser.add_argument(
         '--trigger-char',
         default=DEFAULT_TRIGGER_CHAR,
         help=(
@@ -1787,4 +1990,6 @@ if __name__ == "__main__":
         out_ascent=options.out_ascent,
         base_axis_location=base_axis_location,
         anno_axis_location=anno_axis_location,
+        diy_annotations=options.diy_annotations,
+        mark_x_offset=options.mark_x_offset,
     )
