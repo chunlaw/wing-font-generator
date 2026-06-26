@@ -1,19 +1,56 @@
 """
 liga_handler — emit Ligature Substitution lookups that let the user
-manually pick a variant by typing ``<char><number>`` (or, as a fallback
+manually pick a reading by typing ``<char><number>`` (or, as a fallback
 for IMEs that don't easily type Latin digits, ``<char>丅<chinese-numeral>``).
+
+Digit semantics — 1-indexed, with 0 reserved for "no annotation"
+-----------------------------------------------------------------
+
+  ============   ==============================================
+  User types     Result
+  ============   ==============================================
+  ``字``         Default reading (cmap)
+  ``字0``        Bare ``字`` — no annotation on top
+  ``字1``        1st reading (= default; same as bare ``字``)
+  ``字2``        2nd reading
+  ``字9``        9th reading
+  ``字10``       10th reading
+  ``字N``        N-th reading (internal variant index ``N − 1``)
+  ============   ==============================================
+
+This is a BREAKING CHANGE from the earlier 0-indexed scheme where
+``字0`` was a tautology (reset to default reading, same display as
+``字`` alone) and ``字1`` jumped to the 2nd reading. The 1-indexed
+design gives ``0`` a real meaning ("show me the kanji without
+furigana"), aligns ``字1`` with how humans count alternates ("first" =
+1), and removes the asymmetric tautology corner case.
+
+Both halfwidth ASCII digits (``0``..``9``) and fullwidth digits
+(``０``..``９`` U+FF10–FF19) trigger identically. The fullwidth path
+exists because Microsoft Word's DirectWrite itemiser splits halfwidth
+ASCII digits into a separate shaping run from adjacent CJK, breaking
+the cross-run ligature; fullwidth digits are EAW=F and stay in the
+Han run, so they fire reliably in Word. Mixed input like ``字１0`` is
+intentionally NOT supported — no mixed-dialect rules are emitted, so
+the longest-match falls back to the prefix (``字１`` → default,
+literal ``0`` after).
+
+The ``0 → bare`` rule only fires when ``bare_base_map`` is provided —
+which happens when ``generate_annotated_glyphs(emit_bare_bases=True)``
+ran during composition (now the default for all builds, was previously
+DIY-only).
 
 Multi-digit selection
 ---------------------
 
 The number after the character is read in full decimal, so a character
-with more than nine variants is still reachable from the keyboard:
-``行1`` → variant 1, ``行11`` → variant 11, ``行111`` → variant 111, and
-``行0`` resets to the default reading. This works because every variant
-is emitted as a ligature whose components spell its index
-(``(行,1,1) -> variant 11``), and fontTools orders the ligatures in a set
-longest-first, so the longest valid number wins (``行11`` matches the
-3-component rule before the 2-component ``行1``).
+with many readings is reachable from the keyboard:
+``行1`` → 1st reading, ``行10`` → 10th reading, ``行11`` → 11th reading,
+``行111`` → 111th reading. Every reading is emitted as a ligature whose
+components spell its 1-indexed number (``(行, '1', '1') → 11th reading``),
+and fontTools orders the ligatures in a set longest-first, so the
+longest valid number wins (``行11`` matches the 3-component rule before
+the 2-component ``行1``).
 
 The ligature always STARTS from the character's default glyph (the glyph
 the bare character maps to), and the whole number is typed in one run
@@ -104,31 +141,61 @@ def buildLiga(
     char_mapping: Dict[str, Dict[str, Tuple[str, int]]],
     *,
     trigger_char: str = DEFAULT_TRIGGER_CHAR,
+    bare_base_map: Dict[str, str] | None = None,
 ) -> None:
     """
     Build the per-character variant-selection ligature lookup and
     register it under the ``ccmp`` feature. See module docstring for
     why ``ccmp`` and not ``liga``.
 
+    Digit-trigger semantics — **1-indexed**, with ``0`` reserved
+    for "no annotation":
+
+      ============   ==============================================
+      User types     Result
+      ============   ==============================================
+      ``字``         Default reading (cmap)
+      ``字0``        Bare ``字`` — no annotation on top
+      ``字1``        1st reading (= default reading; same as ``字``)
+      ``字2``        2nd reading
+      ``字9``        9th reading
+      ``字10``       10th reading
+      ``字N``        N-th reading (variant ``N − 1`` internally)
+      ============   ==============================================
+
     For each character with N annotations the builder emits, all
     starting from the character's default glyph:
-      - ``(default, '0')                    -> default glyph``
-      - ``(default, <decimal digits of i>)  -> variant-i glyph`` for
-        i in 1..N-1 (single component for 1–9, multi-component for ≥10 —
-        see _add_digit_rules / the module docstring)
-      - ``(default, <trigger>, 零/一/二/...) -> default/variant-i`` as a
-        single-numeral fallback (1–9)
+      - ``(default, '0') -> bare glyph`` (if ``bare_base_map`` provides one)
+      - ``(default, <decimal digits of N>) -> variant N-1`` for N in 1..len(variants)
+        (single component for 1–9, multi-component for ≥10)
+      - ``(default, <trigger>, 零) -> bare`` (IME-friendly bare strip)
+      - ``(default, <trigger>, 一/二/...) -> 1st/2nd/...`` reading
+
+    This is a BREAKING CHANGE from earlier 0-indexed behaviour where
+    ``字0`` was a tautology (reset to default = same as ``字``) and
+    ``字1`` jumped to the 2nd reading. The 1-indexed scheme gives ``0``
+    a real meaning (= "show me the kanji without furigana") and aligns
+    ``字1`` with how humans count alternates ("first" = 1).
 
     Args:
         output_font: TTFont being mutated.
         char_mapping: ``char -> {annotation_str: (glyph_name, variant_index)}``.
+            ``variant_index`` here is the INTERNAL 0-based index (0 =
+            default reading, 1 = 2nd reading, …). The user-facing digit
+            shift to 1-based is applied INSIDE this function.
         trigger_char: The single-character separator for the IME-friendly
-            variant override (e.g. ``行<trigger>一`` to select variant 1).
+            variant override (e.g. ``行<trigger>一`` to select 1st reading).
             Defaults to ``丅`` (U+4E05). Pass ``""`` to disable the
             trigger+numeral path entirely (only the digit-suffix path will
             be emitted). The character MUST exist in the font's cmap, MUST
             be a single codepoint, and SHOULD NOT appear in the user's
             mapping (it'd collide with an annotated character).
+        bare_base_map: ``{default_base_glyph: bare_base_glyph}``, built by
+            ``generate_annotated_glyphs(emit_bare_bases=True)``. When
+            provided, ``(base, 0) → bare`` rules are emitted so typing
+            ``字0`` (or ``字０``) strips the baked annotation. When None
+            or empty, the ``0`` rules are skipped — typing ``字0`` falls
+            through to a literal ``0`` rendering.
     """
     with step_timer("ligature substitution") as timer:
         gsub = output_font["GSUB"].table
@@ -202,32 +269,43 @@ def buildLiga(
             index_to_glyph = {idx: name for name, idx in resolved}
 
             # The ligature start is ALWAYS the character's default
-            # (variant-0) glyph — i.e. the glyph the bare character cmaps
-            # to. The whole number is typed in one run after it
-            # (`行11` → [行, 1, 1]), so longest-match picks the variant
-            # directly from the default base; we no longer register each
-            # variant glyph as its own ligature start. See the module
-            # docstring ("Multi-digit selection") for why that override
-            # was dropped.
+            # (cmap-target) glyph. The whole number is typed in one run
+            # after it (`行11` → [行, 1, 1]), so longest-match picks
+            # the user-facing N-th reading directly. We no longer
+            # register each variant glyph as its own ligature start.
+            #
+            # Bare glyph (the "0" target) is per-base — look it up from
+            # the bare_base_map populated during composition. None when
+            # the user hasn't enabled emit_bare_bases; in that case the
+            # `0` rules are skipped and typing `字0` falls through to a
+            # literal `0`.
+            bare_glyph = (
+                bare_base_map.get(default_glyph_name)
+                if bare_base_map
+                else None
+            )
             before = len(liga_builder.ligatures)
             _add_digit_rules(
                 liga_builder,
                 base_glyph=default_glyph_name,
                 default_glyph=default_glyph_name,
+                bare_glyph=bare_glyph,
                 index_to_glyph=index_to_glyph,
                 digit_glyphs=digit_glyphs,
             )
             # Parallel fullwidth-digit rules — same builder, same
-            # decimal-encoding logic (`(base, FW1, FW1)` for variant
-            # 11), distinct glyph tuples so the halfwidth and
-            # fullwidth coverage sets coexist without collision.
-            # `_add_digit_rules` is generic over its `digit_glyphs`
-            # arg — same function, different glyph dict.
+            # 1-indexed decimal-encoding logic (`(base, FW1, FW1)` for
+            # the 11th reading = variant 10 internally), distinct
+            # glyph tuples so the halfwidth and fullwidth coverage
+            # sets coexist without collision. `_add_digit_rules` is
+            # generic over its `digit_glyphs` arg — same function,
+            # different glyph dict.
             if fullwidth_digit_glyphs:
                 _add_digit_rules(
                     liga_builder,
                     base_glyph=default_glyph_name,
                     default_glyph=default_glyph_name,
+                    bare_glyph=bare_glyph,
                     index_to_glyph=index_to_glyph,
                     digit_glyphs=fullwidth_digit_glyphs,
                 )
@@ -236,6 +314,7 @@ def buildLiga(
                     liga_builder,
                     base_glyph=default_glyph_name,
                     default_glyph=default_glyph_name,
+                    bare_glyph=bare_glyph,
                     index_to_glyph=index_to_glyph,
                     trigger_glyph=trigger_glyph,
                     numeral_glyphs=numeral_glyphs,
@@ -353,37 +432,50 @@ def _add_digit_rules(
     *,
     base_glyph: str,
     default_glyph: str,
+    bare_glyph: str | None,
     index_to_glyph: Dict[int, str],
     digit_glyphs: Dict[int, str],
 ) -> None:
-    """Emit ``(base, <decimal digits of i>) -> variant_i`` rules so the
-    user picks variant *i* by typing its number after the character.
+    """Emit ``(base, <decimal digits of N>) -> N-th reading`` rules so the
+    user picks the N-th reading by typing its number after the character.
 
-    Single-digit indices (1–9) produce a 2-component ligature
-    ``(base, 'i')`` exactly as before; indices ≥ 10 produce a
-    multi-component ligature, e.g. variant 11 -> ``(base, '1', '1')`` and
-    variant 111 -> ``(base, '1', '1', '1')``. fontTools orders the
-    ligatures within a set longest-first (``_getLigatureSortKey`` returns
-    ``-len(components)``), so for ``行11`` the 3-component ``(行,1,1)``
-    rule is tried before the 2-component ``(行,1)`` — the longest valid
-    number wins. A number with no matching variant falls back to its
-    longest matching prefix and leaves the remaining digits as literal
-    text (e.g. ``行19`` with only variant 1 present → variant 1 then a
-    literal ``9``).
+    **1-indexed semantics**:
 
-    ``(base, '0')`` resets to the default reading. Because the reset
-    target is the default glyph — which is itself the character's base —
-    a leading-zero sequence like ``行01`` naturally re-enters and
-    resolves to variant 1.
+      - ``(base, '0')`` → bare glyph (no annotation) — only emitted when
+        ``bare_glyph`` is provided.
+      - ``(base, '1')`` → default reading (= internal variant 0). Same
+        display as typing the bare character.
+      - ``(base, 'N')`` for N ≥ 2 → internal variant ``N - 1``
+        (the N-th reading).
+
+    Single-digit N (1..9) produces a 2-component ligature ``(base, 'N')``;
+    N ≥ 10 produces a multi-component ligature, e.g. ``(base, '1', '0')``
+    for the 10th reading, ``(base, '1', '1')`` for the 11th, etc.
+    fontTools orders ligatures within a coverage set longest-first
+    (``_getLigatureSortKey`` returns ``-len(components)``), so for
+    ``行10`` the 3-component ``(行, '1', '0')`` rule is tried before the
+    2-component ``(行, '1')`` — the longest valid number wins. A number
+    with no matching reading falls back to its longest matching prefix
+    and leaves the remaining digits as literal text (e.g. ``行19`` on a
+    character with only 1 reading → 1st reading then literal ``9``).
+
+    The previous 0-indexed scheme (``0 = reset to default``, ``1 = 2nd
+    reading``) is gone — ``0`` now means "strip annotation", which
+    requires the caller to emit and pass in a ``bare_glyph`` via
+    ``generate_annotated_glyphs(emit_bare_bases=True)``.
     """
     zero_glyph = digit_glyphs.get(0)
-    if zero_glyph is not None:
-        # '0' resets to the character's default reading.
-        builder.ligatures[(base_glyph, zero_glyph)] = default_glyph
-    for num_index, target in index_to_glyph.items():
-        if num_index < 1:
-            continue
-        components = _digit_components(num_index, digit_glyphs)
+    if zero_glyph is not None and bare_glyph is not None:
+        # '0' strips the baked annotation → bare base glyph. Only
+        # emitted when bare_glyph is available — typing `字0` on a
+        # build without bare bases would otherwise leave the literal
+        # '0' rendered, which is fine.
+        builder.ligatures[(base_glyph, zero_glyph)] = bare_glyph
+    for variant_index, target in index_to_glyph.items():
+        # User-facing reading number is variant_index + 1 (so internal
+        # variant 0 → user types '1', internal variant 1 → '2', …).
+        user_num = variant_index + 1
+        components = _digit_components(user_num, digit_glyphs)
         if components is None:
             # A digit glyph needed to spell this index is missing; the
             # variant stays reachable via the IVS path, just not by
@@ -397,12 +489,35 @@ def _add_chinese_numeral_rules(
     *,
     base_glyph: str,
     default_glyph: str,
+    bare_glyph: str | None,
     index_to_glyph: Dict[int, str],
     trigger_glyph: str,
     numeral_glyphs: Dict[int, str],
 ) -> None:
-    """Emit (base, 丅, numeral) -> variant rules — the IME-friendly fallback."""
-    for num_index, numeral_glyph in numeral_glyphs.items():
-        target = default_glyph if num_index == 0 else index_to_glyph.get(num_index)
+    """Emit ``(base, 丅, numeral) -> N-th reading`` rules — IME-friendly
+    fallback when typing Latin digits is awkward (CJK IME users without
+    a quick way to flip to ASCII input).
+
+    Mirrors the 1-indexed semantics of `_add_digit_rules`:
+      - ``(base, 丅, 零)`` → bare glyph (only when ``bare_glyph`` is provided)
+      - ``(base, 丅, 一)`` → 1st reading (= default)
+      - ``(base, 丅, N)`` for N in 二..九 → N-th reading (internal variant N-1)
+
+    Single-numeral only — multi-numeral IME chains (``丅一零`` for the
+    10th reading) aren't emitted because Chinese numeral text already
+    has the trigger character delimiter; ten+ readings stay reachable
+    via the multi-digit ASCII path or the IVS selector.
+    """
+    for numeral_value, numeral_glyph in numeral_glyphs.items():
+        # numeral_value is 0..9 matching the literal numeral 零..九.
+        if numeral_value == 0:
+            # 零 strips the annotation → bare base. Skip if no bare
+            # glyph available (consistent with the digit-trigger path).
+            if bare_glyph is not None:
+                builder.ligatures[(base_glyph, trigger_glyph, numeral_glyph)] = bare_glyph
+            continue
+        # 一..九 → 1st..9th reading → internal variant 0..8.
+        variant_index = numeral_value - 1
+        target = index_to_glyph.get(variant_index)
         if target:
             builder.ligatures[(base_glyph, trigger_glyph, numeral_glyph)] = target

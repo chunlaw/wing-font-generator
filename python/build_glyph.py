@@ -188,7 +188,7 @@ def generate_annotated_glyphs(
     word_metrics: dict | None = None,
     word_components: dict | None = None,
     char_metrics: dict | None = None,
-    emit_bare_bases: bool = False,
+    emit_bare_bases: bool = True,
     bare_base_map: dict | None = None,
 ):
     """

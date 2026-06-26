@@ -17,7 +17,12 @@ from build_glyph import (
 )
 from diy_handler import build_diy_inventory
 from mark_input_handler import buildMarkInputLiga
-from mark_strip_handler import buildBareStripLiga, tagMarksAsGdefMarks
+# buildBareStripLiga is no longer called from the standard pipeline —
+# the (base, 0) → bare strip is now part of liga_handler.buildLiga's
+# 1-indexed digit-trigger semantics. Module is kept available for
+# anyone who wants to call it explicitly (e.g. a future build mode
+# that doesn't go through liga_handler at all).
+from mark_strip_handler import tagMarksAsGdefMarks
 import gc
 import sys
 import argparse
@@ -1329,7 +1334,12 @@ def main(
         word_metrics=word_metrics,
         word_components=word_components,
         char_metrics=char_metrics,
-        emit_bare_bases=bool(diy_pua_map),
+        # emit_bare_bases is now ALWAYS True: the standard digit-trigger
+        # semantics use `(base, 0) → bare` (annotation-free glyph) as
+        # well as `(base, 1) → default reading`. The DIY annotation path
+        # also consumes bare_base_map but no longer drives whether it's
+        # populated.
+        emit_bare_bases=True,
         bare_base_map=bare_base_map,
     )
     # The base-font blob was only needed for HarfBuzz shaping of word
@@ -1408,17 +1418,14 @@ def main(
     # human-readable fallbacks for users without VS input.
 
     # Step 2(0) — DIY manual-annotation GSUB, built FIRST (lowest lookup
-    # indices) so the (base, ０) → bare strip wins over liga's
-    # (base, ０) → default-reading reset rule (lower index fires first and
-    # consumes the ０). All plain ccmp ligatures — no chain-context
-    # probe-compile, so no glyph-ID overflow on the pre-subset font, and
-    # the subset's GSUB closure keeps the referenced DIY glyphs. The user
-    # types e.g. 行０ｚａａ１ → bare 行 + zaa1: the full-width ０ (script
-    # Common) strips in the Han run, while the full-width letters (script
-    # Latin) form the mark in their own run and overprint the bare base.
-    # See mark_strip_handler for why the explicit ０ trigger is required.
+    # indices). Historically this slot also called buildBareStripLiga to
+    # emit (base, ０) → bare for the DIY path; that's now redundant
+    # because liga_handler.buildLiga (called below with bare_base_map)
+    # emits (base, 0) → bare AND (base, ０) → bare unconditionally as
+    # part of the standard 1-indexed digit-trigger semantics. Keeping
+    # buildBareStripLiga around in mark_strip_handler.py for back-compat /
+    # explicit DIY use, but the standard pipeline no longer calls it.
     if diy_pua_map:
-        buildBareStripLiga(output_font, bare_base_map)
         buildMarkInputLiga(output_font, diy_inputs)
         # Tag the marks GDEF class 3 (mark). This is what tells a shaper
         # the zero-advance glyph is a COMBINING mark that overlaps the
@@ -1445,7 +1452,15 @@ def main(
     # See utils.ensure_trigger_char_glyph for the full rationale.
     if trigger_char:
         ensure_trigger_char_glyph(output_font, trigger_char)
-    buildLiga(output_font, char_mapping, trigger_char=trigger_char)
+    # Pass bare_base_map so liga_handler can emit `(base, 0) → bare`
+    # rules for the new 1-indexed digit semantics: 0 = no annotation,
+    # 1 = default reading, N = N-th reading (variant N-1).
+    buildLiga(
+        output_font,
+        char_mapping,
+        trigger_char=trigger_char,
+        bare_base_map=bare_base_map,
+    )
     buildIvs(output_font, char_mapping)
 
     # Step 2c — Arabic word entries: guarded ccmp word→glyph ligation
