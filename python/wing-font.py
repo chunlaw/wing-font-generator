@@ -1516,6 +1516,32 @@ def main(
             # a different typeface from the surrounding CJK. Listing
             # them ensures both the codepoints and the glyphs survive.
             + '０１２３４５６７８９'
+            # Hiragana (U+3041–309F) + Katakana (U+30A0–30FF). Kana
+            # appear as ANNOTATIONS in the Japanese mapping (kanji →
+            # kana furigana stacked on top), so they're not in the
+            # mapping's BASE column and don't make it into the
+            # composed-glyph keep list. But Japanese text mixes
+            # kanji with literal kana ("学校で日本語と漢字を勉強する"
+            # — only 学校 / 日本語 / 漢字 / 勉強 are kanji; everything
+            # else is kana the user types directly). Without these
+            # ranges, the subsetter prunes our kana glyphs, the
+            # browser falls back to a system Japanese font for kana,
+            # and the user sees full-em-size kana sitting next to our
+            # 75 %-scaled kanji — a glaring visual mismatch that's
+            # especially obvious when the base font and the system
+            # fallback are both Noto Sans JP. Keeping the kana ranges
+            # makes the subsetter retain the glyphs, scale_glyphs()
+            # below applies the same 0.75 base scale to them, and
+            # the rendered line stays visually consistent.
+            #
+            # Non-Japanese builds (Cantonese, Mandarin, Teochew, …)
+            # carry the ~200 extra kana glyphs at zero benefit, but
+            # ~200 glyphs in a font that already weighs 36k+ glyphs
+            # is rounding-error file-size cost (~50–100 KB / font).
+            # The unconditional keep is the simplest design and
+            # forward-compatible with future custom mappings that
+            # mix Japanese into other scripts.
+            + ''.join(chr(cp) for cp in range(0x3041, 0x30FF + 1))
         )
         for char in chars_to_keep_additionally:
             glyph_name = get_glyph_name_by_char(base_font, char)
@@ -1768,10 +1794,7 @@ def main(
     # more — this only ever widens.
     _auto_extend_vertical_metrics(output_font, word_metrics)
 
-    with step_timer("TTF save"):
-        output_font.save(str(output_prefix) + ".ttf")
-
-    # ── Post-build GSUB-cleanup re-subset ─────────────────────────────
+    # ── Pre-save GSUB-cleanup re-subset ──────────────────────────────
     #
     # Empirically required: without this pass, Chrome/Firefox reject
     # variable-base (NotoSansJP-instantiated, …) outputs and fall back
@@ -1792,54 +1815,47 @@ def main(
     # A no-op subset (keep every surviving glyph) is enough — the
     # cleanup happens inside Subsetter regardless of what gets stripped.
     # `prune_unicode_ranges` / `prune_codepage_ranges` defaults stay
-    # True; idempotent on the already-pruned OS/2 we just wrote, so
-    # they're harmless.
+    # True; idempotent on the already-pruned OS/2, so harmless.
+    #
+    # Runs IN MEMORY on `output_font` before the first save, so:
+    #   * The TTF on disk is already cleaned-up — no save/load/save
+    #     round-trip just to clean state.
+    #   * The WOFF2 save below reuses the same cleaned in-memory font,
+    #     so both formats carry identical layout-table structure
+    #     without a second reload.
+    #   * `output_font.cfg[USE_HARFBUZZ_REPACKER]` was set near the top
+    #     of the save block (`= has_word_entries`); the subset call
+    #     inherits that, so hb.repack stays OFF for CJK chain-context
+    #     builds (avoids the "Don't know how to split GSUB lookup type
+    #     5" loop) and ON for word-unit builds.
     #
     # See investigation transcript dated 2026-06-25 for the bisect
     # that landed on this. The proper fix is to find what wing-font.py
     # produces in GSUB that browsers reject and stop producing it;
-    # until that's tracked down, the re-subset pass is the workaround.
-    #
-    # USE_HARFBUZZ_REPACKER propagation: must inherit the same value
-    # the original save used (`has_word_entries`). Default True would
-    # call hb.repack on the freshly-loaded font, which downgrades
-    # CJK chain-context Type 6 lookups to Type 5 during compaction;
-    # fontTools' fallback `splitOverflowingSubtable` doesn't implement
-    # Type 5 splitting and the recovery loop spins forever logging
-    # "Don't know how to split GSUB lookup type 5". Same fix as the
-    # primary `output_font.cfg[USE_HARFBUZZ_REPACKER] = has_word_entries`
-    # line further up — pure-Python serializer for the CJK path, hb
-    # repack ON for word-unit builds where the chain rules pre-wrap in
-    # Extension and never hit the splitter.
-    from fontTools.ttLib import TTFont as _TTFont
-    from fontTools.ttLib.tables.otBase import USE_HARFBUZZ_REPACKER as _UHR
-    with step_timer("post-build GSUB cleanup") as _t:
-        _f = _TTFont(str(output_prefix) + ".ttf")
-        _f.cfg[_UHR] = has_word_entries
+    # until that's tracked down, this cleanup pass is the workaround.
+    with step_timer("pre-save GSUB cleanup") as _t:
         _sub = subset.Subsetter()
-        _sub.populate(glyphs=_f.getGlyphOrder())
-        _sub.subset(_f)
-        _f.save(str(output_prefix) + ".ttf")
-        _t.note(f"{_f['maxp'].numGlyphs} glyphs preserved")
+        _sub.populate(glyphs=output_font.getGlyphOrder())
+        _sub.subset(output_font)
+        _t.note(f"{output_font['maxp'].numGlyphs} glyphs preserved")
+
+    with step_timer("TTF save"):
+        output_font.save(str(output_prefix) + ".ttf")
 
     if not skip_woff:
         # WOFF2 = Brotli-compressed sfnt. fontTools' encoder picks up
         # the local `brotli` (or `brotlicffi`) package automatically;
         # both are in python/requirements.txt. Encoder is lossless —
         # every GSUB lookup (including ccmp chain-context rules) is
-        # byte-preserved across the round-trip. Re-open the cleaned-up
-        # TTF (post the subset pass above) so the WOFF2 carries the
-        # same browser-acceptable layout-table structure.
+        # byte-preserved across the round-trip.
         #
-        # Same USE_HARFBUZZ_REPACKER propagation rationale as the
-        # cleanup pass above — avoid hb.repack on the CJK path.
-        from fontTools.ttLib import TTFont as _TTFont
-        from fontTools.ttLib.tables.otBase import USE_HARFBUZZ_REPACKER as _UHR
-        _woff = _TTFont(str(output_prefix) + ".ttf")
-        _woff.cfg[_UHR] = has_word_entries
-        _woff.flavor = "woff2"
+        # Reuses the cleaned-up `output_font` in memory — no need to
+        # reload from the just-written .ttf, since the same TTFont
+        # instance is in the post-cleanup state and we only need to
+        # flip the flavor for the WOFF2 encoder to wrap it differently.
+        output_font.flavor = "woff2"
         with step_timer("WOFF2 save"):
-            _woff.save(str(output_prefix + ".woff2"))
+            output_font.save(str(output_prefix + ".woff2"))
 
     # Close the font objects. `anno_font` was already closed + deleted
     # right after Phase 1 (see the "release the annotation font ASAP"
