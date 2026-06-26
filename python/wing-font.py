@@ -590,7 +590,20 @@ def _check_glyph_count_budget(
     output_font, char_mapping, optimize, mapping_path, diy_pua_map=None
 ):
     """Pre-flight check: bail early if the predicted output glyph count
-    would exceed OpenType's hard 65,535 ceiling.
+    would exceed OpenType's hard 65,535 ceiling. Returns a dict carrying
+    the per-feature emit decisions the caller should honour:
+
+        {"emit_bare_bases": bool}
+
+    Most builds get ``{"emit_bare_bases": True}`` — every annotated
+    single-char entry gets a paired bare (un-annotated) glyph so the
+    1-indexed digit-trigger semantics can render `字0` → bare. On very
+    large mappings (Mandarin pinyin in particular) the bare bases push
+    the predicted glyph count over the cap; in that case we return
+    ``{"emit_bare_bases": False}`` and log a one-line note. The
+    `字0` rule then degrades to a no-op (typing `字0` renders as
+    literal `0` after the glyph), which is the same behaviour as
+    older pre-1-indexed builds where `0` had no special meaning.
 
     Why here, not at save time:
     The composition phase (Phase 1) and the GSUB build phase (Phase 2)
@@ -608,109 +621,141 @@ def _check_glyph_count_budget(
         bases (the variant glyphs sit alongside the original in the
         font) and for word-unit keys (the composed word glyph is
         entirely new — the base font doesn't have it);
+      * EVERY single-char entry also contributes one BARE glyph (the
+        un-annotated scaled-base used by the `(base, 0) → bare`
+        ligature), unless we decide to disable that branch below;
       * with ``-opt``, fontTools.subset keeps only the glyphs Phase 4's
         keep-list explicitly names, plus a small set of structurally
         required ones (.notdef, .null, space, basic ASCII for fallback)
         — call that ~1,000 as a safe overestimate;
       * without ``-opt``, every glyph already in ``output_font`` survives
-        AS WELL AS the new ones we add.
+        AS WELL AS the new ones we add;
+      * DIY (--diy-annotations) adds one mark glyph per distinct DIY
+        annotation, on top of the per-character bare base.
 
     So:
-        predicted = NEW + (1000 if optimize else existing)
+        predicted = NEW + bare_bases + diy_marks + (1000 if optimize else existing)
+
+    Two-stage overflow handling:
+      1. If predicted with bare bases overflows but WITHOUT bare bases
+         fits, disable bare bases and return early (the caller will
+         skip the (base, 0) → bare rule too).
+      2. If predicted WITHOUT bare bases still overflows, raise the
+         original budget error — there's no way to fit, and the user
+         needs to trim the CSV.
     """
     predicted_new = sum(len(v) for v in char_mapping.values())
     existing = output_font["maxp"].numGlyphs
-    # DIY adds one mark glyph per distinct annotation plus one bare
-    # scaled-base per single-char mapped entry. Both survive --optimize
-    # (kept explicitly in the subset keep-list), so count them in either
-    # branch.
+    # Bare bases — one per single-char mapped entry — are ALWAYS emitted
+    # by default now (was DIY-only). They survive --optimize because
+    # main()'s keep-list explicitly retains them.
+    bare_bases = sum(1 for k in char_mapping if len(k) == 1)
+    # DIY adds one mark glyph per distinct annotation.
     diy_marks = len(diy_pua_map or {})
-    diy_bares = (
-        sum(1 for k in char_mapping if len(k) == 1) if diy_pua_map else 0
-    )
-    diy_extra = diy_marks + diy_bares
-    diy_note = (
-        f" + {diy_marks} DIY marks + {diy_bares} bare bases"
-        if diy_extra
-        else ""
-    )
+
     if optimize:
         # Subset will discard most of `existing`. The keep-list is
         # essentially char_mapping's keys + a small structural retain
         # set; 1,000 is a generous overestimate of "what the subsetter
         # holds onto regardless of mapping".
-        predicted_total = predicted_new + 1000 + diy_extra
-        budget_explanation = (
-            f"{predicted_new} new glyphs from your CSV + ~1,000 "
-            f"structural glyphs kept by --optimize subset{diy_note}"
-        )
+        structural = 1000
     else:
-        predicted_total = existing + predicted_new + diy_extra
-        budget_explanation = (
-            f"{existing} glyphs already in the base font + "
-            f"{predicted_new} new glyphs from your CSV{diy_note}"
+        structural = existing
+
+    predicted_with_bare = predicted_new + bare_bases + diy_marks + structural
+    predicted_without_bare = predicted_new + diy_marks + structural
+    extras_note_with_bare = (
+        f"{bare_bases} bare bases"
+        + (f" + {diy_marks} DIY marks" if diy_marks else "")
+    )
+    extras_note_without_bare = (
+        f"{diy_marks} DIY marks" if diy_marks else ""
+    )
+    budget_explanation_with_bare = (
+        f"{predicted_new} new glyphs from your CSV + {extras_note_with_bare} + ~"
+        f"{structural:,} structural glyphs kept by "
+        f"{'--optimize subset' if optimize else 'base-font passthrough'}"
+    )
+    budget_explanation_without_bare = (
+        f"{predicted_new} new glyphs from your CSV"
+        + (f" + {extras_note_without_bare}" if extras_note_without_bare else "")
+        + f" + ~{structural:,} structural glyphs"
+    )
+
+    # Happy path: bare-bases fit.
+    if predicted_with_bare <= GLYPH_BUDGET_SOFT_CAP:
+        return {"emit_bare_bases": True}
+
+    # Bare-bases would overflow; check whether dropping them fits.
+    if predicted_without_bare <= GLYPH_BUDGET_SOFT_CAP:
+        print(
+            f"[wing-font] Mapping has {bare_bases:,} single-char entries; "
+            f"emitting bare bases for each would push the glyph count to "
+            f"{predicted_with_bare:,} (cap {GLYPH_BUDGET_SOFT_CAP:,}). "
+            f"Disabling bare-base emission for this build — typing "
+            f"`字0` will render literal `0` instead of stripping the "
+            f"annotation. All other digit-trigger paths "
+            f"(`字1`, `字２`, `字丅一`, …) remain available.",
+            flush=True,
         )
-    if predicted_total > GLYPH_BUDGET_SOFT_CAP:
-        # Hand the caller a concrete trim target rather than a vague
-        # "make it smaller": ROWS = predicted_new − overshoot, capped
-        # below SOFT - 1000-glyph buffer.
-        budget_remaining_for_new = GLYPH_BUDGET_SOFT_CAP - (
-            1000 if optimize else existing
-        )
-        target_row_estimate = max(0, budget_remaining_for_new)
-        # Two-step error reporting: print the long friendly diagnostic
-        # to stdout FIRST (so it lands in runner.py's tee'd progress
-        # log — Step 4 in /generate displays everything captured here),
-        # then raise a short RuntimeError to abort the pipeline.
-        #
-        # Why split it: SystemExit inherits from BaseException, not
-        # Exception, so runner.py's `except Exception: print_exc()`
-        # wouldn't catch it — the diagnostic would be lost. Using a
-        # regular Exception keeps it inside the catch, but the
-        # traceback would dwarf the message itself. Printing first
-        # solves both: the user sees the actionable explanation in
-        # the Step 4 log right where they're reading; the traceback
-        # behind it is short and unobtrusive.
-        diagnostic = (
-            f"\n[wing-font] Pre-flight glyph budget exceeded.\n"
-            f"\n"
-            f"  Predicted output glyph count: {predicted_total:,}\n"
-            f"  Computed as: {budget_explanation}.\n"
-            f"  OpenType `maxp` hard cap:     "
-            f"{OPENTYPE_NUMGLYPHS_CAP:,} (uint16).\n"
-            f"  Safe budget (with margin):    "
-            f"{GLYPH_BUDGET_SOFT_CAP:,}.\n"
-            f"\n"
-            f"Each row in the mapping CSV whose first column uses only\n"
-            f"characters present in the base font becomes its own glyph\n"
-            f"in the output (one composed glyph per word for word-unit\n"
-            f"scripts like Thai/Arabic; one variant glyph per reading\n"
-            f"for CJK). Mapping: {mapping_path}\n"
-            f"\n"
-            + (
-                "DIY build: re-run with --optimize (-opt). Subsetting keeps\n"
-                "only the glyphs your mapping reaches plus the DIY marks /\n"
-                "bare bases, which fits — whereas un-subsetted the ~50k-glyph\n"
-                "base font alone already overflows. DIY annotation then\n"
-                "works for any character present in the mapping.\n\n"
-                if (diy_pua_map and not optimize)
-                else (
-                    f"Trim the CSV so the result stays under the cap. As a\n"
-                    f"rough target: keep about the top {target_row_estimate:,}\n"
-                    f"rows (by weight — the third CSV column), then retry.\n\n"
-                )
+        return {"emit_bare_bases": False}
+
+    # Even without bare bases, the mapping is too large — raise the
+    # original budget error so the user knows to trim the CSV.
+    predicted_total = predicted_without_bare
+    budget_explanation = budget_explanation_without_bare
+    # Hand the caller a concrete trim target rather than a vague
+    # "make it smaller": ROWS = predicted_new − overshoot, capped
+    # below SOFT - structural-glyph buffer.
+    budget_remaining_for_new = GLYPH_BUDGET_SOFT_CAP - structural
+    target_row_estimate = max(0, budget_remaining_for_new)
+    # Two-step error reporting: print the long friendly diagnostic
+    # to stdout FIRST (so it lands in runner.py's tee'd progress
+    # log — Step 4 in /generate displays everything captured here),
+    # then raise a short RuntimeError to abort the pipeline.
+    diagnostic = (
+        f"\n[wing-font] Pre-flight glyph budget exceeded.\n"
+        f"\n"
+        f"  Predicted output glyph count: {predicted_total:,}\n"
+        f"  (Bare-base emission already auto-disabled to try fitting;\n"
+        f"   with bare bases the count would have been "
+        f"{predicted_with_bare:,}.)\n"
+        f"  Computed as: {budget_explanation}.\n"
+        f"  OpenType `maxp` hard cap:     "
+        f"{OPENTYPE_NUMGLYPHS_CAP:,} (uint16).\n"
+        f"  Safe budget (with margin):    "
+        f"{GLYPH_BUDGET_SOFT_CAP:,}.\n"
+        f"\n"
+        f"Each row in the mapping CSV whose first column uses only\n"
+        f"characters present in the base font becomes its own glyph\n"
+        f"in the output (one composed glyph per word for word-unit\n"
+        f"scripts like Thai/Arabic; one variant glyph per reading\n"
+        f"for CJK). Mapping: {mapping_path}\n"
+        f"\n"
+        + (
+            "DIY build: re-run with --optimize (-opt). Subsetting keeps\n"
+            "only the glyphs your mapping reaches plus the DIY marks /\n"
+            "bare bases, which fits — whereas un-subsetted the ~50k-glyph\n"
+            "base font alone already overflows. DIY annotation then\n"
+            "works for any character present in the mapping.\n\n"
+            if (diy_pua_map and not optimize)
+            else (
+                f"Trim the CSV so the result stays under the cap. As a\n"
+                f"rough target: keep about the top {target_row_estimate:,}\n"
+                f"rows (by weight — the third CSV column), then retry.\n\n"
             )
-            + f"Aborting before the {('composition + ') if not optimize else ''}"
-            + f"save phase to spare you the wasted compute.\n"
         )
-        print(diagnostic, flush=True)
-        raise RuntimeError(
-            f"Pre-flight glyph budget exceeded: predicted "
-            f"{predicted_total:,} glyphs > soft cap "
-            f"{GLYPH_BUDGET_SOFT_CAP:,} (OpenType uint16 hard cap is "
-            f"{OPENTYPE_NUMGLYPHS_CAP:,}). See the diagnostic printed "
-            f"above for the recommended fix."
-        )
+        + f"Aborting before the {('composition + ') if not optimize else ''}"
+        + f"save phase to spare you the wasted compute.\n"
+    )
+    print(diagnostic, flush=True)
+    raise RuntimeError(
+        f"Pre-flight glyph budget exceeded: predicted "
+        f"{predicted_total:,} glyphs > soft cap "
+        f"{GLYPH_BUDGET_SOFT_CAP:,} (OpenType uint16 hard cap is "
+        f"{OPENTYPE_NUMGLYPHS_CAP:,}). See the diagnostic printed "
+        f"above for the recommended fix."
+    )
 
 
 def _repacker_available() -> bool:
@@ -1224,9 +1269,15 @@ def main(
     # ~4 minutes in, deep inside `output_font.save(...)`, with an
     # opaque `struct.error: 'H' format requires 0 <= number <= 65535`.
     # Check now so we can bail with an actionable error in milliseconds.
-    _check_glyph_count_budget(
+    # Returns a dict carrying the per-feature emit decisions: currently
+    # only `emit_bare_bases`. False when bare-base emission would push
+    # the count over the cap but dropping bare bases keeps it under;
+    # raises RuntimeError when even without bare bases the count would
+    # overflow.
+    _budget_advice = _check_glyph_count_budget(
         output_font, char_mapping, optimize, mapping, diy_pua_map=diy_pua_map
     )
+    emit_bare_bases = _budget_advice["emit_bare_bases"]
     # Same spirit, different ceiling: guard word-unit mappings against
     # the pure-Python save blow-up when uharfbuzz is missing.
     _check_word_unit_save_budget(char_mapping, mapping)
@@ -1334,12 +1385,17 @@ def main(
         word_metrics=word_metrics,
         word_components=word_components,
         char_metrics=char_metrics,
-        # emit_bare_bases is now ALWAYS True: the standard digit-trigger
-        # semantics use `(base, 0) → bare` (annotation-free glyph) as
-        # well as `(base, 1) → default reading`. The DIY annotation path
-        # also consumes bare_base_map but no longer drives whether it's
-        # populated.
-        emit_bare_bases=True,
+        # emit_bare_bases is decided by the pre-flight budget check —
+        # True for nearly all builds (it's the default that lets the
+        # 1-indexed `字0` → bare semantics work), False when the mapping
+        # is large enough that adding one bare glyph per single-char
+        # entry would push the output past `maxp.numGlyphs`'s 65,535
+        # uint16 cap (Mandarin pinyin in particular). When False, the
+        # `(base, 0)` ligature is skipped — typing `字0` falls through
+        # to rendering literal `0`, which matches the pre-1-indexed
+        # behaviour. All other digit-trigger paths (`字1`, `字２`,
+        # `字丅一`, …) remain unaffected.
+        emit_bare_bases=emit_bare_bases,
         bare_base_map=bare_base_map,
     )
     # The base-font blob was only needed for HarfBuzz shaping of word
