@@ -1496,7 +1496,6 @@ def main(
         # outline for the position — no double-shift.
         tagMarksAsGdefMarks(output_font, diy_mark_names)
 
-    buildChainSub(output_font, word_mapping, char_mapping)
     # Auto-inject the trigger glyph into the output font's cmap if the
     # base font doesn't already encode it. Without this, NotoSansHK /
     # NotoSansTC / Huninn / NotoSerif-based outputs silently lose the
@@ -1511,12 +1510,43 @@ def main(
     # Pass bare_base_map so liga_handler can emit `(base, 0) → bare`
     # rules for the new 1-indexed digit semantics: 0 = no annotation,
     # 1 = default reading, N = N-th reading (variant N-1).
+    #
+    # IMPORTANT — buildLiga is intentionally registered BEFORE
+    # buildChainSub so the single-char digit-trigger lookups fire
+    # ahead of the multi-character compound chain in GSUB lookup
+    # order. This gives the user's explicit `字N` / `字０` override
+    # priority over the automatic compound-context annotation.
+    #
+    # Concretely, typing `一刀兩斷０ｐａｎｎ６` shapes as:
+    #   1. buildMarkInputLiga (above) consumes `ｐａｎｎ６` → mark glyph
+    #      → buffer = [一, 刀, 兩, 斷, ０, pa̋nn-mark]
+    #   2. buildLiga matches `(斷, ０)` → bare-斷 (a glyph ID DISTINCT
+    #      from default-斷)
+    #      → buffer = [一, 刀, 兩, bare-斷, pa̋nn-mark]
+    #   3. buildChainSub tries to match `[一, 刀, 兩, 斷]` at pos 0 —
+    #      pos 3 is bare-斷, not default-斷, so the chain rule's
+    #      ChainContextSubst input-coverage check fails. Compound
+    #      stays unannotated; bare-斷 keeps its (no-annotation) form
+    #      and pa̋nn floats above it via the mark anchor.
+    #
+    # Without this ordering, the chain would fire first, substitute
+    # `斷 → 斷-tuān-variant`, and then `(斷-tuān, ０)` would not match
+    # the digit-trigger lookup (which keys off default-斷), so the
+    # `０` would render as a literal fullwidth zero and the user's
+    # explicit "strip the auto-annotation" intent would be lost.
+    #
+    # Side effect: when a digit-trigger overrides a char inside a
+    # compound (`一刀兩斷２`), the surrounding compound annotation also
+    # drops — there is no partial compound match in OpenType
+    # ChainContextSubst. This matches the user's stated mental model
+    # that explicit digit overrides beat automatic compound selection.
     buildLiga(
         output_font,
         char_mapping,
         trigger_char=trigger_char,
         bare_base_map=bare_base_map,
     )
+    buildChainSub(output_font, word_mapping, char_mapping)
     buildIvs(output_font, char_mapping)
 
     # Step 2c — Arabic word entries: guarded ccmp word→glyph ligation
