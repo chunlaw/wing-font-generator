@@ -326,6 +326,85 @@ def ensure_trigger_char_glyph(output_font, trigger_char: str) -> bool:
     return True
 
 
+# Glyph name used by ensure_invisible_glyph. Single shared name so multiple
+# callers see (and reuse) the same injected glyph rather than racing each
+# other to create variants. The `wingfont.` prefix marks it as wing-font's
+# own glyph in the font's glyph order, mirroring the prefix convention
+# used by build_glyph for composed glyphs.
+_INVISIBLE_GLYPH_NAME = "wingfont.invisible"
+
+
+def ensure_invisible_glyph(output_font) -> str:
+    """
+    Guarantee the output font owns a zero-advance, zero-contour glyph that
+    chain-context substitutions can use as the "consume this glyph" target,
+    and return its glyph name.
+
+    What it's for
+    -------------
+
+    ``chain_context_handler.buildChainSubVariantOverrides`` emits chain
+    rules whose input includes a trailing digit — `[base_chars, digit]`
+    — and substitutes the digit position to this glyph so the user-typed
+    digit visually disappears once the variant override fires. Without
+    such a target the rule would either leave the digit visible (no
+    substitution) or require a per-digit invisible glyph (wasteful).
+
+    Idempotent
+    ----------
+
+    If the glyph already exists (a previous call, or the source font
+    happened to ship one with this name), this returns the existing
+    name without re-injecting. The function makes no cmap entry: the
+    glyph is reachable only through GSUB substitution, never through
+    direct codepoint lookup.
+
+    CFF fonts
+    ---------
+
+    Like ``ensure_trigger_char_glyph``, this only handles TTF/glyf
+    fonts. CFF (CFF / CFF2) injection requires a CharString builder
+    that's out of scope here; the standard wing-font pipeline always
+    uses TTF inputs, so the warning branch is theoretical.
+
+    Returns
+    -------
+    The glyph name. Always non-empty for a TTF font, even on idempotent
+    re-call. For a CFF font with no existing entry, returns the
+    canonical name anyway so callers don't need to handle ``None`` —
+    the chain rules that reference it will simply never fire because
+    the glyph isn't in the glyph order, which is a graceful no-op.
+    """
+    glyph_order = output_font.getGlyphOrder()
+    if _INVISIBLE_GLYPH_NAME in glyph_order:
+        return _INVISIBLE_GLYPH_NAME
+
+    if "glyf" not in output_font:
+        print(
+            "Warning: ensure_invisible_glyph: output font has no 'glyf' "
+            "table; cannot inject the digit-eater glyph. Compound-variant "
+            "override chain rules will be skipped."
+        )
+        return _INVISIBLE_GLYPH_NAME
+
+    from fontTools.ttLib.tables._g_l_y_f import Glyph
+    empty_glyph = Glyph()
+    empty_glyph.numberOfContours = 0
+
+    output_font["glyf"][_INVISIBLE_GLYPH_NAME] = empty_glyph
+    output_font["hmtx"][_INVISIBLE_GLYPH_NAME] = (0, 0)
+    if "vmtx" in output_font:
+        upm = output_font["head"].unitsPerEm
+        output_font["vmtx"][_INVISIBLE_GLYPH_NAME] = (upm, 0)
+
+    # Sync the font-level glyph order with glyf's mutated copy. Same
+    # rationale as ensure_trigger_char_glyph — fontTools doesn't
+    # auto-refresh the outer list when glyf.__setitem__ appends to its
+    # own internal list.
+    output_font.setGlyphOrder(output_font["glyf"].glyphOrder)
+    return _INVISIBLE_GLYPH_NAME
+
+
 def clear_source_layout_lookups(output_font) -> int:
     """
     Strip the source font's existing GSUB lookups (and the feature records

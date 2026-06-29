@@ -387,6 +387,26 @@ jobs:
           # at its 0.0 default — Latin romanization shapes naturally and
           # needs no inter-glyph opening.
           - { name: Hind-Noto-romanization,               args: "-opt -v -y 0.88 -i input_fonts/Hind-Regular.ttf -a input_fonts/NotoSerif-Regular.ttf -m mappings/hindi/hindi-romanization.csv -as 0.30" }
+          # Thai — Thai-script base annotated with thai-ink Paiboon
+          # romanization (Latin with IPA-ish vowels and combining tone
+          # marks). GoogleSans is used as the base font because it ships
+          # the full 87-char Thai block with proper mark positioning;
+          # NotoSerif supplies the Latin Paiboon annotation.
+          #
+          # `--anno-below` is the entire point of this entry: Thai's
+          # above-line marks (sara-i ◌ิ, sara-ii ◌ี, mai-aek ◌่,
+          # mai-tho ◌้, nikhahit ◌ํ, …) and Thai's below-line marks
+          # (sara-u ◌ุ, sara-uu ◌ู, phinthu ◌ฺ) both occupy the slots
+          # where a default-above Latin annotation would normally sit.
+          # Dropping the annotation into the (auto-extended) descent
+          # keeps the Thai's own diacritics readable AND avoids the
+          # `--invert` flag's baseline-drift artefact (see
+          # `--anno-below` help in wing-font.py for full design notes).
+          #
+          # `-as 0.30` matches the Hindi entry above (same NotoSerif
+          # Latin face, same approximate target on-screen size for
+          # 4-8 character romanizations like `sà-wàt-dii`).
+          - { name: GoogleSans-Noto-thai-paiboon,         args: "-opt --anno-below -i 'input_fonts/GoogleSans-VariableFont_GRAD,opsz,wght.ttf' -a input_fonts/NotoSerif-Regular.ttf -m mappings/thai/thai-paiboon.csv -as 0.30" }
           - { name: Xiaolai-Huninn-tailo,                  args: "-opt -i input_fonts/XiaolaiSC-Regular.ttf -a input_fonts/Huninn-Regular.ttf -m mappings/taiwanese/taigi-tl-toned.csv --diy-annotations diy-mappings/taiwanese/sutian.diy-annotation.csv -as 0.25" }
           - { name: Xiaolai-Huninn-poj,                    args: "-opt -i input_fonts/XiaolaiSC-Regular.ttf -a input_fonts/Huninn-Regular.ttf -m mappings/taiwanese/taigi-poj-toned.csv -as 0.25" }
           - { name: Xiaolai-Huninn-teochew-pengim,         args: "-opt -i input_fonts/XiaolaiSC-Regular.ttf -a input_fonts/Huninn-Regular.ttf -m mappings/teochew/teochew-gdpi.csv -as 0.25" }

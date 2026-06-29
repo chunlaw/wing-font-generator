@@ -181,6 +181,7 @@ def generate_annotated_glyphs(
     base_scale: float = 0.75,
     upper_y_offset_ratio: float = 0.8,
     invert: bool = False,
+    anno_below: bool = False,
     base_axis_location: dict | None = None,
     anno_axis_location: dict | None = None,
     base_font_bytes: bytes | None = None,
@@ -377,12 +378,56 @@ def generate_annotated_glyphs(
         anno_units_per_em = anno_font["head"].unitsPerEm
         anno_scale_eff = anno_scale * units_per_em / anno_units_per_em
 
-        if not invert:
+        # ── Single-char composite y-offsets ──────────────────────────
+        # Three regimes — `anno_below` and `invert` are independent but
+        # one-or-the-other; if both happen to be set, `anno_below`
+        # wins because it is the more natural representation (caller
+        # is explicitly opting into the descent-extension semantics).
+        #
+        #   • DEFAULT (neither flag):
+        #       base on baseline (y=0), annotation ABOVE at +0.8em.
+        #       Standard furigana-on-top layout.
+        #
+        #   • `--anno-below` (new, recommended for "below" use cases):
+        #       base STAYS on baseline (y=0), annotation drops into
+        #       the descent area (negative y). Output font's typo +
+        #       hhea descent gets auto-widened by wing-font.py to
+        #       reserve the line-box space. This mirrors what the
+        #       word-unit (Arabic) default path does and keeps the
+        #       inverted text's baseline aligned with surrounding
+        #       un-annotated CJK in mixed runs.
+        #
+        #   • `--invert` (legacy, preserved for back-compat):
+        #       lifts the base CJK to +0.8em and parks the annotation
+        #       at y=0. The composite's origin is then the bottom of
+        #       the annotation, so text rendered with this font sits
+        #       visibly higher than un-annotated CJK on the same
+        #       baseline. Inconsistent with the word-unit path's
+        #       `invert` semantics (which means "annotation goes
+        #       ABOVE" for words). Kept because some existing
+        #       deployments depend on it; new builds should prefer
+        #       `--anno-below`.
+        base_descent = min(0, base_font["hhea"].descent)
+        anno_hhea_ascent = max(0, anno_font["hhea"].ascent)
+        if anno_below:
             base_y_offset = 0
-            anno_y_offset = round(units_per_em * upper_y_offset_ratio)
-        else:
+            # Annotation's TOP lands at the scaled base-descent (just
+            # below the baseline, clear of any base ink), extending
+            # downward by anno_hhea_ascent * anno_scale_eff. Same
+            # formula the word-unit "default" path uses below for
+            # word_anno_y, so single-char and word-unit emit
+            # annotation at the same y when both pick the "below"
+            # branch.
+            anno_y_offset = round(
+                base_descent * base_scale
+                - anno_hhea_ascent * anno_scale_eff
+            )
+        elif invert:
             base_y_offset = round(units_per_em * upper_y_offset_ratio)
             anno_y_offset = 0
+        else:
+            base_y_offset = 0
+            anno_y_offset = round(units_per_em * upper_y_offset_ratio)
 
         # Em-units → absolute font units. Done once outside the hot
         # loop because every annotated glyph uses the same value.
@@ -396,8 +441,8 @@ def generate_annotated_glyphs(
         # below the baseline). `invert=True` flips it above the word at
         # `upper_y_offset_ratio` — the mirror of the single-char
         # semantics, where the default is above and invert means below.
-        base_descent = min(0, base_font["hhea"].descent)
-        anno_hhea_ascent = max(0, anno_font["hhea"].ascent)
+        # `base_descent` / `anno_hhea_ascent` were declared just above
+        # for the single-char `anno_below` branch; reuse them here.
         if not invert:
             word_anno_y = round(
                 base_descent * base_scale
@@ -973,6 +1018,7 @@ def generate_glyphs(
     base_scale: float = 0.75,
     upper_y_offset_ratio: float = 0.8,
     invert: bool = False,
+    anno_below: bool = False,
 ):
     """
     Backwards-compatible wrapper that runs the old two-phase pipeline
@@ -997,6 +1043,7 @@ def generate_glyphs(
         base_scale=base_scale,
         upper_y_offset_ratio=upper_y_offset_ratio,
         invert=invert,
+        anno_below=anno_below,
     )
     scale_glyphs(
         base_font,
@@ -1017,6 +1064,9 @@ def generate_mark_glyphs(
     anno_spacing: float = 0.0,
     upper_y_offset_ratio: float = 0.8,
     invert: bool = False,
+    anno_below: bool = False,
+    base_descent: int = 0,
+    base_scale: float = 0.75,
     assumed_base_advance: float | None = None,
     mark_x_offset: float = 0.0,
     anno_axis_location: dict | None = None,
@@ -1106,12 +1156,30 @@ def generate_mark_glyphs(
         anno_scale_eff = anno_scale * units_per_em / anno_units_per_em
         anno_spacing_units = round(units_per_em * anno_spacing)
 
-        # Marks sit where the composite path puts its annotation: above
-        # the base at `upper_y_offset_ratio`, or on the baseline if the
-        # build inverts (annotation below).
-        anno_y_offset = (
-            0 if invert else round(units_per_em * upper_y_offset_ratio)
-        )
+        # Marks sit where the composite path puts its annotation. Three
+        # regimes — see _compose_char_entry's matching block for the
+        # full design rationale:
+        #
+        #   • default: anno ABOVE the base at +upper_y_offset_ratio.
+        #   • `anno_below`: anno DROPS into the descent area, top at
+        #     the scaled base-descent. Same formula the composite path
+        #     uses so a DIY mark and a baked composite of the same
+        #     string land at the same y.
+        #   • `invert` (legacy): anno parked at y=0 (baseline). The
+        #     base-lift that the composite does has no analogue here —
+        #     the mark is a standalone glyph drawn after a separately-
+        #     drawn base — so legacy invert here just means "anno on
+        #     baseline".
+        anno_hhea_ascent = max(0, anno_font["hhea"].ascent)
+        if anno_below:
+            anno_y_offset = round(
+                base_descent * base_scale
+                - anno_hhea_ascent * anno_scale_eff
+            )
+        elif invert:
+            anno_y_offset = 0
+        else:
+            anno_y_offset = round(units_per_em * upper_y_offset_ratio)
 
         out_glyf = output_font["glyf"]
         out_hmtx = output_font["hmtx"]

@@ -6,7 +6,7 @@ from mappings.csv_parser import (
     WORD_UNIT_SCRIPT_RANGES,
     get_word_unit_script,
 )
-from chain_context_handler import buildChainSub
+from chain_context_handler import buildChainSub, buildChainSubVariantOverrides
 from ivs_handler import buildIvs
 from liga_handler import buildLiga, DEFAULT_TRIGGER_CHAR
 from word_liga_handler import buildWordLiga, buildLigCarets
@@ -27,7 +27,12 @@ import gc
 import sys
 import argparse
 from fontTools import subset
-from utils import ensure_trigger_char_glyph, get_glyph_name_by_char, step_timer
+from utils import (
+    ensure_invisible_glyph,
+    ensure_trigger_char_glyph,
+    get_glyph_name_by_char,
+    step_timer,
+)
 import string
 
 WINDOWS_ENGLISH_IDS = 3, 1, 0x409
@@ -305,6 +310,57 @@ def _auto_fit_ascent(output_font, char_metrics, margin=AUTO_ASCENT_MARGIN):
         output_font["hhea"].ascent = ink_top
     if ink_top > output_font["OS/2"].usWinAscent:
         output_font["OS/2"].usWinAscent = ink_top
+
+
+def _auto_fit_descent(output_font, char_metrics, margin=AUTO_ASCENT_MARGIN):
+    """Widen the output font's clipping descent + typo descender so the
+    deepest composed glyph's ink fits with a small margin.
+
+    The descent counterpart to `_auto_fit_ascent`. Specifically targets
+    the `--anno-below` build mode where the annotation drops into the
+    descent area: without this, the annotation ink would render but
+    successive lines would overlap it (Chrome / Firefox / Word /
+    InDesign all reserve line-box space based on
+    hhea.descent / OS/2.sTypoDescender, not on actual ink extent).
+
+    Unlike `_auto_fit_ascent` — which touches only winAscent + hhea
+    ascent to preserve the base font's USE_TYPO_METRICS=False line
+    spacing — this one also pushes `sTypoDescender` down. Reason:
+    `--anno-below` ADDS ink below the baseline that didn't exist in
+    the base font, so the existing typo metrics simply don't describe
+    the new content. Apps that respect typo metrics need to know the
+    deeper extent or the next line will collide; apps that use win
+    metrics need the same. Both families get widened consistently.
+
+    The descent value is negative (positive `ink_floor` magnitude
+    means deeper below the baseline). Mirrors the sign-handling in
+    `_auto_extend_vertical_metrics`:
+      * hhea.descent (signed, negative) ← min(current, ink_floor)
+      * OS/2.usWinDescent (unsigned positive) ← max(current, -ink_floor)
+      * OS/2.sTypoDescender (signed, negative) ← min(current, ink_floor)
+
+    Widen-only: never raises a descent the base font already set deeper.
+
+    No-op when `char_metrics` is empty or carries no ``min_y``. Safe
+    to call on default builds too — single-char composites with
+    annotation ABOVE the baseline have min_y near 0, which won't push
+    the descent any deeper.
+    """
+    if not char_metrics:
+        return
+    min_y = char_metrics.get("min_y")
+    if min_y is None:
+        return
+    ink_floor = int(min_y) - margin   # negative when annotation extends below baseline
+    if ink_floor >= 0:
+        # No ink below baseline — nothing to do.
+        return
+    if ink_floor < output_font["hhea"].descent:
+        output_font["hhea"].descent = ink_floor
+    if -ink_floor > output_font["OS/2"].usWinDescent:
+        output_font["OS/2"].usWinDescent = -ink_floor
+    if ink_floor < output_font["OS/2"].sTypoDescender:
+        output_font["OS/2"].sTypoDescender = ink_floor
 
 
 def _to_postscript_name(family_name: str) -> str:
@@ -864,6 +920,7 @@ def _format_cli_invocation(
     anno_spacing,
     upper_y_offset_ratio,
     invert,
+    anno_below,
     optimize,
     trigger_char,
     out_ascent,
@@ -907,6 +964,8 @@ def _format_cli_invocation(
         parts.append(f"-y {upper_y_offset_ratio}")
     if invert:
         parts.append("-v")
+    if anno_below:
+        parts.append("--anno-below")
     if optimize:
         parts.append("-opt")
     if trigger_char != DEFAULT_TRIGGER_CHAR:
@@ -949,6 +1008,7 @@ def main(
     anno_spacing=0.0,
     upper_y_offset_ratio=0.8,
     invert=False,
+    anno_below=False,
     optimize=False,
     skip_woff=False,
     base_axis_location=None,
@@ -1031,6 +1091,7 @@ def main(
         anno_spacing=anno_spacing,
         upper_y_offset_ratio=upper_y_offset_ratio,
         invert=invert,
+        anno_below=anno_below,
         optimize=optimize,
         trigger_char=trigger_char,
         out_ascent=out_ascent,
@@ -1378,6 +1439,7 @@ def main(
         anno_spacing=anno_spacing,
         upper_y_offset_ratio=upper_y_offset_ratio,
         invert=invert,
+        anno_below=anno_below,
         base_axis_location=base_axis_location,
         anno_axis_location=anno_axis_location,
         base_font_bytes=base_font_bytes,
@@ -1417,6 +1479,13 @@ def main(
             anno_spacing=anno_spacing,
             upper_y_offset_ratio=upper_y_offset_ratio,
             invert=invert,
+            anno_below=anno_below,
+            # Pass base_descent and base_scale through so the mark's
+            # below-baseline placement matches what _compose_char_entry
+            # uses for baked composites — a DIY mark and a baked
+            # composite of the same string should land at identical y.
+            base_descent=min(0, base_font["hhea"].descent),
+            base_scale=base_scale,
             mark_x_offset=mark_x_offset,
             anno_axis_location=anno_axis_location,
             base_axis_location=base_axis_location,
@@ -1496,6 +1565,59 @@ def main(
         # outline for the position — no double-shift.
         tagMarksAsGdefMarks(output_font, diy_mark_names)
 
+    # ────────────────────────────────────────────────────────────────
+    # GSUB LOOKUP ORDER — three layers, ordered to satisfy two user
+    # requirements that cannot coexist in a single-pass design:
+    #
+    #   (a) `佗位2` → cycle the compound's 2nd variant (tueh _).
+    #       Requires the compound chain to consume the digit BEFORE
+    #       liga sees it (else liga eats `位+2` first and the chain
+    #       can't match the bases).
+    #
+    #   (b) `斷０ｐａｎｎ６` after `一刀兩斷` → strip only the trailing
+    #       `斷`, leave 一刀兩 alone, then float pa̋nn above bare-斷.
+    #       Requires liga's per-char `(斷, ０) → bare-斷` to fire and
+    #       the default-compound chain to FAIL afterwards (because
+    #       pos 3 is no longer default-斷).
+    #
+    # The two-pass split — see chain_context_handler module docstring
+    # for the full design rationale:
+    #
+    #   PASS 1 (buildChainSubVariantOverrides, BEFORE liga): chain
+    #     rules ONLY for compounds with variant_idx ≥ 1. Input is
+    #     `[base_chars, digit_for_(idx+1)]`; digit position is
+    #     substituted to a zero-width invisible glyph. Covers (a).
+    #
+    #   LIGA (buildLiga, BETWEEN): per-char digit overrides and bare-
+    #     strip `(base, '0')`. Covers (b) — liga eats the digit per-
+    #     char, breaking the default chain match in pass 2.
+    #
+    #   PASS 2 (buildChainSub, AFTER liga): default chain rules
+    #     (variant_idx == 0, no digit input). Fires only when neither
+    #     liga nor pass 1 has consumed the relevant input.
+    #
+    # The shared invisible-glyph (digit-eater target) is injected
+    # once before pass 1 and reused by both passes if the strip path
+    # ever needs it (currently only pass 1 references it).
+    # ────────────────────────────────────────────────────────────────
+
+    # The compound-variant override pass needs a zero-width invisible
+    # glyph as the substitution target for the consumed digit. Inject
+    # it once here so both pass 1 and any future pass can share the
+    # same glyph name.
+    invisible_glyph_name = ensure_invisible_glyph(output_font)
+
+    # Pass 1 — variant-override chain (compounds with ≥ 2 variants).
+    # No-op when no compound carries multiple weighted entries; the
+    # implementation early-exits if word_mapping has no multi-variant
+    # entries, so there's no per-call cost for monotype mappings.
+    buildChainSubVariantOverrides(
+        output_font,
+        word_mapping,
+        char_mapping,
+        invisible_glyph=invisible_glyph_name,
+    )
+
     # Auto-inject the trigger glyph into the output font's cmap if the
     # base font doesn't already encode it. Without this, NotoSansHK /
     # NotoSansTC / Huninn / NotoSerif-based outputs silently lose the
@@ -1510,42 +1632,16 @@ def main(
     # Pass bare_base_map so liga_handler can emit `(base, 0) → bare`
     # rules for the new 1-indexed digit semantics: 0 = no annotation,
     # 1 = default reading, N = N-th reading (variant N-1).
-    #
-    # IMPORTANT — buildLiga is intentionally registered BEFORE
-    # buildChainSub so the single-char digit-trigger lookups fire
-    # ahead of the multi-character compound chain in GSUB lookup
-    # order. This gives the user's explicit `字N` / `字０` override
-    # priority over the automatic compound-context annotation.
-    #
-    # Concretely, typing `一刀兩斷０ｐａｎｎ６` shapes as:
-    #   1. buildMarkInputLiga (above) consumes `ｐａｎｎ６` → mark glyph
-    #      → buffer = [一, 刀, 兩, 斷, ０, pa̋nn-mark]
-    #   2. buildLiga matches `(斷, ０)` → bare-斷 (a glyph ID DISTINCT
-    #      from default-斷)
-    #      → buffer = [一, 刀, 兩, bare-斷, pa̋nn-mark]
-    #   3. buildChainSub tries to match `[一, 刀, 兩, 斷]` at pos 0 —
-    #      pos 3 is bare-斷, not default-斷, so the chain rule's
-    #      ChainContextSubst input-coverage check fails. Compound
-    #      stays unannotated; bare-斷 keeps its (no-annotation) form
-    #      and pa̋nn floats above it via the mark anchor.
-    #
-    # Without this ordering, the chain would fire first, substitute
-    # `斷 → 斷-tuān-variant`, and then `(斷-tuān, ０)` would not match
-    # the digit-trigger lookup (which keys off default-斷), so the
-    # `０` would render as a literal fullwidth zero and the user's
-    # explicit "strip the auto-annotation" intent would be lost.
-    #
-    # Side effect: when a digit-trigger overrides a char inside a
-    # compound (`一刀兩斷２`), the surrounding compound annotation also
-    # drops — there is no partial compound match in OpenType
-    # ChainContextSubst. This matches the user's stated mental model
-    # that explicit digit overrides beat automatic compound selection.
     buildLiga(
         output_font,
         char_mapping,
         trigger_char=trigger_char,
         bare_base_map=bare_base_map,
     )
+
+    # Pass 2 — default compound chain (variant 0, no digit input).
+    # This is the original buildChainSub behaviour, modified to read
+    # variants[0] off the new {word: [variants...]} word_mapping shape.
     buildChainSub(output_font, word_mapping, char_mapping)
     buildIvs(output_font, char_mapping)
 
@@ -1887,6 +1983,13 @@ def main(
         # single-char glyph's ink (no-op for word-unit-only builds —
         # _auto_extend_vertical_metrics handles those just below).
         _auto_fit_ascent(output_font, char_metrics)
+        # Mirror auto-fit-ascent for the descent side. Fires when
+        # `--anno-below` (or any future "ink below baseline" mode)
+        # has pushed annotation glyphs deep enough that the base
+        # font's native descent metrics no longer reserve enough
+        # line-box space. No-op for the default above-the-baseline
+        # build because min_y stays at 0.
+        _auto_fit_descent(output_font, char_metrics)
 
     # ── Auto-extend metrics for word-unit (Arabic/Thai) outputs ───
     # Composed word glyphs can carry ink below the base font's
@@ -1991,7 +2094,32 @@ if __name__ == "__main__":
             "drives this same parameter."
         ),
     )
-    parser.add_argument('-v', '--invert', action='store_true', help='Invert the annotation and base glyph')
+    parser.add_argument(
+        '-v', '--invert', action='store_true',
+        help=(
+            "Legacy invert: lift the base CJK glyph by upper_y_offset_ratio "
+            "(~0.8em) and park the annotation at y=0. Preserved for "
+            "back-compat with builds that already depend on this geometry. "
+            "Prefer --anno-below for new builds — it has the more natural "
+            "semantics of keeping the base on the baseline."
+        ),
+    )
+    parser.add_argument(
+        '--anno-below',
+        dest='anno_below',
+        action='store_true',
+        help=(
+            "Place the annotation BELOW the baseline (inside an "
+            "auto-extended descent) instead of above. The base CJK glyph "
+            "stays on the baseline, so text rendered with this font has "
+            "the same baseline as un-annotated CJK in mixed runs. The "
+            "output font's hhea.descent, OS/2.usWinDescent, and "
+            "OS/2.sTypoDescender are widened to fit the annotation ink "
+            "with a small margin (line-height grows correspondingly in "
+            "apps that honour the metric — Chrome, Firefox, Word, "
+            "InDesign). Wins over --invert when both are passed."
+        ),
+    )
     parser.add_argument('-opt', '--optimize', action="store_true", help="Optimizing size by subsetting annotated glyph only")
     parser.add_argument(
         '--diy-annotations',
@@ -2151,6 +2279,7 @@ if __name__ == "__main__":
         anno_spacing=options.anno_spacing,
         upper_y_offset_ratio=options.upper_y_offset_ratio,
         invert=options.invert,
+        anno_below=options.anno_below,
         optimize=options.optimize,
         trigger_char=options.trigger_char,
         out_ascent=options.out_ascent,

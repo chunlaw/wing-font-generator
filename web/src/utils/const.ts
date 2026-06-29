@@ -170,6 +170,32 @@ export const TEMPLATES_BY_DIALECT: Record<string, string[]> = {
     "図書館で一冊の本を借りる",
     "山の上から海と空を眺める",
   ],
+  // Thai — Thai words annotated with thai-ink Paiboon romanization,
+  // rendered with the GoogleSans-Noto-thai-paiboon font where the
+  // Latin annotation sits BELOW the baseline (`--anno-below`) so it
+  // doesn't collide with Thai's above-line vowels (สระอิ / สระอี /
+  // สระอืน) and tone marks (ไม้เอก / ไม้โท / ไม้ตรี / ไม้จัตวา).
+  //
+  // Selected from common everyday vocabulary — greetings, country/
+  // place names, weather, food — all words that appear in the
+  // hand-curated thai-ink vocab set (highest-priority rows in
+  // thai-paiboon.csv) and therefore render with the ground-truth
+  // romanization rather than an algorithmic approximation. Thai is
+  // normally written without word spaces; the word-unit GSUB
+  // matches each registered word longest-first inside the unspaced
+  // run, so the phrases render as one annotated word after another.
+  thai: [
+    "สวัสดีครับ",
+    "ขอบคุณมากครับ",
+    "สบายดีไหม",
+    "ภาษาไทยสวยมาก",
+    "ฉันรักประเทศไทย",
+    "อาหารไทยอร่อย",
+    "กรุงเทพมหานคร",
+    "ดอกไม้บานสวย",
+    "ดวงจันทร์ลอยฟ้า",
+    "น้ำใจคนไทย",
+  ],
 };
 
 /**
@@ -846,6 +872,26 @@ export const AVAILABLE_FONTS: FontSet = {
         displayName: "Hind（ISO 15919 罗马字）",
         name: "Hind-Noto-romanization",
         source: `url(${import.meta.env.VITE_FONT_URL}/Hind-Noto-romanization.woff2) format('woff2')`,
+      },
+    },
+  },
+  // Thai — Thai-script base annotated with thai-ink Paiboon
+  // romanization. The pairing uses GoogleSans for the Thai base
+  // (NotoSerif covers Latin), and `--anno-below` puts the Latin
+  // romanization in the (auto-extended) descent so Thai's own
+  // above-line vowels (◌ิ ◌ี ◌ื) and tone marks (◌่ ◌้ ◌๊ ◌๋)
+  // stay readable in the ascender area. See the matching
+  // matrix entry in .github/workflows/deploy-pages.yml.
+  thai: {
+    lang: {
+      zh: "泰文",
+      en: "Thai",
+    },
+    fonts: {
+      "GoogleSans-Noto-thai-paiboon": {
+        displayName: "Google Sans 泰文（Paiboon 拼音）",
+        name: "GoogleSans-Noto-thai-paiboon",
+        source: `url(${import.meta.env.VITE_FONT_URL}/GoogleSans-Noto-thai-paiboon.woff2) format('woff2')`,
       },
     },
   },

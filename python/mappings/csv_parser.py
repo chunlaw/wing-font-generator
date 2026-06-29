@@ -434,9 +434,23 @@ def load_mapping(font, csv_file):
     
     # 由於 Python 3.7+ 的字典會保持插入順序，
     # 這裡生成的 word_mapping_final 將會是已經排序好的。
+    #
+    # Shape: ``{word: [variant_anno_strs_list, …]}``. ``variant_anno_strs_list``
+    # at index 0 is the highest-priority (weight-desc, tone-asc, …) entry,
+    # later indices are the additional readings of the same compound that
+    # used to be silently dropped. Preserving them is what lets
+    # chain_context_handler.buildChainSubVariantOverrides emit `<compound> + N`
+    # rules so users can cycle between e.g. `佗位` → tuē _, `佗位2` → tueh _,
+    # `佗位3` → tó uī. The default-reading (pass 2) chain still reads
+    # ``variants[0]`` only — see chain_context_handler module docstring.
+    #
+    # Consumer impact: every reader of ``word_mapping`` must index ``[0]``
+    # (default reading) or iterate ``enumerate(variants)`` (variant override).
+    # The shape change is breaking — wing-font.py / chain_context_handler.py
+    # were updated in the same commit; parseCsv.py is the legacy parser, no
+    # current callers.
     word_mapping_final = {}
     for word, anno_strs, _ in sorted_word_entries:
-        if word not in word_mapping_final:
-            word_mapping_final[word] = anno_strs
-    
+        word_mapping_final.setdefault(word, []).append(anno_strs)
+
     return (word_mapping_final, char_mapping_raw)
