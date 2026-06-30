@@ -629,6 +629,40 @@ def register_feature_lookup(
                     script.DefaultLangSys.FeatureCount = len(
                         script.DefaultLangSys.FeatureIndex
                     )
+
+        # Patch named LangSys whose FeatureIndex omits `feature_tag`.
+        #
+        # Some source fonts ship named LangSys without ccmp by design
+        # — ChironSungHK-R drops the upstream locl support, leaving
+        # hani/ZHT, ZHS, JAN, KOR carrying only [locl, vert]. HarfBuzz
+        # falls back to DefaultLangSys for missing features, so
+        # browsers render correctly; DirectWrite (Word, Edge legacy)
+        # does not fall back — when it resolves Traditional Chinese
+        # text to `hani + ZHT`, finds no ccmp on ZHT, it skips the
+        # feature entirely and the chain context we registered never
+        # fires (symptom: `銀行` rendered as default-per-char `haang4`
+        # instead of compound `hong4`).
+        #
+        # Append the first matching feature index to any named LangSys
+        # whose FeatureIndex lacks our tag. Universal across scripts
+        # so the fix also covers Thai, Arabic, Devanagari sources
+        # with the same wiring gap. Already-wired LangSys are
+        # untouched — their existing feature record was extended with
+        # our lookup in the loop above and remains reachable.
+        first_idx = feature_indexes[0]
+        for script_record in gsub.ScriptList.ScriptRecord:
+            for lsr in (script_record.Script.LangSysRecord or []):
+                langsys = lsr.LangSys
+                if langsys is None:
+                    continue
+                already_references_tag = any(
+                    fi < len(gsub.FeatureList.FeatureRecord)
+                    and gsub.FeatureList.FeatureRecord[fi].FeatureTag == feature_tag
+                    for fi in langsys.FeatureIndex
+                )
+                if not already_references_tag:
+                    langsys.FeatureIndex.append(first_idx)
+                    langsys.FeatureCount = len(langsys.FeatureIndex)
         return
 
     # Create a fresh FeatureRecord for this tag.
