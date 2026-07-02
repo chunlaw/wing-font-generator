@@ -1,5 +1,5 @@
-import { Box, Button, IconButton } from "@mui/material";
-import { Download, RemoveCircleOutline } from "@mui/icons-material";
+import { Box, Button, IconButton, Tooltip } from "@mui/material";
+import { Download, DeleteOutline, RemoveCircleOutline } from "@mui/icons-material";
 import { useContext, useMemo } from "react";
 import AppContext from "../../AppContext";
 import { useRecentFonts } from "../../RecentFontsContext";
@@ -32,16 +32,50 @@ interface FontHeaderProps {
  */
 export const FontHeader = ({ family, displayName, idx }: FontHeaderProps) => {
   const { removePickedFont } = useContext(AppContext);
-  const { entries: recentEntries } = useRecentFonts();
+  const { entries: recentEntries, remove: removeRecentFont } = useRecentFonts();
 
-  // Look up the matching recent-fonts entry (if any). Used both to
-  // route the download through IndexedDB bytes AND to decide which
-  // download buttons to render — uploaded entries only have one
-  // populated format, so we hide the missing format's button.
+  // Look up the matching recent-fonts entry (if any). Used to
+  // route the download through IndexedDB bytes, decide which
+  // download buttons to render (uploaded entries only have one
+  // populated format, so we hide the missing format's button),
+  // and route the header's remove button between "unpick from row"
+  // and "delete from cache" (see the remove handler below).
   const recentEntry = useMemo(
     () => recentEntries.find((e) => e.id === family),
     [recentEntries, family],
   );
+
+  // Uploaded fonts are the one recent-entry class where a distinct
+  // "delete forever" affordance makes sense — the source of truth is
+  // a file the user picked from disk (they can always re-upload if
+  // needed), and the IndexedDB copy is dead weight once they choose
+  // to purge it. Pipeline-generated entries are the user's build
+  // output and don't get a per-card delete here — that lives on
+  // /generate's RecentFontsChips row, where a delete is more clearly
+  // an intent to discard the build rather than an accidental
+  // extension of an unpick click.
+  const isUploaded = recentEntry?.source === "uploaded";
+
+  // Hide from /showcase. Same operation for every font class — drops
+  // the card from the current pickedFonts row, leaving IndexedDB
+  // (and any /generate chip visibility) untouched. Reversible: the
+  // user can pick the same font again from the font picker to bring
+  // the card back.
+  const handleUnpick = () => {
+    if (idx === undefined) return;
+    removePickedFont(idx);
+  };
+
+  // Delete an uploaded font — permanent. Removes the IndexedDB entry
+  // (also revokes the blob URL and removes the FontFace registration
+  // via RecentFontsContext.remove) AND unpicks the card. Ordering
+  // matters: purge IndexedDB first so removePickedFont doesn't leave
+  // a card briefly pointing at bytes we're mid-deleting.
+  const handleDelete = async () => {
+    if (idx === undefined) return;
+    await removeRecentFont(family);
+    removePickedFont(idx);
+  };
 
   // The compressed-format extension depends on where the bytes
   // came from:
@@ -148,9 +182,49 @@ export const FontHeader = ({ family, displayName, idx }: FontHeaderProps) => {
       <Box display="flex" gap={1} alignItems="center">
         {displayName}
         {idx !== undefined && (
-          <IconButton size="small" onClick={() => removePickedFont(idx)}>
-            <RemoveCircleOutline />
-          </IconButton>
+          <>
+            {/*
+              Universal "hide from showcase" affordance — reversible
+              unpick that doesn't touch IndexedDB. Shown for every
+              font class (built-in, generated, uploaded) because the
+              user might want to compact the /showcase row without
+              throwing away the underlying font.
+            */}
+            <Tooltip title="Hide from showcase">
+              <IconButton size="small" onClick={handleUnpick}>
+                <RemoveCircleOutline />
+              </IconButton>
+            </Tooltip>
+            {/*
+              Uploaded-only "delete forever" affordance — sits next
+              to the unpick button so the two operations read as
+              related-but-distinct choices ("hide" vs "delete"). The
+              trash-can icon carries the destructive-intent visual
+              weight; the unpick's remove-circle stays as the
+              softer, reversible cousin. Not shown for pipeline-
+              generated entries (delete lives on /generate's chips)
+              or built-ins (nothing to delete on the CDN).
+            */}
+            {isUploaded && (
+              <Tooltip title="Delete uploaded font">
+                <IconButton
+                  size="small"
+                  onClick={() => {
+                    // Fire-and-forget: the visible removal is
+                    // driven by the pickedFonts change inside
+                    // handleDelete after the IndexedDB purge
+                    // resolves. Adding await here would gate the
+                    // click handler on a rejectable promise with
+                    // no meaningful recovery UX beyond a Snackbar
+                    // for a narrow edge case.
+                    void handleDelete();
+                  }}
+                >
+                  <DeleteOutline />
+                </IconButton>
+              </Tooltip>
+            )}
+          </>
         )}
       </Box>
       <Box
