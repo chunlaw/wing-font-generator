@@ -28,6 +28,7 @@ import sys
 import argparse
 from fontTools import subset
 from utils import (
+    ensure_gsub_table,
     ensure_invisible_glyph,
     ensure_trigger_char_glyph,
     get_glyph_name_by_char,
@@ -1541,6 +1542,15 @@ def main(
     # macOS Character Viewer, Adobe Glyphs panel). The existing
     # digit-suffix and 丅+numeral paths in liga_handler stay as
     # human-readable fallbacks for users without VS input.
+
+    # Step 2 preamble — guarantee GSUB exists on the output font before
+    # any handler tries to append lookups. Most base fonts we ship carry
+    # a GSUB skeleton already, but user-uploaded / minimal display base
+    # fonts can omit it entirely; in that case buildMarkInputLiga /
+    # buildLiga / buildChainSub used to fail at their first
+    # `output_font["GSUB"].table` dereference with a KeyError. This is
+    # a no-op when GSUB is already present.
+    ensure_gsub_table(output_font)
 
     # Step 2(0) — DIY manual-annotation GSUB, built FIRST (lowest lookup
     # indices). Historically this slot also called buildBareStripLiga to

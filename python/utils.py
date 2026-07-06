@@ -510,6 +510,47 @@ def _build_default_langsys():
     return ls
 
 
+def ensure_gsub_table(output_font) -> None:
+    """
+    Guarantee ``output_font`` owns a GSUB table so downstream handlers
+    (buildLiga, buildChainSub, buildMarkInputLiga, buildIvs, …) can
+    dereference ``output_font["GSUB"].table`` without a KeyError.
+
+    Wing-font's pipeline appends its own Ligature / Chain-Context / IVS
+    lookups into the base font's GSUB. Most base fonts we ship already
+    carry a GSUB — Noto, Chiron, Xiaolai, Huninn, Hind, GoogleSans all
+    populate at least a `ccmp` skeleton. But an arbitrary user-uploaded
+    font on `/showcase` (or a minimal display font used as base) can
+    ship with NO GSUB table at all, which used to crash the pipeline at
+    the first handler call with ``KeyError: 'GSUB'``.
+
+    This helper synthesises an empty-but-well-formed GSUB (version 1.0,
+    empty ScriptList / FeatureList / LookupList) when the table is
+    absent. Idempotent: no-op when GSUB already exists. Safe to call
+    unconditionally at the top of the pipeline.
+    """
+    if "GSUB" in output_font:
+        return
+    from fontTools.ttLib import newTable
+
+    gsub_table = newTable("GSUB")
+    gsub_table.table = otTables.GSUB()
+    gsub_table.table.Version = 0x00010000  # GSUB v1.0
+    # ScriptList / FeatureList / LookupList are required child records.
+    # Empty ones satisfy the compiler; register_feature_lookup will
+    # populate them as handlers append their lookups.
+    gsub_table.table.ScriptList = otTables.ScriptList()
+    gsub_table.table.ScriptList.ScriptRecord = []
+    gsub_table.table.ScriptList.ScriptCount = 0
+    gsub_table.table.FeatureList = otTables.FeatureList()
+    gsub_table.table.FeatureList.FeatureRecord = []
+    gsub_table.table.FeatureList.FeatureCount = 0
+    gsub_table.table.LookupList = otTables.LookupList()
+    gsub_table.table.LookupList.Lookup = []
+    gsub_table.table.LookupList.LookupCount = 0
+    output_font["GSUB"] = gsub_table
+
+
 # Default set of OpenType script tags we GUARANTEE the feature lookup
 # is registered under. The motivating bug: CoreText (the shaper used
 # by Pages / InDesign on macOS) selects an OT script tag based on the
