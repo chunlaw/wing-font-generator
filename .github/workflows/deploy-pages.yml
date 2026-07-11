@@ -273,7 +273,7 @@ jobs:
           # Mengshen-equivalent products (source fonts are SIL OFL-1.1, user-supplied in input_fonts/).
           # Serif: Source Han Serif (Noto Serif SC) + M+ 1m — Simplified, -cn only.
           # Handwritten: Xiaolai + M+ Rounded 1c (OFL stand-in for Mengshen's non-OFL SetoFontSP); Xiaolai SC covers Traditional, so it builds both -cn and -tw.
-          - { name: SourceHan-Mplus-mandarin-cn,      args: "-opt -i input_fonts/SourceHanSerif-Regular.ttf -a input_fonts/mplus-1m-medium.ttf -m mappings/mandarin/mandarin-cn.csv -as 0.25" }
+          - { name: SourceHanSerif-Mplus-mandarin-cn, args: "-opt -i input_fonts/SourceHanSerif-Regular.ttf -a input_fonts/mplus-1m-medium.ttf -m mappings/mandarin/mandarin-cn.csv -as 0.25" }
           - { name: Xiaolai-Mplus-mandarin-cn,      args: "-opt -i input_fonts/XiaolaiSC-Regular.ttf -a input_fonts/MPLUSRounded1c-Regular.ttf -m mappings/mandarin/mandarin-cn.csv -as 0.25" }
           - { name: Xiaolai-Mplus-mandarin-tw,      args: "-opt -i input_fonts/XiaolaiSC-Regular.ttf -a input_fonts/MPLUSRounded1c-Regular.ttf -m mappings/mandarin/mandarin-tw.csv -as 0.25" }
           # === Xiaolai + Huninn family (handwritten base) ============
