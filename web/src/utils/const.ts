@@ -797,10 +797,10 @@ export const AVAILABLE_FONTS: FontSet = {
         name: "Xiaolai-Huninn-mandarin-tw",
         source: `url(${import.meta.env.VITE_FONT_URL}/Xiaolai-Huninn-mandarin-tw.woff2) format('woff2')`,
       },
-      "SourceHanSerif-Mplus-mandarin-cn": {
+      "SHSerif-Mplus-mandarin-cn": {
         displayName: "思源宋體（拼音調符 · 普通話）",
-        name: "SourceHanSerif-Mplus-mandarin-cn",
-        source: `url(${import.meta.env.VITE_FONT_URL}/SourceHanSerif-Mplus-mandarin-cn.woff2) format('woff2')`,
+        name: "SHSerif-Mplus-mandarin-cn",
+        source: `url(${import.meta.env.VITE_FONT_URL}/SHSerif-Mplus-mandarin-cn.woff2) format('woff2')`,
       },
       "Xiaolai-Huninn-mandarin-cn": {
         displayName: "小賴字體（拼音調符 · 普通話）",
