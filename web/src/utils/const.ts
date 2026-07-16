@@ -84,8 +84,10 @@ export const TEMPLATES_BY_DIALECT: Record<string, string[]> = {
   ],
   // Mandarin (普通話 / 國語) samples — render with the Mandarin
   // showcase fonts (思源宋體 拼音 / 小賴字體 拼音) to see Hanyu Pinyin
-  // stacked above each character via the full-Unihan mandarin-cn /
-  // mandarin-tw mappings. Mix of 鄧麗君 / 王菲 / 羅大佑 / 周華健 / 五月天 / 朴樹
+  // stacked above each character. The 普通話 (-cn) fonts now render
+  // diacritic tone marks (mā) from the common-set mandarin-cn-toned-
+  // trimmed mapping (+ full-width pinyin DIY input); the 國語 (-tw) fonts
+  // use numeric tones from the full-Unihan mandarin-tw mapping. Mix of 鄧麗君 / 王菲 / 羅大佑 / 周華健 / 五月天 / 朴樹
   // / 周深 — broad coverage across 70s–2010s 國語 pop so a reader
   // of any generation lands on something familiar.
   // Arabic samples — phrases drawn from the hand-curated
@@ -560,10 +562,10 @@ export const AVAILABLE_FONTS: FontSet = {
         source: `url(${import.meta.env.VITE_FONT_URL}/Xiaolai-Tagalog-baybayin-notone.woff2) format('woff2')`,
         group: CANTO_GROUP_TONELESS,
       },
-      "Xiaolai-NotoNastaliq-urdu-notone": {
+      "Xiaolai-Nastaliq-urdu-notone": {
         displayName: "小賴字體（烏爾都文・無聲調）",
-        name: "Xiaolai-NotoNastaliq-urdu-notone",
-        source: `url(${import.meta.env.VITE_FONT_URL}/Xiaolai-NotoNastaliq-urdu-notone.woff2) format('woff2')`,
+        name: "Xiaolai-Nastaliq-urdu-notone",
+        source: `url(${import.meta.env.VITE_FONT_URL}/Xiaolai-Nastaliq-urdu-notone.woff2) format('woff2')`,
         group: CANTO_GROUP_TONELESS,
       },
       "Xiaolai-Hind-hindi-notone": {
@@ -736,10 +738,10 @@ export const AVAILABLE_FONTS: FontSet = {
       en: "Teochew / Min Nan",
     },
     fonts: {
-      "NotoSansTC-Huninn-teochew-pengim": {
+      "NotoSansTC-Huninn-pengim": {
         displayName: "思源黑體（潮拼）",
-        name: "NotoSansTC-Huninn-teochew-pengim",
-        source: `url(${import.meta.env.VITE_FONT_URL}/NotoSansTC-Huninn-teochew-pengim.woff2) format('woff2')`,
+        name: "NotoSansTC-Huninn-pengim",
+        source: `url(${import.meta.env.VITE_FONT_URL}/NotoSansTC-Huninn-pengim.woff2) format('woff2')`,
       },
       "NotoSansTC-Huninn-teochew-puj": {
         displayName: "思源黑體（潮州白話字）",
@@ -761,7 +763,8 @@ export const AVAILABLE_FONTS: FontSet = {
   },
   // Mandarin (普通話 / 國語) — showcased in BOTH regional standards so a
   // reader can compare the cross-strait reading differences:
-  //   • 普通話 (-cn) — mandarin-cn.csv on Simplified-region fonts. The
+  //   • 普通話 (-cn) — mandarin-cn-toned-trimmed.csv (diacritic tone marks +
+  //     full-width pinyin DIY, common-set chars) on Simplified-region fonts. The
   //     Mainland standard (also what Singapore / Malaysia adopt).
   //   • 國語 (-tw) — mandarin-tw.csv on Traditional fonts. The Taiwan
   //     standard, 753 single-character defaults re-derived from the MOE
@@ -795,12 +798,12 @@ export const AVAILABLE_FONTS: FontSet = {
         source: `url(${import.meta.env.VITE_FONT_URL}/Xiaolai-Huninn-mandarin-tw.woff2) format('woff2')`,
       },
       "SourceHanSerif-Mplus-mandarin-cn": {
-        displayName: "思源宋體（拼音 · 普通話）",
+        displayName: "思源宋體（拼音調符 · 普通話）",
         name: "SourceHanSerif-Mplus-mandarin-cn",
         source: `url(${import.meta.env.VITE_FONT_URL}/SourceHanSerif-Mplus-mandarin-cn.woff2) format('woff2')`,
       },
       "Xiaolai-Huninn-mandarin-cn": {
-        displayName: "小賴字體（拼音 · 普通話）",
+        displayName: "小賴字體（拼音調符 · 普通話）",
         name: "Xiaolai-Huninn-mandarin-cn",
         source: `url(${import.meta.env.VITE_FONT_URL}/Xiaolai-Huninn-mandarin-cn.woff2) format('woff2')`,
       },
