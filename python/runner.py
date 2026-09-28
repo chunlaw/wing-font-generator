@@ -258,6 +258,10 @@ def generate(
     # --out-ascent flag / _resolve_out_ascent for the full policy
     # (including the "off" opt-out, which the CLI exposes).
     out_ascent: int | None = None,
+    # DIY manual-annotation inventory CSV (`input,annotation` rows), as
+    # text. None/empty = no DIY path. Written to MEMFS and forwarded to
+    # main() as --diy-annotations. Needs optimize=True (main() warns).
+    diy_csv_text: str | None = None,
     progress_cb=None,
 ):
     """
@@ -364,6 +368,11 @@ def generate(
         f.write(anno_font_bytes)
     with open(mapping_path, "w", encoding="utf-8") as f:
         f.write(mapping_csv_text)
+    diy_path = None
+    if diy_csv_text:
+        diy_path = os.path.join(work_dir, "diy.csv")
+        with open(diy_path, "w", encoding="utf-8") as f:
+            f.write(diy_csv_text)
     _elapsed = time.perf_counter() - _t0
     record_step_time("input files", _elapsed)
     _emit(progress_cb, f"Processing input files... DONE ({_elapsed:.1f}s)")
@@ -424,6 +433,7 @@ def generate(
                 optimize=optimize,
                 trigger_char=trigger_char,
                 out_ascent=out_ascent,
+                diy_annotations=diy_path,
                 # WOFF is generated in JS via CompressionStream — much
                 # faster than Pyodide doing it via wasm-compiled zlib.
                 skip_woff=True,

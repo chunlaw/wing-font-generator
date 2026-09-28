@@ -720,14 +720,21 @@ export const BUILT_IN_MAPPINGS: BuiltInPreset[] = [
   // works (Huninn, Noto Serif, ChironHei/Sung all fine).
   //
   // Two regional standards: 普通話 (Mainland China; also the standard
-  // Singapore and Malaysia adopt) and 國語 (Taiwan — 753 single-char
-  // default readings re-derived from the MOE 國語辭典, e.g. 期 qí,
-  // 危 wéi, 突 tú).
+  // Singapore and Malaysia adopt) and 國語 (Taiwan — every reading and
+  // word row from the MOE 國語辭典, e.g. 期 qí, 危 wéi, 垃圾 lè sè).
+  // Keys match the CSV stems so buildCliCommand's path resolves.
   {
-    key: "mandarin-tw",
-    label: "拼音 · 國語 (Hanyu Pinyin, 數字調)",
-    url: "/wingfont/mappings/mandarin-tw.csv",
-    filename: "mandarin-tw.csv",
+    key: "mandarin-tw-toned",
+    label: "拼音調符 · 國語 (Hanyu Pinyin, 教育部辭典)",
+    url: "/wingfont/mappings/mandarin-tw-toned.csv",
+    filename: "mandarin-tw-toned.csv",
+    group: "國語 / 普通話 (Mandarin)",
+  },
+  {
+    key: "mandarin-tw-zhuyin",
+    label: "注音 · 國語 (Zhuyin, 教育部辭典)",
+    url: "/wingfont/mappings/mandarin-tw-zhuyin.csv",
+    filename: "mandarin-tw-zhuyin.csv",
     group: "國語 / 普通話 (Mandarin)",
   },
   {
@@ -753,6 +760,40 @@ export const BUILT_IN_MAPPINGS: BuiltInPreset[] = [
 export const DEFAULT_BASE_FONT_PRESET = BUILT_IN_BASE_FONTS[0];
 export const DEFAULT_ANNO_FONT_PRESET = BUILT_IN_ANNO_FONTS[0];
 export const DEFAULT_MAPPING_PRESET = BUILT_IN_MAPPINGS[0];
+
+/**
+ * DIY manual-annotation inventories for Step 3 (`--diy-annotations`).
+ * Each row is `input,annotation`: typing the full-width input after a
+ * base character (with ０ to strip its baked reading, e.g. `行０ｚａａ１`)
+ * draws that annotation over it. Copied into public/wingfont/diy/ by
+ * scripts/sync-python.mjs from python/diy-mappings/<group>/.
+ */
+export const BUILT_IN_DIY: BuiltInPreset[] = [
+  {
+    key: "lshk",
+    label: "粵拼 (LSHK Jyutping) — ｚａａ１ → zaa1",
+    url: "/wingfont/diy/lshk.diy-annotation.csv",
+    filename: "cantonese/lshk.diy-annotation.csv",
+  },
+  {
+    key: "pinyin",
+    label: "漢語拼音 (Pinyin, tone marks) — ｚｈｏｎｇ１ → zhōng",
+    url: "/wingfont/diy/pinyin.diy-annotation.csv",
+    filename: "mandarin/pinyin.diy-annotation.csv",
+  },
+  {
+    key: "zhuyin",
+    label: "注音符號 (Zhuyin) — ｚｈｏｎｇ１ → ㄓㄨㄥ",
+    url: "/wingfont/diy/zhuyin.diy-annotation.csv",
+    filename: "mandarin/zhuyin.diy-annotation.csv",
+  },
+  {
+    key: "sutian",
+    label: "台羅 (Tâi-lô, tone marks) — ｐａ２ → pá",
+    url: "/wingfont/diy/sutian.diy-annotation.csv",
+    filename: "taiwanese/sutian.diy-annotation.csv",
+  },
+];
 
 /** Find a preset by its key. Returns undefined if no match — caller
  *  should treat that as "user has uploaded a custom file". */

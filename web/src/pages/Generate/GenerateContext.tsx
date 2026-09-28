@@ -246,14 +246,26 @@ interface GenerateContextValue {
    *  null when the user has edited / imported a custom mapping. */
   mappingsPresetKey: string | null;
 
-  // --- Step 3: params ---
+  // --- Step 3: DIY annotations (optional) ---
+  /** DIY inventory CSV text (`input,annotation`), or null when off.
+   *  Sent to the full Generate only — live previews skip it. */
+  diyCsvText: string | null;
+  /** Display name of the loaded DIY file (preset filename or upload). */
+  diyName: string | null;
+  /** Key of the BUILT_IN_DIY preset in use, null for uploads / off. */
+  diyPresetKey: string | null;
+  loadBuiltInDiy: (preset: BuiltInPreset) => Promise<void>;
+  loadDiyFromCsvText: (csv: string, name: string) => void;
+  clearDiy: () => void;
+
+  // --- Step 4: params ---
   params: GenerateParams;
   setParam: <K extends keyof GenerateParams>(
     key: K,
     value: GenerateParams[K],
   ) => void;
 
-  // --- Step 4: log + run ---
+  // --- Step 5: log + run ---
   progressLog: string[];
   /** 0..1 progress derived from step weights below. -1 when no run
    *  has started; never decreases during a single run. */
@@ -266,7 +278,7 @@ interface GenerateContextValue {
   runtimeReady: boolean;
   generate: () => Promise<void>;
 
-  // --- Step 5: result ---
+  // --- Step 6: result ---
   result: GenerateResult | null;
 
   // --- Parameter-tuning preview (Step 3) ---
@@ -689,7 +701,30 @@ export const GenerateProvider = ({ children }: { children: ReactNode }) => {
     [mappings],
   );
 
-  // --- Step 3: parameters ----------------------------------------------
+  // --- Step 3: DIY annotations (optional) ------------------------------
+  const [diy, setDiy] = useState<{
+    text: string | null;
+    name: string | null;
+    presetKey: string | null;
+  }>({ text: null, name: null, presetKey: null });
+  const loadBuiltInDiy = useCallback(async (preset: BuiltInPreset) => {
+    const res = await fetch(preset.url);
+    if (!res.ok || (res.headers.get("content-type") ?? "").includes("text/html")) {
+      throw new Error(
+        `Failed to load DIY preset "${preset.label}" (${res.status}). ` +
+          "Run `yarn sync` to copy it into public/wingfont/diy/.",
+      );
+    }
+    setDiy({ text: await res.text(), name: preset.filename, presetKey: preset.key });
+  }, []);
+  const loadDiyFromCsvText = useCallback((csv: string, name: string) => {
+    setDiy({ text: csv, name, presetKey: null });
+  }, []);
+  const clearDiy = useCallback(() => {
+    setDiy({ text: null, name: null, presetKey: null });
+  }, []);
+
+  // --- Step 4: parameters ----------------------------------------------
   const [params, setParams] = useState<GenerateParams>({
     baseScale: 0.75,
     // UPM-independent (normalized in build_glyph.py): a fraction of the
@@ -796,6 +831,7 @@ export const GenerateProvider = ({ children }: { children: ReactNode }) => {
         annoAxisLocation: annoFont.axisLocation,
         triggerChar: params.triggerChar,
         outAscent: params.outAscent,
+        diyCsvText: diy.text,
         onProgress: (msg) => {
           // Parse step boundaries to drive the determinate progress
           // bar. "Processing X..." marks a step start; "Processing X...
@@ -838,7 +874,7 @@ export const GenerateProvider = ({ children }: { children: ReactNode }) => {
       setCurrentProcessingStep(null);
       // Auto-advance to the preview step. User can navigate back if
       // they want to tweak anything.
-      setCurrentStep(4);
+      setCurrentStep(5);
     } catch (err) {
       setError(err instanceof Error ? err.message : String(err));
       // Leave the progress bar at wherever it got so the user can see
@@ -846,7 +882,7 @@ export const GenerateProvider = ({ children }: { children: ReactNode }) => {
     } finally {
       setIsGenerating(false);
     }
-  }, [baseFont, annoFont, mappings, params]);
+  }, [baseFont, annoFont, mappings, params, diy.text]);
 
   // --- Stepper navigation ----------------------------------------------
   // Declared before the live-preview machinery because the
@@ -1113,7 +1149,7 @@ export const GenerateProvider = ({ children }: { children: ReactNode }) => {
 
   // Auto-trigger: any change to inputs while the user is on Step 3
   // schedules a debounced preview. We deliberately gate on
-  // `currentStep === 2` so editing mappings on Step 2 doesn't burn
+  // `currentStep === 3` (params) so editing mappings on Step 2 doesn't burn
   // Pyodide cycles for a preview the user isn't looking at — they'll
   // get a fresh preview when they navigate to Step 3.
   //
@@ -1121,9 +1157,9 @@ export const GenerateProvider = ({ children }: { children: ReactNode }) => {
   // single-threaded, and any preview message we send would queue
   // behind the user's full-run Generate and starve it of CPU.
   useEffect(() => {
-    // Step indices: 0=fonts, 1=mappings, 2=params, 3=log, 4=preview.
-    // Only Step 3 (params) shows the live preview.
-    if (currentStep !== 2) return;
+    // Step indices: 0=fonts, 1=mappings, 2=DIY, 3=params, 4=log,
+    // 5=preview. Only the params step shows the live preview.
+    if (currentStep !== 3) return;
     if (isGenerating) return;
     if (!runtimeReady) return;
     if (mappings.length === 0) return;
@@ -1158,7 +1194,7 @@ export const GenerateProvider = ({ children }: { children: ReactNode }) => {
   // cancellation: the worker finishes whatever was already running
   // (we can't stop Python mid-execution) but nothing new queues.
   useEffect(() => {
-    if (currentStep !== 2 || isGenerating) {
+    if (currentStep !== 3 || isGenerating) {
       if (previewDebounceTimerRef.current !== null) {
         clearTimeout(previewDebounceTimerRef.current);
         previewDebounceTimerRef.current = null;
@@ -1186,8 +1222,8 @@ export const GenerateProvider = ({ children }: { children: ReactNode }) => {
   // The next preview that sets `useTrimCache: true` picks up the
   // cache and runs in <1 s instead of 2–4 s.
   //
-  // Triggered while the user is on Step 2 OR Step 3 (currentStep ∈
-  // {1, 2}) so by the time they finish editing mappings and click
+  // Triggered while the user is on Mappings, DIY or Params (currentStep ∈
+  // {1, 2, 3}) so by the time they finish editing mappings and click
   // into Step 3 the trim is almost always done. A 1.5 s debounce
   // coalesces rapid mapping edits — the trim itself takes 2–3 s,
   // longer than the preview's debounce, so we don't want to fire it
@@ -1211,7 +1247,7 @@ export const GenerateProvider = ({ children }: { children: ReactNode }) => {
     // the preview-tuning window and dangerous to fire afterwards
     // because it ties up the Pyodide worker that Step 4's Generate
     // needs.
-    if (currentStep < 1 || currentStep > 2) return;
+    if (currentStep < 1 || currentStep > 3) return;
     if (isGenerating) return;
     if (!runtimeReady) return;
     if (mappings.length === 0) return;
@@ -1291,7 +1327,7 @@ export const GenerateProvider = ({ children }: { children: ReactNode }) => {
   // user clicked Generate, queueing pre-trim work behind the user's
   // actual generation on the single-threaded Pyodide worker.
   useEffect(() => {
-    if (currentStep < 1 || currentStep > 2 || isGenerating) {
+    if (currentStep < 1 || currentStep > 3 || isGenerating) {
       if (preTrimDebounceTimerRef.current !== null) {
         clearTimeout(preTrimDebounceTimerRef.current);
         preTrimDebounceTimerRef.current = null;
@@ -1333,6 +1369,12 @@ export const GenerateProvider = ({ children }: { children: ReactNode }) => {
       loadMappingsFromCsvText,
       exportMappingsAsCsv,
       mappingsPresetKey,
+      diyCsvText: diy.text,
+      diyName: diy.name,
+      diyPresetKey: diy.presetKey,
+      loadBuiltInDiy,
+      loadDiyFromCsvText,
+      clearDiy,
       params,
       setParam,
       progressLog,
@@ -1378,6 +1420,10 @@ export const GenerateProvider = ({ children }: { children: ReactNode }) => {
       loadMappingsFromCsvText,
       exportMappingsAsCsv,
       mappingsPresetKey,
+      diy,
+      loadBuiltInDiy,
+      loadDiyFromCsvText,
+      clearDiy,
       params,
       setParam,
       progressLog,

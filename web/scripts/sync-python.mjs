@@ -90,17 +90,20 @@ const MANIFEST = [
   ["mappings/cantonese/canto-hindi-notone.csv", "mappings/canto-hindi-notone.csv"],
   ["mappings/cantonese/canto-punjab-notone.csv", "mappings/canto-punjab-notone.csv"],
   ["mappings/cangjie.csv", "mappings/cangjie.csv"],
-  // Mandarin — Hanyu Pinyin in numeric-tone form (e.g. `ling2`,
-  // `yuan2`). Two regional variants, each ~95k rows / ~3 MB covering
-  // the full Unihan CJK ideograph range; the in-browser pipeline
-  // surfaces every entry that matches a glyph in the user's selected
-  // base font. Pair naturally with Noto Sans SC (or any base font) +
-  // Noto Serif / Huninn annotation.
-  //   • mandarin-cn.csv — Mainland 普通話 (also Singapore / Malaysia).
-  //   • mandarin-tw.csv — Taiwan 國語 (753 single-char defaults
-  //     re-derived from the MOE 國語辭典).
+  // Mandarin, two regional standards:
+  //   • mandarin-cn.csv — Mainland 普通話 (also Singapore / Malaysia),
+  //     numeric-tone pinyin over the full Unihan range (~95k rows).
+  //   • mandarin-tw-toned.csv / mandarin-tw-zhuyin.csv — Taiwan 國語 from
+  //     the MOE 國語辭典 alone (tone-marked pinyin / 注音, ~11k chars).
   ["mappings/mandarin/mandarin-cn.csv", "mappings/mandarin-cn.csv"],
-  ["mappings/mandarin/mandarin-tw.csv", "mappings/mandarin-tw.csv"],
+  ["mappings/mandarin/mandarin-tw-toned.csv", "mappings/mandarin-tw-toned.csv"],
+  ["mappings/mandarin/mandarin-tw-zhuyin.csv", "mappings/mandarin-tw-zhuyin.csv"],
+  // DIY manual-annotation inventories (`input,annotation`) — Step 3
+  // presets for --diy-annotations (type 字０ｚａａ１ → zaa1 over 字).
+  ["diy-mappings/cantonese/lshk.diy-annotation.csv", "diy/lshk.diy-annotation.csv"],
+  ["diy-mappings/mandarin/pinyin.diy-annotation.csv", "diy/pinyin.diy-annotation.csv"],
+  ["diy-mappings/mandarin/zhuyin.diy-annotation.csv", "diy/zhuyin.diy-annotation.csv"],
+  ["diy-mappings/taiwanese/sutian.diy-annotation.csv", "diy/sutian.diy-annotation.csv"],
   // Japanese — kanji → kana furigana (音読み in katakana, 訓読み in
   // hiragana) from KanjiDic2, plus 熟語 word-context rows aligned from
   // JMdict so 行 reads コウ in 行政 but いく alone. Drives the

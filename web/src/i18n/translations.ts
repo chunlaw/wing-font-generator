@@ -119,6 +119,10 @@ export type TranslationKey =
   | "ack.mandarin.phrasepinyindata"
   | "ack.mandarin.unihan"
   | "ack.mandarin.moedict"
+  | "ack.thai.title"
+  | "ack.thai.body"
+  | "ack.thai.tcahk"
+  | "ack.thai.pythainlp"
   | "ack.license"
   | "ack.cta.showcase"
   // Home
@@ -236,6 +240,18 @@ export type TranslationKey =
   | "generate.step3.label"
   | "generate.step4.label"
   | "generate.step5.label"
+  | "generate.stepDiy.label"
+  | "stepDiy.title"
+  | "stepDiy.description"
+  | "stepDiy.preset"
+  | "stepDiy.none"
+  | "stepDiy.custom"
+  | "stepDiy.upload"
+  | "stepDiy.clear"
+  | "stepDiy.loaded"
+  | "stepDiy.example"
+  | "stepDiy.needsOptimize"
+  | "stepDiy.format"
   // Step 1 — fonts
   | "step1.title"
   | "step1.description"
@@ -468,11 +484,15 @@ export const TRANSLATIONS: Record<Language, Record<TranslationKey, string>> = {
     "ack.canto.kodensha": "粵語羅馬拼音轉換工具。",
     "ack.mandarin.title": "普通話／國語　字音資料",
     "ack.mandarin.body":
-      "普通話（mandarin-cn）字音資料全部取自 mozillazg 採用 MIT 授權嘅開源資料，並非來自任何 OFL 字型項目；每字嘅預設讀音依照 Unicode Unihan 資料庫嘅 kMandarin 欄。新加坡同馬來西亞官方都採用普通話讀音標準，所以同 mandarin-cn 一致。台灣國語（mandarin-tw）就唔同：有 753 個單字嘅預設讀音改用台灣教育部《國語辭典》嘅標準音（例如 期 qí、危 wéi、突 tú），資料取自 g0v moedict-data。將拼音直接造入字形、再按上下文自動切換多音字嘅做法，最早由 Mengshen 拼音字型（OFL-1.1）開創；Wing Font 並無使用佢嘅資料檔案，但謹此鳴謝佢嘅啟發。",
+      "普通話（mandarin-cn）字音資料全部取自 mozillazg 採用 MIT 授權嘅開源資料，並非來自任何 OFL 字型項目；每字嘅預設讀音依照 Unicode Unihan 資料庫嘅 kMandarin 欄。新加坡同馬來西亞官方都採用普通話讀音標準，所以同 mandarin-cn 一致。台灣國語（mandarin-tw-toned／mandarin-tw-zhuyin）就完全取自台灣教育部《重編國語辭典修訂本》：每個字同詞嘅讀音、以至注音本身都跟辭典（例如 期 qí、垃圾 lè sè），資料取自 g0v moedict-data。將拼音直接造入字形、再按上下文自動切換多音字嘅做法，最早由 Mengshen 拼音字型（OFL-1.1）開創；Wing Font 並無使用佢嘅資料檔案，但謹此鳴謝佢嘅啟發。",
     "ack.mandarin.pinyindata": "普通話逐字讀音資料（MIT；源自 Unihan）。",
     "ack.mandarin.phrasepinyindata": "詞語讀音資料，用嚟做多音字上下文判斷（MIT）。",
     "ack.mandarin.unihan": "Unicode 漢字資料庫（Unihan）— 上游讀音資料。",
-    "ack.mandarin.moedict": "台灣教育部《國語辭典》字音資料，用嚟做國語（mandarin-tw）讀音（g0v moedict-data；CC BY-ND 3.0 TW）。",
+    "ack.mandarin.moedict": "台灣教育部《國語辭典》字音資料，用嚟做國語（mandarin-tw-toned／mandarin-tw-zhuyin）全部讀音同注音（g0v moedict-data；CC BY-ND 3.0 TW）。",
+    "ack.thai.title": "泰文　字音資料",
+    "ack.thai.body": "泰文詞語嘅羅馬拼音方案取自香港泰國文化協會（TCAHK）以廣東話教授泰文嘅課程教材，經 thai-ink 項目整理成拼讀規則同人手校對嘅詞彙表（約 900 個詞，一律優先）；其餘約 8.4 萬個常用詞取自 PyThaiNLP 嘅詞表，按同一套規則自動轉換，屬近似結果。",
+    "ack.thai.tcahk": "泰文拼音方案同詞彙嘅來源：協會以廣東話教授泰文嘅課程教材。",
+    "ack.thai.pythainlp": "泰文詞表同詞頻（Apache-2.0），用嚟擴充自動轉換嘅詞彙。",
     "ack.license":
       "各項資料與字型均依其原有授權條款使用；如需轉載或再發佈，請先參閱各來源之授權。",
     "ack.cta.showcase": "睇睇成品字體",
@@ -502,7 +522,7 @@ export const TRANSLATIONS: Record<Language, Record<TranslationKey, string>> = {
     "home.platforms.tabs.iwork":
       "1. 先用 macOS **字體簿**安裝字型（見 **macOS** 分頁）。\n2. 開啟 Pages 或 Keynote，字型會以家族名稱出現在「**格式 > 字型**」選單，毋須額外設定即可使用。",
     "home.platforms.tabs.web":
-      "1. 將下載的 `.woff` 與 `.ttf` 上傳至你的伺服器（或任何 CSS 能存取的位置）。\n2. 在 CSS 中加入 `@font-face` 宣告（生成器 Step 5 對話框提供可複製的範本）。\n3. 套用字型：`font-family: '你的字型家族名稱'`。\n\n*Chrome、Firefox、Safari 均自動支援，毋須額外設定。*",
+      "1. 將下載的 `.woff` 與 `.ttf` 上傳至你的伺服器（或任何 CSS 能存取的位置）。\n2. 在 CSS 中加入 `@font-face` 宣告（生成器 Step 6 對話框提供可複製的範本）。\n3. 套用字型：`font-family: '你的字型家族名稱'`。\n\n*Chrome、Firefox、Safari 均自動支援，毋須額外設定。*",
     "home.platforms.tabs.windows":
       "1. 右鍵點擊 `.ttf` 檔案，選擇「**安裝**」（或「為所有使用者安裝」以全系統可用）。\n2. 或拖曳 `.ttf` 至「**設定 > 個人化 > 字型**」。\n3. **重啟已開啟的應用程式**，否則它們無法載入新字型。",
     "home.platforms.tabs.macos":
@@ -622,6 +642,18 @@ export const TRANSLATIONS: Record<Language, Record<TranslationKey, string>> = {
     "generate.step3.label": "參數設定",
     "generate.step4.label": "生成字型",
     "generate.step5.label": "預覽與下載",
+    "generate.stepDiy.label": "自訂標注",
+    "stepDiy.title": "步驟 3：自訂標注（選用）",
+    "stepDiy.description": "加入一份「手動標注」清單（--diy-annotations），讓字型使用者可以為任何字自行指定讀音：在字後面先打全形 ０ 清除原有標注，再打全形拼音，例如「行０ｚａａ１」會在「行」上顯示 zaa1。不需要的話可以略過此步驟。",
+    "stepDiy.preset": "預設清單",
+    "stepDiy.none": "不使用",
+    "stepDiy.custom": "自訂檔案",
+    "stepDiy.upload": "載入 CSV",
+    "stepDiy.clear": "移除",
+    "stepDiy.loaded": "已載入 {name}：共 {count} 個標注",
+    "stepDiy.example": "例：輸入「{input}」→ 顯示 {anno}",
+    "stepDiy.needsOptimize": "自訂標注需要開啟「最佳化」（-opt），否則字型可能超出 65,535 個字形的上限。請在參數設定中開啟。",
+    "stepDiy.format": "CSV 格式：每行「輸入,標注」，例如 ｚａａ１,zaa1。輸入須為全形英數字；只填一欄時會自動轉成全形作為輸入。只會套用在完整生成，即時預覽不包括自訂標注。",
     // Step 1
     "step1.title": "步驟 1：選擇字體",
     "step1.description":
@@ -677,7 +709,7 @@ export const TRANSLATIONS: Record<Language, Record<TranslationKey, string>> = {
     "step2.coverage.andMore": "還有 {n} 個未顯示",
     "step2.confirmDelete": "確定要刪除嗎？",
     // Step 3
-    "step3.title": "步驟 3：參數設定",
+    "step3.title": "步驟 4：參數設定",
     "step3.description": "微調字形位置、大小與輸出選項。",
     "step3.family": "字體名稱",
     "step3.familyHint": "會寫入字型的 name 表",
@@ -716,7 +748,7 @@ export const TRANSLATIONS: Record<Language, Record<TranslationKey, string>> = {
     "step3.previewText.placeholder": "留空 = 自動揀字詞",
     "step3.previewText.helper": "輸入想預覽嘅文字，會根據對應嘅字詞配對顯示。",
     // Step 4
-    "step4.title": "步驟 4：生成字型",
+    "step4.title": "步驟 5：生成字型",
     "step4.description": "按「開始生成」啟動。下方會即時顯示處理進度與每個步驟的詳細記錄。",
     "step4.empty": "尚未執行。請按下方按鈕開始生成。",
     "step4.run.idle": "開始生成",
@@ -724,10 +756,10 @@ export const TRANSLATIONS: Record<Language, Record<TranslationKey, string>> = {
     "step4.copy": "複製記錄",
     "step4.copied": "已複製",
     // Step 5
-    "step5.title": "步驟 5：預覽與下載",
+    "step5.title": "步驟 6：預覽與下載",
     "step5.description":
       "生成完成的字型已自動載入到下方輸入框，可即場輸入字符試效果。",
-    "step5.noResult": "尚未有生成結果。請完成步驟 4。",
+    "step5.noResult": "尚未有生成結果。請完成步驟 5。",
     "step5.sampleText":
       "你好世界 — 試試輸入「銀行」、「行家」、「行0」（純漢字無標注）、「行1」（第 1 個讀音，等同直接打「行」）、「行2」（第 2 個讀音）、「行１」「行２」（全形數字，Word 適用）、「行丅一」、「畫畫」",
     "step5.download.ttf": "下載 TTF",
@@ -869,14 +901,18 @@ export const TRANSLATIONS: Record<Language, Record<TranslationKey, string>> = {
     "ack.canto.kodensha": "Cantonese Romanization Converter.",
     "ack.mandarin.title": "Mandarin (普通話 / 國語) — reading data",
     "ack.mandarin.body":
-      "The Mainland 普通話 reading data (mandarin-cn) is built entirely from mozillazg's MIT-licensed datasets — taken from their permissive upstream, not from any OFL-licensed font project — with each character's default reading following the Unicode Unihan database's kMandarin field. Singapore and Malaysia officially adopt the same 普通話 standard, so they share mandarin-cn. The Taiwan 國語 variant (mandarin-tw) diverges: 753 single-character default readings are re-derived from the Taiwan Ministry of Education's 《國語辭典》 (e.g. 期 qí, 危 wéi, 突 tú), sourced from g0v's moedict-data. The technique of baking pinyin into the glyphs with contextual homograph disambiguation was pioneered by Mengshen-pinyin-font (OFL-1.1); Wing Font reuses none of its data files but gratefully acknowledges it as inspiration.",
+      "The Mainland 普通話 reading data (mandarin-cn) is built entirely from mozillazg's MIT-licensed datasets — taken from their permissive upstream, not from any OFL-licensed font project — with each character's default reading following the Unicode Unihan database's kMandarin field. Singapore and Malaysia officially adopt the same 普通話 standard, so they share mandarin-cn. The Taiwan 國語 variant (mandarin-tw-toned / mandarin-tw-zhuyin) is taken entirely from the Taiwan Ministry of Education's 《重編國語辭典修訂本》: every character and word reading, and the 注音 itself, follows the dictionary (e.g. 期 qí, 垃圾 lè sè), sourced from g0v's moedict-data. The technique of baking pinyin into the glyphs with contextual homograph disambiguation was pioneered by Mengshen-pinyin-font (OFL-1.1); Wing Font reuses none of its data files but gratefully acknowledges it as inspiration.",
     "ack.mandarin.pinyindata":
       "Per-character 普通話 readings (MIT; derived from Unihan).",
     "ack.mandarin.phrasepinyindata":
       "Word/phrase readings that drive contextual homograph disambiguation (MIT).",
     "ack.mandarin.unihan": "Unicode Han Database (Unihan) — upstream reading data.",
     "ack.mandarin.moedict":
-      "Taiwan MOE 《國語辭典》 readings used for the 國語 variant (mandarin-tw), via g0v's moedict-data (CC BY-ND 3.0 TW).",
+      "Taiwan MOE 《國語辭典》 readings and 注音 used for the whole 國語 variant (mandarin-tw-toned / mandarin-tw-zhuyin), via g0v's moedict-data (CC BY-ND 3.0 TW).",
+    "ack.thai.title": "Thai — reading data",
+    "ack.thai.body": "The Thai romanization follows the teaching materials of the Thai Culture Association of Hong Kong (TCAHK), whose Thai classes are taught in Cantonese. The thai-ink project turned those materials into spelling-to-sound rules and a hand-checked vocabulary (~900 words, always preferred); the remaining ~84k common words come from PyThaiNLP's word lists, romanized automatically by the same rules, so they are approximations.",
+    "ack.thai.tcahk": "Source of the romanization scheme and vocabulary: the association's Cantonese-medium Thai course materials.",
+    "ack.thai.pythainlp": "Thai word lists and frequencies (Apache-2.0), used to extend the automatically romanized vocabulary.",
     "ack.license":
       "Each dataset and font is used under its own licence — check the upstream source before redistributing.",
     "ack.cta.showcase": "Browse the fonts",
@@ -906,7 +942,7 @@ export const TRANSLATIONS: Record<Language, Record<TranslationKey, string>> = {
     "home.platforms.tabs.iwork":
       "1. Install the font via macOS **Font Book** (see the **macOS** tab).\n2. Open Pages or Keynote; the font appears in **Format > Font** under its family name and is ready to use — no extra settings.",
     "home.platforms.tabs.web":
-      "1. Upload the `.woff` and `.ttf` to your server (or anywhere your CSS can reach them).\n2. Add the `@font-face` snippet from the generator's Step 5 dialog to your stylesheet.\n3. Use the font like any other: `font-family: 'YourFamilyName'`.\n\n*Works automatically in Chrome, Firefox, and Safari — no extra settings.*",
+      "1. Upload the `.woff` and `.ttf` to your server (or anywhere your CSS can reach them).\n2. Add the `@font-face` snippet from the generator's Step 6 dialog to your stylesheet.\n3. Use the font like any other: `font-family: 'YourFamilyName'`.\n\n*Works automatically in Chrome, Firefox, and Safari — no extra settings.*",
     "home.platforms.tabs.windows":
       "1. Right-click the `.ttf` file and choose “**Install**” (or “Install for all users” for system-wide access).\n2. Alternatively, drag the `.ttf` into **Settings > Personalization > Fonts**.\n3. **Restart any application** that was already running, otherwise it won't see the new font.",
     "home.platforms.tabs.macos":
@@ -1027,6 +1063,18 @@ export const TRANSLATIONS: Record<Language, Record<TranslationKey, string>> = {
     "generate.step3.label": "Parameters",
     "generate.step4.label": "Generate",
     "generate.step5.label": "Preview & download",
+    "generate.stepDiy.label": "DIY annotations",
+    "stepDiy.title": "Step 3: DIY annotations (optional)",
+    "stepDiy.description": "Add a manual-annotation inventory (--diy-annotations) so people using the font can set any character's reading themselves: after a character, type a full-width ０ to strip its reading, then the full-width romanization — e.g. 行０ｚａａ１ shows zaa1 over 行. Skip this step if you don't need it.",
+    "stepDiy.preset": "Built-in inventory",
+    "stepDiy.none": "None",
+    "stepDiy.custom": "Custom file",
+    "stepDiy.upload": "Import CSV",
+    "stepDiy.clear": "Remove",
+    "stepDiy.loaded": "Loaded {name}: {count} annotations",
+    "stepDiy.example": "Example: type {input} → shows {anno}",
+    "stepDiy.needsOptimize": "DIY annotations need Optimize (-opt) turned on, or the font may exceed the 65,535-glyph limit. Turn it on in Parameters.",
+    "stepDiy.format": "CSV format: one \"input,annotation\" per line, e.g. ｚａａ１,zaa1. Inputs must be full-width letters/digits; a single column is converted to full-width automatically. Applied to the full Generate only — the live preview doesn't include DIY annotations.",
     // Step 1
     "step1.title": "Step 1: Choose fonts",
     "step1.description":
@@ -1084,7 +1132,7 @@ export const TRANSLATIONS: Record<Language, Record<TranslationKey, string>> = {
     "step2.coverage.andMore": "and {n} more",
     "step2.confirmDelete": "Delete this row?",
     // Step 3
-    "step3.title": "Step 3: Parameters",
+    "step3.title": "Step 4: Parameters",
     "step3.description":
       "Tune glyph sizes, vertical position, and output options.",
     "step3.family": "Family name",
@@ -1126,7 +1174,7 @@ export const TRANSLATIONS: Record<Language, Record<TranslationKey, string>> = {
     "step3.previewText.helper":
       "Type the text you want to preview — uses whichever mappings cover it.",
     // Step 4
-    "step4.title": "Step 4: Generate font",
+    "step4.title": "Step 5: Generate font",
     "step4.description": "Press Generate to start. The progress feed below shows each step of the pipeline in real time.",
     "step4.empty": "Not started. Click the button below to generate.",
     "step4.run.idle": "Generate",
@@ -1134,10 +1182,10 @@ export const TRANSLATIONS: Record<Language, Record<TranslationKey, string>> = {
     "step4.copy": "Copy log",
     "step4.copied": "Copied",
     // Step 5
-    "step5.title": "Step 5: Preview & download",
+    "step5.title": "Step 6: Preview & download",
     "step5.description":
       "The generated font is loaded as `@font-face` so you can type below to see it in action.",
-    "step5.noResult": "No result yet. Complete Step 4 first.",
+    "step5.noResult": "No result yet. Complete Step 5 first.",
     "step5.sampleText":
       "Hello world — try typing 銀行, 行家, 行0 (bare, no annotation), 行1 (1st reading, same as 行 alone), 行2 (2nd reading), 行１ 行２ (fullwidth, works in Word), 行丅一, or 畫畫",
     "step5.download.ttf": "Download TTF",

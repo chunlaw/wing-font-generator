@@ -1,5 +1,5 @@
 /**
- * Generate page — non-linear 5-step font generation flow.
+ * Generate page — non-linear 6-step font generation flow.
  *
  * The actual state and step components live under ./Generate/. This
  * file is the orchestration shell: it provides the GenerateContext,
@@ -31,6 +31,7 @@ import { useTranslation } from "../i18n/LanguageContext";
 import { useDocumentMeta } from "../utils/hooks";
 import Step1Fonts from "./Generate/steps/Step1Fonts";
 import Step2Mappings from "./Generate/steps/Step2Mappings";
+import StepDiy from "./Generate/steps/StepDiy";
 import Step3Parameters from "./Generate/steps/Step3Parameters";
 import Step4Log from "./Generate/steps/Step4Log";
 import Step5Preview from "./Generate/steps/Step5Preview";
@@ -59,6 +60,7 @@ const GenerateInner = () => {
   const steps = [
     { label: t("generate.step1.label"), body: <Step1Fonts /> },
     { label: t("generate.step2.label"), body: <Step2Mappings /> },
+    { label: t("generate.stepDiy.label"), body: <StepDiy /> },
     { label: t("generate.step3.label"), body: <Step3Parameters /> },
     { label: t("generate.step4.label"), body: <Step4Log /> },
     { label: t("generate.step5.label"), body: <Step5Preview /> },

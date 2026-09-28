@@ -191,6 +191,19 @@ const MANDARIN_SOURCES: Source[] = [
   },
 ];
 
+const THAI_SOURCES: Source[] = [
+  {
+    name: "香港泰國文化協會 Thai Culture Association of Hong Kong",
+    url: "https://www.thaicultureasso.org.hk/",
+    descKey: "ack.thai.tcahk",
+  },
+  {
+    name: "PyThaiNLP",
+    url: "https://github.com/PyThaiNLP/pythainlp",
+    descKey: "ack.thai.pythainlp",
+  },
+];
+
 const Acknowledgements = () => {
   const { t } = useTranslation();
   const navigate = useNavigate();
@@ -284,6 +297,13 @@ const Acknowledgements = () => {
         title={t("ack.mandarin.title")}
         body={t("ack.mandarin.body")}
         sources={MANDARIN_SOURCES}
+      />
+
+      {/* Thai — romanization from TCAHK's teaching materials via thai-ink */}
+      <CreditSection
+        title={t("ack.thai.title")}
+        body={t("ack.thai.body")}
+        sources={THAI_SOURCES}
       />
 
       {/* Licence note + CTA */}

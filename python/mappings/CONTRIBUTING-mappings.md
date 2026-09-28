@@ -72,11 +72,11 @@ Apply the standard the file already uses; don't mix schemes within a file.
 |---|---|---|
 | Cantonese | `canto-lshk` | LSHK Jyutping |
 | Cantonese (other) | `canto-yale`, `canto-lau`, `canto-guangdong`, `canto-chishima` | Yale / Lau / Guangdong / Chishima |
-| Mandarin | `mandarin-cn`, `mandarin-tw` | Hanyu Pinyin |
+| Mandarin | `mandarin-cn`, `mandarin-tw`, `mandarin-tw-toned`, `mandarin-tw-zhuyin` | Hanyu Pinyin; 注音符號 (`mandarin-tw-zhuyin`, MOE) |
 | Taiwanese / Southern Min | `taigi-tl*`, `taigi-poj*`, `taigi-tps`, `taigi-kana` | Tâi-lô, POJ, Bopomofo, Taiwanese Kana |
 | Teochew | `teochew-gdpi`, `teochew-tlo`, … | Peng'im (GDPI), Pe̍h-ūe-jī — see `teochew-README.md` |
 | Arabic | `arabic-romanization` | **DIN 31635** — see `arabic-romanization-NOTES.md` |
-| Thai | `thai-paiboon` | Paiboon — see `thai-paiboon-NOTES.md` |
+| Thai | `thai-tcahk` | TCAHK (香港泰國文化協會) romanization, via thai-ink — see `thai-tcahk-NOTES.md` |
 | Hindi | `hindi-romanization` | **ISO 15919** with Hindi schwa deletion (राम → rām) |
 | Malayalam | `malayalam-romanization` | **ISO 15919** (short/long e·o distinguished, chillu letters; no schwa deletion) — see `malayalam/NOTES.md` |
 | Cross-script (CJK→other) | `canto-katakana`, `canto-hindi`, `canto-korean`, `canto-thai`, `canto-urdu` | Transliteration into the target script — see the per-file `*-NOTES.md` |

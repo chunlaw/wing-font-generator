@@ -61,6 +61,12 @@ export interface GenerateParams {
    * and the deploy-pages.yml matrix's --out-ascent argument.
    */
   outAscent?: number | null;
+  /**
+   * DIY manual-annotation inventory CSV text (`input,annotation` rows,
+   * e.g. `ｚａａ１,zaa1`). null/undefined = off. Matches the
+   * wing-font.py --diy-annotations CLI flag.
+   */
+  diyCsvText?: string | null;
   onProgress?: (message: string) => void;
 }
 
@@ -257,6 +263,7 @@ export async function generateFont(params: GenerateParams): Promise<GenerateResu
           annoAxisLocation: params.annoAxisLocation,
           triggerChar: params.triggerChar,
           outAscent: params.outAscent,
+          diyCsvText: params.diyCsvText ?? null,
         },
       },
       transfer,

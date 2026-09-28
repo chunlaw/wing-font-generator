@@ -87,7 +87,7 @@ export const TEMPLATES_BY_DIALECT: Record<string, string[]> = {
   // stacked above each character. The 普通話 (-cn) fonts now render
   // diacritic tone marks (mā) from the common-set mandarin-cn-toned-
   // trimmed mapping (+ full-width pinyin DIY input); the 國語 (-tw) fonts
-  // use numeric tones from the full-Unihan mandarin-tw mapping. Mix of 鄧麗君 / 王菲 / 羅大佑 / 周華健 / 五月天 / 朴樹
+  // use tone-marked pinyin / 注音 taken from the MOE 國語辭典 alone. Mix of 鄧麗君 / 王菲 / 羅大佑 / 周華健 / 五月天 / 朴樹
   // / 周深 — broad coverage across 70s–2010s 國語 pop so a reader
   // of any generation lands on something familiar.
   // Arabic samples — phrases drawn from the hand-curated
@@ -172,8 +172,8 @@ export const TEMPLATES_BY_DIALECT: Record<string, string[]> = {
     "図書館で一冊の本を借りる",
     "山の上から海と空を眺める",
   ],
-  // Thai — Thai words annotated with thai-ink Paiboon romanization,
-  // rendered with the GoogleSans-Noto-thai-paiboon font where the
+  // Thai — Thai words annotated with the TCAHK romanization (thai-ink),
+  // rendered with the GoogleSans-Noto-thai-tcahk font where the
   // Latin annotation sits BELOW the baseline (`--anno-below`) so it
   // doesn't collide with Thai's above-line vowels (สระอิ / สระอี /
   // สระอืน) and tone marks (ไม้เอก / ไม้โท / ไม้ตรี / ไม้จัตวา).
@@ -181,7 +181,7 @@ export const TEMPLATES_BY_DIALECT: Record<string, string[]> = {
   // Selected from common everyday vocabulary — greetings, country/
   // place names, weather, food — all words that appear in the
   // hand-curated thai-ink vocab set (highest-priority rows in
-  // thai-paiboon.csv) and therefore render with the ground-truth
+  // thai-tcahk.csv) and therefore render with the ground-truth
   // romanization rather than an algorithmic approximation. Thai is
   // normally written without word spaces; the word-unit GSUB
   // matches each registered word longest-first inside the unspaced
@@ -224,9 +224,9 @@ export interface FontOption {
    * un-grouped ones implicitly belong to a leading "(no group)"
    * section before the first subheader appears.
    *
-   * Within the Cantonese dialect we use it to split:
-   *   "粵拼 Romanization"    — Latin romanizations (LSHK, Yale, …)
-   *   "其他標注 Other scripts" — Thai / Katakana / Korean / Cangjie
+   * Within the Cantonese dialect there is one group per scheme
+   *   (粵拼, Yale, Lau, Guangdong, Chishima, 空耳, Cangjie), displayed
+   *   in FONT_GROUP_ORDER.
    */
   group?: string;
   /**
@@ -249,9 +249,28 @@ export interface FontOption {
 // constructing FontOption entries can reference these constants
 // instead of duplicating bilingual strings — typo-safe and i18n-
 // migratable later if we want full per-locale group labels.
-export const CANTO_GROUP_ROMANIZATION = "粵拼 Romanization";
-export const CANTO_GROUP_OTHER_SCRIPTS = "其他標注 Other scripts";
-export const CANTO_GROUP_TONELESS = "無聲調・裝飾 Toneless / decorative";
+// One group per scheme. 粵拼 IS the LSHK scheme (香港語言學會粵語拼音方案,
+// "Jyutping"); canto-lshk.csv holds it. 空耳 = the Cantonese sound spelled
+// in another script (Thai, katakana, Hangul, Urdu, Hindi, …), toned or not.
+export const CANTO_GROUP_JYUTPING = "粵拼 Jyutping";
+export const CANTO_GROUP_YALE = "耶魯 Yale";
+export const CANTO_GROUP_LAU = "劉錫祥 Lau";
+export const CANTO_GROUP_GUANGDONG = "廣州話拼音方案 Guangdong";
+export const CANTO_GROUP_CHISHIMA = "千島 Chishima";
+export const CANTO_GROUP_SORAMIMI = "空耳 Other scripts";
+export const CANTO_GROUP_CANGJIE = "倉頡 Cangjie";
+/** Display order of the groups above. FontPicker sorts each dialect's
+ *  fonts by it (stable), so a group's entries render under one
+ *  subheader whatever order they're declared in. */
+export const FONT_GROUP_ORDER: string[] = [
+  CANTO_GROUP_JYUTPING,
+  CANTO_GROUP_YALE,
+  CANTO_GROUP_LAU,
+  CANTO_GROUP_GUANGDONG,
+  CANTO_GROUP_CHISHIMA,
+  CANTO_GROUP_SORAMIMI,
+  CANTO_GROUP_CANGJIE,
+];
 
 export type FontSet = Record<
   string,
@@ -262,49 +281,11 @@ export type FontSet = Record<
 >;
 
 /*
- * Showcase curation:
- *
- * The CI workflow (.github/workflows/deploy-pages.yml) builds ~80
- * font variants per push (down from ~110 after the June 2026 cleanup
- * removed stylistic-only ChironHei + ChironSung Italic/Invert
- * variants — see the "Trimmed" list below) and deploys them all to
- * wing-font.chunlaw.io/fonts/ + the rolling GitHub Release for TTFs.
- * The showcase page surfaces only a CURATED SUBSET of those builds —
- * entries chosen to demonstrate maximally-distinct concepts rather
- * than visually-similar romanization variants.
- *
- * Showcasing rule: every entry must illustrate a different angle of
- * the product's range. If two entries look near-identical to a
- * casual viewer (e.g. LSHK vs Lau, both Latin-letter romanizations
- * on the same Sung base), only ONE belongs here.
- *
- * Currently surfaced (7):
- *   • LSHK Jyutping  — primary / most-widely-used Latin romanization
- *   • Yale           — historical alternative Latin romanization
- *   • Cangjie        — completely different concept: CJK input method
- *   • Thai script    — non-Latin transliteration (Google Sans)
- *   • Katakana       — non-Latin transliteration (Noto Sans JP)
- *   • Hangul         — non-Latin transliteration (Noto Sans KR)
- *   • Urdu           — non-Latin, RIGHT-TO-LEFT transliteration
- *                      (Noto Nastaliq Urdu); demonstrates RTL + abjad
- *
- * Built but NOT showcased (still reachable directly under /fonts/):
- *   • Chishima / Lau / Guangdong — three additional Latin romanizations,
- *     redundant with LSHK + Yale for showcase purposes. Built for both
- *     ChironSung Regular and NotoSansHK bases (6 fonts total).
- *
- * Trimmed from the matrix (June 2026) — no longer built:
- *   • Every ChironSung *-It italic variant (Latin + scripts; 10 fonts).
- *   • Every ChironSung *-Invert variant (Latin + scripts; 10 fonts).
- *   • Every ChironSung *-It-Invert variant (Latin + scripts; 10 fonts).
- *   • Both ChironHei LSHK variants (B + B-Invert; 2 fonts).
- *   These were stylistic-only — same linguistic content as the
- *   Regular base fonts above. Users who need Italic or Inverted
- *   output can regenerate via /generate with the -v flag.
- *
- * If you want a dropped variant re-surfaced, re-add the matrix
- * entry to .github/workflows/deploy-pages.yml AND register the
- * font here.
+ * Showcase catalogue: every font the CI matrix builds
+ * (.github/workflows/deploy-pages.yml) is listed here, grouped by
+ * language. The site and fonts deploy together, so a new matrix entry
+ * only needs registering below to appear on /showcase — no `pending`
+ * flag required. Keep this list and the matrix in sync.
  */
 export const AVAILABLE_FONTS: FontSet = {
   cantonese: {
@@ -356,49 +337,67 @@ export const AVAILABLE_FONTS: FontSet = {
         displayName: "思源黑體 香港（粵拼・Huninn 調符）",
         name: "NotoSansHK-Huninn-tonemark",
         source: `url(${import.meta.env.VITE_FONT_URL}/NotoSansHK-Huninn-tonemark.woff2) format('woff2')`,
-        group: CANTO_GROUP_ROMANIZATION,
+        group: CANTO_GROUP_JYUTPING,
       },
       "NotoSansHK-Noto-lshk": {
-        displayName: "思源黑體 香港（香港語言學會）",
+        displayName: "思源黑體 香港（粵拼）",
         name: "NotoSansHK-Noto-lshk",
         source: `url(${import.meta.env.VITE_FONT_URL}/NotoSansHK-Noto-lshk.woff2) format('woff2')`,
-        group: CANTO_GROUP_ROMANIZATION,
+        group: CANTO_GROUP_JYUTPING,
       },
       "NotoSansHK-Noto-yale": {
         displayName: "思源黑體 香港（耶魯拼音）",
         name: "NotoSansHK-Noto-yale",
         source: `url(${import.meta.env.VITE_FONT_URL}/NotoSansHK-Noto-yale.woff2) format('woff2')`,
-        group: CANTO_GROUP_ROMANIZATION,
+        group: CANTO_GROUP_YALE,
+      },
+      "NotoSansHK-Noto-lau": {
+        displayName: "思源黑體 香港（劉錫祥）",
+        name: "NotoSansHK-Noto-lau",
+        source: `url(${import.meta.env.VITE_FONT_URL}/NotoSansHK-Noto-lau.woff2) format('woff2')`,
+        group: CANTO_GROUP_LAU,
+      },
+      "NotoSansHK-Noto-guangdong": {
+        displayName: "思源黑體 香港（廣州話拼音方案）",
+        name: "NotoSansHK-Noto-guangdong",
+        source: `url(${import.meta.env.VITE_FONT_URL}/NotoSansHK-Noto-guangdong.woff2) format('woff2')`,
+        group: CANTO_GROUP_GUANGDONG,
+      },
+      "NotoSansHK-Noto-chishima": {
+        displayName: "思源黑體 香港（千島）",
+        name: "NotoSansHK-Noto-chishima",
+        source: `url(${import.meta.env.VITE_FONT_URL}/NotoSansHK-Noto-chishima.woff2) format('woff2')`,
+        group: CANTO_GROUP_CHISHIMA,
       },
       "NotoSansHK-cangjie": {
         displayName: "思源黑體 香港（倉頡）",
         name: "NotoSansHK-cangjie",
         source: `url(${import.meta.env.VITE_FONT_URL}/NotoSansHK-cangjie.woff2) format('woff2')`,
-        group: CANTO_GROUP_OTHER_SCRIPTS,
+        group: CANTO_GROUP_CANGJIE,
       },
       "NotoSansHK-Google-thai": {
         displayName: "思源黑體 香港（泰文標注）",
         name: "NotoSansHK-Google-thai",
         source: `url(${import.meta.env.VITE_FONT_URL}/NotoSansHK-Google-thai.woff2) format('woff2')`,
-        group: CANTO_GROUP_OTHER_SCRIPTS,
+        group: CANTO_GROUP_SORAMIMI,
       },
       "NotoSansHK-NotoJP-katakana": {
         displayName: "思源黑體 香港（片假名標注）",
         name: "NotoSansHK-NotoJP-katakana",
         source: `url(${import.meta.env.VITE_FONT_URL}/NotoSansHK-NotoJP-katakana.woff2) format('woff2')`,
-        group: CANTO_GROUP_OTHER_SCRIPTS,
+        group: CANTO_GROUP_SORAMIMI,
       },
       "NotoSansHK-NotoKR-korean": {
         displayName: "思源黑體 香港（諺文標注）",
         name: "NotoSansHK-NotoKR-korean",
         source: `url(${import.meta.env.VITE_FONT_URL}/NotoSansHK-NotoKR-korean.woff2) format('woff2')`,
-        group: CANTO_GROUP_OTHER_SCRIPTS,
+        group: CANTO_GROUP_SORAMIMI,
       },
       "NotoSansHK-NotoNastaliq-urdu": {
         displayName: "思源黑體 香港（烏爾都文標注）",
         name: "NotoSansHK-NotoNastaliq-urdu",
         source: `url(${import.meta.env.VITE_FONT_URL}/NotoSansHK-NotoNastaliq-urdu.woff2) format('woff2')`,
-        group: CANTO_GROUP_OTHER_SCRIPTS,
+        group: CANTO_GROUP_SORAMIMI,
       },
       // ─ ChironSung Heavyweight Edition ────────────────────────────
       // The original (HK-serif) Cantonese showcase set. Heavier
@@ -409,46 +408,64 @@ export const AVAILABLE_FONTS: FontSet = {
       // The FontPicker dropdown surfaces both — HK Sans first (as
       // the default), Chiron Sung after.
       "ChironSungHK-Noto-lshk": {
-        displayName: "昭源宋體（香港語言學會）",
+        displayName: "昭源宋體（粵拼）",
         name: "ChironSungHK-Noto-lshk",
         source: `url(${import.meta.env.VITE_FONT_URL}/ChironSungHK-Noto-lshk.woff2) format('woff2')`,
-        group: CANTO_GROUP_ROMANIZATION,
+        group: CANTO_GROUP_JYUTPING,
       },
       "ChironSungHK-Noto-yale": {
         displayName: "昭源宋體（耶魯拼音）",
         name: "ChironSungHK-Noto-yale",
         source: `url(${import.meta.env.VITE_FONT_URL}/ChironSungHK-Noto-yale.woff2) format('woff2')`,
-        group: CANTO_GROUP_ROMANIZATION,
+        group: CANTO_GROUP_YALE,
+      },
+      "ChironSungHK-Noto-lau": {
+        displayName: "昭源宋體（劉錫祥）",
+        name: "ChironSungHK-Noto-lau",
+        source: `url(${import.meta.env.VITE_FONT_URL}/ChironSungHK-Noto-lau.woff2) format('woff2')`,
+        group: CANTO_GROUP_LAU,
+      },
+      "ChironSungHK-Noto-guangdong": {
+        displayName: "昭源宋體（廣州話拼音方案）",
+        name: "ChironSungHK-Noto-guangdong",
+        source: `url(${import.meta.env.VITE_FONT_URL}/ChironSungHK-Noto-guangdong.woff2) format('woff2')`,
+        group: CANTO_GROUP_GUANGDONG,
+      },
+      "ChironSungHK-Noto-chishima": {
+        displayName: "昭源宋體（千島）",
+        name: "ChironSungHK-Noto-chishima",
+        source: `url(${import.meta.env.VITE_FONT_URL}/ChironSungHK-Noto-chishima.woff2) format('woff2')`,
+        group: CANTO_GROUP_CHISHIMA,
       },
       "ChironSungHK-cangjie": {
         displayName: "昭源宋體（倉頡）",
         name: "ChironSungHK-cangjie",
         source: `url(${import.meta.env.VITE_FONT_URL}/ChironSungHK-cangjie.woff2) format('woff2')`,
-        group: CANTO_GROUP_OTHER_SCRIPTS,
+        group: CANTO_GROUP_CANGJIE,
       },
       "ChironSungHK-Google-thai": {
         displayName: "昭源宋體（泰文標注）",
         name: "ChironSungHK-Google-thai",
         source: `url(${import.meta.env.VITE_FONT_URL}/ChironSungHK-Google-thai.woff2) format('woff2')`,
-        group: CANTO_GROUP_OTHER_SCRIPTS,
+        group: CANTO_GROUP_SORAMIMI,
       },
       "ChironSungHK-NotoJP-katakana": {
         displayName: "昭源宋體（片假名標注）",
         name: "ChironSungHK-NotoJP-katakana",
         source: `url(${import.meta.env.VITE_FONT_URL}/ChironSungHK-NotoJP-katakana.woff2) format('woff2')`,
-        group: CANTO_GROUP_OTHER_SCRIPTS,
+        group: CANTO_GROUP_SORAMIMI,
       },
       "ChironSungHK-NotoKR-korean": {
         displayName: "昭源宋體（諺文標注）",
         name: "ChironSungHK-NotoKR-korean",
         source: `url(${import.meta.env.VITE_FONT_URL}/ChironSungHK-NotoKR-korean.woff2) format('woff2')`,
-        group: CANTO_GROUP_OTHER_SCRIPTS,
+        group: CANTO_GROUP_SORAMIMI,
       },
       "ChironSungHK-NotoNastaliq-urdu": {
         displayName: "昭源宋體（烏爾都文標注）",
         name: "ChironSungHK-NotoNastaliq-urdu",
         source: `url(${import.meta.env.VITE_FONT_URL}/ChironSungHK-NotoNastaliq-urdu.woff2) format('woff2')`,
-        group: CANTO_GROUP_OTHER_SCRIPTS,
+        group: CANTO_GROUP_SORAMIMI,
       },
       // ─ Xiaolai (小賴) + Huninn pairing ────────────────────────────
       // Handwritten 楷書-style base font (Xiaolai, OFL) with the
@@ -460,34 +477,40 @@ export const AVAILABLE_FONTS: FontSet = {
       // romanization schemes that weren't previously surfaced in
       // the showcase: Lau (劉錫祥), Guangdong PRC, and Chishima.
       "Xiaolai-Huninn-lshk": {
-        displayName: "小賴字體（香港語言學會）",
+        displayName: "小賴字體（粵拼）",
         name: "Xiaolai-Huninn-lshk",
         source: `url(${import.meta.env.VITE_FONT_URL}/Xiaolai-Huninn-lshk.woff2) format('woff2')`,
-        group: CANTO_GROUP_ROMANIZATION,
+        group: CANTO_GROUP_JYUTPING,
       },
       "Xiaolai-Huninn-yale": {
         displayName: "小賴字體（耶魯拼音）",
         name: "Xiaolai-Huninn-yale",
         source: `url(${import.meta.env.VITE_FONT_URL}/Xiaolai-Huninn-yale.woff2) format('woff2')`,
-        group: CANTO_GROUP_ROMANIZATION,
+        group: CANTO_GROUP_YALE,
       },
       "Xiaolai-Huninn-lau": {
         displayName: "小賴字體（劉錫祥）",
         name: "Xiaolai-Huninn-lau",
         source: `url(${import.meta.env.VITE_FONT_URL}/Xiaolai-Huninn-lau.woff2) format('woff2')`,
-        group: CANTO_GROUP_ROMANIZATION,
+        group: CANTO_GROUP_LAU,
       },
       "Xiaolai-Huninn-guangdong": {
         displayName: "小賴字體（廣州話拼音方案）",
         name: "Xiaolai-Huninn-guangdong",
         source: `url(${import.meta.env.VITE_FONT_URL}/Xiaolai-Huninn-guangdong.woff2) format('woff2')`,
-        group: CANTO_GROUP_ROMANIZATION,
+        group: CANTO_GROUP_GUANGDONG,
       },
       "Xiaolai-Huninn-chishima": {
         displayName: "小賴字體（千島）",
         name: "Xiaolai-Huninn-chishima",
         source: `url(${import.meta.env.VITE_FONT_URL}/Xiaolai-Huninn-chishima.woff2) format('woff2')`,
-        group: CANTO_GROUP_ROMANIZATION,
+        group: CANTO_GROUP_CHISHIMA,
+      },
+      "Xiaolai-Huninn-hero-sample": {
+        displayName: "小賴字體（首頁示範・粵拼，只含示範字）",
+        name: "Xiaolai-Huninn-hero-sample",
+        source: `url(${import.meta.env.VITE_FONT_URL}/Xiaolai-Huninn-hero-sample.woff2) format('woff2')`,
+        group: CANTO_GROUP_JYUTPING,
       },
       // Xiaolai-base non-romanization companions. Annotation font
       // varies (Xiaolai itself for cangjie self-reference; Google
@@ -498,43 +521,43 @@ export const AVAILABLE_FONTS: FontSet = {
         displayName: "小賴字體（倉頡）",
         name: "Xiaolai-cangjie",
         source: `url(${import.meta.env.VITE_FONT_URL}/Xiaolai-cangjie.woff2) format('woff2')`,
-        group: CANTO_GROUP_OTHER_SCRIPTS,
+        group: CANTO_GROUP_CANGJIE,
       },
       "Xiaolai-Google-thai": {
         displayName: "小賴字體（泰文標注）",
         name: "Xiaolai-Google-thai",
         source: `url(${import.meta.env.VITE_FONT_URL}/Xiaolai-Google-thai.woff2) format('woff2')`,
-        group: CANTO_GROUP_OTHER_SCRIPTS,
+        group: CANTO_GROUP_SORAMIMI,
       },
       "Xiaolai-NotoJP-katakana": {
         displayName: "小賴字體（片假名標注）",
         name: "Xiaolai-NotoJP-katakana",
         source: `url(${import.meta.env.VITE_FONT_URL}/Xiaolai-NotoJP-katakana.woff2) format('woff2')`,
-        group: CANTO_GROUP_OTHER_SCRIPTS,
+        group: CANTO_GROUP_SORAMIMI,
       },
       "Xiaolai-NotoKR-korean": {
         displayName: "小賴字體（諺文標注）",
         name: "Xiaolai-NotoKR-korean",
         source: `url(${import.meta.env.VITE_FONT_URL}/Xiaolai-NotoKR-korean.woff2) format('woff2')`,
-        group: CANTO_GROUP_OTHER_SCRIPTS,
+        group: CANTO_GROUP_SORAMIMI,
       },
       "Xiaolai-NotoNastaliq-urdu": {
         displayName: "小賴字體（烏爾都文標注）",
         name: "Xiaolai-NotoNastaliq-urdu",
         source: `url(${import.meta.env.VITE_FONT_URL}/Xiaolai-NotoNastaliq-urdu.woff2) format('woff2')`,
-        group: CANTO_GROUP_OTHER_SCRIPTS,
+        group: CANTO_GROUP_SORAMIMI,
       },
       "Xiaolai-Hind-hindi": {
         displayName: "小賴字體（印地文標注）",
         name: "Xiaolai-Hind-hindi",
         source: `url(${import.meta.env.VITE_FONT_URL}/Xiaolai-Hind-hindi.woff2) format('woff2')`,
-        group: CANTO_GROUP_OTHER_SCRIPTS,
+        group: CANTO_GROUP_SORAMIMI,
       },
       "Xiaolai-Gurmukhi-punjab": {
         displayName: "小賴字體（旁遮普文標注）",
         name: "Xiaolai-Gurmukhi-punjab",
         source: `url(${import.meta.env.VITE_FONT_URL}/Xiaolai-Gurmukhi-punjab.woff2) format('woff2')`,
-        group: CANTO_GROUP_OTHER_SCRIPTS,
+        group: CANTO_GROUP_SORAMIMI,
       },
       // ─ Toneless / decorative (souvenir) set — Xiaolai base, tone
       // digit stripped so the script reads as clean native text.
@@ -542,43 +565,43 @@ export const AVAILABLE_FONTS: FontSet = {
         displayName: "小賴字體（泰文・無聲調）",
         name: "Xiaolai-Google-thai-notone",
         source: `url(${import.meta.env.VITE_FONT_URL}/Xiaolai-Google-thai-notone.woff2) format('woff2')`,
-        group: CANTO_GROUP_TONELESS,
+        group: CANTO_GROUP_SORAMIMI,
       },
       "Xiaolai-NotoKR-korean-notone": {
         displayName: "小賴字體（諺文・無聲調）",
         name: "Xiaolai-NotoKR-korean-notone",
         source: `url(${import.meta.env.VITE_FONT_URL}/Xiaolai-NotoKR-korean-notone.woff2) format('woff2')`,
-        group: CANTO_GROUP_TONELESS,
+        group: CANTO_GROUP_SORAMIMI,
       },
       "Xiaolai-NotoJP-katakana-notone": {
         displayName: "小賴字體（片假名・無聲調）",
         name: "Xiaolai-NotoJP-katakana-notone",
         source: `url(${import.meta.env.VITE_FONT_URL}/Xiaolai-NotoJP-katakana-notone.woff2) format('woff2')`,
-        group: CANTO_GROUP_TONELESS,
+        group: CANTO_GROUP_SORAMIMI,
       },
       "Xiaolai-Tagalog-baybayin-notone": {
         displayName: "小賴字體（貝貝因・無聲調）",
         name: "Xiaolai-Tagalog-baybayin-notone",
         source: `url(${import.meta.env.VITE_FONT_URL}/Xiaolai-Tagalog-baybayin-notone.woff2) format('woff2')`,
-        group: CANTO_GROUP_TONELESS,
+        group: CANTO_GROUP_SORAMIMI,
       },
       "Xiaolai-Nastaliq-urdu-notone": {
         displayName: "小賴字體（烏爾都文・無聲調）",
         name: "Xiaolai-Nastaliq-urdu-notone",
         source: `url(${import.meta.env.VITE_FONT_URL}/Xiaolai-Nastaliq-urdu-notone.woff2) format('woff2')`,
-        group: CANTO_GROUP_TONELESS,
+        group: CANTO_GROUP_SORAMIMI,
       },
       "Xiaolai-Hind-hindi-notone": {
         displayName: "小賴字體（印地文・無聲調）",
         name: "Xiaolai-Hind-hindi-notone",
         source: `url(${import.meta.env.VITE_FONT_URL}/Xiaolai-Hind-hindi-notone.woff2) format('woff2')`,
-        group: CANTO_GROUP_TONELESS,
+        group: CANTO_GROUP_SORAMIMI,
       },
       "Xiaolai-Gurmukhi-punjab-notone": {
         displayName: "小賴字體（旁遮普文・無聲調）",
         name: "Xiaolai-Gurmukhi-punjab-notone",
         source: `url(${import.meta.env.VITE_FONT_URL}/Xiaolai-Gurmukhi-punjab-notone.woff2) format('woff2')`,
-        group: CANTO_GROUP_TONELESS,
+        group: CANTO_GROUP_SORAMIMI,
       },
     },
   },
@@ -720,6 +743,21 @@ export const AVAILABLE_FONTS: FontSet = {
         name: "Xiaolai-MplusRounded-manking",
         source: `url(${import.meta.env.VITE_FONT_URL}/Xiaolai-MplusRounded-manking.woff2) format('woff2')`,
       },
+      "NotoSansTC-tps": {
+        displayName: "思源黑體（方音符號）",
+        name: "NotoSansTC-tps",
+        source: `url(${import.meta.env.VITE_FONT_URL}/NotoSansTC-tps.woff2) format('woff2')`,
+      },
+      "NotoSansTC-NotoJP-kana": {
+        displayName: "思源黑體（台灣語假名）",
+        name: "NotoSansTC-NotoJP-kana",
+        source: `url(${import.meta.env.VITE_FONT_URL}/NotoSansTC-NotoJP-kana.woff2) format('woff2')`,
+      },
+      "Xiaolai-Huninn-hero-tailo": {
+        displayName: "小賴字體（首頁示範・台羅，只含示範字）",
+        name: "Xiaolai-Huninn-hero-tailo",
+        source: `url(${import.meta.env.VITE_FONT_URL}/Xiaolai-Huninn-hero-tailo.woff2) format('woff2')`,
+      },
     },
   },
   // Teochew / Min Nan (潮州話) — the second non-Cantonese dialect
@@ -759,6 +797,11 @@ export const AVAILABLE_FONTS: FontSet = {
         name: "Xiaolai-Huninn-teochew-puj",
         source: `url(${import.meta.env.VITE_FONT_URL}/Xiaolai-Huninn-teochew-puj.woff2) format('woff2')`,
       },
+      "Xiaolai-Huninn-hero-pengim": {
+        displayName: "小賴字體（首頁示範・潮拼，只含示範字）",
+        name: "Xiaolai-Huninn-hero-pengim",
+        source: `url(${import.meta.env.VITE_FONT_URL}/Xiaolai-Huninn-hero-pengim.woff2) format('woff2')`,
+      },
     },
   },
   // Mandarin (普通話 / 國語) — showcased in BOTH regional standards so a
@@ -766,21 +809,15 @@ export const AVAILABLE_FONTS: FontSet = {
   //   • 普通話 (-cn) — mandarin-cn-toned-trimmed.csv (diacritic tone marks +
   //     full-width pinyin DIY, common-set chars) on Simplified-region fonts. The
   //     Mainland standard (also what Singapore / Malaysia adopt).
-  //   • 國語 (-tw) — mandarin-tw.csv on Traditional fonts. The Taiwan
-  //     standard, 753 single-character defaults re-derived from the MOE
-  //     國語辭典 (e.g. 期 qí, 危 wéi, 突 tú, 企 qì, 跌 dié).
-  // mandarin-tw.csv is a Traditional-Chinese mapping (166 of the 753
-  // differences are traditional-only glyphs), so the 國語 builds use
-  // Traditional bases: Noto Sans TC (思源黑體 台灣) for the sans face and
-  // Xiaolai SC for the handwritten face (it covers 100% of the common
-  // Traditional set despite the "SC" name). The 小賴字體 face appears in
-  // both standards — the cleanest same-face A/B of 普通話 vs 國語. The
-  // Simplified-region Noto Serif SC (思源宋體) is 普通話-only.
-  // All .woff files come from the build matrix in
-  // .github/workflows/deploy-pages.yml — they go live once the source
-  // TTFs are added to python/input_fonts/ and CI rebuilds. The
-  // Xiaolai-MplusRounded-mandarin-{cn,tw} face is also built but not
-  // surfaced here (reachable by direct /fonts/ URL).
+  //   • 國語 (-tw) — mandarin-tw-toned.csv (tone-marked pinyin) and
+  //     mandarin-tw-zhuyin.csv (注音), both taken entirely from the MOE
+  //     國語辭典 (python/mappings/mandarin/gen_mandarin_tw.py), on
+  //     Traditional bases: Noto Sans TC (思源黑體 台灣) and Xiaolai SC
+  //     (covers 100% of the common Traditional set despite the "SC" name).
+  // The 小賴字體 face appears in both standards — the cleanest same-face
+  // A/B of 普通話 vs 國語. Noto Serif SC (思源宋體) is 普通話-only.
+  // All .woff2 files come from the build matrix in
+  // .github/workflows/deploy-pages.yml.
   mandarin: {
     lang: {
       zh: "國語 / 普通話",
@@ -788,24 +825,64 @@ export const AVAILABLE_FONTS: FontSet = {
     },
     fonts: {
       "NotoSansTC-Huninn-mandarin-tw": {
-        displayName: "思源黑體 台灣（拼音 · 國語）",
+        displayName: "思源黑體 台灣（拼音調符 · 國語・教育部辭典）",
         name: "NotoSansTC-Huninn-mandarin-tw",
         source: `url(${import.meta.env.VITE_FONT_URL}/NotoSansTC-Huninn-mandarin-tw.woff2) format('woff2')`,
       },
+      "NotoSansTC-mandarin-tw-zhuyin": {
+        displayName: "思源黑體 台灣（注音 · 國語・教育部辭典）",
+        name: "NotoSansTC-mandarin-tw-zhuyin",
+        source: `url(${import.meta.env.VITE_FONT_URL}/NotoSansTC-mandarin-tw-zhuyin.woff2) format('woff2')`,
+      },
       "Xiaolai-Huninn-mandarin-tw": {
-        displayName: "小賴字體（拼音 · 國語）",
+        displayName: "小賴字體（拼音調符 · 國語・教育部辭典）",
         name: "Xiaolai-Huninn-mandarin-tw",
         source: `url(${import.meta.env.VITE_FONT_URL}/Xiaolai-Huninn-mandarin-tw.woff2) format('woff2')`,
+      },
+      "Xiaolai-Mplus-mandarin-tw": {
+        displayName: "小賴圓體（拼音調符 · 國語・教育部辭典）",
+        name: "Xiaolai-Mplus-mandarin-tw",
+        source: `url(${import.meta.env.VITE_FONT_URL}/Xiaolai-Mplus-mandarin-tw.woff2) format('woff2')`,
       },
       "SHSerif-Mplus-mandarin-cn": {
         displayName: "思源宋體（拼音調符 · 普通話）",
         name: "SHSerif-Mplus-mandarin-cn",
         source: `url(${import.meta.env.VITE_FONT_URL}/SHSerif-Mplus-mandarin-cn.woff2) format('woff2')`,
       },
+      "NotoSansSC-Huninn-mandarin-cn": {
+        displayName: "思源黑體 簡體（拼音調符 · 普通話）",
+        name: "NotoSansSC-Huninn-mandarin-cn",
+        source: `url(${import.meta.env.VITE_FONT_URL}/NotoSansSC-Huninn-mandarin-cn.woff2) format('woff2')`,
+      },
       "Xiaolai-Huninn-mandarin-cn": {
         displayName: "小賴字體（拼音調符 · 普通話）",
         name: "Xiaolai-Huninn-mandarin-cn",
         source: `url(${import.meta.env.VITE_FONT_URL}/Xiaolai-Huninn-mandarin-cn.woff2) format('woff2')`,
+      },
+      "Xiaolai-Mplus-mandarin-cn": {
+        displayName: "小賴圓體（拼音調符 · 普通話）",
+        name: "Xiaolai-Mplus-mandarin-cn",
+        source: `url(${import.meta.env.VITE_FONT_URL}/Xiaolai-Mplus-mandarin-cn.woff2) format('woff2')`,
+      },
+    },
+  },
+  // Thai — Thai-script base annotated with the TCAHK (thai-ink)
+  // romanization. The pairing uses GoogleSans for the Thai base
+  // (NotoSerif covers Latin), and `--anno-below` puts the Latin
+  // romanization in the (auto-extended) descent so Thai's own
+  // above-line vowels (◌ิ ◌ี ◌ื) and tone marks (◌่ ◌้ ◌๊ ◌๋)
+  // stay readable in the ascender area. See the matching
+  // matrix entry in .github/workflows/deploy-pages.yml.
+  thai: {
+    lang: {
+      zh: "泰文",
+      en: "Thai",
+    },
+    fonts: {
+      "GoogleSans-Noto-thai-tcahk": {
+        displayName: "Google Sans 泰文（香港泰國文化協會拼音）",
+        name: "GoogleSans-Noto-thai-tcahk",
+        source: `url(${import.meta.env.VITE_FONT_URL}/GoogleSans-Noto-thai-tcahk.woff2) format('woff2')`,
       },
     },
   },
@@ -875,26 +952,6 @@ export const AVAILABLE_FONTS: FontSet = {
         displayName: "Hind（ISO 15919 罗马字）",
         name: "Hind-Noto-romanization",
         source: `url(${import.meta.env.VITE_FONT_URL}/Hind-Noto-romanization.woff2) format('woff2')`,
-      },
-    },
-  },
-  // Thai — Thai-script base annotated with thai-ink Paiboon
-  // romanization. The pairing uses GoogleSans for the Thai base
-  // (NotoSerif covers Latin), and `--anno-below` puts the Latin
-  // romanization in the (auto-extended) descent so Thai's own
-  // above-line vowels (◌ิ ◌ี ◌ื) and tone marks (◌่ ◌้ ◌๊ ◌๋)
-  // stay readable in the ascender area. See the matching
-  // matrix entry in .github/workflows/deploy-pages.yml.
-  thai: {
-    lang: {
-      zh: "泰文",
-      en: "Thai",
-    },
-    fonts: {
-      "GoogleSans-Noto-thai-paiboon": {
-        displayName: "Google Sans 泰文（Paiboon 拼音）",
-        name: "GoogleSans-Noto-thai-paiboon",
-        source: `url(${import.meta.env.VITE_FONT_URL}/GoogleSans-Noto-thai-paiboon.woff2) format('woff2')`,
       },
     },
   },

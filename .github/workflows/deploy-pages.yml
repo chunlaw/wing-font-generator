@@ -261,33 +261,29 @@ jobs:
           # === Mandarin (普通話 / 國語) showcase ====================
           # Two regional standards, built from the SAME annotation fonts
           # but DIFFERENT glyph (base) + mapping pairs:
-          #   • -cn → mappings/mandarin/mandarin-cn.csv on Simplified-region base
-          #     fonts (Noto Sans SC / Noto Serif SC / Xiaolai SC). The
-          #     Mainland 普通話 standard — also what Singapore / Malaysia
-          #     officially adopt.
-          #   • -tw → mappings/mandarin/mandarin-tw.csv on Traditional base fonts.
-          #     The Taiwan 國語 standard — 753 single-character defaults
-          #     re-derived from the MOE 國語辭典 (e.g. 期 qī→qí, 危 wēi→wéi,
-          #     突 tū→tú). mandarin-tw.csv is a Traditional-Chinese mapping
-          #     (166 of the 753 differences are traditional-only glyphs),
-          #     so the -tw builds use Noto Sans TC and Xiaolai SC — the two
-          #     hub fonts that cover ≥95% of the common Traditional set
-          #     (Noto Sans TC 97.8%, Xiaolai SC 100%). Noto Serif SC is a
-          #     Simplified-region serif, so it ships -cn only.
+          #   • -cn → mappings/mandarin/mandarin-cn-toned-trimmed.csv on
+          #     Simplified-region base fonts (Noto Sans SC / Noto Serif SC /
+          #     Xiaolai SC). The Mainland 普通話 standard — also what
+          #     Singapore / Malaysia officially adopt.
+          #   • -tw → the Taiwan 國語 standard from the MOE 國語辭典 alone
+          #     (gen_mandarin_tw.py over g0v moedict dict-revised): readings
+          #     and word rows verbatim from MOE, as tone-marked pinyin
+          #     (mandarin-tw-toned.csv) or 注音 (mandarin-tw-zhuyin.csv).
+          #     MOE is a Traditional-Chinese dictionary, so the -tw builds use
+          #     Noto Sans TC and Xiaolai SC (covers 100% of the common
+          #     Traditional set). Noto Serif SC is Simplified-region, -cn only.
           - { name: NotoSansSC-Huninn-mandarin-cn,         args: "-opt -i input_fonts/NotoSansSC-VariableFont_wght.ttf -a input_fonts/Huninn-Regular.ttf -m mappings/mandarin/mandarin-cn-toned-trimmed.csv --diy-annotations diy-mappings/mandarin/pinyin.diy-annotation.csv -as 0.30 -bs 0.70 -y 0.77" }
-          - { name: NotoSansTC-Huninn-mandarin-tw,         args: "-opt -i input_fonts/NotoSansTC-VariableFont_wght.ttf -a input_fonts/Huninn-Regular.ttf -m mappings/mandarin/mandarin-tw.csv -as 0.27 -bs 0.70 -y 0.77" }
-          # Taiwan 國語 from the MOE 國語辭典 alone (gen_mandarin_tw.py): readings,
-          # word rows and 注音 all taken from moedict dict-revised. The 注音 font
-          # uses Noto Sans TC for the annotation too (Bopomofo, as NotoSansTC-tps);
-          # its DIY inventory is typed like pinyin's (字ｂａ２ -> ㄅㄚˊ).
+          - { name: NotoSansTC-Huninn-mandarin-tw,         args: "-opt -i input_fonts/NotoSansTC-VariableFont_wght.ttf -a input_fonts/Huninn-Regular.ttf -m mappings/mandarin/mandarin-tw-toned.csv --diy-annotations diy-mappings/mandarin/pinyin.diy-annotation.csv -as 0.30 -bs 0.70 -y 0.77" }
+          # 注音 uses Noto Sans TC for the annotation too (Bopomofo, as
+          # NotoSansTC-tps); its DIY inventory is typed like pinyin's
+          # (字ｂａ２ -> ㄅㄚˊ).
           - { name: NotoSansTC-mandarin-tw-zhuyin,         args: "-opt -i input_fonts/NotoSansTC-VariableFont_wght.ttf -a input_fonts/NotoSansTC-VariableFont_wght.ttf -m mappings/mandarin/mandarin-tw-zhuyin.csv --diy-annotations diy-mappings/mandarin/zhuyin.diy-annotation.csv -as 0.26 -bs 0.70 -y 0.77" }
-          - { name: NotoSansTC-Huninn-tw-toned,            args: "-opt -i input_fonts/NotoSansTC-VariableFont_wght.ttf -a input_fonts/Huninn-Regular.ttf -m mappings/mandarin/mandarin-tw-toned.csv --diy-annotations diy-mappings/mandarin/pinyin.diy-annotation.csv -as 0.30 -bs 0.70 -y 0.77" }
           # Mengshen-equivalent products (source fonts are SIL OFL-1.1, user-supplied in input_fonts/).
           # Serif: Source Han Serif (Noto Serif SC) + M+ 1m — Simplified, -cn only.
           # Handwritten: Xiaolai + M+ Rounded 1c (OFL stand-in for Mengshen's non-OFL SetoFontSP); Xiaolai SC covers Traditional, so it builds both -cn and -tw.
           - { name: SHSerif-Mplus-mandarin-cn, args: "-opt -i input_fonts/SourceHanSerif-Regular.ttf -a input_fonts/mplus-1m-medium.ttf -m mappings/mandarin/mandarin-cn-toned-trimmed.csv --diy-annotations diy-mappings/mandarin/pinyin.diy-annotation.csv -as 0.30 -bs 0.70 -y 0.77" }
           - { name: Xiaolai-Mplus-mandarin-cn,      args: "-opt -i input_fonts/XiaolaiSC-Regular.ttf -a input_fonts/MPLUSRounded1c-Regular.ttf -m mappings/mandarin/mandarin-cn-toned-trimmed.csv --diy-annotations diy-mappings/mandarin/pinyin.diy-annotation.csv -as 0.30 -bs 0.70 -y 0.77" }
-          - { name: Xiaolai-Mplus-mandarin-tw,      args: "-opt -i input_fonts/XiaolaiSC-Regular.ttf -a input_fonts/MPLUSRounded1c-Regular.ttf -m mappings/mandarin/mandarin-tw.csv -as 0.27 -bs 0.70 -y 0.77" }
+          - { name: Xiaolai-Mplus-mandarin-tw,      args: "-opt -i input_fonts/XiaolaiSC-Regular.ttf -a input_fonts/MPLUSRounded1c-Regular.ttf -m mappings/mandarin/mandarin-tw-toned.csv --diy-annotations diy-mappings/mandarin/pinyin.diy-annotation.csv -as 0.30 -bs 0.70 -y 0.77" }
           # === Xiaolai + Huninn family (handwritten base) ============
           # A consistent base + annotation pairing across every dialect
           # mapping the Huninn annotation font can render in Latin
@@ -399,11 +395,11 @@ jobs:
           # at its 0.0 default — Latin romanization shapes naturally and
           # needs no inter-glyph opening.
           - { name: Hind-Noto-romanization,               args: "-opt -v -y 0.88 -i input_fonts/Hind-Regular.ttf -a input_fonts/NotoSerif-Regular.ttf -m mappings/hindi/hindi-romanization.csv -as 0.30" }
-          # Thai — Thai-script base annotated with thai-ink Paiboon
+          # Thai — Thai-script base annotated with the TCAHK (thai-ink)
           # romanization (Latin with IPA-ish vowels and combining tone
           # marks). GoogleSans is used as the base font because it ships
           # the full 87-char Thai block with proper mark positioning;
-          # NotoSerif supplies the Latin Paiboon annotation.
+          # NotoSerif supplies the Latin TCAHK romanization.
           #
           # `--anno-below` is the entire point of this entry: Thai's
           # above-line marks (sara-i ◌ิ, sara-ii ◌ี, mai-aek ◌่,
@@ -418,13 +414,13 @@ jobs:
           # `-as 0.30` matches the Hindi entry above (same NotoSerif
           # Latin face, same approximate target on-screen size for
           # 4-8 character romanizations like `sà-wàt-dii`).
-          - { name: GoogleSans-Noto-thai-paiboon,         args: "-opt --anno-below -i 'input_fonts/GoogleSans-VariableFont_GRAD,opsz,wght.ttf' -a input_fonts/NotoSerif-Regular.ttf -m mappings/thai/thai-paiboon.csv -as 0.30" }
+          - { name: GoogleSans-Noto-thai-tcahk,         args: "-opt --anno-below -i 'input_fonts/GoogleSans-VariableFont_GRAD,opsz,wght.ttf' -a input_fonts/NotoSerif-Regular.ttf -m mappings/thai/thai-tcahk.csv -as 0.30" }
           - { name: Xiaolai-Huninn-tailo,                  args: "-opt -i input_fonts/XiaolaiSC-Regular.ttf -a input_fonts/Huninn-Regular.ttf -m mappings/taiwanese/taigi-tl-toned.csv --diy-annotations diy-mappings/taiwanese/sutian.diy-annotation.csv -as 0.29 -bs 0.70 -y 0.77" }
           - { name: Xiaolai-Huninn-poj,                    args: "-opt -i input_fonts/XiaolaiSC-Regular.ttf -a input_fonts/Huninn-Regular.ttf -m mappings/taiwanese/taigi-poj-toned.csv -as 0.29 -bs 0.70 -y 0.77" }
           - { name: Xiaolai-Huninn-teochew-pengim,         args: "-opt -i input_fonts/XiaolaiSC-Regular.ttf -a input_fonts/Huninn-Regular.ttf -m mappings/teochew/teochew-gdpi.csv -as 0.26 -bs 0.70 -y 0.77" }
           - { name: Xiaolai-Huninn-teochew-puj,            args: "-opt -i input_fonts/XiaolaiSC-Regular.ttf -a input_fonts/Huninn-Regular.ttf -m mappings/teochew/teochew-duffus.csv -as 0.27 -bs 0.70 -y 0.77" }
           - { name: Xiaolai-Huninn-mandarin-cn,            args: "-opt -i input_fonts/XiaolaiSC-Regular.ttf -a input_fonts/Huninn-Regular.ttf -m mappings/mandarin/mandarin-cn-toned-trimmed.csv --diy-annotations diy-mappings/mandarin/pinyin.diy-annotation.csv -as 0.30 -bs 0.70 -y 0.77" }
-          - { name: Xiaolai-Huninn-mandarin-tw,            args: "-opt -i input_fonts/XiaolaiSC-Regular.ttf -a input_fonts/Huninn-Regular.ttf -m mappings/mandarin/mandarin-tw.csv -as 0.27 -bs 0.70 -y 0.77" }
+          - { name: Xiaolai-Huninn-mandarin-tw,            args: "-opt -i input_fonts/XiaolaiSC-Regular.ttf -a input_fonts/Huninn-Regular.ttf -m mappings/mandarin/mandarin-tw-toned.csv --diy-annotations diy-mappings/mandarin/pinyin.diy-annotation.csv -as 0.30 -bs 0.70 -y 0.77" }
           # Japanese — kanji annotated with kana furigana (on'yomi in
           # katakana, kun'yomi in hiragana) plus 熟語 word-context rules.
           # Base Noto Sans JP for native Japanese kanji glyph forms; the

@@ -85,6 +85,9 @@ export interface BuildCliCommandInput {
   baseAxisLocation?: AxisLocation;
   /** Variable-font axis pin for the annotation font, if any. */
   annoAxisLocation?: AxisLocation;
+  /** DIY inventory path for --diy-annotations (preset path under
+   *  diy-mappings/, or the uploaded file's name). null/undefined = off. */
+  diyPath?: string | null;
 }
 
 /**
@@ -119,6 +122,7 @@ export function buildCliCommand({
   params,
   baseAxisLocation,
   annoAxisLocation,
+  diyPath,
 }: BuildCliCommandInput): string {
   // Path prefixes match wing-font-generator's repo layout. A user
   // running locally will have cloned the repo and put their inputs
@@ -179,6 +183,9 @@ export function buildCliCommand({
     params.outAscent > 0
   ) {
     parts.push(`--out-ascent ${Math.round(params.outAscent)}`);
+  }
+  if (diyPath) {
+    parts.push(`--diy-annotations ${shellQuote(diyPath)}`);
   }
 
   // Axis location flags — one per (tag, value) pair, repeating the

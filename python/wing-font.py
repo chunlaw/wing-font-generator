@@ -927,6 +927,7 @@ def _format_cli_invocation(
     out_ascent,
     base_axis_location,
     anno_axis_location,
+    diy_annotations=None,
 ):
     """Build the equivalent `python wing-font.py ...` command from
     the kwargs main() actually received.
@@ -980,6 +981,8 @@ def _format_cli_invocation(
         parts.append(f"--out-ascent {_asc_val}")
     elif _asc_mode == "off":
         parts.append("--out-ascent off")
+    if diy_annotations:
+        parts.append(f"--diy-annotations {shlex.quote(str(diy_annotations))}")
 
     # Variable-font axis pins: --base-axis TAG=VALUE / --anno-axis
     # TAG=VALUE, repeated per axis. Mirrors the CLI flag shape so the
@@ -1098,6 +1101,7 @@ def main(
         out_ascent=out_ascent,
         base_axis_location=base_axis_location,
         anno_axis_location=anno_axis_location,
+        diy_annotations=diy_annotations,
     ))
 
     # ── DIY inventory: parse `A`, assign internal PUA mark ids ─────

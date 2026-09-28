@@ -1,7 +1,8 @@
 # Thai (ภาษาไทย)
 
-**Romanization.** A **Paiboon-style phonemic** transcription (the "thai-ink"
-schema): IPA-ish vowels (`ɔ ʉ ə ɛ`), a tone diacritic over the vowel nucleus,
+**Romanization.** The romanization taught by the **Thai Culture Association of
+Hong Kong (TCAHK)** in its Cantonese-medium Thai classes, as implemented by the
+thai-ink project: a phonemic transcription with IPA-ish vowels (`ɔ ʉ ə ɛ`), a tone diacritic over the vowel nucleus,
 and `g / dt / bp` for ก / ต / ป. It is a pronunciation transcription, not a
 letter-for-letter transliteration, so it reflects Thai's complex
 spelling-to-sound rules (consonant classes, leading ห/อ, อักษรนำ tone
@@ -11,7 +12,7 @@ governance, clusters, vowel length).
 Thai (Thai has no spaces between words), reached by longest-match GSUB ligation.
 Two tiers of data: ≈906 **hand-curated** rows from thai-ink (ground truth,
 always win) plus ≈84k words from PyThaiNLP romanized by an algorithmic engine
-(`thai_paiboon.py`), weighted by corpus frequency. A separate
+(`thai_tcahk.py`), weighted by corpus frequency. A separate
 `thai-canto-soramimi` file plays Cantonese readings as Thai "soramimi".
 
 **Limitations.**

@@ -9,7 +9,7 @@ Pipeline:
   1. Build a Cantonese syllable inventory from canto-lshk.csv. For every
      toneless Jyutping syllable, keep the most common character (lowest freq
      rank value) as its representative.
-  2. Parse the Thai Paiboon romanisation into syllables, and each syllable
+  2. Parse the Thai TCAHK romanisation into syllables, and each syllable
      into (initial, vowel, coda) over a shared phonetic feature space.
   3. For each Thai syllable, find the Cantonese syllable with the smallest
      phonetic distance, and emit its representative character.
@@ -21,7 +21,7 @@ Tones are ignored on purpose -- this is just for fun (soramimi).
 import csv, re, unicodedata, os, sys
 
 HERE      = os.path.dirname(os.path.abspath(__file__))
-THAI_CSV  = os.path.join(HERE, "mappings", "thai-paiboon.csv")
+THAI_CSV  = os.path.join(HERE, "mappings", "thai-tcahk.csv")
 CANTO_CSV = os.path.join(HERE, "mappings", "canto-lshk.csv")
 OUT_CSV   = os.path.join(HERE, "mappings", "thai-canto-soramimi.csv")
 
@@ -169,7 +169,7 @@ def build_canto():
     return inv
 
 # --------------------------------------------------------------------------
-# Thai Paiboon parsing
+# Thai TCAHK-romanization parsing
 # --------------------------------------------------------------------------
 def strip_tones(s):
     s = unicodedata.normalize('NFD', s)
@@ -215,7 +215,7 @@ THAI_NUC = {
 }
 
 def parse_thai_syl(syl):
-    """paiboon syllable (tones stripped) -> (init, vowelcat, long, coda) or None"""
+    """TCAHK-romanized syllable (tones stripped) -> (init, vowelcat, long, coda) or None"""
     i = 0
     while i < len(syl) and syl[i] not in VOWEL_CHARS:
         i += 1
@@ -273,9 +273,9 @@ def main():
         for row in csv.reader(f):
             if len(row) < 2:
                 continue
-            thai_word, paiboon = row[0], row[1]
+            thai_word, tcahk = row[0], row[1]
             freq = row[2] if len(row) > 2 else ''
-            syls = [s for s in re.split(r'[ \-]', strip_tones(paiboon)) if s]
+            syls = [s for s in re.split(r'[ \-]', strip_tones(tcahk)) if s]
             chars = []; jps = []
             for s in syls:
                 m = map_syl(s)
@@ -283,11 +283,11 @@ def main():
                     jps.append(m[0]); chars.append(m[1])
             if not chars:
                 continue
-            rows.append((thai_word, paiboon, ''.join(chars), ' '.join(jps), freq))
+            rows.append((thai_word, tcahk, ''.join(chars), ' '.join(jps), freq))
 
     with open(OUT_CSV, 'w', encoding='utf-8', newline='') as f:
         w = csv.writer(f)
-        w.writerow(['thai', 'thai_paiboon', 'cantonese', 'cantonese_jyutping', 'thai_freq'])
+        w.writerow(['thai', 'thai_tcahk', 'cantonese', 'cantonese_jyutping', 'thai_freq'])
         w.writerows(rows)
     sys.stderr.write(f"wrote {len(rows)} rows to {OUT_CSV}\n")
 

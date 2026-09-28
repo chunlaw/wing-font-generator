@@ -209,7 +209,7 @@ RULES_PER_SUBTABLE = 500
 # When the user's mapping exceeds this, buildLigCarets keeps the first
 # 1,500 entries in iteration order. csv_parser hands char_mapping back
 # in CSV-row order, so as long as the CSV is sorted weight-descending
-# (gen_*_paiboon.py output, and gen_arabic_romanization.py output) the
+# (gen_*_tcahk.py output, and gen_arabic_romanization.py output) the
 # kept glyphs are the highest-weight words — the ones a reader actually
 # encounters most. Lower-weight word glyphs lose intra-letter cursor
 # stepping (an editor will treat them as one opaque unit) but the font

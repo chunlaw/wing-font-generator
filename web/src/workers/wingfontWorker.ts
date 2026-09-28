@@ -276,6 +276,9 @@ interface GeneratePayload {
    * to the Python runner as `out_ascent`.
    */
   outAscent?: number | null;
+  /** DIY manual-annotation inventory CSV text (`input,annotation`).
+   *  null/undefined = no DIY path. */
+  diyCsvText?: string | null;
 }
 
 interface PrepareTrimPayload {
@@ -318,6 +321,8 @@ async function handleGenerate(id: string, payload: GeneratePayload): Promise<voi
     // OS/2.usWinAscent to this value before save. Matches the
     // --out-ascent CLI flag's semantics.
     out_ascent: payload.outAscent ?? null,
+    // → runner.generate(diy_csv_text=…) → --diy-annotations.
+    diy_csv_text: payload.diyCsvText ?? null,
   };
   pyodide.globals.set("_params", pyodide.toPy(params));
 

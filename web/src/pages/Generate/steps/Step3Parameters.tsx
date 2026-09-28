@@ -62,6 +62,8 @@ const Step3Parameters = () => {
     baseFont,
     annoFont,
     mappingsPresetKey,
+    diyName,
+    diyPresetKey,
   } = useGenerate();
 
   // ── Family-name collision detector ─────────────────────────────
@@ -138,6 +140,11 @@ const Step3Parameters = () => {
         params,
         baseAxisLocation: baseFont.axisLocation,
         annoAxisLocation: annoFont.axisLocation,
+        diyPath: diyName
+          ? diyPresetKey
+            ? `diy-mappings/${diyName}`
+            : diyName
+          : null,
       }),
     [
       baseFont.name,
@@ -146,6 +153,8 @@ const Step3Parameters = () => {
       annoFont.axisLocation,
       mappingsPresetKey,
       params,
+      diyName,
+      diyPresetKey,
     ],
   );
 

@@ -54,6 +54,7 @@ import { AddCircleOutline } from "@mui/icons-material";
 import AppContext from "../../AppContext";
 import {
   AVAILABLE_FONTS,
+  FONT_GROUP_ORDER,
   getDialectLabel,
   USER_FONTS_GROUP_KEY,
 } from "../../utils/const";
@@ -136,8 +137,16 @@ const FontPicker = () => {
     }
     const dialect = AVAILABLE_FONTS[state.lang];
     if (!dialect) return [];
+    // Sort by FONT_GROUP_ORDER so each group is one contiguous run
+    // (groupBy only draws a subheader per run). Stable; unlisted /
+    // missing groups keep declaration order after the listed ones.
+    const rank = (g?: string) => {
+      const i = g ? FONT_GROUP_ORDER.indexOf(g) : -1;
+      return i < 0 ? FONT_GROUP_ORDER.length : i;
+    };
     return Object.values(dialect.fonts)
       .filter((opt) => !opt.pending)
+      .sort((a, b) => rank(a.group) - rank(b.group))
       .map((opt) => ({
         name: opt.name,
         displayName: opt.displayName,
