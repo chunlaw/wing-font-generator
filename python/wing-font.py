@@ -1849,6 +1849,22 @@ def main(
             subsetter.subset(output_font)
             timer.note(f"{len(valid_glyphs_to_keep)} glyphs kept")
 
+        # Word only lets a font be applied to Han text if OS/2 declares a
+        # CJK code page (bits 17-21). Pruning intersects the SOURCE's bits
+        # with what the output cmap covers, which can leave none: XiaolaiSC
+        # declares only GB2312 (18), whose fontTools test char ㄅ gets
+        # subset away -> output claims Latin-1 only and Word refuses it for
+        # CJK. Re-add the CJK bits recalculated from the output cmap itself,
+        # so the claim stays honest (see the "claims more than the cmap
+        # delivers" notes below).
+        from fontTools.ttLib.tables.O_S_2f_2 import calcCodePageRanges
+        os2 = output_font["OS/2"]
+        cjk_bits = {
+            b for b in calcCodePageRanges(set(output_font.getBestCmap()))
+            if 17 <= b <= 21
+        }
+        os2.setCodePageRanges(os2.getCodePageRanges() | cjk_bits)
+
         # ── NB: previous edits in this slot, both reverted ────────────
         #
         # 1. Whole-range OS/2 restore. An earlier "Fix E" did
