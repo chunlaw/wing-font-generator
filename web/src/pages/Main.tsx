@@ -681,8 +681,16 @@ const FontShowcaseCard = ({
   const FADE_MS = 300;
   const [displayedMsg, setDisplayedMsg] = useState(msgShown);
   const [isFadedIn, setIsFadedIn] = useState(true);
+  // User-typed text (msg non-empty) skips the fade: it would otherwise
+  // blink the preview on every keystroke. Only the rotating samples fade.
+  const isTyped = msg !== "";
   useEffect(() => {
     if (msgShown === displayedMsg) return;
+    if (isTyped) {
+      setDisplayedMsg(msgShown);
+      setIsFadedIn(true);
+      return;
+    }
     // Fade-out: flip opacity to 0; CSS transition handles the
     // animation over FADE_MS.
     setIsFadedIn(false);
@@ -695,7 +703,7 @@ const FontShowcaseCard = ({
       setIsFadedIn(true);
     }, FADE_MS);
     return () => clearTimeout(t);
-  }, [msgShown, displayedMsg]);
+  }, [msgShown, displayedMsg, isTyped]);
 
   // Compose the two opacity sources:
   //   * `isLoading` dims to 0.35 while the FontFace is still
@@ -704,7 +712,12 @@ const FontShowcaseCard = ({
   // Take the minimum so the more-restrictive value wins — a font
   // that's still loading AND mid-rotation reads as 0 momentarily,
   // which is fine.
-  const previewOpacity = Math.min(isLoading ? 0.35 : 1, isFadedIn ? 1 : 0);
+  const previewOpacity = Math.min(
+    isLoading ? 0.35 : 1,
+    isFadedIn || isTyped ? 1 : 0,
+  );
+  // Typed text renders straight from msgShown (no one-render lag).
+  const textShown = isTyped ? msgShown : displayedMsg;
 
   return (
     <Box width="100%">
@@ -812,7 +825,7 @@ const FontShowcaseCard = ({
           dir={cardDir}
           onClick={() => navigate(`/specimen/${pickedFont.name}`)}
         >
-          {displayedMsg}
+          {textShown}
         </Typography>
       </Box>
       <Divider />
