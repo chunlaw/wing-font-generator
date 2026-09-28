@@ -118,11 +118,12 @@ jobs:
         # Sizing (Sep 2026, CJK bases): -bs 0.70 everywhere.
         # Latin romanizations (jyutping/yale/lau/guangdong/chishima, tailo/
         # poj, teochew, pinyin) follow a user reference image: annotation
-        # x-height ~0.26 x the character's ink height, baseline gap ~0.17-0.20
+        # x-height ~0.33 x the character's ink height (raised from the
+        # reference's ~0.26 at the user's request), baseline gap ~0.17-0.20
         # x ink height (-y 0.70-0.71 on Noto/Chiron/SourceHan, 0.67 on
         # Xiaolai; the tonemark font keeps 0.77). All of them except the Cantonese tonemark font use
         # condensed Noto Sans (NotoSans-VariableFont_wdth,wght.ttf,
-        # --anno-axis wdth=75, "NotoCond" in the name) at -as 0.30-0.32;
+        # --anno-axis wdth=75, "NotoCond" in the name) at -as 0.38-0.41;
         # the auto --cell-width keeps the longest reading from colliding.
         # Descenders (g/y/p/j) clear the character top at these -y values.
         # Exception: NotoSansHK-Huninn-tonemark keeps -y 0.77 because its
@@ -146,11 +147,11 @@ jobs:
           # Inverted output can generate via `/generate` with `-v`.
           # See git history for the cut entries' exact args.
           # === Standard variants — ChironSung Regular ===============
-          - { name: ChironSungHK-NotoCond-lshk,                args: "-opt -i input_fonts/ChironSungHK-R.ttf -a 'input_fonts/NotoSans-VariableFont_wdth,wght.ttf' --anno-axis wdth=75 -m mappings/cantonese/canto-lshk.csv --diy-annotations diy-mappings/cantonese/lshk.diy-annotation.csv -as 0.32 -bs 0.70 -y 0.71" }
-          - { name: ChironSungHK-NotoCond-yale,                args: "-opt -i input_fonts/ChironSungHK-R.ttf -a 'input_fonts/NotoSans-VariableFont_wdth,wght.ttf' --anno-axis wdth=75 -m mappings/cantonese/canto-yale.csv -as 0.32 -bs 0.70 -y 0.71" }
-          - { name: ChironSungHK-NotoCond-chishima,            args: "-opt -i input_fonts/ChironSungHK-R.ttf -a 'input_fonts/NotoSans-VariableFont_wdth,wght.ttf' --anno-axis wdth=75 -m mappings/cantonese/canto-chishima.csv -as 0.32 -bs 0.70 -y 0.71" }
-          - { name: ChironSungHK-NotoCond-guangdong,           args: "-opt -i input_fonts/ChironSungHK-R.ttf -a 'input_fonts/NotoSans-VariableFont_wdth,wght.ttf' --anno-axis wdth=75 -m mappings/cantonese/canto-guangdong.csv -as 0.32 -bs 0.70 -y 0.71" }
-          - { name: ChironSungHK-NotoCond-lau,                 args: "-opt -i input_fonts/ChironSungHK-R.ttf -a 'input_fonts/NotoSans-VariableFont_wdth,wght.ttf' --anno-axis wdth=75 -m mappings/cantonese/canto-lau.csv -as 0.32 -bs 0.70 -y 0.71" }
+          - { name: ChironSungHK-NotoCond-lshk,                args: "-opt -i input_fonts/ChironSungHK-R.ttf -a 'input_fonts/NotoSans-VariableFont_wdth,wght.ttf' --anno-axis wdth=75 -m mappings/cantonese/canto-lshk.csv --diy-annotations diy-mappings/cantonese/lshk.diy-annotation.csv -as 0.41 -bs 0.70 -y 0.71" }
+          - { name: ChironSungHK-NotoCond-yale,                args: "-opt -i input_fonts/ChironSungHK-R.ttf -a 'input_fonts/NotoSans-VariableFont_wdth,wght.ttf' --anno-axis wdth=75 -m mappings/cantonese/canto-yale.csv -as 0.41 -bs 0.70 -y 0.71" }
+          - { name: ChironSungHK-NotoCond-chishima,            args: "-opt -i input_fonts/ChironSungHK-R.ttf -a 'input_fonts/NotoSans-VariableFont_wdth,wght.ttf' --anno-axis wdth=75 -m mappings/cantonese/canto-chishima.csv -as 0.41 -bs 0.70 -y 0.71" }
+          - { name: ChironSungHK-NotoCond-guangdong,           args: "-opt -i input_fonts/ChironSungHK-R.ttf -a 'input_fonts/NotoSans-VariableFont_wdth,wght.ttf' --anno-axis wdth=75 -m mappings/cantonese/canto-guangdong.csv -as 0.41 -bs 0.70 -y 0.71" }
+          - { name: ChironSungHK-NotoCond-lau,                 args: "-opt -i input_fonts/ChironSungHK-R.ttf -a 'input_fonts/NotoSans-VariableFont_wdth,wght.ttf' --anno-axis wdth=75 -m mappings/cantonese/canto-lau.csv -as 0.41 -bs 0.70 -y 0.71" }
           - { name: ChironSungHK-cangjie,                  args: "-i input_fonts/ChironSungHK-R.ttf -a input_fonts/ChironSungHK-R.ttf -m mappings/cangjie.csv -as 0.25 -bs 0.70 -y 0.77 --cell-width 1.0" }
           # === Script-specific annotation variants =================
           # ChironSung Regular base only — the Italic, Invert, and
@@ -170,11 +171,11 @@ jobs:
           # of the Chiron equivalents, so /showcase loads ~2× faster
           # on slow connections. Chiron variants stay built and
           # downloadable; these are the new default showcase set.
-          - { name: NotoSansHK-NotoCond-lshk,                  args: "-opt -i input_fonts/NotoSansHK-VariableFont_wght.ttf -a 'input_fonts/NotoSans-VariableFont_wdth,wght.ttf' --anno-axis wdth=75 -m mappings/cantonese/canto-lshk.csv --diy-annotations diy-mappings/cantonese/lshk.diy-annotation.csv -as 0.31 -bs 0.70 -y 0.70" }
-          - { name: NotoSansHK-NotoCond-yale,                  args: "-opt -i input_fonts/NotoSansHK-VariableFont_wght.ttf -a 'input_fonts/NotoSans-VariableFont_wdth,wght.ttf' --anno-axis wdth=75 -m mappings/cantonese/canto-yale.csv -as 0.31 -bs 0.70 -y 0.70" }
-          - { name: NotoSansHK-NotoCond-chishima,              args: "-opt -i input_fonts/NotoSansHK-VariableFont_wght.ttf -a 'input_fonts/NotoSans-VariableFont_wdth,wght.ttf' --anno-axis wdth=75 -m mappings/cantonese/canto-chishima.csv -as 0.31 -bs 0.70 -y 0.70" }
-          - { name: NotoSansHK-NotoCond-guangdong,             args: "-opt -i input_fonts/NotoSansHK-VariableFont_wght.ttf -a 'input_fonts/NotoSans-VariableFont_wdth,wght.ttf' --anno-axis wdth=75 -m mappings/cantonese/canto-guangdong.csv -as 0.31 -bs 0.70 -y 0.70" }
-          - { name: NotoSansHK-NotoCond-lau,                   args: "-opt -i input_fonts/NotoSansHK-VariableFont_wght.ttf -a 'input_fonts/NotoSans-VariableFont_wdth,wght.ttf' --anno-axis wdth=75 -m mappings/cantonese/canto-lau.csv -as 0.31 -bs 0.70 -y 0.70" }
+          - { name: NotoSansHK-NotoCond-lshk,                  args: "-opt -i input_fonts/NotoSansHK-VariableFont_wght.ttf -a 'input_fonts/NotoSans-VariableFont_wdth,wght.ttf' --anno-axis wdth=75 -m mappings/cantonese/canto-lshk.csv --diy-annotations diy-mappings/cantonese/lshk.diy-annotation.csv -as 0.39 -bs 0.70 -y 0.70" }
+          - { name: NotoSansHK-NotoCond-yale,                  args: "-opt -i input_fonts/NotoSansHK-VariableFont_wght.ttf -a 'input_fonts/NotoSans-VariableFont_wdth,wght.ttf' --anno-axis wdth=75 -m mappings/cantonese/canto-yale.csv -as 0.39 -bs 0.70 -y 0.70" }
+          - { name: NotoSansHK-NotoCond-chishima,              args: "-opt -i input_fonts/NotoSansHK-VariableFont_wght.ttf -a 'input_fonts/NotoSans-VariableFont_wdth,wght.ttf' --anno-axis wdth=75 -m mappings/cantonese/canto-chishima.csv -as 0.39 -bs 0.70 -y 0.70" }
+          - { name: NotoSansHK-NotoCond-guangdong,             args: "-opt -i input_fonts/NotoSansHK-VariableFont_wght.ttf -a 'input_fonts/NotoSans-VariableFont_wdth,wght.ttf' --anno-axis wdth=75 -m mappings/cantonese/canto-guangdong.csv -as 0.39 -bs 0.70 -y 0.70" }
+          - { name: NotoSansHK-NotoCond-lau,                   args: "-opt -i input_fonts/NotoSansHK-VariableFont_wght.ttf -a 'input_fonts/NotoSans-VariableFont_wdth,wght.ttf' --anno-axis wdth=75 -m mappings/cantonese/canto-lau.csv -as 0.39 -bs 0.70 -y 0.70" }
           # Cangjie under Noto Sans HK: annotation IS the base font
           # (so the radicals render in HK style), no -opt because
           # subsetting would chase the self-reference.
@@ -229,7 +230,7 @@ jobs:
           # hero is visually unified across Cantonese / Taiwanese /
           # Teochew phrases. Previous versions used ChironSung HK and
           # Noto Sans TC bases respectively — see git history.
-          - { name: Xiaolai-NotoCond-hero-sample,            args: "-opt -i input_fonts/XiaolaiSC-Regular.ttf -a 'input_fonts/NotoSans-VariableFont_wdth,wght.ttf' --anno-axis wdth=75 -m mappings/hero-sample.csv -as 0.30 -bs 0.70 -y 0.67" }
+          - { name: Xiaolai-NotoCond-hero-sample,            args: "-opt -i input_fonts/XiaolaiSC-Regular.ttf -a 'input_fonts/NotoSans-VariableFont_wdth,wght.ttf' --anno-axis wdth=75 -m mappings/hero-sample.csv -as 0.38 -bs 0.70 -y 0.67" }
           # === Taiwanese / Southern Min (河洛話) showcase ===========
           # tailo / poj are the MOE 優勢腔 standard (sutian via ChhoeTaigi);
           # sannkiap is the distinctive 三峽偏泉腔 accent (雞 = kere) — one
@@ -239,28 +240,28 @@ jobs:
           # Tâi-lô tone marks) — built for every taigi-tl-*.csv: the
           # 優勢腔 standard (tailo) plus all nine 腔 accent variants.
           # All also offered in /generate.
-          - { name: NotoSansTC-NotoCond-tailo,                   args: "-opt -i input_fonts/NotoSansTC-VariableFont_wght.ttf -a 'input_fonts/NotoSans-VariableFont_wdth,wght.ttf' --anno-axis wdth=75 -m mappings/taiwanese/taigi-tl-toned.csv --diy-annotations diy-mappings/taiwanese/sutian.diy-annotation.csv -as 0.31 -bs 0.70 -y 0.70" }
-          - { name: NotoSansTC-NotoCond-poj,                     args: "-opt -i input_fonts/NotoSansTC-VariableFont_wght.ttf -a 'input_fonts/NotoSans-VariableFont_wdth,wght.ttf' --anno-axis wdth=75 -m mappings/taiwanese/taigi-poj-toned.csv -as 0.31 -bs 0.70 -y 0.70" }
-          - { name: NotoSansTC-NotoCond-taipak,                  args: "-opt -i input_fonts/NotoSansTC-VariableFont_wght.ttf -a 'input_fonts/NotoSans-VariableFont_wdth,wght.ttf' --anno-axis wdth=75 -m mappings/taiwanese/taigi-tl-taipak.csv --diy-annotations diy-mappings/taiwanese/sutian.diy-annotation.csv -as 0.31 -bs 0.70 -y 0.70" }
-          - { name: NotoSansTC-NotoCond-sannkiap,                args: "-opt -i input_fonts/NotoSansTC-VariableFont_wght.ttf -a 'input_fonts/NotoSans-VariableFont_wdth,wght.ttf' --anno-axis wdth=75 -m mappings/taiwanese/taigi-tl-sannkiap.csv --diy-annotations diy-mappings/taiwanese/sutian.diy-annotation.csv -as 0.31 -bs 0.70 -y 0.70" }
-          - { name: NotoSansTC-NotoCond-sintik,                  args: "-opt -i input_fonts/NotoSansTC-VariableFont_wght.ttf -a 'input_fonts/NotoSans-VariableFont_wdth,wght.ttf' --anno-axis wdth=75 -m mappings/taiwanese/taigi-tl-sintik.csv --diy-annotations diy-mappings/taiwanese/sutian.diy-annotation.csv -as 0.31 -bs 0.70 -y 0.70" }
-          - { name: NotoSansTC-NotoCond-taitiong,                args: "-opt -i input_fonts/NotoSansTC-VariableFont_wght.ttf -a 'input_fonts/NotoSans-VariableFont_wdth,wght.ttf' --anno-axis wdth=75 -m mappings/taiwanese/taigi-tl-taitiong.csv --diy-annotations diy-mappings/taiwanese/sutian.diy-annotation.csv -as 0.31 -bs 0.70 -y 0.70" }
-          - { name: NotoSansTC-NotoCond-lokkang,                 args: "-opt -i input_fonts/NotoSansTC-VariableFont_wght.ttf -a 'input_fonts/NotoSans-VariableFont_wdth,wght.ttf' --anno-axis wdth=75 -m mappings/taiwanese/taigi-tl-lokkang.csv --diy-annotations diy-mappings/taiwanese/sutian.diy-annotation.csv -as 0.31 -bs 0.70 -y 0.70" }
-          - { name: NotoSansTC-NotoCond-tailam,                  args: "-opt -i input_fonts/NotoSansTC-VariableFont_wght.ttf -a 'input_fonts/NotoSans-VariableFont_wdth,wght.ttf' --anno-axis wdth=75 -m mappings/taiwanese/taigi-tl-tailam.csv --diy-annotations diy-mappings/taiwanese/sutian.diy-annotation.csv -as 0.31 -bs 0.70 -y 0.70" }
-          - { name: NotoSansTC-NotoCond-kohiong,                 args: "-opt -i input_fonts/NotoSansTC-VariableFont_wght.ttf -a 'input_fonts/NotoSans-VariableFont_wdth,wght.ttf' --anno-axis wdth=75 -m mappings/taiwanese/taigi-tl-kohiong.csv --diy-annotations diy-mappings/taiwanese/sutian.diy-annotation.csv -as 0.31 -bs 0.70 -y 0.70" }
-          - { name: NotoSansTC-NotoCond-gilan,                   args: "-opt -i input_fonts/NotoSansTC-VariableFont_wght.ttf -a 'input_fonts/NotoSans-VariableFont_wdth,wght.ttf' --anno-axis wdth=75 -m mappings/taiwanese/taigi-tl-gilan.csv --diy-annotations diy-mappings/taiwanese/sutian.diy-annotation.csv -as 0.31 -bs 0.70 -y 0.70" }
-          - { name: NotoSansTC-NotoCond-manking,                 args: "-opt -i input_fonts/NotoSansTC-VariableFont_wght.ttf -a 'input_fonts/NotoSans-VariableFont_wdth,wght.ttf' --anno-axis wdth=75 -m mappings/taiwanese/taigi-tl-manking.csv --diy-annotations diy-mappings/taiwanese/sutian.diy-annotation.csv -as 0.31 -bs 0.70 -y 0.70" }
-          - { name: Xiaolai-NotoCond-tailo,                args: "-opt -i input_fonts/XiaolaiSC-Regular.ttf -a 'input_fonts/NotoSans-VariableFont_wdth,wght.ttf' --anno-axis wdth=75 -m mappings/taiwanese/taigi-tl-toned.csv --diy-annotations diy-mappings/taiwanese/sutian.diy-annotation.csv -as 0.30 -bs 0.70 -y 0.67" }
-          - { name: Xiaolai-NotoCond-taipak,               args: "-opt -i input_fonts/XiaolaiSC-Regular.ttf -a 'input_fonts/NotoSans-VariableFont_wdth,wght.ttf' --anno-axis wdth=75 -m mappings/taiwanese/taigi-tl-taipak.csv --diy-annotations diy-mappings/taiwanese/sutian.diy-annotation.csv -as 0.30 -bs 0.70 -y 0.67" }
-          - { name: Xiaolai-NotoCond-sannkiap,             args: "-opt -i input_fonts/XiaolaiSC-Regular.ttf -a 'input_fonts/NotoSans-VariableFont_wdth,wght.ttf' --anno-axis wdth=75 -m mappings/taiwanese/taigi-tl-sannkiap.csv --diy-annotations diy-mappings/taiwanese/sutian.diy-annotation.csv -as 0.30 -bs 0.70 -y 0.67" }
-          - { name: Xiaolai-NotoCond-sintik,               args: "-opt -i input_fonts/XiaolaiSC-Regular.ttf -a 'input_fonts/NotoSans-VariableFont_wdth,wght.ttf' --anno-axis wdth=75 -m mappings/taiwanese/taigi-tl-sintik.csv --diy-annotations diy-mappings/taiwanese/sutian.diy-annotation.csv -as 0.30 -bs 0.70 -y 0.67" }
-          - { name: Xiaolai-NotoCond-taitiong,             args: "-opt -i input_fonts/XiaolaiSC-Regular.ttf -a 'input_fonts/NotoSans-VariableFont_wdth,wght.ttf' --anno-axis wdth=75 -m mappings/taiwanese/taigi-tl-taitiong.csv --diy-annotations diy-mappings/taiwanese/sutian.diy-annotation.csv -as 0.30 -bs 0.70 -y 0.67" }
-          - { name: Xiaolai-NotoCond-lokkang,              args: "-opt -i input_fonts/XiaolaiSC-Regular.ttf -a 'input_fonts/NotoSans-VariableFont_wdth,wght.ttf' --anno-axis wdth=75 -m mappings/taiwanese/taigi-tl-lokkang.csv --diy-annotations diy-mappings/taiwanese/sutian.diy-annotation.csv -as 0.30 -bs 0.70 -y 0.67" }
-          - { name: Xiaolai-NotoCond-tailam,               args: "-opt -i input_fonts/XiaolaiSC-Regular.ttf -a 'input_fonts/NotoSans-VariableFont_wdth,wght.ttf' --anno-axis wdth=75 -m mappings/taiwanese/taigi-tl-tailam.csv --diy-annotations diy-mappings/taiwanese/sutian.diy-annotation.csv -as 0.30 -bs 0.70 -y 0.67" }
-          - { name: Xiaolai-NotoCond-kohiong,              args: "-opt -i input_fonts/XiaolaiSC-Regular.ttf -a 'input_fonts/NotoSans-VariableFont_wdth,wght.ttf' --anno-axis wdth=75 -m mappings/taiwanese/taigi-tl-kohiong.csv --diy-annotations diy-mappings/taiwanese/sutian.diy-annotation.csv -as 0.30 -bs 0.70 -y 0.67" }
-          - { name: Xiaolai-NotoCond-gilan,                args: "-opt -i input_fonts/XiaolaiSC-Regular.ttf -a 'input_fonts/NotoSans-VariableFont_wdth,wght.ttf' --anno-axis wdth=75 -m mappings/taiwanese/taigi-tl-gilan.csv --diy-annotations diy-mappings/taiwanese/sutian.diy-annotation.csv -as 0.30 -bs 0.70 -y 0.67" }
-          - { name: Xiaolai-NotoCond-manking,              args: "-opt -i input_fonts/XiaolaiSC-Regular.ttf -a 'input_fonts/NotoSans-VariableFont_wdth,wght.ttf' --anno-axis wdth=75 -m mappings/taiwanese/taigi-tl-manking.csv --diy-annotations diy-mappings/taiwanese/sutian.diy-annotation.csv -as 0.30 -bs 0.70 -y 0.67" }
-          - { name: Xiaolai-NotoCond-hero-tailo,             args: "-opt -i input_fonts/XiaolaiSC-Regular.ttf -a 'input_fonts/NotoSans-VariableFont_wdth,wght.ttf' --anno-axis wdth=75 -m mappings/hero-taigi.csv --diy-annotations diy-mappings/taiwanese/sutian.diy-annotation.csv -as 0.30 -bs 0.70 -y 0.67" }
+          - { name: NotoSansTC-NotoCond-tailo,                   args: "-opt -i input_fonts/NotoSansTC-VariableFont_wght.ttf -a 'input_fonts/NotoSans-VariableFont_wdth,wght.ttf' --anno-axis wdth=75 -m mappings/taiwanese/taigi-tl-toned.csv --diy-annotations diy-mappings/taiwanese/sutian.diy-annotation.csv -as 0.39 -bs 0.70 -y 0.70" }
+          - { name: NotoSansTC-NotoCond-poj,                     args: "-opt -i input_fonts/NotoSansTC-VariableFont_wght.ttf -a 'input_fonts/NotoSans-VariableFont_wdth,wght.ttf' --anno-axis wdth=75 -m mappings/taiwanese/taigi-poj-toned.csv -as 0.39 -bs 0.70 -y 0.70" }
+          - { name: NotoSansTC-NotoCond-taipak,                  args: "-opt -i input_fonts/NotoSansTC-VariableFont_wght.ttf -a 'input_fonts/NotoSans-VariableFont_wdth,wght.ttf' --anno-axis wdth=75 -m mappings/taiwanese/taigi-tl-taipak.csv --diy-annotations diy-mappings/taiwanese/sutian.diy-annotation.csv -as 0.39 -bs 0.70 -y 0.70" }
+          - { name: NotoSansTC-NotoCond-sannkiap,                args: "-opt -i input_fonts/NotoSansTC-VariableFont_wght.ttf -a 'input_fonts/NotoSans-VariableFont_wdth,wght.ttf' --anno-axis wdth=75 -m mappings/taiwanese/taigi-tl-sannkiap.csv --diy-annotations diy-mappings/taiwanese/sutian.diy-annotation.csv -as 0.39 -bs 0.70 -y 0.70" }
+          - { name: NotoSansTC-NotoCond-sintik,                  args: "-opt -i input_fonts/NotoSansTC-VariableFont_wght.ttf -a 'input_fonts/NotoSans-VariableFont_wdth,wght.ttf' --anno-axis wdth=75 -m mappings/taiwanese/taigi-tl-sintik.csv --diy-annotations diy-mappings/taiwanese/sutian.diy-annotation.csv -as 0.39 -bs 0.70 -y 0.70" }
+          - { name: NotoSansTC-NotoCond-taitiong,                args: "-opt -i input_fonts/NotoSansTC-VariableFont_wght.ttf -a 'input_fonts/NotoSans-VariableFont_wdth,wght.ttf' --anno-axis wdth=75 -m mappings/taiwanese/taigi-tl-taitiong.csv --diy-annotations diy-mappings/taiwanese/sutian.diy-annotation.csv -as 0.39 -bs 0.70 -y 0.70" }
+          - { name: NotoSansTC-NotoCond-lokkang,                 args: "-opt -i input_fonts/NotoSansTC-VariableFont_wght.ttf -a 'input_fonts/NotoSans-VariableFont_wdth,wght.ttf' --anno-axis wdth=75 -m mappings/taiwanese/taigi-tl-lokkang.csv --diy-annotations diy-mappings/taiwanese/sutian.diy-annotation.csv -as 0.39 -bs 0.70 -y 0.70" }
+          - { name: NotoSansTC-NotoCond-tailam,                  args: "-opt -i input_fonts/NotoSansTC-VariableFont_wght.ttf -a 'input_fonts/NotoSans-VariableFont_wdth,wght.ttf' --anno-axis wdth=75 -m mappings/taiwanese/taigi-tl-tailam.csv --diy-annotations diy-mappings/taiwanese/sutian.diy-annotation.csv -as 0.39 -bs 0.70 -y 0.70" }
+          - { name: NotoSansTC-NotoCond-kohiong,                 args: "-opt -i input_fonts/NotoSansTC-VariableFont_wght.ttf -a 'input_fonts/NotoSans-VariableFont_wdth,wght.ttf' --anno-axis wdth=75 -m mappings/taiwanese/taigi-tl-kohiong.csv --diy-annotations diy-mappings/taiwanese/sutian.diy-annotation.csv -as 0.39 -bs 0.70 -y 0.70" }
+          - { name: NotoSansTC-NotoCond-gilan,                   args: "-opt -i input_fonts/NotoSansTC-VariableFont_wght.ttf -a 'input_fonts/NotoSans-VariableFont_wdth,wght.ttf' --anno-axis wdth=75 -m mappings/taiwanese/taigi-tl-gilan.csv --diy-annotations diy-mappings/taiwanese/sutian.diy-annotation.csv -as 0.39 -bs 0.70 -y 0.70" }
+          - { name: NotoSansTC-NotoCond-manking,                 args: "-opt -i input_fonts/NotoSansTC-VariableFont_wght.ttf -a 'input_fonts/NotoSans-VariableFont_wdth,wght.ttf' --anno-axis wdth=75 -m mappings/taiwanese/taigi-tl-manking.csv --diy-annotations diy-mappings/taiwanese/sutian.diy-annotation.csv -as 0.39 -bs 0.70 -y 0.70" }
+          - { name: Xiaolai-NotoCond-tailo,                args: "-opt -i input_fonts/XiaolaiSC-Regular.ttf -a 'input_fonts/NotoSans-VariableFont_wdth,wght.ttf' --anno-axis wdth=75 -m mappings/taiwanese/taigi-tl-toned.csv --diy-annotations diy-mappings/taiwanese/sutian.diy-annotation.csv -as 0.38 -bs 0.70 -y 0.67" }
+          - { name: Xiaolai-NotoCond-taipak,               args: "-opt -i input_fonts/XiaolaiSC-Regular.ttf -a 'input_fonts/NotoSans-VariableFont_wdth,wght.ttf' --anno-axis wdth=75 -m mappings/taiwanese/taigi-tl-taipak.csv --diy-annotations diy-mappings/taiwanese/sutian.diy-annotation.csv -as 0.38 -bs 0.70 -y 0.67" }
+          - { name: Xiaolai-NotoCond-sannkiap,             args: "-opt -i input_fonts/XiaolaiSC-Regular.ttf -a 'input_fonts/NotoSans-VariableFont_wdth,wght.ttf' --anno-axis wdth=75 -m mappings/taiwanese/taigi-tl-sannkiap.csv --diy-annotations diy-mappings/taiwanese/sutian.diy-annotation.csv -as 0.38 -bs 0.70 -y 0.67" }
+          - { name: Xiaolai-NotoCond-sintik,               args: "-opt -i input_fonts/XiaolaiSC-Regular.ttf -a 'input_fonts/NotoSans-VariableFont_wdth,wght.ttf' --anno-axis wdth=75 -m mappings/taiwanese/taigi-tl-sintik.csv --diy-annotations diy-mappings/taiwanese/sutian.diy-annotation.csv -as 0.38 -bs 0.70 -y 0.67" }
+          - { name: Xiaolai-NotoCond-taitiong,             args: "-opt -i input_fonts/XiaolaiSC-Regular.ttf -a 'input_fonts/NotoSans-VariableFont_wdth,wght.ttf' --anno-axis wdth=75 -m mappings/taiwanese/taigi-tl-taitiong.csv --diy-annotations diy-mappings/taiwanese/sutian.diy-annotation.csv -as 0.38 -bs 0.70 -y 0.67" }
+          - { name: Xiaolai-NotoCond-lokkang,              args: "-opt -i input_fonts/XiaolaiSC-Regular.ttf -a 'input_fonts/NotoSans-VariableFont_wdth,wght.ttf' --anno-axis wdth=75 -m mappings/taiwanese/taigi-tl-lokkang.csv --diy-annotations diy-mappings/taiwanese/sutian.diy-annotation.csv -as 0.38 -bs 0.70 -y 0.67" }
+          - { name: Xiaolai-NotoCond-tailam,               args: "-opt -i input_fonts/XiaolaiSC-Regular.ttf -a 'input_fonts/NotoSans-VariableFont_wdth,wght.ttf' --anno-axis wdth=75 -m mappings/taiwanese/taigi-tl-tailam.csv --diy-annotations diy-mappings/taiwanese/sutian.diy-annotation.csv -as 0.38 -bs 0.70 -y 0.67" }
+          - { name: Xiaolai-NotoCond-kohiong,              args: "-opt -i input_fonts/XiaolaiSC-Regular.ttf -a 'input_fonts/NotoSans-VariableFont_wdth,wght.ttf' --anno-axis wdth=75 -m mappings/taiwanese/taigi-tl-kohiong.csv --diy-annotations diy-mappings/taiwanese/sutian.diy-annotation.csv -as 0.38 -bs 0.70 -y 0.67" }
+          - { name: Xiaolai-NotoCond-gilan,                args: "-opt -i input_fonts/XiaolaiSC-Regular.ttf -a 'input_fonts/NotoSans-VariableFont_wdth,wght.ttf' --anno-axis wdth=75 -m mappings/taiwanese/taigi-tl-gilan.csv --diy-annotations diy-mappings/taiwanese/sutian.diy-annotation.csv -as 0.38 -bs 0.70 -y 0.67" }
+          - { name: Xiaolai-NotoCond-manking,              args: "-opt -i input_fonts/XiaolaiSC-Regular.ttf -a 'input_fonts/NotoSans-VariableFont_wdth,wght.ttf' --anno-axis wdth=75 -m mappings/taiwanese/taigi-tl-manking.csv --diy-annotations diy-mappings/taiwanese/sutian.diy-annotation.csv -as 0.38 -bs 0.70 -y 0.67" }
+          - { name: Xiaolai-NotoCond-hero-tailo,             args: "-opt -i input_fonts/XiaolaiSC-Regular.ttf -a 'input_fonts/NotoSans-VariableFont_wdth,wght.ttf' --anno-axis wdth=75 -m mappings/hero-taigi.csv --diy-annotations diy-mappings/taiwanese/sutian.diy-annotation.csv -as 0.38 -bs 0.70 -y 0.67" }
           # Non-Latin Taiwanese annotation (data from ButTaiwan/taigivs).
           # 方音符號 (TPS): annotation font must cover Bopomofo + Bopomofo
           # Extended — Noto Sans TC does (serves as both base and anno).
@@ -268,9 +269,9 @@ jobs:
           - { name: NotoSansTC-tps,                        args: "-opt -i input_fonts/NotoSansTC-VariableFont_wght.ttf -a input_fonts/NotoSansTC-VariableFont_wght.ttf -m mappings/taiwanese/taigi-tps.csv -as 0.25 -bs 0.70 -y 0.77 --cell-width 1.0" }
           - { name: NotoSansTC-NotoJP-kana,                args: "-opt -i input_fonts/NotoSansTC-VariableFont_wght.ttf -a input_fonts/NotoSansJP-VariableFont_wght.ttf -m mappings/taiwanese/taigi-kana.csv -as 0.25 -bs 0.70 -y 0.77 --cell-width 1.0" }
           # === Teochew / Min Nan (潮州話) showcase ==================
-          - { name: NotoSansTC-NotoCond-pengim,      args: "-opt -i input_fonts/NotoSansTC-VariableFont_wght.ttf -a 'input_fonts/NotoSans-VariableFont_wdth,wght.ttf' --anno-axis wdth=75 -m mappings/teochew/teochew-gdpi.csv -as 0.31 -bs 0.70 -y 0.70" }
-          - { name: NotoSansTC-NotoCond-teochew-puj,         args: "-opt -i input_fonts/NotoSansTC-VariableFont_wght.ttf -a 'input_fonts/NotoSans-VariableFont_wdth,wght.ttf' --anno-axis wdth=75 -m mappings/teochew/teochew-duffus.csv -as 0.31 -bs 0.70 -y 0.70" }
-          - { name: Xiaolai-NotoCond-hero-pengim,            args: "-opt -i input_fonts/XiaolaiSC-Regular.ttf -a 'input_fonts/NotoSans-VariableFont_wdth,wght.ttf' --anno-axis wdth=75 -m mappings/hero-teochew.csv -as 0.30 -bs 0.70 -y 0.67" }
+          - { name: NotoSansTC-NotoCond-pengim,      args: "-opt -i input_fonts/NotoSansTC-VariableFont_wght.ttf -a 'input_fonts/NotoSans-VariableFont_wdth,wght.ttf' --anno-axis wdth=75 -m mappings/teochew/teochew-gdpi.csv -as 0.39 -bs 0.70 -y 0.70" }
+          - { name: NotoSansTC-NotoCond-teochew-puj,         args: "-opt -i input_fonts/NotoSansTC-VariableFont_wght.ttf -a 'input_fonts/NotoSans-VariableFont_wdth,wght.ttf' --anno-axis wdth=75 -m mappings/teochew/teochew-duffus.csv -as 0.39 -bs 0.70 -y 0.70" }
+          - { name: Xiaolai-NotoCond-hero-pengim,            args: "-opt -i input_fonts/XiaolaiSC-Regular.ttf -a 'input_fonts/NotoSans-VariableFont_wdth,wght.ttf' --anno-axis wdth=75 -m mappings/hero-teochew.csv -as 0.38 -bs 0.70 -y 0.67" }
           # === Mandarin (普通話 / 國語) showcase ====================
           # Two regional standards, built from the SAME annotation fonts
           # but DIFFERENT glyph (base) + mapping pairs:
@@ -285,8 +286,8 @@ jobs:
           #     MOE is a Traditional-Chinese dictionary, so the -tw builds use
           #     Noto Sans TC and Xiaolai SC (covers 100% of the common
           #     Traditional set). Noto Serif SC is Simplified-region, -cn only.
-          - { name: NotoSansSC-NotoCond-mandarin-cn,         args: "-opt -i input_fonts/NotoSansSC-VariableFont_wght.ttf -a 'input_fonts/NotoSans-VariableFont_wdth,wght.ttf' --anno-axis wdth=75 -m mappings/mandarin/mandarin-cn-toned-trimmed.csv --diy-annotations diy-mappings/mandarin/pinyin.diy-annotation.csv -as 0.31 -bs 0.70 -y 0.70" }
-          - { name: NotoSansTC-NotoCond-mandarin-tw,         args: "-opt -i input_fonts/NotoSansTC-VariableFont_wght.ttf -a 'input_fonts/NotoSans-VariableFont_wdth,wght.ttf' --anno-axis wdth=75 -m mappings/mandarin/mandarin-tw-toned.csv --diy-annotations diy-mappings/mandarin/pinyin.diy-annotation.csv -as 0.31 -bs 0.70 -y 0.70" }
+          - { name: NotoSansSC-NotoCond-mandarin-cn,         args: "-opt -i input_fonts/NotoSansSC-VariableFont_wght.ttf -a 'input_fonts/NotoSans-VariableFont_wdth,wght.ttf' --anno-axis wdth=75 -m mappings/mandarin/mandarin-cn-toned-trimmed.csv --diy-annotations diy-mappings/mandarin/pinyin.diy-annotation.csv -as 0.39 -bs 0.70 -y 0.70" }
+          - { name: NotoSansTC-NotoCond-mandarin-tw,         args: "-opt -i input_fonts/NotoSansTC-VariableFont_wght.ttf -a 'input_fonts/NotoSans-VariableFont_wdth,wght.ttf' --anno-axis wdth=75 -m mappings/mandarin/mandarin-tw-toned.csv --diy-annotations diy-mappings/mandarin/pinyin.diy-annotation.csv -as 0.39 -bs 0.70 -y 0.70" }
           # 注音 uses Noto Sans TC for the annotation too (Bopomofo, as
           # NotoSansTC-tps); its DIY inventory is typed like pinyin's
           # (字ｂａ２ -> ㄅㄚˊ).
@@ -294,9 +295,9 @@ jobs:
           # Mengshen-equivalent products (source fonts are SIL OFL-1.1, user-supplied in input_fonts/).
           # Serif: Source Han Serif (Noto Serif SC) + condensed Noto Sans — Simplified, -cn only.
           # Handwritten: Xiaolai + condensed Noto Sans; Xiaolai SC covers Traditional, so it builds both -cn and -tw.
-          - { name: SHSerif-NotoCond-mandarin-cn, args: "-opt -i input_fonts/SourceHanSerif-Regular.ttf -a 'input_fonts/NotoSans-VariableFont_wdth,wght.ttf' --anno-axis wdth=75 -m mappings/mandarin/mandarin-cn-toned-trimmed.csv --diy-annotations diy-mappings/mandarin/pinyin.diy-annotation.csv -as 0.31 -bs 0.70 -y 0.70" }
-          - { name: Xiaolai-NotoCond-mandarin-cn,      args: "-opt -i input_fonts/XiaolaiSC-Regular.ttf -a 'input_fonts/NotoSans-VariableFont_wdth,wght.ttf' --anno-axis wdth=75 -m mappings/mandarin/mandarin-cn-toned-trimmed.csv --diy-annotations diy-mappings/mandarin/pinyin.diy-annotation.csv -as 0.30 -bs 0.70 -y 0.67" }
-          - { name: Xiaolai-NotoCond-mandarin-tw,      args: "-opt -i input_fonts/XiaolaiSC-Regular.ttf -a 'input_fonts/NotoSans-VariableFont_wdth,wght.ttf' --anno-axis wdth=75 -m mappings/mandarin/mandarin-tw-toned.csv --diy-annotations diy-mappings/mandarin/pinyin.diy-annotation.csv -as 0.30 -bs 0.70 -y 0.67" }
+          - { name: SHSerif-NotoCond-mandarin-cn, args: "-opt -i input_fonts/SourceHanSerif-Regular.ttf -a 'input_fonts/NotoSans-VariableFont_wdth,wght.ttf' --anno-axis wdth=75 -m mappings/mandarin/mandarin-cn-toned-trimmed.csv --diy-annotations diy-mappings/mandarin/pinyin.diy-annotation.csv -as 0.39 -bs 0.70 -y 0.70" }
+          - { name: Xiaolai-NotoCond-mandarin-cn,      args: "-opt -i input_fonts/XiaolaiSC-Regular.ttf -a 'input_fonts/NotoSans-VariableFont_wdth,wght.ttf' --anno-axis wdth=75 -m mappings/mandarin/mandarin-cn-toned-trimmed.csv --diy-annotations diy-mappings/mandarin/pinyin.diy-annotation.csv -as 0.38 -bs 0.70 -y 0.67" }
+          - { name: Xiaolai-NotoCond-mandarin-tw,      args: "-opt -i input_fonts/XiaolaiSC-Regular.ttf -a 'input_fonts/NotoSans-VariableFont_wdth,wght.ttf' --anno-axis wdth=75 -m mappings/mandarin/mandarin-tw-toned.csv --diy-annotations diy-mappings/mandarin/pinyin.diy-annotation.csv -as 0.38 -bs 0.70 -y 0.67" }
           # === Xiaolai + condensed Noto Sans (handwritten base) =====
           # A consistent base + annotation pairing across every dialect
           # mapping with a Latin romanization
@@ -307,11 +308,11 @@ jobs:
           # Xiaolai gives a warm handwritten 楷書 feel distinct from the
           # existing Noto Sans HK / ChironSung showcase sets. Xiaolai
           # tailo and mandarin-cn/tw live in the sections above.
-          - { name: Xiaolai-NotoCond-lshk,                   args: "-opt -i input_fonts/XiaolaiSC-Regular.ttf -a 'input_fonts/NotoSans-VariableFont_wdth,wght.ttf' --anno-axis wdth=75 -m mappings/cantonese/canto-lshk.csv --diy-annotations diy-mappings/cantonese/lshk.diy-annotation.csv -as 0.30 -bs 0.70 -y 0.67" }
-          - { name: Xiaolai-NotoCond-yale,                   args: "-opt -i input_fonts/XiaolaiSC-Regular.ttf -a 'input_fonts/NotoSans-VariableFont_wdth,wght.ttf' --anno-axis wdth=75 -m mappings/cantonese/canto-yale.csv -as 0.30 -bs 0.70 -y 0.67" }
-          - { name: Xiaolai-NotoCond-lau,                    args: "-opt -i input_fonts/XiaolaiSC-Regular.ttf -a 'input_fonts/NotoSans-VariableFont_wdth,wght.ttf' --anno-axis wdth=75 -m mappings/cantonese/canto-lau.csv -as 0.30 -bs 0.70 -y 0.67" }
-          - { name: Xiaolai-NotoCond-guangdong,              args: "-opt -i input_fonts/XiaolaiSC-Regular.ttf -a 'input_fonts/NotoSans-VariableFont_wdth,wght.ttf' --anno-axis wdth=75 -m mappings/cantonese/canto-guangdong.csv -as 0.30 -bs 0.70 -y 0.67" }
-          - { name: Xiaolai-NotoCond-chishima,               args: "-opt -i input_fonts/XiaolaiSC-Regular.ttf -a 'input_fonts/NotoSans-VariableFont_wdth,wght.ttf' --anno-axis wdth=75 -m mappings/cantonese/canto-chishima.csv -as 0.30 -bs 0.70 -y 0.67" }
+          - { name: Xiaolai-NotoCond-lshk,                   args: "-opt -i input_fonts/XiaolaiSC-Regular.ttf -a 'input_fonts/NotoSans-VariableFont_wdth,wght.ttf' --anno-axis wdth=75 -m mappings/cantonese/canto-lshk.csv --diy-annotations diy-mappings/cantonese/lshk.diy-annotation.csv -as 0.38 -bs 0.70 -y 0.67" }
+          - { name: Xiaolai-NotoCond-yale,                   args: "-opt -i input_fonts/XiaolaiSC-Regular.ttf -a 'input_fonts/NotoSans-VariableFont_wdth,wght.ttf' --anno-axis wdth=75 -m mappings/cantonese/canto-yale.csv -as 0.38 -bs 0.70 -y 0.67" }
+          - { name: Xiaolai-NotoCond-lau,                    args: "-opt -i input_fonts/XiaolaiSC-Regular.ttf -a 'input_fonts/NotoSans-VariableFont_wdth,wght.ttf' --anno-axis wdth=75 -m mappings/cantonese/canto-lau.csv -as 0.38 -bs 0.70 -y 0.67" }
+          - { name: Xiaolai-NotoCond-guangdong,              args: "-opt -i input_fonts/XiaolaiSC-Regular.ttf -a 'input_fonts/NotoSans-VariableFont_wdth,wght.ttf' --anno-axis wdth=75 -m mappings/cantonese/canto-guangdong.csv -as 0.38 -bs 0.70 -y 0.67" }
+          - { name: Xiaolai-NotoCond-chishima,               args: "-opt -i input_fonts/XiaolaiSC-Regular.ttf -a 'input_fonts/NotoSans-VariableFont_wdth,wght.ttf' --anno-axis wdth=75 -m mappings/cantonese/canto-chishima.csv -as 0.38 -bs 0.70 -y 0.67" }
           # Cantonese non-romanization variants on Xiaolai base. Cangjie
           # uses Xiaolai as its own annotation source (input-method
           # radicals render in Xiaolai's hand-drawn style alongside the
@@ -426,9 +427,9 @@ jobs:
           # Latin face, same approximate target on-screen size for
           # 4-8 character romanizations like `sà-wàt-dii`).
           - { name: GoogleSans-Noto-thai-tcahk,         args: "-opt --anno-below -i 'input_fonts/GoogleSans-VariableFont_GRAD,opsz,wght.ttf' -a input_fonts/NotoSerif-Regular.ttf -m mappings/thai/thai-tcahk.csv -as 0.30 --cell-width 1.0" }
-          - { name: Xiaolai-NotoCond-poj,                    args: "-opt -i input_fonts/XiaolaiSC-Regular.ttf -a 'input_fonts/NotoSans-VariableFont_wdth,wght.ttf' --anno-axis wdth=75 -m mappings/taiwanese/taigi-poj-toned.csv -as 0.30 -bs 0.70 -y 0.67" }
-          - { name: Xiaolai-NotoCond-teochew-pengim,         args: "-opt -i input_fonts/XiaolaiSC-Regular.ttf -a 'input_fonts/NotoSans-VariableFont_wdth,wght.ttf' --anno-axis wdth=75 -m mappings/teochew/teochew-gdpi.csv -as 0.30 -bs 0.70 -y 0.67" }
-          - { name: Xiaolai-NotoCond-teochew-puj,            args: "-opt -i input_fonts/XiaolaiSC-Regular.ttf -a 'input_fonts/NotoSans-VariableFont_wdth,wght.ttf' --anno-axis wdth=75 -m mappings/teochew/teochew-duffus.csv -as 0.30 -bs 0.70 -y 0.67" }
+          - { name: Xiaolai-NotoCond-poj,                    args: "-opt -i input_fonts/XiaolaiSC-Regular.ttf -a 'input_fonts/NotoSans-VariableFont_wdth,wght.ttf' --anno-axis wdth=75 -m mappings/taiwanese/taigi-poj-toned.csv -as 0.38 -bs 0.70 -y 0.67" }
+          - { name: Xiaolai-NotoCond-teochew-pengim,         args: "-opt -i input_fonts/XiaolaiSC-Regular.ttf -a 'input_fonts/NotoSans-VariableFont_wdth,wght.ttf' --anno-axis wdth=75 -m mappings/teochew/teochew-gdpi.csv -as 0.38 -bs 0.70 -y 0.67" }
+          - { name: Xiaolai-NotoCond-teochew-puj,            args: "-opt -i input_fonts/XiaolaiSC-Regular.ttf -a 'input_fonts/NotoSans-VariableFont_wdth,wght.ttf' --anno-axis wdth=75 -m mappings/teochew/teochew-duffus.csv -as 0.38 -bs 0.70 -y 0.67" }
           # Japanese — kanji annotated with kana furigana (on'yomi in
           # katakana, kun'yomi in hiragana) plus 熟語 word-context rules.
           # Base Noto Sans JP for native Japanese kanji glyph forms; the
