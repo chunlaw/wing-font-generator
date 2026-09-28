@@ -90,6 +90,9 @@ FONT_FILES: list[str] = [
     "NotoSansArabic-VariableFont_wdth,wght.ttf",
     "Hind-Regular.ttf",
     "NotoSerif-Regular.ttf",
+    # Noto Sans (Latin) with a wdth axis — condensed (--anno-axis
+    # wdth=75) annotation font for the CJK romanization fonts.
+    "NotoSans-VariableFont_wdth,wght.ttf",
     "SourceHanSerif-Regular.ttf",
     "XiaolaiSC-Regular.ttf",
     "mplus-1m-medium.ttf",

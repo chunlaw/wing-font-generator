@@ -119,11 +119,11 @@ python wing-font.py \
   -i input_fonts/ChironSungHK-R.ttf \
   -a input_fonts/NotoSerif-Regular.ttf \
   -m mappings/cantonese/canto-lshk.csv \
-  -o ChironSungHK-Noto-lshk \
+  -o ChironSungHK-NotoCond-lshk \
   -opt -as 0.27
 ```
 
-This writes `ChironSungHK-Noto-lshk.ttf` and `ChironSungHK-Noto-lshk.woff2`
+This writes `ChironSungHK-NotoCond-lshk.ttf` and `ChironSungHK-NotoCond-lshk.woff2`
 to the working directory. Drop the WOFF2 into a page with
 `@font-face { font-family: …; src: url('…') format('woff2') }` and any
 Chinese text using mapped characters will render with romanization

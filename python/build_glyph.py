@@ -27,6 +27,12 @@ from fontTools.pens.recordingPen import DecomposingRecordingPen
 from mappings.csv_parser import WORD_SCRIPTS, get_word_unit_script
 from utils import get_glyph_name_by_char, step_timer
 
+import math
+
+# Minimum clear space (em) between neighbouring annotations when
+# --cell-width is auto-computed.
+AUTO_CELL_GAP = 0.05
+
 GLYPH_PREFIX = "wingfont"
 # DIY manual-annotation mark glyphs (one per CSV-A entry). Named by their
 # Plane-15 PUA codepoint for stable, collision-free names, e.g.
@@ -178,6 +184,7 @@ def generate_annotated_glyphs(
     *,
     anno_scale: float = 0.25,
     anno_spacing: float = 0.0,
+    cell_width: float = 1.0,
     base_scale: float = 0.75,
     upper_y_offset_ratio: float = 0.8,
     invert: bool = False,
@@ -769,6 +776,54 @@ def generate_annotated_glyphs(
                         for c in carets_unscaled
                     ]
 
+        # Readings repeat across many chars — shape each string once.
+        shaped_cache: dict = {}
+
+        def _shaped_cached(anno_str):
+            hit = shaped_cache.get(anno_str)
+            if hit is None:
+                shaped = _shape_with(
+                    hb_font, anno_str, anno_glyph_order, anno_glyph_order_set
+                )
+                hit = shaped_cache[anno_str] = (
+                    shaped, _annotation_width(shaped)
+                )
+            return hit
+
+        # cell_width=None → auto: widen full-width cells just enough that
+        # the longest annotation plus AUTO_CELL_GAP never overlaps its
+        # neighbour's. Multi-syllable readings (containing a space, e.g.
+        # 𠺖 "jing1 mau5") are rare outliers and are ignored — they may
+        # still overlap.
+        if cell_width is None:
+            longest, longest_at = 0, None
+            for ch, annos in mapping.items():
+                if len(ch) != 1:
+                    continue
+                g = get_glyph_name_by_char(base_font, ch)
+                if not isinstance(g, str) or g not in base_glyph_set:
+                    continue
+                if base_hmtx[g][0] != units_per_em:
+                    continue
+                for a in annos:
+                    if " " in a:
+                        continue
+                    w = _shaped_cached(a)[1]
+                    if w > longest:
+                        longest, longest_at = w, f"{ch} {a}"
+            cell_width = max(
+                1.0,
+                math.ceil(
+                    (longest / units_per_em + AUTO_CELL_GAP) * 100
+                ) / 100,
+            )
+            print(
+                f"auto --cell-width {cell_width} (longest annotation "
+                f"{longest / units_per_em:.2f} em: {longest_at})"
+            )
+        if char_metrics is not None:
+            char_metrics["cell_width"] = cell_width
+
         for base_char, anno_strs_dict in mapping.items():
             # Multi-char keys are word-unit entries (Arabic / Thai —
             # see csv_parser.WORD_SCRIPTS); single chars take the
@@ -792,6 +847,18 @@ def generate_annotated_glyphs(
                 continue
 
             base_advance_width = base_hmtx[glyph_name][0]
+            # --cell-width: widen full-width (advance == 1 em, i.e. CJK)
+            # cells only and centre the scaled base (and its annotation)
+            # in the wider cell. Proportional bases (Thai, Latin, …) keep
+            # their advance. At 1.0 this is exactly the old centring.
+            cell_advance = (
+                round(base_advance_width * cell_width)
+                if base_advance_width == units_per_em
+                else base_advance_width
+            )
+            cell_shift = (cell_advance - base_advance_width) / 2 + (
+                1 - base_scale
+            ) * base_advance_width / 2
 
             for i, anno_str in enumerate(anno_strs_dict.keys()):
                 if i == 0:
@@ -823,13 +890,7 @@ def generate_annotated_glyphs(
                 # shaping/layout mechanics are shared with the
                 # word-unit path — see _shape_with /
                 # _annotation_width / _draw_annotation above.
-                anno_shaped = _shape_with(
-                    hb_font,
-                    anno_str,
-                    anno_glyph_order,
-                    anno_glyph_order_set,
-                )
-                anno_len = _annotation_width(anno_shaped)
+                anno_shaped, anno_len = _shaped_cached(anno_str)
                 _draw_annotation(
                     pen,
                     anno_shaped,
@@ -841,7 +902,7 @@ def generate_annotated_glyphs(
                     out_vmtx[new_glyph_name] = base_font["vmtx"][glyph_name]
 
                 out_hmtx[new_glyph_name] = (
-                    base_advance_width,
+                    cell_advance,
                     round(
                         max(
                             0,
@@ -849,7 +910,7 @@ def generate_annotated_glyphs(
                                 (base_advance_width * base_scale - anno_len) / 2,
                                 base_hmtx[glyph_name][1] * base_scale,
                             )
-                            + (1 - base_scale) * base_advance_width / 2,
+                            + cell_shift,
                         )
                     ),
                 )
@@ -898,7 +959,7 @@ def generate_annotated_glyphs(
                 # x-centre the scaled base (same effective placement the
                 # baked composite ends up at), so a DIY-annotated 行 sits
                 # at the same x as the automatic composite 行.
-                bare_x = (base_advance_width * (1 - base_scale)) / 2
+                bare_x = cell_shift
                 _draw_decomposed(
                     base_glyph_set,
                     glyph_name,
@@ -909,7 +970,7 @@ def generate_annotated_glyphs(
                 )
                 out_glyf[bare_name] = bare_pen.glyph()
                 out_hmtx[bare_name] = (
-                    base_advance_width,
+                    cell_advance,
                     round(base_hmtx[glyph_name][1] * base_scale + bare_x),
                 )
                 if out_vmtx is not None and glyph_name in base_glyph_order_set:
@@ -942,6 +1003,7 @@ def scale_glyphs(
     *,
     skip_glyph_names: set[str] | None = None,
     base_axis_location: dict | None = None,
+    cell_width: float = 1.0,
 ):
     """
     Shrink the given glyph names in `output_font` by `base_scale`, using
@@ -976,6 +1038,7 @@ def scale_glyphs(
         out_glyf = output_font["glyf"]
         out_hmtx = output_font["hmtx"]
         inv_base_scale = 1 - base_scale
+        full_width = base_font["head"].unitsPerEm
 
         skipped_no_outline: list[str] = []
         scaled_count = 0
@@ -989,7 +1052,13 @@ def scale_glyphs(
 
             base_advance_width, base_lsb = base_hmtx[glyph_name]
             pen = TTGlyphPen(output_glyph_set)
+            # --cell-width widens full-width (CJK) cells only; Latin and
+            # other proportional glyphs keep their advance.
             x_offset = (base_advance_width * inv_base_scale) / 2
+            if cell_width != 1.0 and base_advance_width == full_width:
+                widened = round(base_advance_width * cell_width)
+                x_offset += (widened - base_advance_width) / 2
+                base_advance_width = widened
             tpen = TransformPen(
                 pen, (base_scale, 0, 0, base_scale, x_offset, 0)
             )

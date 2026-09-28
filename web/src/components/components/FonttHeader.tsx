@@ -23,7 +23,7 @@ interface FontHeaderProps {
  *
  * Source resolution:
  *   The `family` prop can be either a built-in font's machine name
- *   (e.g. "NotoSansHK-Noto-lshk") or a recent-fonts opaque id (e.g.
+ *   (e.g. "NotoSansHK-NotoCond-lshk") or a recent-fonts opaque id (e.g.
  *   "gen-..." for pipeline-generated, "up-..." for uploaded). Built-
  *   in fonts download from the CDN (VITE_FONT_URL/<family>.ttf);
  *   recent-fonts entries download from the IndexedDB-stored bytes

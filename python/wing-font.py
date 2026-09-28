@@ -928,6 +928,7 @@ def _format_cli_invocation(
     base_axis_location,
     anno_axis_location,
     diy_annotations=None,
+    cell_width=None,
 ):
     """Build the equivalent `python wing-font.py ...` command from
     the kwargs main() actually received.
@@ -962,6 +963,8 @@ def _format_cli_invocation(
         parts.append(f"-as {anno_scale}")
     if anno_spacing != 0.0:
         parts.append(f"--anno-spacing {anno_spacing}")
+    if cell_width is not None:
+        parts.append(f"--cell-width {cell_width}")
     if upper_y_offset_ratio != 0.8:
         parts.append(f"-y {upper_y_offset_ratio}")
     if invert:
@@ -1010,6 +1013,7 @@ def main(
     base_scale=0.75,
     anno_scale=0.25,
     anno_spacing=0.0,
+    cell_width=None,
     upper_y_offset_ratio=0.8,
     invert=False,
     anno_below=False,
@@ -1093,6 +1097,7 @@ def main(
         base_scale=base_scale,
         anno_scale=anno_scale,
         anno_spacing=anno_spacing,
+        cell_width=cell_width,
         upper_y_offset_ratio=upper_y_offset_ratio,
         invert=invert,
         anno_below=anno_below,
@@ -1442,6 +1447,7 @@ def main(
         base_scale=base_scale,
         anno_scale=anno_scale,
         anno_spacing=anno_spacing,
+        cell_width=cell_width,
         upper_y_offset_ratio=upper_y_offset_ratio,
         invert=invert,
         anno_below=anno_below,
@@ -1465,6 +1471,8 @@ def main(
         emit_bare_bases=emit_bare_bases,
         bare_base_map=bare_base_map,
     )
+    # Resolve auto (None) --cell-width to what composition picked.
+    cell_width = char_metrics.get("cell_width", cell_width or 1.0)
     # The base-font blob was only needed for HarfBuzz shaping of word
     # entries during composition; release it before the GSUB phase.
     del base_font_bytes
@@ -1491,6 +1499,9 @@ def main(
             # composite of the same string should land at identical y.
             base_descent=min(0, base_font["hhea"].descent),
             base_scale=base_scale,
+            assumed_base_advance=round(
+                output_font["head"].unitsPerEm * cell_width
+            ),
             mark_x_offset=mark_x_offset,
             anno_axis_location=anno_axis_location,
             base_axis_location=base_axis_location,
@@ -1796,6 +1807,7 @@ def main(
             base_scale,
             skip_glyph_names=processed,
             base_axis_location=base_axis_location,
+            cell_width=cell_width,
         )
 
         # Variation-selector codepoints for the IVS (cmap format-14)
@@ -1920,6 +1932,7 @@ def main(
             base_scale,
             skip_glyph_names=processed,
             base_axis_location=base_axis_location,
+            cell_width=cell_width,
         )
 
     # --- Phase 4: save ---------------------------------------------------
@@ -2109,6 +2122,20 @@ if __name__ == "__main__":
     parser.add_argument('-y', '--upper_y_offset_ratio', type=float, default=0.8, help="Y offset in (percentage) for the upper string")
     parser.add_argument('-bs', '--base-scale', type=float, default=0.75, help="The scaling factor for the base font")
     parser.add_argument('-as', '--anno-scale', type=float, default=0.25, help="The scaling factor for the annotation glyphs, as a fraction of the output em (UPM-independent: same visual size regardless of the annotation font's unitsPerEm)")
+    parser.add_argument(
+        '--cell-width',
+        type=float,
+        default=None,
+        help=(
+            "Advance of every full-width (CJK) glyph as a multiple of the "
+            "base font's advance. >1 widens the cell uniformly so wider "
+            "annotations fit without colliding (acts like letter-spacing "
+            "on CJK only). Default: auto — just wide enough that the "
+            "longest single-syllable annotation (readings with a space "
+            "are ignored) keeps a 0.05 em gap to its neighbour "
+            "(never below 1.0). Pass 1.0 to keep the base font's width."
+        ),
+    )
     parser.add_argument(
         '--anno-spacing',
         type=float,
@@ -2307,6 +2334,7 @@ if __name__ == "__main__":
         base_scale=options.base_scale,
         anno_scale=options.anno_scale,
         anno_spacing=options.anno_spacing,
+        cell_width=options.cell_width,
         upper_y_offset_ratio=options.upper_y_offset_ratio,
         invert=options.invert,
         anno_below=options.anno_below,

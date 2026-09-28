@@ -84,17 +84,17 @@ const HERO_SAMPLES: { lines: [string, string]; fontFamily: string }[] = [
     // visually mismatch the Xiaolai 楷書 we're rendering when the
     // subset arrives ~50-100 ms later).
     fontFamily:
-      '"Xiaolai-Huninn-hero-sample", "Kaiti TC", "標楷體", "DFKai-SB", "STKaiti", serif',
+      '"Xiaolai-NotoCond-hero-sample", "Kaiti TC", "標楷體", "DFKai-SB", "STKaiti", serif',
   },
   {
     lines: ["家己的歌家己唱", "家己的字家己選"],
     fontFamily:
-      '"Xiaolai-Huninn-hero-tailo", "Kaiti TC", "標楷體", "DFKai-SB", "STKaiti", serif',
+      '"Xiaolai-NotoCond-hero-tailo", "Kaiti TC", "標楷體", "DFKai-SB", "STKaiti", serif',
   },
   {
     lines: ["家己个歌家己唱", "家己个字家己揀"],
     fontFamily:
-      '"Xiaolai-Huninn-hero-pengim", "Kaiti TC", "標楷體", "DFKai-SB", "STKaiti", serif',
+      '"Xiaolai-NotoCond-hero-pengim", "Kaiti TC", "標楷體", "DFKai-SB", "STKaiti", serif',
   },
 ];
 

@@ -28,7 +28,7 @@
      history or Inkscape's own docs.)
 
   Either way, the @font-face below pulls the actual product font
-  (Xiaolai-Huninn-hero-sample.woff) at render time. That woff is the
+  (Xiaolai-NotoCond-hero-sample.woff) at render time. That woff is the
   ~25 KB hero subset that already powers the home-page hero — the
   characters 各 有 唱 自 己 歌 找 我 each carry their LSHK Jyutping
   annotation baked into the glyph outline. So rendering the bare
@@ -80,8 +80,8 @@
         plain CJK characters without the annotation stack we ship.
       */
       @font-face {
-        font-family: "Xiaolai-Huninn-hero-sample";
-        src: url("https://wing-font.chunlaw.io/fonts/Xiaolai-Huninn-hero-sample.woff") format("woff");
+        font-family: "Xiaolai-NotoCond-hero-sample";
+        src: url("https://wing-font.chunlaw.io/fonts/Xiaolai-NotoCond-hero-sample.woff") format("woff");
         font-display: block;
       }
 
@@ -113,7 +113,7 @@
         letter-spacing on top of that reads as awkward.
       */
       .hero {
-        font-family: "Xiaolai-Huninn-hero-sample",
+        font-family: "Xiaolai-NotoCond-hero-sample",
           "Kaiti TC", "標楷體", "DFKai-SB", "STKaiti", serif;
         font-size: 120px;
         fill: #1a2332;

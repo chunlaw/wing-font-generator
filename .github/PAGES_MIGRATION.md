@@ -35,7 +35,7 @@ drags down ~150 MB of generated fonts.
    fonts from cache and deploy in seconds.
 
 4. **Verify** https://wing-fonts.chunlaw.io loads and a font URL such as
-   https://wing-fonts.chunlaw.io/fonts/ChironSungHK-Noto-lshk.woff
+   https://wing-fonts.chunlaw.io/fonts/ChironSungHK-NotoCond-lshk.woff
    resolves.
 
 5. **Delete the `gh-pages` branch** — this is the step that actually

@@ -299,8 +299,8 @@ export const AVAILABLE_FONTS: FontSet = {
     // Order matters; do not alphabetise.
     //
     // History of the default:
-    //   * ChironSungHK-Noto-lshk             — original (HK-serif)
-    //   * NotoSansHK-Noto-lshk               — June 2026 (smaller
+    //   * ChironSungHK-NotoCond-lshk             — original (HK-serif)
+    //   * NotoSansHK-NotoCond-lshk               — June 2026 (smaller
     //                                          WOFF, HK-locale Han)
     //   * NotoSansTC-Huninn-Regular-tonemark — attempted briefly;
     //     rolled back. NotoSansTC's family-name signal made Word's
@@ -339,34 +339,34 @@ export const AVAILABLE_FONTS: FontSet = {
         source: `url(${import.meta.env.VITE_FONT_URL}/NotoSansHK-Huninn-tonemark.woff2) format('woff2')`,
         group: CANTO_GROUP_JYUTPING,
       },
-      "NotoSansHK-Noto-lshk": {
+      "NotoSansHK-NotoCond-lshk": {
         displayName: "思源黑體 香港（粵拼）",
-        name: "NotoSansHK-Noto-lshk",
-        source: `url(${import.meta.env.VITE_FONT_URL}/NotoSansHK-Noto-lshk.woff2) format('woff2')`,
+        name: "NotoSansHK-NotoCond-lshk",
+        source: `url(${import.meta.env.VITE_FONT_URL}/NotoSansHK-NotoCond-lshk.woff2) format('woff2')`,
         group: CANTO_GROUP_JYUTPING,
       },
-      "NotoSansHK-Noto-yale": {
+      "NotoSansHK-NotoCond-yale": {
         displayName: "思源黑體 香港（耶魯拼音）",
-        name: "NotoSansHK-Noto-yale",
-        source: `url(${import.meta.env.VITE_FONT_URL}/NotoSansHK-Noto-yale.woff2) format('woff2')`,
+        name: "NotoSansHK-NotoCond-yale",
+        source: `url(${import.meta.env.VITE_FONT_URL}/NotoSansHK-NotoCond-yale.woff2) format('woff2')`,
         group: CANTO_GROUP_YALE,
       },
-      "NotoSansHK-Noto-lau": {
+      "NotoSansHK-NotoCond-lau": {
         displayName: "思源黑體 香港（劉錫祥）",
-        name: "NotoSansHK-Noto-lau",
-        source: `url(${import.meta.env.VITE_FONT_URL}/NotoSansHK-Noto-lau.woff2) format('woff2')`,
+        name: "NotoSansHK-NotoCond-lau",
+        source: `url(${import.meta.env.VITE_FONT_URL}/NotoSansHK-NotoCond-lau.woff2) format('woff2')`,
         group: CANTO_GROUP_LAU,
       },
-      "NotoSansHK-Noto-guangdong": {
+      "NotoSansHK-NotoCond-guangdong": {
         displayName: "思源黑體 香港（廣州話拼音方案）",
-        name: "NotoSansHK-Noto-guangdong",
-        source: `url(${import.meta.env.VITE_FONT_URL}/NotoSansHK-Noto-guangdong.woff2) format('woff2')`,
+        name: "NotoSansHK-NotoCond-guangdong",
+        source: `url(${import.meta.env.VITE_FONT_URL}/NotoSansHK-NotoCond-guangdong.woff2) format('woff2')`,
         group: CANTO_GROUP_GUANGDONG,
       },
-      "NotoSansHK-Noto-chishima": {
+      "NotoSansHK-NotoCond-chishima": {
         displayName: "思源黑體 香港（千島）",
-        name: "NotoSansHK-Noto-chishima",
-        source: `url(${import.meta.env.VITE_FONT_URL}/NotoSansHK-Noto-chishima.woff2) format('woff2')`,
+        name: "NotoSansHK-NotoCond-chishima",
+        source: `url(${import.meta.env.VITE_FONT_URL}/NotoSansHK-NotoCond-chishima.woff2) format('woff2')`,
         group: CANTO_GROUP_CHISHIMA,
       },
       "NotoSansHK-cangjie": {
@@ -407,34 +407,34 @@ export const AVAILABLE_FONTS: FontSet = {
       // the longer download in exchange for the typographic style.
       // The FontPicker dropdown surfaces both — HK Sans first (as
       // the default), Chiron Sung after.
-      "ChironSungHK-Noto-lshk": {
+      "ChironSungHK-NotoCond-lshk": {
         displayName: "昭源宋體（粵拼）",
-        name: "ChironSungHK-Noto-lshk",
-        source: `url(${import.meta.env.VITE_FONT_URL}/ChironSungHK-Noto-lshk.woff2) format('woff2')`,
+        name: "ChironSungHK-NotoCond-lshk",
+        source: `url(${import.meta.env.VITE_FONT_URL}/ChironSungHK-NotoCond-lshk.woff2) format('woff2')`,
         group: CANTO_GROUP_JYUTPING,
       },
-      "ChironSungHK-Noto-yale": {
+      "ChironSungHK-NotoCond-yale": {
         displayName: "昭源宋體（耶魯拼音）",
-        name: "ChironSungHK-Noto-yale",
-        source: `url(${import.meta.env.VITE_FONT_URL}/ChironSungHK-Noto-yale.woff2) format('woff2')`,
+        name: "ChironSungHK-NotoCond-yale",
+        source: `url(${import.meta.env.VITE_FONT_URL}/ChironSungHK-NotoCond-yale.woff2) format('woff2')`,
         group: CANTO_GROUP_YALE,
       },
-      "ChironSungHK-Noto-lau": {
+      "ChironSungHK-NotoCond-lau": {
         displayName: "昭源宋體（劉錫祥）",
-        name: "ChironSungHK-Noto-lau",
-        source: `url(${import.meta.env.VITE_FONT_URL}/ChironSungHK-Noto-lau.woff2) format('woff2')`,
+        name: "ChironSungHK-NotoCond-lau",
+        source: `url(${import.meta.env.VITE_FONT_URL}/ChironSungHK-NotoCond-lau.woff2) format('woff2')`,
         group: CANTO_GROUP_LAU,
       },
-      "ChironSungHK-Noto-guangdong": {
+      "ChironSungHK-NotoCond-guangdong": {
         displayName: "昭源宋體（廣州話拼音方案）",
-        name: "ChironSungHK-Noto-guangdong",
-        source: `url(${import.meta.env.VITE_FONT_URL}/ChironSungHK-Noto-guangdong.woff2) format('woff2')`,
+        name: "ChironSungHK-NotoCond-guangdong",
+        source: `url(${import.meta.env.VITE_FONT_URL}/ChironSungHK-NotoCond-guangdong.woff2) format('woff2')`,
         group: CANTO_GROUP_GUANGDONG,
       },
-      "ChironSungHK-Noto-chishima": {
+      "ChironSungHK-NotoCond-chishima": {
         displayName: "昭源宋體（千島）",
-        name: "ChironSungHK-Noto-chishima",
-        source: `url(${import.meta.env.VITE_FONT_URL}/ChironSungHK-Noto-chishima.woff2) format('woff2')`,
+        name: "ChironSungHK-NotoCond-chishima",
+        source: `url(${import.meta.env.VITE_FONT_URL}/ChironSungHK-NotoCond-chishima.woff2) format('woff2')`,
         group: CANTO_GROUP_CHISHIMA,
       },
       "ChironSungHK-cangjie": {
@@ -467,49 +467,49 @@ export const AVAILABLE_FONTS: FontSet = {
         source: `url(${import.meta.env.VITE_FONT_URL}/ChironSungHK-NotoNastaliq-urdu.woff2) format('woff2')`,
         group: CANTO_GROUP_SORAMIMI,
       },
-      // ─ Xiaolai (小賴) + Huninn pairing ────────────────────────────
+      // ─ Xiaolai (小賴) + condensed Noto Sans ───────────────────────
       // Handwritten 楷書-style base font (Xiaolai, OFL) with the
-      // Latin-friendly Huninn (jf-openhuninn) annotation set.
+      // condensed Noto Sans (wdth 75) annotation set.
       // Visually distinct from the Noto Sans HK and ChironSung HK
       // groups above — the warm hand-drawn strokes read well for
       // dialect-learning material, classroom worksheets, and
       // children's books. Also introduces three Cantonese
       // romanization schemes that weren't previously surfaced in
       // the showcase: Lau (劉錫祥), Guangdong PRC, and Chishima.
-      "Xiaolai-Huninn-lshk": {
+      "Xiaolai-NotoCond-lshk": {
         displayName: "小賴字體（粵拼）",
-        name: "Xiaolai-Huninn-lshk",
-        source: `url(${import.meta.env.VITE_FONT_URL}/Xiaolai-Huninn-lshk.woff2) format('woff2')`,
+        name: "Xiaolai-NotoCond-lshk",
+        source: `url(${import.meta.env.VITE_FONT_URL}/Xiaolai-NotoCond-lshk.woff2) format('woff2')`,
         group: CANTO_GROUP_JYUTPING,
       },
-      "Xiaolai-Huninn-yale": {
+      "Xiaolai-NotoCond-yale": {
         displayName: "小賴字體（耶魯拼音）",
-        name: "Xiaolai-Huninn-yale",
-        source: `url(${import.meta.env.VITE_FONT_URL}/Xiaolai-Huninn-yale.woff2) format('woff2')`,
+        name: "Xiaolai-NotoCond-yale",
+        source: `url(${import.meta.env.VITE_FONT_URL}/Xiaolai-NotoCond-yale.woff2) format('woff2')`,
         group: CANTO_GROUP_YALE,
       },
-      "Xiaolai-Huninn-lau": {
+      "Xiaolai-NotoCond-lau": {
         displayName: "小賴字體（劉錫祥）",
-        name: "Xiaolai-Huninn-lau",
-        source: `url(${import.meta.env.VITE_FONT_URL}/Xiaolai-Huninn-lau.woff2) format('woff2')`,
+        name: "Xiaolai-NotoCond-lau",
+        source: `url(${import.meta.env.VITE_FONT_URL}/Xiaolai-NotoCond-lau.woff2) format('woff2')`,
         group: CANTO_GROUP_LAU,
       },
-      "Xiaolai-Huninn-guangdong": {
+      "Xiaolai-NotoCond-guangdong": {
         displayName: "小賴字體（廣州話拼音方案）",
-        name: "Xiaolai-Huninn-guangdong",
-        source: `url(${import.meta.env.VITE_FONT_URL}/Xiaolai-Huninn-guangdong.woff2) format('woff2')`,
+        name: "Xiaolai-NotoCond-guangdong",
+        source: `url(${import.meta.env.VITE_FONT_URL}/Xiaolai-NotoCond-guangdong.woff2) format('woff2')`,
         group: CANTO_GROUP_GUANGDONG,
       },
-      "Xiaolai-Huninn-chishima": {
+      "Xiaolai-NotoCond-chishima": {
         displayName: "小賴字體（千島）",
-        name: "Xiaolai-Huninn-chishima",
-        source: `url(${import.meta.env.VITE_FONT_URL}/Xiaolai-Huninn-chishima.woff2) format('woff2')`,
+        name: "Xiaolai-NotoCond-chishima",
+        source: `url(${import.meta.env.VITE_FONT_URL}/Xiaolai-NotoCond-chishima.woff2) format('woff2')`,
         group: CANTO_GROUP_CHISHIMA,
       },
-      "Xiaolai-Huninn-hero-sample": {
+      "Xiaolai-NotoCond-hero-sample": {
         displayName: "小賴字體（首頁示範・粵拼，只含示範字）",
-        name: "Xiaolai-Huninn-hero-sample",
-        source: `url(${import.meta.env.VITE_FONT_URL}/Xiaolai-Huninn-hero-sample.woff2) format('woff2')`,
+        name: "Xiaolai-NotoCond-hero-sample",
+        source: `url(${import.meta.env.VITE_FONT_URL}/Xiaolai-NotoCond-hero-sample.woff2) format('woff2')`,
         group: CANTO_GROUP_JYUTPING,
       },
       // Xiaolai-base non-romanization companions. Annotation font
@@ -611,7 +611,7 @@ export const AVAILABLE_FONTS: FontSet = {
   // reading and is NOT one of the nine survey points — so the accents
   // are not a superset of the standard; they're listed together here as
   // a single 臺語 category. Bases: Noto Sans TC (思源黑體) and Xiaolai
-  // (小賴), romanization in Huninn / M+ Rounded 1c. .woff files are
+  // (小賴), romanization in condensed Noto Sans. .woff files are
   // produced by .github/workflows/deploy-pages.yml.
   taiwanese: {
     lang: {
@@ -619,129 +619,123 @@ export const AVAILABLE_FONTS: FontSet = {
       en: "Taiwanese / Southern Min",
     },
     fonts: {
-      // 優勢腔 standard reading (KipUnicode), Noto Sans TC + Huninn —
+      // 優勢腔 standard reading (KipUnicode), Noto Sans TC + condensed Noto Sans —
       // Tâi-lô and 白話字. The 優勢腔 is the MOE prestige/"common"
       // reading; it is NOT any single one of the nine survey points below.
-      "NotoSansTC-Huninn-tailo": {
+      "NotoSansTC-NotoCond-tailo": {
         displayName: "思源黑體（台羅・優勢腔）",
-        name: "NotoSansTC-Huninn-tailo",
-        source: `url(${import.meta.env.VITE_FONT_URL}/NotoSansTC-Huninn-tailo.woff2) format('woff2')`,
+        name: "NotoSansTC-NotoCond-tailo",
+        source: `url(${import.meta.env.VITE_FONT_URL}/NotoSansTC-NotoCond-tailo.woff2) format('woff2')`,
       },
-      "NotoSansTC-Huninn-poj": {
+      "NotoSansTC-NotoCond-poj": {
         displayName: "思源黑體（白話字・優勢腔）",
-        name: "NotoSansTC-Huninn-poj",
-        source: `url(${import.meta.env.VITE_FONT_URL}/NotoSansTC-Huninn-poj.woff2) format('woff2')`,
+        name: "NotoSansTC-NotoCond-poj",
+        source: `url(${import.meta.env.VITE_FONT_URL}/NotoSansTC-NotoCond-poj.woff2) format('woff2')`,
       },
-      // 優勢腔 standard on the Xiaolai handwritten 楷書 base, in two
-      // annotation styles: Huninn and the rounder M+ Rounded 1c.
-      "Xiaolai-Huninn-tailo": {
-        displayName: "小賴字體（台羅・優勢腔）",
-        name: "Xiaolai-Huninn-tailo",
-        source: `url(${import.meta.env.VITE_FONT_URL}/Xiaolai-Huninn-tailo.woff2) format('woff2')`,
-      },
-      "Xiaolai-Huninn-poj": {
+      // 優勢腔 standard on the Xiaolai handwritten 楷書 base.
+      "Xiaolai-NotoCond-poj": {
         displayName: "小賴字體（白話字・優勢腔）",
-        name: "Xiaolai-Huninn-poj",
-        source: `url(${import.meta.env.VITE_FONT_URL}/Xiaolai-Huninn-poj.woff2) format('woff2')`,
+        name: "Xiaolai-NotoCond-poj",
+        source: `url(${import.meta.env.VITE_FONT_URL}/Xiaolai-NotoCond-poj.woff2) format('woff2')`,
       },
-      "Xiaolai-MplusRounded-tailo": {
-        displayName: "小賴圓體（台羅・優勢腔）",
-        name: "Xiaolai-MplusRounded-tailo",
-        source: `url(${import.meta.env.VITE_FONT_URL}/Xiaolai-MplusRounded-tailo.woff2) format('woff2')`,
+      "Xiaolai-NotoCond-tailo": {
+        displayName: "小賴字體（台羅・優勢腔）",
+        name: "Xiaolai-NotoCond-tailo",
+        source: `url(${import.meta.env.VITE_FONT_URL}/Xiaolai-NotoCond-tailo.woff2) format('woff2')`,
       },
       // Nine 腔 (accent) survey points — the same MOE 語音差異 data, each
-      // in two pairings (思源黑體 / 小賴圓體), all Tâi-lô. 漳/泉 splits
+      // in two pairings (思源黑體 / 小賴字體), all Tâi-lô. 漳/泉 splits
       // (雞 ke/kue/kere, 飯 pn̄g/puīnn) are real here; the entries above
       // are the 優勢腔 standard, which is not one of these nine points.
-      "NotoSansTC-Huninn-taipak": {
+      "NotoSansTC-NotoCond-taipak": {
         displayName: "思源黑體（台北腔）",
-        name: "NotoSansTC-Huninn-taipak",
-        source: `url(${import.meta.env.VITE_FONT_URL}/NotoSansTC-Huninn-taipak.woff2) format('woff2')`,
+        name: "NotoSansTC-NotoCond-taipak",
+        source: `url(${import.meta.env.VITE_FONT_URL}/NotoSansTC-NotoCond-taipak.woff2) format('woff2')`,
       },
-      "Xiaolai-MplusRounded-taipak": {
-        displayName: "小賴圓體（台北腔）",
-        name: "Xiaolai-MplusRounded-taipak",
-        source: `url(${import.meta.env.VITE_FONT_URL}/Xiaolai-MplusRounded-taipak.woff2) format('woff2')`,
+      "Xiaolai-NotoCond-taipak": {
+        displayName: "小賴字體（台北腔）",
+        name: "Xiaolai-NotoCond-taipak",
+        source: `url(${import.meta.env.VITE_FONT_URL}/Xiaolai-NotoCond-taipak.woff2) format('woff2')`,
       },
-      "NotoSansTC-Huninn-sannkiap": {
+      "NotoSansTC-NotoCond-sannkiap": {
         displayName: "思源黑體（三峽腔）",
-        name: "NotoSansTC-Huninn-sannkiap",
-        source: `url(${import.meta.env.VITE_FONT_URL}/NotoSansTC-Huninn-sannkiap.woff2) format('woff2')`,
+        name: "NotoSansTC-NotoCond-sannkiap",
+        source: `url(${import.meta.env.VITE_FONT_URL}/NotoSansTC-NotoCond-sannkiap.woff2) format('woff2')`,
       },
-      "Xiaolai-MplusRounded-sannkiap": {
-        displayName: "小賴圓體（三峽腔）",
-        name: "Xiaolai-MplusRounded-sannkiap",
-        source: `url(${import.meta.env.VITE_FONT_URL}/Xiaolai-MplusRounded-sannkiap.woff2) format('woff2')`,
+      "Xiaolai-NotoCond-sannkiap": {
+        displayName: "小賴字體（三峽腔）",
+        name: "Xiaolai-NotoCond-sannkiap",
+        source: `url(${import.meta.env.VITE_FONT_URL}/Xiaolai-NotoCond-sannkiap.woff2) format('woff2')`,
       },
-      "NotoSansTC-Huninn-sintik": {
+      "NotoSansTC-NotoCond-sintik": {
         displayName: "思源黑體（新竹腔）",
-        name: "NotoSansTC-Huninn-sintik",
-        source: `url(${import.meta.env.VITE_FONT_URL}/NotoSansTC-Huninn-sintik.woff2) format('woff2')`,
+        name: "NotoSansTC-NotoCond-sintik",
+        source: `url(${import.meta.env.VITE_FONT_URL}/NotoSansTC-NotoCond-sintik.woff2) format('woff2')`,
       },
-      "Xiaolai-MplusRounded-sintik": {
-        displayName: "小賴圓體（新竹腔）",
-        name: "Xiaolai-MplusRounded-sintik",
-        source: `url(${import.meta.env.VITE_FONT_URL}/Xiaolai-MplusRounded-sintik.woff2) format('woff2')`,
+      "Xiaolai-NotoCond-sintik": {
+        displayName: "小賴字體（新竹腔）",
+        name: "Xiaolai-NotoCond-sintik",
+        source: `url(${import.meta.env.VITE_FONT_URL}/Xiaolai-NotoCond-sintik.woff2) format('woff2')`,
       },
-      "NotoSansTC-Huninn-taitiong": {
+      "NotoSansTC-NotoCond-taitiong": {
         displayName: "思源黑體（台中腔）",
-        name: "NotoSansTC-Huninn-taitiong",
-        source: `url(${import.meta.env.VITE_FONT_URL}/NotoSansTC-Huninn-taitiong.woff2) format('woff2')`,
+        name: "NotoSansTC-NotoCond-taitiong",
+        source: `url(${import.meta.env.VITE_FONT_URL}/NotoSansTC-NotoCond-taitiong.woff2) format('woff2')`,
       },
-      "Xiaolai-MplusRounded-taitiong": {
-        displayName: "小賴圓體（台中腔）",
-        name: "Xiaolai-MplusRounded-taitiong",
-        source: `url(${import.meta.env.VITE_FONT_URL}/Xiaolai-MplusRounded-taitiong.woff2) format('woff2')`,
+      "Xiaolai-NotoCond-taitiong": {
+        displayName: "小賴字體（台中腔）",
+        name: "Xiaolai-NotoCond-taitiong",
+        source: `url(${import.meta.env.VITE_FONT_URL}/Xiaolai-NotoCond-taitiong.woff2) format('woff2')`,
       },
-      "NotoSansTC-Huninn-lokkang": {
+      "NotoSansTC-NotoCond-lokkang": {
         displayName: "思源黑體（鹿港腔）",
-        name: "NotoSansTC-Huninn-lokkang",
-        source: `url(${import.meta.env.VITE_FONT_URL}/NotoSansTC-Huninn-lokkang.woff2) format('woff2')`,
+        name: "NotoSansTC-NotoCond-lokkang",
+        source: `url(${import.meta.env.VITE_FONT_URL}/NotoSansTC-NotoCond-lokkang.woff2) format('woff2')`,
       },
-      "Xiaolai-MplusRounded-lokkang": {
-        displayName: "小賴圓體（鹿港腔）",
-        name: "Xiaolai-MplusRounded-lokkang",
-        source: `url(${import.meta.env.VITE_FONT_URL}/Xiaolai-MplusRounded-lokkang.woff2) format('woff2')`,
+      "Xiaolai-NotoCond-lokkang": {
+        displayName: "小賴字體（鹿港腔）",
+        name: "Xiaolai-NotoCond-lokkang",
+        source: `url(${import.meta.env.VITE_FONT_URL}/Xiaolai-NotoCond-lokkang.woff2) format('woff2')`,
       },
-      "NotoSansTC-Huninn-tailam": {
+      "NotoSansTC-NotoCond-tailam": {
         displayName: "思源黑體（台南腔）",
-        name: "NotoSansTC-Huninn-tailam",
-        source: `url(${import.meta.env.VITE_FONT_URL}/NotoSansTC-Huninn-tailam.woff2) format('woff2')`,
+        name: "NotoSansTC-NotoCond-tailam",
+        source: `url(${import.meta.env.VITE_FONT_URL}/NotoSansTC-NotoCond-tailam.woff2) format('woff2')`,
       },
-      "Xiaolai-MplusRounded-tailam": {
-        displayName: "小賴圓體（台南腔）",
-        name: "Xiaolai-MplusRounded-tailam",
-        source: `url(${import.meta.env.VITE_FONT_URL}/Xiaolai-MplusRounded-tailam.woff2) format('woff2')`,
+      "Xiaolai-NotoCond-tailam": {
+        displayName: "小賴字體（台南腔）",
+        name: "Xiaolai-NotoCond-tailam",
+        source: `url(${import.meta.env.VITE_FONT_URL}/Xiaolai-NotoCond-tailam.woff2) format('woff2')`,
       },
-      "NotoSansTC-Huninn-kohiong": {
+      "NotoSansTC-NotoCond-kohiong": {
         displayName: "思源黑體（高雄腔）",
-        name: "NotoSansTC-Huninn-kohiong",
-        source: `url(${import.meta.env.VITE_FONT_URL}/NotoSansTC-Huninn-kohiong.woff2) format('woff2')`,
+        name: "NotoSansTC-NotoCond-kohiong",
+        source: `url(${import.meta.env.VITE_FONT_URL}/NotoSansTC-NotoCond-kohiong.woff2) format('woff2')`,
       },
-      "Xiaolai-MplusRounded-kohiong": {
-        displayName: "小賴圓體（高雄腔）",
-        name: "Xiaolai-MplusRounded-kohiong",
-        source: `url(${import.meta.env.VITE_FONT_URL}/Xiaolai-MplusRounded-kohiong.woff2) format('woff2')`,
+      "Xiaolai-NotoCond-kohiong": {
+        displayName: "小賴字體（高雄腔）",
+        name: "Xiaolai-NotoCond-kohiong",
+        source: `url(${import.meta.env.VITE_FONT_URL}/Xiaolai-NotoCond-kohiong.woff2) format('woff2')`,
       },
-      "NotoSansTC-Huninn-gilan": {
+      "NotoSansTC-NotoCond-gilan": {
         displayName: "思源黑體（宜蘭腔）",
-        name: "NotoSansTC-Huninn-gilan",
-        source: `url(${import.meta.env.VITE_FONT_URL}/NotoSansTC-Huninn-gilan.woff2) format('woff2')`,
+        name: "NotoSansTC-NotoCond-gilan",
+        source: `url(${import.meta.env.VITE_FONT_URL}/NotoSansTC-NotoCond-gilan.woff2) format('woff2')`,
       },
-      "Xiaolai-MplusRounded-gilan": {
-        displayName: "小賴圓體（宜蘭腔）",
-        name: "Xiaolai-MplusRounded-gilan",
-        source: `url(${import.meta.env.VITE_FONT_URL}/Xiaolai-MplusRounded-gilan.woff2) format('woff2')`,
+      "Xiaolai-NotoCond-gilan": {
+        displayName: "小賴字體（宜蘭腔）",
+        name: "Xiaolai-NotoCond-gilan",
+        source: `url(${import.meta.env.VITE_FONT_URL}/Xiaolai-NotoCond-gilan.woff2) format('woff2')`,
       },
-      "NotoSansTC-Huninn-manking": {
+      "NotoSansTC-NotoCond-manking": {
         displayName: "思源黑體（馬公腔）",
-        name: "NotoSansTC-Huninn-manking",
-        source: `url(${import.meta.env.VITE_FONT_URL}/NotoSansTC-Huninn-manking.woff2) format('woff2')`,
+        name: "NotoSansTC-NotoCond-manking",
+        source: `url(${import.meta.env.VITE_FONT_URL}/NotoSansTC-NotoCond-manking.woff2) format('woff2')`,
       },
-      "Xiaolai-MplusRounded-manking": {
-        displayName: "小賴圓體（馬公腔）",
-        name: "Xiaolai-MplusRounded-manking",
-        source: `url(${import.meta.env.VITE_FONT_URL}/Xiaolai-MplusRounded-manking.woff2) format('woff2')`,
+      "Xiaolai-NotoCond-manking": {
+        displayName: "小賴字體（馬公腔）",
+        name: "Xiaolai-NotoCond-manking",
+        source: `url(${import.meta.env.VITE_FONT_URL}/Xiaolai-NotoCond-manking.woff2) format('woff2')`,
       },
       "NotoSansTC-tps": {
         displayName: "思源黑體（方音符號）",
@@ -753,16 +747,16 @@ export const AVAILABLE_FONTS: FontSet = {
         name: "NotoSansTC-NotoJP-kana",
         source: `url(${import.meta.env.VITE_FONT_URL}/NotoSansTC-NotoJP-kana.woff2) format('woff2')`,
       },
-      "Xiaolai-Huninn-hero-tailo": {
+      "Xiaolai-NotoCond-hero-tailo": {
         displayName: "小賴字體（首頁示範・台羅，只含示範字）",
-        name: "Xiaolai-Huninn-hero-tailo",
-        source: `url(${import.meta.env.VITE_FONT_URL}/Xiaolai-Huninn-hero-tailo.woff2) format('woff2')`,
+        name: "Xiaolai-NotoCond-hero-tailo",
+        source: `url(${import.meta.env.VITE_FONT_URL}/Xiaolai-NotoCond-hero-tailo.woff2) format('woff2')`,
       },
     },
   },
   // Teochew / Min Nan (潮州話) — the second non-Cantonese dialect
   // showcased, sharing the Taiwanese pairing: Noto Sans TC base CJK
-  // font + Huninn (jf-openhuninn) for the romanization (Huninn carries
+  // font + condensed Noto Sans for the romanization (it carries
   // the Pe̍h-ūe-jī diacritics — combining tilde, dot-above, diaeresis-
   // below — plus the nasal ⁿ U+207F). Two entries mirror the
   // Cantonese LSHK / Yale pairing: a primary modern romanization
@@ -776,31 +770,31 @@ export const AVAILABLE_FONTS: FontSet = {
       en: "Teochew / Min Nan",
     },
     fonts: {
-      "NotoSansTC-Huninn-pengim": {
+      "NotoSansTC-NotoCond-pengim": {
         displayName: "思源黑體（潮拼）",
-        name: "NotoSansTC-Huninn-pengim",
-        source: `url(${import.meta.env.VITE_FONT_URL}/NotoSansTC-Huninn-pengim.woff2) format('woff2')`,
+        name: "NotoSansTC-NotoCond-pengim",
+        source: `url(${import.meta.env.VITE_FONT_URL}/NotoSansTC-NotoCond-pengim.woff2) format('woff2')`,
       },
-      "NotoSansTC-Huninn-teochew-puj": {
+      "NotoSansTC-NotoCond-teochew-puj": {
         displayName: "思源黑體（潮州白話字）",
-        name: "NotoSansTC-Huninn-teochew-puj",
-        source: `url(${import.meta.env.VITE_FONT_URL}/NotoSansTC-Huninn-teochew-puj.woff2) format('woff2')`,
+        name: "NotoSansTC-NotoCond-teochew-puj",
+        source: `url(${import.meta.env.VITE_FONT_URL}/NotoSansTC-NotoCond-teochew-puj.woff2) format('woff2')`,
       },
       // Xiaolai handwritten companions for Teochew.
-      "Xiaolai-Huninn-teochew-pengim": {
+      "Xiaolai-NotoCond-teochew-pengim": {
         displayName: "小賴字體（潮拼）",
-        name: "Xiaolai-Huninn-teochew-pengim",
-        source: `url(${import.meta.env.VITE_FONT_URL}/Xiaolai-Huninn-teochew-pengim.woff2) format('woff2')`,
+        name: "Xiaolai-NotoCond-teochew-pengim",
+        source: `url(${import.meta.env.VITE_FONT_URL}/Xiaolai-NotoCond-teochew-pengim.woff2) format('woff2')`,
       },
-      "Xiaolai-Huninn-teochew-puj": {
+      "Xiaolai-NotoCond-teochew-puj": {
         displayName: "小賴字體（潮州白話字）",
-        name: "Xiaolai-Huninn-teochew-puj",
-        source: `url(${import.meta.env.VITE_FONT_URL}/Xiaolai-Huninn-teochew-puj.woff2) format('woff2')`,
+        name: "Xiaolai-NotoCond-teochew-puj",
+        source: `url(${import.meta.env.VITE_FONT_URL}/Xiaolai-NotoCond-teochew-puj.woff2) format('woff2')`,
       },
-      "Xiaolai-Huninn-hero-pengim": {
+      "Xiaolai-NotoCond-hero-pengim": {
         displayName: "小賴字體（首頁示範・潮拼，只含示範字）",
-        name: "Xiaolai-Huninn-hero-pengim",
-        source: `url(${import.meta.env.VITE_FONT_URL}/Xiaolai-Huninn-hero-pengim.woff2) format('woff2')`,
+        name: "Xiaolai-NotoCond-hero-pengim",
+        source: `url(${import.meta.env.VITE_FONT_URL}/Xiaolai-NotoCond-hero-pengim.woff2) format('woff2')`,
       },
     },
   },
@@ -824,45 +818,35 @@ export const AVAILABLE_FONTS: FontSet = {
       en: "Mandarin",
     },
     fonts: {
-      "NotoSansTC-Huninn-mandarin-tw": {
+      "NotoSansTC-NotoCond-mandarin-tw": {
         displayName: "思源黑體 台灣（拼音調符 · 國語・教育部辭典）",
-        name: "NotoSansTC-Huninn-mandarin-tw",
-        source: `url(${import.meta.env.VITE_FONT_URL}/NotoSansTC-Huninn-mandarin-tw.woff2) format('woff2')`,
+        name: "NotoSansTC-NotoCond-mandarin-tw",
+        source: `url(${import.meta.env.VITE_FONT_URL}/NotoSansTC-NotoCond-mandarin-tw.woff2) format('woff2')`,
       },
       "NotoSansTC-mandarin-tw-zhuyin": {
         displayName: "思源黑體 台灣（注音 · 國語・教育部辭典）",
         name: "NotoSansTC-mandarin-tw-zhuyin",
         source: `url(${import.meta.env.VITE_FONT_URL}/NotoSansTC-mandarin-tw-zhuyin.woff2) format('woff2')`,
       },
-      "Xiaolai-Huninn-mandarin-tw": {
+      "Xiaolai-NotoCond-mandarin-tw": {
         displayName: "小賴字體（拼音調符 · 國語・教育部辭典）",
-        name: "Xiaolai-Huninn-mandarin-tw",
-        source: `url(${import.meta.env.VITE_FONT_URL}/Xiaolai-Huninn-mandarin-tw.woff2) format('woff2')`,
+        name: "Xiaolai-NotoCond-mandarin-tw",
+        source: `url(${import.meta.env.VITE_FONT_URL}/Xiaolai-NotoCond-mandarin-tw.woff2) format('woff2')`,
       },
-      "Xiaolai-Mplus-mandarin-tw": {
-        displayName: "小賴圓體（拼音調符 · 國語・教育部辭典）",
-        name: "Xiaolai-Mplus-mandarin-tw",
-        source: `url(${import.meta.env.VITE_FONT_URL}/Xiaolai-Mplus-mandarin-tw.woff2) format('woff2')`,
-      },
-      "SHSerif-Mplus-mandarin-cn": {
+      "SHSerif-NotoCond-mandarin-cn": {
         displayName: "思源宋體（拼音調符 · 普通話）",
-        name: "SHSerif-Mplus-mandarin-cn",
-        source: `url(${import.meta.env.VITE_FONT_URL}/SHSerif-Mplus-mandarin-cn.woff2) format('woff2')`,
+        name: "SHSerif-NotoCond-mandarin-cn",
+        source: `url(${import.meta.env.VITE_FONT_URL}/SHSerif-NotoCond-mandarin-cn.woff2) format('woff2')`,
       },
-      "NotoSansSC-Huninn-mandarin-cn": {
+      "NotoSansSC-NotoCond-mandarin-cn": {
         displayName: "思源黑體 簡體（拼音調符 · 普通話）",
-        name: "NotoSansSC-Huninn-mandarin-cn",
-        source: `url(${import.meta.env.VITE_FONT_URL}/NotoSansSC-Huninn-mandarin-cn.woff2) format('woff2')`,
+        name: "NotoSansSC-NotoCond-mandarin-cn",
+        source: `url(${import.meta.env.VITE_FONT_URL}/NotoSansSC-NotoCond-mandarin-cn.woff2) format('woff2')`,
       },
-      "Xiaolai-Huninn-mandarin-cn": {
+      "Xiaolai-NotoCond-mandarin-cn": {
         displayName: "小賴字體（拼音調符 · 普通話）",
-        name: "Xiaolai-Huninn-mandarin-cn",
-        source: `url(${import.meta.env.VITE_FONT_URL}/Xiaolai-Huninn-mandarin-cn.woff2) format('woff2')`,
-      },
-      "Xiaolai-Mplus-mandarin-cn": {
-        displayName: "小賴圓體（拼音調符 · 普通話）",
-        name: "Xiaolai-Mplus-mandarin-cn",
-        source: `url(${import.meta.env.VITE_FONT_URL}/Xiaolai-Mplus-mandarin-cn.woff2) format('woff2')`,
+        name: "Xiaolai-NotoCond-mandarin-cn",
+        source: `url(${import.meta.env.VITE_FONT_URL}/Xiaolai-NotoCond-mandarin-cn.woff2) format('woff2')`,
       },
     },
   },
@@ -959,7 +943,7 @@ export const AVAILABLE_FONTS: FontSet = {
 
 /**
  * Reverse-lookup: given a font's machine name (e.g.
- * "NotoSansTC-Huninn-tailo"), return which dialect group it belongs
+ * "NotoSansTC-NotoCond-tailo"), return which dialect group it belongs
  * to (e.g. "taiwanese"). Returns undefined when the name isn't in
  * AVAILABLE_FONTS — happens transiently when a stale entry sits in
  * localStorage after we remove a font from the showcase. Callers

@@ -252,7 +252,7 @@ Both files have the same rows; only the annotation differs:
 - **CI:** every 國語 font in `deploy-pages.yml` uses these files, with
   `--diy-annotations`: `NotoSansTC-mandarin-tw-zhuyin` (注音; Noto Sans TC for
   both base and annotation, like `NotoSansTC-tps`) and the tone-marked pinyin
-  fonts `NotoSansTC-Huninn-mandarin-tw`, `Xiaolai-Huninn-mandarin-tw` and
-  `Xiaolai-Mplus-mandarin-tw` (with `pinyin.diy-annotation.csv`). The old
+  fonts `NotoSansTC-NotoCond-mandarin-tw`, `Xiaolai-NotoCond-mandarin-tw` and
+  `Xiaolai-NotoCond-mandarin-tw` (with `pinyin.diy-annotation.csv`). The old
   `mandarin-tw.csv` is no longer built; `gen_mandarin_tw.py` still reads it to
   rank MOE's readings. 普通話 fonts keep `mandarin-cn-toned-trimmed.csv`.

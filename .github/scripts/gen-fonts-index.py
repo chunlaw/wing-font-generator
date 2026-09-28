@@ -15,8 +15,8 @@ alongside the font files so the produced site has:
 
     site/fonts/
     ├── index.html              ← generated here
-    ├── NotoSansHK-Noto-lshk.ttf
-    ├── NotoSansHK-Noto-lshk.woff
+    ├── NotoSansHK-NotoCond-lshk.ttf
+    ├── NotoSansHK-NotoCond-lshk.woff
     ├── ...
 
 Lives in .github/scripts/ rather than inline in deploy-pages.yml on

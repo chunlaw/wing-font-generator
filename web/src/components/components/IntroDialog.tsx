@@ -44,7 +44,7 @@ const IntroDialog = ({ open, onClose }: IntroDialogProps) => {
           <AccordionDetails>
             <Typography
               variant="body1"
-              fontFamily="ChironSungHK-Noto-lshk"
+              fontFamily="ChironSungHK-NotoCond-lshk"
               fontSize={24}
             >
               中文字可以加語言學會拼音，可以用反切，會唔會可以用平假名添？推而廣之，圍頭話，潮洲話，台語，福建話、上海話都可以做埋﹗
@@ -58,7 +58,7 @@ const IntroDialog = ({ open, onClose }: IntroDialogProps) => {
           <AccordionDetails>
             <Typography
               variant="body1"
-              fontFamily="ChironSungHK-Noto-lshk"
+              fontFamily="ChironSungHK-NotoCond-lshk"
               fontSize={24}
             >
               我地已經做到 woff 字體畀網頁使用，普羅大眾只需要用瀏覽器打開 IT
@@ -73,7 +73,7 @@ const IntroDialog = ({ open, onClose }: IntroDialogProps) => {
           <AccordionDetails>
             <Typography
               variant="body1"
-              fontFamily="ChironSungHK-Noto-lshk"
+              fontFamily="ChironSungHK-NotoCond-lshk"
               fontSize={24}
             >
               若我能說萬國的方言，但時間有限，一齊參與，一齊為語言為文字努力，我相信社會一定會更好﹗
@@ -87,7 +87,7 @@ const IntroDialog = ({ open, onClose }: IntroDialogProps) => {
           <AccordionDetails>
             <Typography
               variant="body1"
-              fontFamily="ChironSungHK-Noto-lshk"
+              fontFamily="ChironSungHK-NotoCond-lshk"
               fontSize={24}
             >
               設計師想加拼音，但又想用自己字體，就可以用我地既軟件自己合成字體。仲有好多字體本身有版權，我地無辦法拎返來合成畀出來，佢就可以自己搞，開開心心﹗
@@ -101,7 +101,7 @@ const IntroDialog = ({ open, onClose }: IntroDialogProps) => {
           <AccordionDetails>
             <Typography
               variant="body1"
-              fontFamily="ChironSungHK-Noto-lshk"
+              fontFamily="ChironSungHK-NotoCond-lshk"
               fontSize={24}
             >
               暫時最缺係詞典，同埋要知多音字預設點讀最好，可以加入{" "}
@@ -119,7 +119,7 @@ const IntroDialog = ({ open, onClose }: IntroDialogProps) => {
           <AccordionDetails>
             <Typography
               variant="body1"
-              fontFamily="ChironSungHK-Noto-lshk"
+              fontFamily="ChironSungHK-NotoCond-lshk"
               fontSize={24}
             >
               無任歡迎，相信識寫 code 既你會搵到 Github link。
@@ -133,7 +133,7 @@ const IntroDialog = ({ open, onClose }: IntroDialogProps) => {
           <AccordionDetails>
             <Typography
               variant="body1"
-              fontFamily="ChironSungHK-Noto-lshk"
+              fontFamily="ChironSungHK-NotoCond-lshk"
               fontSize={24}
             >
               依家字體擺位未必好突出，歡迎加入{" "}
@@ -151,7 +151,7 @@ const IntroDialog = ({ open, onClose }: IntroDialogProps) => {
           <AccordionDetails>
             <Typography
               variant="body1"
-              fontFamily="ChironSungHK-Noto-lshk"
+              fontFamily="ChironSungHK-NotoCond-lshk"
               fontSize={24}
             >
               多謝先，話說我都有做巴士 app 。或者你可以試埋{" "}

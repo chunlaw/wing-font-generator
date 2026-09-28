@@ -164,7 +164,7 @@ function upsertCanonical(href: string): void {
 interface DocumentMetaOptions {
   /**
    * Path component for canonical / og:url. Should start with "/".
-   * Examples: "/", "/about", "/specimen/NotoSansHK-Noto-lshk".
+   * Examples: "/", "/about", "/specimen/NotoSansHK-NotoCond-lshk".
    *
    * Routes with query strings (e.g. /showcase?fonts=A,B) should pass
    * the BARE path here ("/showcase") — canonical URLs deliberately

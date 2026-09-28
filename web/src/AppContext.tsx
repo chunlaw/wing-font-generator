@@ -233,7 +233,7 @@ export const AppContextProvider = ({ children }: { children: ReactNode }) => {
     }
     // Layer the user-generated recents on top — keyed by entry.id
     // (collision-free with the catalog above because built-in fonts
-    // use machine names like "NotoSansHK-Noto-lshk" while user
+    // use machine names like "NotoSansHK-NotoCond-lshk" while user
     // entries use opaque "gen-uuid…" ids).
     for (const entry of recentFontEntriesRef.current) {
       catalog[entry.id] = recentEntryToFontOption(entry);
