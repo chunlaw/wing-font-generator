@@ -198,6 +198,15 @@ export const TEMPLATES_BY_DIALECT: Record<string, string[]> = {
     "ดวงจันทร์ลอยฟ้า",
     "น้ำใจคนไทย",
   ],
+  // Dakelh (Carrier) — syllabics with the per-symbol CLC reading above
+  // each symbol (NotoSansCanAb-NotoCond-dakelh). No word list yet, so
+  // these are words whose syllabics spell the CLC form exactly:
+  // Dakelh, Nak'azdli, kwun ("fire").
+  dakelh: [
+    "ᑕᗸᒡ",
+    "ᘇᘀᙆᘬ",
+    "ᐠᗒᐣ",
+  ],
 };
 
 /**
@@ -936,6 +945,26 @@ export const AVAILABLE_FONTS: FontSet = {
         displayName: "Hind（ISO 15919 罗马字）",
         name: "Hind-Noto-romanization",
         source: `url(${import.meta.env.VITE_FONT_URL}/Hind-Noto-romanization.woff2) format('woff2')`,
+      },
+    },
+  },
+  // ── Dakelh (Carrier) syllabics tier (experimental) ────────────
+  // Carrier syllabics base (Noto Sans Canadian Aboriginal) with the
+  // Carrier Linguistic Committee romanization above each symbol, in
+  // condensed Noto Sans. Per-symbol only — no word list yet, so tone
+  // and other sounds the syllabics don't write are not shown. Matrix
+  // entry NotoSansCanAb-NotoCond-dakelh in deploy-pages.yml; mapping
+  // notes in python/mappings/carrier/NOTES.md.
+  dakelh: {
+    lang: {
+      zh: "Dakelh 語（Carrier）",
+      en: "Dakelh (Carrier)",
+    },
+    fonts: {
+      "NotoSansCanAb-NotoCond-dakelh": {
+        displayName: "Noto Sans Canadian Aboriginal（CLC 拼寫）",
+        name: "NotoSansCanAb-NotoCond-dakelh",
+        source: `url(${import.meta.env.VITE_FONT_URL}/NotoSansCanAb-NotoCond-dakelh.woff2) format('woff2')`,
       },
     },
   },
