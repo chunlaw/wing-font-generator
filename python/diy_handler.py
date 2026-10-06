@@ -140,6 +140,28 @@ def load_diy_rows(path: str) -> List[Tuple[Optional[str], str]]:
     return rows
 
 
+# Cmap route to a mark, for apps that don't run GSUB. Windows PowerPoint
+# renders Plane-15 PUA with a fallback font no matter what the run font
+# covers (tested Oct 2026, Office 16.0 build 20326), but honours BMP PUA
+# and variation sequences on it. BMP PUA alone has only 6,400 slots —
+# fewer than the lshk (7,200) or Taiwanese (10,458) inventories — so each
+# BMP PUA "carrier" holds 241 marks: the carrier alone, then carrier +
+# VS17…VS256.
+DIY_CARRIER_BASE = 0xE000
+DIY_CARRIER_LIMIT = 0xF8FF
+_VS17 = 0xE0100
+_MARKS_PER_CARRIER = 241
+
+
+def mark_sequence(index: int) -> Tuple[int, Optional[int]]:
+    """``(carrier, selector-or-None)`` for the ``index``-th mark."""
+    block, slot = divmod(index, _MARKS_PER_CARRIER)
+    carrier = DIY_CARRIER_BASE + block
+    if carrier > DIY_CARRIER_LIMIT:
+        raise DiyInventoryError("DIY inventory exceeds the BMP PUA carrier range.")
+    return carrier, (_VS17 + slot - 1 if slot else None)
+
+
 def assign_pua(annotations: List[str]) -> Dict[str, int]:
     """Map each annotation to a Plane-15 PUA codepoint, ``DIY_PUA_BASE``
     upward in the given order. Raises :class:`DiyInventoryError` on
@@ -155,12 +177,16 @@ def assign_pua(annotations: List[str]) -> Dict[str, int]:
 def build_diy_inventory(path: str) -> DiyInventory:
     """Parse ``A`` and return the :class:`DiyInventory`.
 
-    Distinct annotations (sorted) get PUA codepoints; each row with a
+    Distinct annotations (in CSV row order) get PUA codepoints; each row with a
     typed input yields one ``(input, codepoint)`` ligature. Duplicate
     inputs are de-duplicated (first wins). Returns empty maps for an empty
     file."""
     rows = load_diy_rows(path)
-    annotations = sorted({anno for _inp, anno in rows})
+    # Mark numbers follow the CSV's row order (first appearance), NOT an
+    # alphabetical sort: the number is baked into documents the Office
+    # add-in converted, so appending a new annotation at the end of the
+    # CSV must not renumber the existing ones.
+    annotations = list(dict.fromkeys(anno for _inp, anno in rows))
     pua_map = assign_pua(annotations)
 
     inputs: List[Tuple[str, int]] = []

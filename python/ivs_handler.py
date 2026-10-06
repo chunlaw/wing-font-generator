@@ -5,17 +5,17 @@ variant by typing ``<base codepoint> + <variation selector>``, in
 addition to the digit-suffix and ``丅+numeral`` paths emitted by
 liga_handler.
 
-Each polyphonic character with N annotations gets N-1 IVS entries::
+Each polyphonic character gets one IVS entry per reading — the default
+included — numbered by sorting the readings' annotation strings::
 
-    base + VS17 (U+E0100) → variant 1
-    base + VS18 (U+E0101) → variant 2
+    行 + VS17 (U+E0100) → haang1
+    行 + VS18 (U+E0101) → haang4
+    行 + VS19 (U+E0102) → hang4
     ...
-    base + VS(16+N) (≤ U+E01EF) → variant N
 
-Variant 0 (the default reading) needs no IVS entry — typing the bare
-base character already resolves through the normal format-4/12 cmap
-subtable to whatever default-reading variant glyph composition
-produced.
+plus two fixed slots: ``+ VS255`` (muted variant) and ``+ VS256`` (bare,
+annotation-free glyph). See ``buildIvs`` for why the numbering ignores
+the weight-ranked variant index.
 
 Why ship this on top of the GSUB ligature paths
 -----------------------------------------------
@@ -65,7 +65,17 @@ from utils import step_timer
 # range which Unicode reserves for older variation sequences (KangXi
 # radicals, math symbol shapes, etc.).
 IVS_BASE = 0xE0100
-IVS_LIMIT = 0xE01EF  # inclusive — 240 selectors total
+# The last two selectors are fixed slots, so they never shift when a
+# mapping gains readings:
+#   VS256 — the BARE (annotation-free) glyph of a mapped char, i.e. the
+#           pure-cmap path to what `行０` produces;
+#   VS255 — the MUTED variant (empty annotation, e.g. 毋 in the 合音
+#           拍毋見). Its empty string would otherwise sort first and
+#           renumber every reading of a char the day it gains one.
+BARE_SELECTOR = 0xE01EF
+MUTE_SELECTOR = 0xE01EE
+IVS_LIMIT = MUTE_SELECTOR - 1  # inclusive — 238 reading selectors
+
 
 # Format-14 cmap subtable identifier triple. Platform 0 / encoding 5 is
 # the Unicode Variation Sequences platform-encoding pair; the OpenType
@@ -78,13 +88,26 @@ _UVS_FORMAT = 14
 def buildIvs(
     output_font,
     char_mapping: Dict[str, Dict[str, Tuple[str, int]]],
-) -> None:
+    bare_base_map: Dict[str, str] | None = None,
+) -> set:
     """
     Build (or augment) the cmap format-14 subtable so every variant
     glyph in ``char_mapping`` is reachable as ``<base> + <VS>``.
 
-    No-op when the mapping contains only single-variant characters
-    (nothing to disambiguate via IVS).
+    ``bare_base_map`` (``{default_glyph: bare_glyph}``) additionally
+    maps ``<base> + BARE_SELECTOR`` to the annotation-free glyph.
+
+    Selector slots are derived from the readings themselves, NOT from
+    the weight-ranked variant index: every reading of a char — the
+    default included — is sorted by its annotation string (code point
+    order) and position p gets ``IVS_BASE + p``. Re-weighting the CSV,
+    adding words, or a different reading becoming the default therefore
+    never renumbers anything; only adding/removing/respelling a reading
+    of that same char moves the readings sorted after it. (The digit
+    syntax `行２` still means "2nd most common" and is unaffected.)
+
+    Returns the set of selector codepoints used (the subsetter must be
+    told to keep them).
     """
     with step_timer("ivs (cmap fmt 14)") as timer:
         cmap = output_font["cmap"]
@@ -107,35 +130,50 @@ def buildIvs(
                 continue
             base_unicode = ord(original_char)
 
-            # {variant_index: glyph_name}. Index 0 is the default
-            # reading — bare base codepoint already maps to it via
-            # format-4/12, so no IVS entry needed.
-            index_to_glyph: Dict[int, str] = {
-                idx: name for name, idx in anno_strs_dict.values()
-            }
-            non_default_variants = sorted(
-                (idx, glyph)
-                for idx, glyph in index_to_glyph.items()
-                if idx >= 1
+            by_index = sorted(
+                (idx, anno, name) for anno, (name, idx) in anno_strs_dict.items()
             )
-            if not non_default_variants:
+            slotted = [
+                (slot, name)
+                for slot, (anno, name) in enumerate(
+                    sorted((anno, name) for _i, anno, name in by_index if anno)
+                )
+            ]
+            muted = [name for _i, anno, name in by_index if not anno]
+            if muted:
+                fmt14.uvsDict.setdefault(MUTE_SELECTOR, []).append(
+                    (base_unicode, muted[0])
+                )
+                rules_added += 1
+
+            default_glyph = by_index[0][2] if by_index and by_index[0][0] == 0 else None
+            bare_glyph = (bare_base_map or {}).get(default_glyph)
+            if bare_glyph:
+                fmt14.uvsDict.setdefault(BARE_SELECTOR, []).append(
+                    (base_unicode, bare_glyph)
+                )
+                rules_added += 1
+
+            # A single-reading char needs no selector: the bare codepoint
+            # is the only thing a converter would ever emit for it.
+            if len(slotted) < 2:
                 continue
 
             chars_with_variants += 1
 
-            for variant_index, glyph_name in non_default_variants:
-                vs_codepoint = IVS_BASE + (variant_index - 1)
+            for slot, glyph_name in slotted:
+                vs_codepoint = IVS_BASE + slot
                 if vs_codepoint > IVS_LIMIT:
-                    # 240 selectors should be plenty (no realistic
-                    # mapping has 240 readings of the same character),
+                    # 238 selectors should be plenty (no realistic
+                    # mapping has that many readings of one character),
                     # but emit one warning and skip the overflow rather
                     # than write malformed cmap data.
                     if not overflow_warned:
                         print(
-                            "Warning: ivs_handler: variant index "
-                            f"{variant_index} of {original_char!r} "
+                            "Warning: ivs_handler: slot "
+                            f"{slot} of {original_char!r} "
                             "exceeds the IVS supplement range "
-                            "(U+E0100–U+E01EF); skipping further "
+                            "(U+E0100–U+E01ED); skipping further "
                             "overflow entries silently."
                         )
                         overflow_warned = True
@@ -145,27 +183,30 @@ def buildIvs(
                 entries.append((base_unicode, glyph_name))
                 rules_added += 1
 
-        if rules_added == 0:
-            # Either no polyphonic chars in the mapping, or every
-            # mapped char has only its default reading. Leave the
-            # subtable in place (if we created it) but empty — fontTools
-            # will skip-emit it on compile when uvsDict is empty.
-            timer.note("no IVS entries needed")
-            return
-
         # The OpenType spec requires VarSelector records sorted by
         # selector codepoint, and within each, NonDefaultUVS entries
         # sorted by base codepoint. fontTools sorts the outer dict at
         # compile, but only sorts the inner list iff it's already
         # tuple-of-tuples — sort defensively to avoid relying on that.
+        # (Also covers the DIY mark entries build_glyph added earlier.)
+        #
+        # De-duplicate while sorting: a base font that ships its own IVS
+        # (NotoSansJP has 13k Adobe-Japan1 sequences on U+E01xx) may
+        # already map a (base, selector) pair we just appended. A pair
+        # may appear only once, and ours — appended last — must win, or
+        # the reading selector would pick an un-annotated shape variant.
         for entries in fmt14.uvsDict.values():
-            entries.sort(key=lambda e: e[0])
+            entries[:] = sorted(dict(entries).items())
 
-        timer.note(
-            f"{rules_added} entries across "
-            f"{chars_with_variants} char(s), "
-            f"{len(fmt14.uvsDict)} VS slot(s)"
-        )
+        if rules_added:
+            timer.note(
+                f"{rules_added} entries across "
+                f"{chars_with_variants} char(s), "
+                f"{len(fmt14.uvsDict)} VS slot(s)"
+            )
+        else:
+            timer.note("no IVS entries needed")
+        return set(fmt14.uvsDict)
 
 
 def _find_or_create_uvs_subtable(cmap):

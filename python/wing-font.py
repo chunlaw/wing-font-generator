@@ -8,12 +8,14 @@ from mappings.csv_parser import (
 )
 from chain_context_handler import buildChainSub, buildChainSubVariantOverrides
 from ivs_handler import buildIvs
+from check_cmap_reachability import unreachable_glyphs
 from liga_handler import buildLiga, DEFAULT_TRIGGER_CHAR
 from word_liga_handler import buildWordLiga, buildLigCarets
 from build_glyph import (
     generate_annotated_glyphs,
     scale_glyphs,
     generate_mark_glyphs,
+    GLYPH_PREFIX,
 )
 from diy_handler import build_diy_inventory
 from mark_input_handler import buildMarkInputLiga
@@ -25,6 +27,7 @@ from mark_input_handler import buildMarkInputLiga
 from mark_strip_handler import tagMarksAsGdefMarks
 import gc
 import sys
+from datetime import date
 import argparse
 from fontTools import subset
 from utils import (
@@ -627,13 +630,14 @@ def tag_wing_font_version(font):
         # across fontTools / makeotfexe versions and isn't useful to
         # carry into the derivative.
         head = existing.split(";", 1)[0].strip()
-        new_value = f"{head}; {WING_FONT_VERSION_TAG}"
-        # Defensive length cap — should never fire with typical base
-        # versions (which compress to ~20-30 chars after the split),
-        # but ensures we don't accidentally write a record some
-        # downstream tool's fixed buffer can't hold.
-        if len(new_value) > VERSION_MAX_LEN:
-            new_value = new_value[:VERSION_MAX_LEN]
+        # The build date tells two builds of the same family apart: IVS /
+        # mark numbering can differ between them, so the Office add-in
+        # shows this string for the user to compare with the installed
+        # font (Font Book / Windows font properties show NameID 5).
+        # The head is what gets trimmed if the record would exceed the
+        # cap some downstream tools' fixed buffers can hold.
+        tag = f"; {WING_FONT_VERSION_TAG} {date.today().isoformat()}"
+        new_value = head[: VERSION_MAX_LEN - len(tag)] + tag
         table.setName(
             new_value,
             nameID=5,
@@ -1668,7 +1672,7 @@ def main(
     # This is the original buildChainSub behaviour, modified to read
     # variants[0] off the new {word: [variants...]} word_mapping shape.
     buildChainSub(output_font, word_mapping, char_mapping)
-    buildIvs(output_font, char_mapping)
+    ivs_unicodes = buildIvs(output_font, char_mapping, bare_base_map)
 
     # Step 2c — Arabic word entries: guarded ccmp word→glyph ligation
     # (+ tatweel variant cycling) and GDEF ligature carets. Both are
@@ -1786,9 +1790,13 @@ def main(
         # full-width input glyphs they map to — aren't pruned. (There is no
         # PUA route: marks carry no cmap entry.)
         diy_unicodes: set = set()
+        # Bare bases are requested unconditionally: GSUB closure would
+        # keep the glyphs anyway, but the subsetter only keeps a cmap-14
+        # entry whose glyph was explicitly requested, so without this a
+        # non-DIY build loses every `<base> + BARE_SELECTOR` mapping.
+        glyphs_to_be_kept.extend(bare_base_map.values())
         if diy_pua_map:
             glyphs_to_be_kept.extend(diy_mark_names)
-            glyphs_to_be_kept.extend(bare_base_map.values())
             diy_unicodes |= {
                 ord(ch) for inp, _cp in diy_inputs for ch in inp
             }
@@ -1815,26 +1823,9 @@ def main(
         # unless the variation selectors are explicitly in the requested
         # `unicodes` — a glyph-only `populate(glyphs=...)` keeps the
         # variant *glyphs* but strips the `<base> + <VS>` mappings that
-        # reach them, silently disabling the IVS selector in every
-        # optimized (shipped) build. We mirror buildIvs's index→selector
-        # math (VS17 = U+E0100 for variant 1, capped at the U+E01EF
-        # supplement ceiling) so exactly the selectors buildIvs emitted
-        # survive the subset. Base codepoints don't need listing — their
-        # glyphs are already in the keep list, so the subsetter retains
-        # them and the UVS entries that point at retained glyphs.
-        from ivs_handler import IVS_BASE, IVS_LIMIT
-        ivs_unicodes = set()
-        for original_char, anno_strs_dict in char_mapping.items():
-            if len(original_char) != 1:
-                continue
-            for composed in anno_strs_dict.values():
-                if not isinstance(composed, tuple):
-                    continue
-                variant_index = composed[1]
-                if variant_index >= 1:
-                    vs = IVS_BASE + (variant_index - 1)
-                    if vs <= IVS_LIMIT:
-                        ivs_unicodes.add(vs)
+        # reach them. `ivs_unicodes` is exactly the selector set buildIvs
+        # emitted. Base codepoints don't need listing — their glyphs are
+        # already in the keep list.
 
         # Now apply the actual subset. The set of glyphs surviving might
         # be slightly larger than valid_glyphs_to_keep because the
@@ -2082,9 +2073,37 @@ def main(
     # until that's tracked down, this cleanup pass is the workaround.
     with step_timer("pre-save GSUB cleanup") as _t:
         _sub = subset.Subsetter()
-        _sub.populate(glyphs=output_font.getGlyphOrder())
+        # Same format-14 trap as the optimize subset above: glyph-only
+        # populate strips every IVS mapping, so re-request the selectors.
+        _sub.populate(
+            glyphs=output_font.getGlyphOrder(),
+            unicodes=sorted(
+                vs
+                for t in output_font["cmap"].tables
+                if t.format == 14
+                for vs in t.uvsDict
+            ),
+        )
         _sub.subset(output_font)
         _t.note(f"{output_font['maxp'].numGlyphs} glyphs preserved")
+
+    # Every glyph WE make GSUB produce must also be reachable through
+    # cmap alone (IVS / PUA) — PowerPoint doesn't run GSUB on CJK, and
+    # the Office add-in can only rewrite text to glyphs that have such a
+    # path. Source-font lookups (vert, locl, kana voicing…) are not ours
+    # to fix, hence the name filter.
+    _unreach = sorted(
+        g for g in unreachable_glyphs(output_font)
+        # The invisible glyph only swallows a typed digit; "no character"
+        # is its cmap equivalent.
+        if g.startswith(GLYPH_PREFIX) and g != invisible_glyph_name
+    )
+    if _unreach:
+        print(
+            f"Warning: {len(_unreach):,} generated glyph(s) have no cmap "
+            f"path (GSUB-only; invisible to the Office add-in), e.g. "
+            f"{', '.join(_unreach[:5])}"
+        )
 
     with step_timer("TTF save"):
         output_font.save(str(output_prefix) + ".ttf")

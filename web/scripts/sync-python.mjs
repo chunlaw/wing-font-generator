@@ -50,6 +50,7 @@ const MANIFEST = [
   ["build_glyph.py", "build_glyph.py"],
   ["chain_context_handler.py", "chain_context_handler.py"],
   ["ivs_handler.py", "ivs_handler.py"],
+  ["check_cmap_reachability.py", "check_cmap_reachability.py"], // GSUB-only glyph check
   ["liga_handler.py", "liga_handler.py"],
   ["word_liga_handler.py", "word_liga_handler.py"],
   ["diy_handler.py", "diy_handler.py"], // DIY manual-annotation inventory (CSV A → PUA)

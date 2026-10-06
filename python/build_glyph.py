@@ -26,6 +26,8 @@ from fontTools.pens.recordingPen import DecomposingRecordingPen
 
 from mappings.csv_parser import WORD_SCRIPTS, get_word_unit_script
 from utils import get_glyph_name_by_char, step_timer
+from diy_handler import DIY_PUA_BASE, mark_sequence
+from ivs_handler import _find_or_create_uvs_subtable
 
 import math
 
@@ -1258,6 +1260,8 @@ def generate_mark_glyphs(
         mark_names: list[str] = []
         skipped: list[str] = []
 
+        uvs = _find_or_create_uvs_subtable(output_font["cmap"])
+
         # Deterministic order (by codepoint) for stable glyph-order diffs.
         for anno_str, cp in sorted(pua_map.items(), key=lambda kv: kv[1]):
             mark_name = f"{MARK_PREFIX}{cp:05X}"
@@ -1330,12 +1334,14 @@ def generate_mark_glyphs(
             if out_vmtx is not None:
                 out_vmtx[mark_name] = (units_per_em, 0)
 
-            # NO cmap entry: marks are reached ONLY through the typed
-            # full-width input ligature (mark_input_handler). The codepoint
-            # `cp` is used purely as a stable, unique glyph-name suffix —
-            # there is no PUA "type the codepoint" route (it isn't
-            # user-typable, and the typed full-width sequence already
-            # survives copy-paste).
+            # Cmap route (BMP PUA carrier [+ IVS], see diy_handler): gives
+            # apps that don't run GSUB (PowerPoint) a path to the mark. The
+            # Office add-in rewrites the typed full-width sequence to it.
+            carrier, selector = mark_sequence(cp - DIY_PUA_BASE)
+            if selector is None:
+                _add_cmap_entry(output_font, carrier, mark_name)
+            else:
+                uvs.uvsDict.setdefault(selector, []).append((carrier, mark_name))
 
             mark_names.append(mark_name)
 
