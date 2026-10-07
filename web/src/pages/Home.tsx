@@ -186,6 +186,7 @@ const Home = () => {
     { label: "Affinity", bodyKey: "home.platforms.tabs.affinity" },
     { label: "Adobe", bodyKey: "home.platforms.tabs.adobe" },
     { label: "Microsoft Word", bodyKey: "home.platforms.tabs.word" },
+    { label: "Microsoft PowerPoint", bodyKey: "home.platforms.tabs.powerpoint" },
     // Pages and Keynote share an install pattern (macOS Font Book →
     // iWork's typography panel ligature toggle) and the same iWork
     // typesetter quirk we worked around with the calt→ccmp move, so
@@ -384,7 +385,7 @@ const Home = () => {
           {t("home.platforms.body")}
         </Typography>
         {/*
-          Chips arranged as 5 rows of 3, grouped by category. The
+          Chips arranged as 5 rows (3–4 each), grouped by category. The
           rows are unlabeled — the icons within each row are visually
           consistent (palette / document / globe / laptop / book)
           and the brand names are universally recognised, so explicit
@@ -392,7 +393,7 @@ const Home = () => {
 
           Rows (left to right within each row, top to bottom across):
             1. Canva, Affinity, Adobe          — design tools
-            2. Microsoft Word, Pages, Keynote  — documents & slides
+            2. Microsoft Word, Microsoft PowerPoint, Pages, Keynote — documents & slides
             3. Chrome, Firefox, Safari         — browsers
             4. Windows, macOS, Linux           — operating systems
             5. Kindle, Kobo, Boox              — e-readers
@@ -426,6 +427,7 @@ const Home = () => {
               ],
               [
                 { label: "Microsoft Word", Icon: DescriptionOutlinedIcon },
+                { label: "Microsoft PowerPoint", Icon: DescriptionOutlinedIcon },
                 { label: "Pages", Icon: DescriptionOutlinedIcon },
                 { label: "Keynote", Icon: DescriptionOutlinedIcon },
               ],

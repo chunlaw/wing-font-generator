@@ -221,17 +221,43 @@ const Markdown = ({
     // should be wired through React Router by the caller (pass
     // openLinksInNewTab=false and provide a `<Link as RouterLink>`
     // upstream instead of using markdown for those).
-    a: ({ href, children }) => (
-      <MuiLink
-        href={href}
-        underline="hover"
-        target={openLinksInNewTab ? "_blank" : undefined}
-        rel={openLinksInNewTab ? "noopener noreferrer" : undefined}
-        sx={{ fontWeight: 500 }}
-      >
-        {children}
-      </MuiLink>
-    ),
+    //
+    // `[file](url "download")` downloads instead of navigating. The
+    // `download` attribute is ignored cross-origin, so fetch the file
+    // into a blob (the host must send CORS headers, as GitHub Pages
+    // does) and fall back to plain navigation if that fails.
+    a: ({ href, title, children }) => {
+      const isDownload = title === "download" && href;
+      return (
+        <MuiLink
+          href={href}
+          underline="hover"
+          target={openLinksInNewTab && !isDownload ? "_blank" : undefined}
+          rel={openLinksInNewTab ? "noopener noreferrer" : undefined}
+          download={isDownload ? href.split("/").pop() : undefined}
+          onClick={
+            isDownload
+              ? (e) => {
+                  e.preventDefault();
+                  fetch(href)
+                    .then((r) => (r.ok ? r.blob() : Promise.reject()))
+                    .then((blob) => {
+                      const a = document.createElement("a");
+                      a.href = URL.createObjectURL(blob);
+                      a.download = href.split("/").pop() || "download";
+                      a.click();
+                      setTimeout(() => URL.revokeObjectURL(a.href), 1000);
+                    })
+                    .catch(() => window.open(href, "_blank", "noopener"));
+                }
+              : undefined
+          }
+          sx={{ fontWeight: 500 }}
+        >
+          {children}
+        </MuiLink>
+      );
+    },
     // Emphasis: bold lifts text.primary so it pops out of the
     // text.secondary paragraph colour. Italic stays the same colour.
     strong: ({ children }) => (
