@@ -243,8 +243,16 @@ Both files have the same rows; only the annotation differs:
 - **Budget:** about 27k predicted glyphs for 注音 and 29k for pinyin with DIY
   marks, against the 64k cap. The 18k word rows compare with 39.5k in the
   shipping mandarin file.
-- **Skipped:** 997 MOE titles with punctuation (一不做，二不休). MOE marks
-  一 / 不 in their base tone, so there's no 變調.
+- **Skipped:** 997 MOE titles with punctuation (一不做，二不休).
+- **一 / 不 變調:** 修訂本 marks only the 本調 (its Q&A 【音讀】Q2 says so). Pass
+  《國語辭典簡編本》's xlsx as the second argument and its 712 一/不 words typed
+  變 get the 變調 (一樣 yí yàng, 不對 bú duì, 一起 yì qǐ); 第一 / 統一 stay yī.
+  Its other 變 rows (葡萄 pú tao) are ignored.
+- **一 + 量詞:** 簡編本 lacks 一對 / 一個, so `MEASURE` (≈170 common 量詞) adds 一X
+  by rule — ㄧˊ before a 4th tone, else ㄧˋ, tone taken from 修訂本's 量詞 reading
+  (一個 yí ge via 個 ㄍㄜˋ). Characters 修訂本 doesn't define as 量詞 are skipped.
+  第一X / 十一X rows pin ordinals and numbers to yī (longer words win).
+  年 月 日 號 樓 班 are left out on purpose: 一年級, 一月, 一號 are ordinal.
 - **DIY:** the script also writes `diy-mappings/mandarin/zhuyin.diy-annotation.csv`,
   1,559 syllables typed like the pinyin DIY file and rendered as 注音
   (`字０ｘｉｎｇ２` → ㄒㄧㄥˊ). Erhua ㄦ and ê (ㄝ) have no ASCII spelling there,
