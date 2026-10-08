@@ -585,9 +585,11 @@ is having to wire `lookup_index` ourselves and call
 
 ### Cantonese (廣東話)
 
-1. [Typeduck-HK](https://github.com/TypeDuck-HK/TypeDuck-Mac/blob/master/Preparing/Sources/Preparing/Resources/data.csv)
+1. [TypeDuck](https://github.com/TypeDuck-HK/schema) — main dictionary, CC BY 4.0
 2. [粵語審音配詞字庫](https://humanum.arts.cuhk.edu.hk/Lexis/lexi-can/)
 3. [Cantonese Romanization Converter](https://www.kodensha.jp/webapp/cantonese/can_converter_e.html)
+4. [rime-cantonese](https://github.com/rime/rime-cantonese) — word-reading corrections and default readings (via pycantonese), CC BY 4.0
+5. [HKCanCor](https://pycantonese.org/data.html) — corpus frequencies for reading weights (via pycantonese), CC BY
 
 ### Taiwanese / Southern Min (河洛話)
 

@@ -153,7 +153,7 @@ const FONT_SOURCES: Source[] = [
 const CANTO_SOURCES: Source[] = [
   {
     name: "TypeDuck",
-    url: "https://github.com/TypeDuck-HK/TypeDuck-Mac",
+    url: "https://github.com/TypeDuck-HK/schema",
     descKey: "ack.canto.typeduck",
   },
   {
