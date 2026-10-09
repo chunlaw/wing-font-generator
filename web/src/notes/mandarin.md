@@ -1,4 +1,4 @@
-# Mandarin (普通話 / 國語)
+# Mandarin (國語／普通話)
 
 **Romanization.** Two regional standards:
 

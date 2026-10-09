@@ -17,7 +17,7 @@ export const NOTE_LANGUAGES: NoteLanguage[] = [
   { key: "cantonese", native: "廣東話", en: "Cantonese" },
   { key: "taiwanese", native: "台語", en: "Taiwanese" },
   { key: "teochew", native: "潮州話", en: "Teochew" },
-  { key: "mandarin", native: "普通話", en: "Mandarin" },
+  { key: "mandarin", native: "國語／普通話", en: "Mandarin" },
   { key: "japanese", native: "日本語", en: "Japanese" },
   { key: "thai", native: "ภาษาไทย", en: "Thai" },
   { key: "hindi", native: "हिन्दी", en: "Hindi" },
