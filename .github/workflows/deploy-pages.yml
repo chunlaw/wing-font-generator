@@ -427,17 +427,6 @@ jobs:
           # Latin face, same approximate target on-screen size for
           # 4-8 character romanizations like `sà-wàt-dii`).
           - { name: GoogleSans-Noto-thai-tcahk,         args: "-opt --anno-below -i 'input_fonts/GoogleSans-VariableFont_GRAD,opsz,wght.ttf' -a input_fonts/NotoSerif-Regular.ttf -m mappings/thai/thai-tcahk.csv -as 0.30 --cell-width 1.0" }
-          # Dakelh (Carrier) — Carrier syllabics base annotated with the
-          # Carrier Linguistic Committee (CLC) romanization, one reading
-          # per syllabic symbol (dakelh-clc.csv, from Bill Poser's Carrier
-          # transliterator). No word list yet, so readings the syllabics
-          # don't write (tone, pre-vocalic fronting, final w/wh) are not
-          # restored — see mappings/carrier/NOTES.md.
-          # Syllabics are proportional, so --cell-width has no effect;
-          # sizing follows the Latin-romanization rule above, measured on
-          # the syllabics' ink (0.726 em x -bs 0.70 = 0.51 em):
-          # -as 0.31 → x-height ≈ 0.33 x ink, -y 0.60 → gap ≈ 0.19 x ink.
-          - { name: NotoSansCanAb-NotoCond-dakelh,        args: "-opt -i input_fonts/NotoSansCanadianAboriginal-VariableFont_wght.ttf -a 'input_fonts/NotoSans-VariableFont_wdth,wght.ttf' --anno-axis wdth=75 -m mappings/carrier/dakelh-clc.csv -as 0.31 -bs 0.70 -y 0.60" }
           - { name: Xiaolai-NotoCond-poj,                    args: "-opt -i input_fonts/XiaolaiSC-Regular.ttf -a 'input_fonts/NotoSans-VariableFont_wdth,wght.ttf' --anno-axis wdth=75 -m mappings/taiwanese/taigi-poj-toned.csv -as 0.38 -bs 0.70 -y 0.67" }
           - { name: Xiaolai-NotoCond-teochew-pengim,         args: "-opt -i input_fonts/XiaolaiSC-Regular.ttf -a 'input_fonts/NotoSans-VariableFont_wdth,wght.ttf' --anno-axis wdth=75 -m mappings/teochew/teochew-gdpi.csv -as 0.38 -bs 0.70 -y 0.67" }
           - { name: Xiaolai-NotoCond-teochew-puj,            args: "-opt -i input_fonts/XiaolaiSC-Regular.ttf -a 'input_fonts/NotoSans-VariableFont_wdth,wght.ttf' --anno-axis wdth=75 -m mappings/teochew/teochew-duffus.csv -as 0.38 -bs 0.70 -y 0.67" }

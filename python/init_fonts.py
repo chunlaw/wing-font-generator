@@ -89,11 +89,6 @@ FONT_FILES: list[str] = [
     # OFL (Google Fonts).
     "NotoSansArabic-VariableFont_wdth,wght.ttf",
     "Hind-Regular.ttf",
-    # Noto Sans Canadian Aboriginal — BASE for the Dakelh (Carrier)
-    # syllabics font. Redrawn in 2022 with Typotheque's Kevin King, who
-    # also filed the Unicode Carrier glyph corrections (L2/21-088).
-    # OFL (Google Fonts).
-    "NotoSansCanadianAboriginal-VariableFont_wght.ttf",
     "NotoSerif-Regular.ttf",
     # Noto Sans (Latin) with a wdth axis — condensed (--anno-axis
     # wdth=75) annotation font for the CJK romanization fonts.
