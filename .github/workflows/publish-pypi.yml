@@ -17,6 +17,10 @@ jobs:
       - uses: actions/setup-python@v5
         with:
           python-version: '3.11'
+      - name: Tag must match wingfont.__version__
+        run: |
+          v=$(sed -n 's/^__version__ = "\(.*\)"/\1/p' python/wingfont/__init__.py)
+          test "${GITHUB_REF_NAME}" = "v$v" || { echo "::error::tag ${GITHUB_REF_NAME} != v$v (python/wingfont/__init__.py)"; exit 1; }
       - run: pip install build && python -m build python
       - uses: pypa/gh-action-pypi-publish@release/v1
         with:
