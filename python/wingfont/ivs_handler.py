@@ -58,7 +58,7 @@ from typing import Dict, Tuple
 
 from fontTools.ttLib.tables._c_m_a_p import CmapSubtable
 
-from utils import step_timer
+from .utils import step_timer
 
 # Variation Selector Supplement: U+E0100 (VS17) through U+E01EF (VS256).
 # IVS uses the supplement range, NOT the lower VS1–VS16 (U+FE00–U+FE0F)

@@ -1,0 +1,2383 @@
+# wing-font.py
+
+from fontTools.ttLib import TTFont
+from .csv_parser import (
+    load_mapping,
+    WORD_UNIT_SCRIPT_RANGES,
+    get_word_unit_script,
+)
+from .chain_context_handler import buildChainSub, buildChainSubVariantOverrides
+from .ivs_handler import buildIvs
+from .check_cmap_reachability import unreachable_glyphs
+from .liga_handler import buildLiga, DEFAULT_TRIGGER_CHAR
+from .word_liga_handler import buildWordLiga, buildLigCarets
+from .build_glyph import (
+    generate_annotated_glyphs,
+    scale_glyphs,
+    generate_mark_glyphs,
+    GLYPH_PREFIX,
+)
+from .diy_handler import build_diy_inventory
+from .mark_input_handler import buildMarkInputLiga
+# buildBareStripLiga is no longer called from the standard pipeline —
+# the (base, 0) → bare strip is now part of liga_handler.buildLiga's
+# 1-indexed digit-trigger semantics. Module is kept available for
+# anyone who wants to call it explicitly (e.g. a future build mode
+# that doesn't go through liga_handler at all).
+from .mark_strip_handler import tagMarksAsGdefMarks
+import gc
+import os
+import sys
+from datetime import date
+import argparse
+from fontTools import subset
+from .utils import (
+    ensure_gsub_table,
+    ensure_invisible_glyph,
+    ensure_trigger_char_glyph,
+    get_glyph_name_by_char,
+    step_timer,
+)
+import string
+
+WINDOWS_ENGLISH_IDS = 3, 1, 0x409
+MAC_ROMAN_IDS = 1, 0, 0
+
+# ── Name-table length caps ────────────────────────────────────────
+# Each NameID has its own practical maximum that downstream tools
+# bind to. Setting any of these too high makes the font install
+# but silently misbehave in ways the browser preview won't catch.
+# Capping consistently is what stops us repeating the LF_FACESIZE
+# / NameID 1 trap we fell into for HKSCS routing.
+#
+# Discovered the hard way: NameID 1 / 16 must fit Windows GDI's
+# LOGFONT.lfFaceName (32 bytes incl. null terminator, so 31
+# effective characters). Overflowing names install on Windows fine
+# but get silently truncated in Word's font registry, which breaks
+# DirectWrite's strict-CJK path → Word substitutes Microsoft
+# JhengHei UI for every HKSCS-extension char (啲 嘅 嗰 噉 嚟 咗 唔
+# 攞 …). /showcase (HarfBuzz / FontFace API) doesn't go through
+# LOGFONT so the bug is invisible there.
+#
+# The remaining caps below are derived from OpenType spec or
+# established tool-chain limits; staying within them is defensive
+# against the same class of silent breakage:
+#
+#   NameID 1, 16 (Family / Typographic Family) → 31 chars
+#       Bound: Windows GDI LF_FACESIZE.
+#   NameID 4 (Full Name)                       → 63 chars
+#       Bound: Windows GDI LF_FULLFACESIZE. We share the family
+#       string here, which the LF_FACESIZE guard already keeps to
+#       31 — well under 63 — so no separate enforcement needed.
+#   NameID 3 (Unique Font Identifier)          → 63 chars
+#       Bound: practical font-tool buffer convention; no hard spec.
+#   NameID 5 (Version)                         → 63 chars
+#       Bound: same practical convention. Font Validator warns
+#       at higher lengths.
+#   NameID 6 (PostScript Name)                 → 63 chars
+#       Bound: hard OpenType spec cap. Plus printable-ASCII-only,
+#       no spaces, no  [ ] ( ) { } < > / %.
+#   NameID 10 (Description)                    → no spec cap
+#       But: Mac-Roman platform records can only encode MacRoman
+#       characters. Non-MacRoman input (e.g. em-dash U+2014) gets
+#       lost or "?" substituted on write.
+LF_FACESIZE_LIMIT = 31           # NameID 1, 16
+UNIQUE_ID_MAX_LEN = 63           # NameID 3
+VERSION_MAX_LEN = 63             # NameID 5
+POSTSCRIPT_NAME_MAX_LEN = 63     # NameID 6
+# Characters forbidden in PostScript names per the OpenType spec.
+# Note that ASCII space is also forbidden — handled via
+# POSTSCRIPT_NAME_FORBIDDEN below.
+POSTSCRIPT_NAME_FORBIDDEN = frozenset(" []()<>{}/%")
+
+# OpenType `maxp` table stores numGlyphs as a uint16 — hard cap 65,535.
+# A font with more than that cannot be saved as TTF/OTF (struct.error
+# during pack of format 'H'). We check predicted glyph count against a
+# soft cap a touch below the absolute limit so the few structural
+# glyphs the subsetter retains (.notdef, .null, CR, space, plus a
+# handful introduced by GSUB build) don't push us over the edge
+# AFTER the check passed.
+OPENTYPE_NUMGLYPHS_CAP = 65535
+GLYPH_BUDGET_SOFT_CAP = 65000
+
+# ── Word-unit save-time guard ────────────────────────────────────────
+# Word-unit (Arabic / Thai / Indic) builds emit ~3 GSUB chain-context
+# rules per word. With the HarfBuzz repacker (uharfbuzz) enabled — which
+# main() turns on automatically for word-unit builds — that packs in
+# seconds. But if uharfbuzz is NOT importable, fontTools silently falls
+# back to its pure-Python serializer, whose GSUB pack time grows
+# superlinearly with rule count: measured ~0.4s @500 words, ~9s @8k, and
+# ~90 MINUTES at the full 25k-word Arabic set (the save appears to hang).
+#
+# Above this many word entries we therefore REQUIRE the repacker: if
+# it's missing the build aborts in milliseconds with an actionable
+# message instead of wedging at save time. Set WING_FONT_ALLOW_SLOW_SAVE
+# (any non-empty value) to bypass the abort and accept the slow path.
+#
+# The threshold is deliberately well above the largest curated mapping's
+# expected size but below the danger zone — 8k words still saves in ~9s
+# pure-Python, so 10k leaves headroom while catching the pathological
+# 25k+ case. Builds that DO have the repacker only get a heads-up
+# warning past the threshold, never an abort.
+WORD_UNIT_REPACKER_REQUIRED_THRESHOLD = 10000
+
+
+def _prepare_word_mode_fonts(
+    base_font, output_font, base_font_file, base_axis_location
+):
+    """Word-unit (Arabic/Thai) mode needs raw base-font bytes for
+    HarfBuzz shaping. Returns ``(base_font_bytes, output_font)`` —
+    output_font may be REPLACED, see below.
+
+    Two paths:
+
+      * Base font was instanced from a variable master — the on-disk
+        bytes don't match the in-memory static instance, so serialise
+        it. This save runs with fontTools' DEFAULT serializer config
+        (hb.repack enabled) — safe because the GSUB is still the
+        source font's own (no wing lookups yet) — and it bakes
+        Extension (type 7) wrapping into any overflow-prone lookups.
+        We then RELOAD output_font from those very bytes: a
+        freshly-instanced in-memory font has every lookup unwrapped,
+        and big Arabic GSUB tables (Noto Nastaliq: ~200 lookups,
+        ~2.5k subtables) make Phase 4's repacker-disabled save
+        re-discover the Extension promotions one full GSUB recompile
+        at a time (30s+ instead of ~1s). The round-trip preserves the
+        baked-in wrapping through subset + save.
+      * Static base — just read the file.
+    """
+    if base_axis_location and "fvar" not in base_font:
+        import io as _io
+        _buf = _io.BytesIO()
+        base_font.save(_buf)
+        base_font_bytes = _buf.getvalue()
+        output_font.close()
+        output_font = TTFont(_io.BytesIO(base_font_bytes))
+    else:
+        with open(base_font_file, "rb") as _f:
+            base_font_bytes = _f.read()
+    return base_font_bytes, output_font
+
+
+def _word_mode_keep_glyphs(base_font, char_mapping, word_components):
+    """Extra glyphs the optimize/subset path must keep for word-unit
+    outputs:
+
+      * the ligature-component glyphs of every mapped word — the match
+        input the user actually types (post shaper-preprocessing,
+        e.g. Thai NIKHAHIT);
+      * the whole encoded repertoire of every word-unit script present
+        (letters, marks, digits, punctuation, tatweel) so un-mapped
+        words still render, the Arabic boundary-guard coverages stay
+        meaningful, and the variant-override triggers survive;
+      * the space glyph — Arabic words are space-separated and Thai
+        uses spaces between clauses.
+    """
+    keep: list = []
+    for comps in word_components.values():
+        keep.extend(comps)
+    scripts_present = {
+        get_word_unit_script(key) for key in char_mapping if len(key) > 1
+    }
+    keep_ranges = [
+        r
+        for tag, ranges in WORD_UNIT_SCRIPT_RANGES.items()
+        if tag in scripts_present
+        for r in ranges
+    ]
+    base_cmap = base_font.getBestCmap() or {}
+    for cp, g in base_cmap.items():
+        if isinstance(g, str) and any(
+            lo <= cp <= hi for lo, hi in keep_ranges
+        ):
+            keep.append(g)
+    space_glyph = get_glyph_name_by_char(base_font, " ")
+    if space_glyph:
+        keep.append(space_glyph)
+    return keep
+
+
+def _auto_extend_vertical_metrics(output_font, word_metrics, margin=20):
+    """Extend the output font's vertical metrics to the composed word
+    glyphs' actual ink (plus a small safety margin) so neither direction
+    gets clipped or overlaps the adjacent line: the below-the-word
+    annotation default puts ink underneath the base font's descent, and
+    the above-the-word `-v` variant can poke past its ascent.
+
+    Unlike the CJK above-the-character path (and the --out-ascent flag),
+    this extends the sTypo* metrics too, not just hhea + OS/2 win. The
+    reason is line spacing: word-unit fonts add a whole extra row of
+    annotation (a romanization line under each Arabic word, or above it
+    when inverted), and the base fonts ship with `USE_TYPO_METRICS` set,
+    so the apps that lay out multi-line text — Chrome, Firefox, Word,
+    InDesign — derive line height from sTypoAscender/Descender. If those
+    stayed at the base font's values while win/hhea grew, the reserved
+    line box would be shallower than the annotation ink and the
+    annotation row would collide with the next line as soon as line
+    spacing is tightened. We know the exact ink extent here
+    (`word_metrics`), so we set all three metric families consistently.
+
+    This only fires for word-unit builds: `min_y`/`max_y` are populated
+    solely by the word-composition path in build_glyph, so the CJK
+    single-character fonts (including the Urdu/Thai annotation-on-CJK
+    pairings) never reach these branches and keep their native line
+    spacing."""
+    os2 = output_font["OS/2"]
+    if word_metrics.get("min_y") is not None:
+        ink_floor = int(word_metrics["min_y"]) - margin
+        if ink_floor < output_font["hhea"].descent:
+            output_font["hhea"].descent = ink_floor
+        if -ink_floor > os2.usWinDescent:
+            os2.usWinDescent = -ink_floor
+        if ink_floor < os2.sTypoDescender:
+            os2.sTypoDescender = ink_floor
+    if word_metrics.get("max_y") is not None:
+        ink_top = int(word_metrics["max_y"]) + margin
+        if ink_top > output_font["hhea"].ascent:
+            output_font["hhea"].ascent = ink_top
+        if ink_top > os2.usWinAscent:
+            os2.usWinAscent = ink_top
+        if ink_top > os2.sTypoAscender:
+            os2.sTypoAscender = ink_top
+
+
+# Small headroom (font units, UPM=1000) added above the tallest
+# composed glyph's ink when auto-fitting the clipping ascent. Matches
+# the word-unit `_auto_extend_vertical_metrics` margin so the two paths
+# behave consistently. Just enough to clear winAscent-strict clipping
+# (Word / Pages / Keynote / Canva) without inflating line height the way
+# the old hand-tuned `--out-ascent 1200/1300` values did.
+AUTO_ASCENT_MARGIN = 20
+
+
+def _resolve_out_ascent(out_ascent):
+    """Normalise the many shapes `out_ascent` arrives in into a
+    ``(mode, explicit_value)`` pair.
+
+      * ``None``                         → ("auto", None)
+      * ``"auto"`` (any case)            → ("auto", None)
+      * ``"off"`` / ``"none"`` / ``0``   → ("off", None)
+      * a positive number or int-string → ("explicit", int(value))
+      * anything else (JsNull from the   → ("auto", None)
+        Pyodide bridge, stray types)
+
+    Modes:
+      * ``"auto"``     — widen the clipping ascent to fit the tallest
+        composed glyph (the new default). Done in `_auto_fit_ascent`.
+      * ``"explicit"`` — the caller pinned an exact ascent; set it
+        verbatim and DON'T auto-widen (respects hand-tuned CI values
+        like the Xiaolai+Urdu `--out-ascent 1300`).
+      * ``"off"``      — leave the base font's ascent untouched (the
+        pre-auto-fit legacy behaviour; opt back in with `--out-ascent
+        off`).
+    """
+    if out_ascent is None:
+        return ("auto", None)
+    if isinstance(out_ascent, str):
+        s = out_ascent.strip().lower()
+        if s in ("", "auto"):
+            return ("auto", None)
+        if s in ("off", "none"):
+            return ("off", None)
+        try:
+            v = int(float(s))
+        except ValueError:
+            return ("auto", None)
+        return ("explicit", v) if v > 0 else ("off", None)
+    if isinstance(out_ascent, (int, float)):
+        return ("explicit", int(out_ascent)) if out_ascent > 0 else ("off", None)
+    # JsNull / undefined / unexpected types from the worker bridge.
+    return ("auto", None)
+
+
+def _auto_fit_ascent(output_font, char_metrics, margin=AUTO_ASCENT_MARGIN):
+    """Widen (only) the output font's clipping ascent so the tallest
+    composed SINGLE-character glyph's ink fits with a small margin.
+
+    Touches ``hhea.ascent`` + ``OS/2.usWinAscent`` only — NOT
+    ``sTypoAscender`` — mirroring the explicit `--out-ascent` lever:
+    CJK single-char builds keep their typo-metrics line spacing (the
+    base fonts ship with USE_TYPO_METRICS off, so winAscent is what
+    renderers actually clip at). Widen-only: never lowers an ascent the
+    base font already set higher.
+
+    No-op when `char_metrics` carries no ``max_y`` — e.g. word-unit-only
+    builds, whose ascent/descent are handled by
+    `_auto_extend_vertical_metrics` instead.
+    """
+    if not char_metrics:
+        return
+    max_y = char_metrics.get("max_y")
+    if max_y is None:
+        return
+    ink_top = int(max_y) + margin
+    if ink_top > output_font["hhea"].ascent:
+        output_font["hhea"].ascent = ink_top
+    if ink_top > output_font["OS/2"].usWinAscent:
+        output_font["OS/2"].usWinAscent = ink_top
+
+
+def _auto_fit_descent(output_font, char_metrics, margin=AUTO_ASCENT_MARGIN):
+    """Widen the output font's clipping descent + typo descender so the
+    deepest composed glyph's ink fits with a small margin.
+
+    The descent counterpart to `_auto_fit_ascent`. Specifically targets
+    the `--anno-below` build mode where the annotation drops into the
+    descent area: without this, the annotation ink would render but
+    successive lines would overlap it (Chrome / Firefox / Word /
+    InDesign all reserve line-box space based on
+    hhea.descent / OS/2.sTypoDescender, not on actual ink extent).
+
+    Unlike `_auto_fit_ascent` — which touches only winAscent + hhea
+    ascent to preserve the base font's USE_TYPO_METRICS=False line
+    spacing — this one also pushes `sTypoDescender` down. Reason:
+    `--anno-below` ADDS ink below the baseline that didn't exist in
+    the base font, so the existing typo metrics simply don't describe
+    the new content. Apps that respect typo metrics need to know the
+    deeper extent or the next line will collide; apps that use win
+    metrics need the same. Both families get widened consistently.
+
+    The descent value is negative (positive `ink_floor` magnitude
+    means deeper below the baseline). Mirrors the sign-handling in
+    `_auto_extend_vertical_metrics`:
+      * hhea.descent (signed, negative) ← min(current, ink_floor)
+      * OS/2.usWinDescent (unsigned positive) ← max(current, -ink_floor)
+      * OS/2.sTypoDescender (signed, negative) ← min(current, ink_floor)
+
+    Widen-only: never raises a descent the base font already set deeper.
+
+    No-op when `char_metrics` is empty or carries no ``min_y``. Safe
+    to call on default builds too — single-char composites with
+    annotation ABOVE the baseline have min_y near 0, which won't push
+    the descent any deeper.
+    """
+    if not char_metrics:
+        return
+    min_y = char_metrics.get("min_y")
+    if min_y is None:
+        return
+    ink_floor = int(min_y) - margin   # negative when annotation extends below baseline
+    if ink_floor >= 0:
+        # No ink below baseline — nothing to do.
+        return
+    if ink_floor < output_font["hhea"].descent:
+        output_font["hhea"].descent = ink_floor
+    if -ink_floor > output_font["OS/2"].usWinDescent:
+        output_font["OS/2"].usWinDescent = -ink_floor
+    if ink_floor < output_font["OS/2"].sTypoDescender:
+        output_font["OS/2"].sTypoDescender = ink_floor
+
+
+def _to_postscript_name(family_name: str) -> str:
+    """Sanitize an arbitrary family name into a spec-compliant
+    PostScript name (NameID 6).
+
+    OpenType spec for NameID 6:
+      * Printable ASCII only (codepoints 33..126)
+      * Forbidden chars: space, `[ ] ( ) { } < > / %`
+      * Max 63 chars
+
+    Non-conforming chars become `-`; runs of consecutive `-` are
+    collapsed; leading / trailing `-` are stripped. The result is
+    capped at POSTSCRIPT_NAME_MAX_LEN as a defensive backstop —
+    LF_FACESIZE = 31 will usually hit first, but a caller bypassing
+    `main()`'s validation would still produce a spec-compliant
+    NameID 6 here.
+    """
+    out: list[str] = []
+    for ch in family_name:
+        cp = ord(ch)
+        if 33 <= cp <= 126 and ch not in POSTSCRIPT_NAME_FORBIDDEN:
+            out.append(ch)
+        else:
+            out.append("-")
+    result = "".join(out)
+    while "--" in result:
+        result = result.replace("--", "-")
+    return result.strip("-")[:POSTSCRIPT_NAME_MAX_LEN]
+
+
+def _wing_font_unique_id(base_unique_id: str, new_family: str) -> str:
+    """Compose a spec-compliant NameID 3 (Unique Font Identifier).
+
+    OpenType requires NameID 3 to be globally unique across fonts.
+    Inheriting the base font's NameID 3 verbatim — what we used to
+    do — produces multiple Wing Font derivatives that all claim
+    the same identifier, which validators flag.
+
+    Format: preserve the base font's Adobe-convention version +
+    vendor segments and substitute the third segment with the new
+    family name. Falls back to a minimal `WNGF;<family>` when the
+    base record is missing or doesn't parse.
+
+    Length cap at UNIQUE_ID_MAX_LEN (63). Practical bound — no
+    OpenType hard limit, but font-tool buffers commonly assume
+    fields fit in 64-byte buckets, and Microsoft Font Validator
+    warns past that point.
+    """
+    base = (base_unique_id or "").strip()
+    family = new_family.strip()
+    if base:
+        parts = [p.strip() for p in base.split(";")]
+        if len(parts) >= 3:
+            # Adobe: <version>;<vendor>;<unique-name>[;<extras>...]
+            # Keep version + vendor, swap in our family name, drop
+            # extras (which historically duplicate the vendor).
+            composed = ";".join([parts[0], parts[1], family])
+        else:
+            composed = f"WNGF;{family}"
+    else:
+        composed = f"WNGF;{family}"
+    # Defensive truncate — should never fire with LF_FACESIZE = 31
+    # families, but keeps us safe if a future caller bypasses that
+    # guard. Trim from the right so the family-name suffix survives
+    # (search-by-family in font managers still works).
+    if len(composed) > UNIQUE_ID_MAX_LEN:
+        composed = composed[:UNIQUE_ID_MAX_LEN]
+    return composed
+
+
+def set_family_name(font, new_family_name):
+    """Rewrite the output font's family-identifying name records.
+
+    Touched records:
+      * 1  Font Family             ← new family verbatim
+      * 3  Unique Font Identifier  ← _wing_font_unique_id() — composes
+                                     "version;vendor;family" from the
+                                     base record so the output gets a
+                                     globally-unique ID instead of
+                                     inheriting the base font's.
+      * 4  Full Name               ← new family verbatim
+      * 6  PostScript Name         ← _to_postscript_name() — ASCII +
+                                     forbidden-char strip so the
+                                     output complies with the OT spec
+                                     for PS names.
+      * 16 Typographic Family      ← new family verbatim
+
+    Earlier attempts to rewrite NameID 3 caused Word-rendering
+    regressions, eventually traced to the LF_FACESIZE family-name
+    overflow (since fixed). The retry now ships as part of the
+    spec-compliance pass — distinct values per NameID, all within
+    their respective length caps (see the comment block around
+    LF_FACESIZE_LIMIT at module top).
+
+    Length guard:
+      The actual check lives at the top of `main()` (search for
+      LF_FACESIZE_LIMIT) so a too-long family name fails in
+      milliseconds instead of after the multi-minute composition
+      + GSUB phases. By the time `set_family_name` is called, the
+      name has already been validated.
+    """
+    table = font["name"]
+    # Compute the value for each NameID upfront. NameID 6 needs
+    # PostScript-spec sanitization (no spaces, no `[]{}()<>/%`);
+    # NameID 3 needs the "version;vendor;family" composition. The
+    # rest reuse the family name verbatim — its 31-char cap from
+    # the LF_FACESIZE guard at main() keeps them well under their
+    # individual NameID maxima.
+    base_uid_rec = table.getName(3, *WINDOWS_ENGLISH_IDS)
+    new_unique_id = _wing_font_unique_id(
+        base_uid_rec.toUnicode() if base_uid_rec is not None else "",
+        new_family_name,
+    )
+    new_postscript_name = _to_postscript_name(new_family_name)
+
+    name_id_to_value = {
+        1: new_family_name,        # Family
+        3: new_unique_id,          # Unique Font Identifier (NEW)
+        4: new_family_name,        # Full Name
+        6: new_postscript_name,    # PostScript Name (sanitized)
+        16: new_family_name,       # Typographic Family
+    }
+
+    for plat_id, enc_id, lang_id in (WINDOWS_ENGLISH_IDS, MAC_ROMAN_IDS):
+        for name_id, value in name_id_to_value.items():
+            family_name_rec = table.getName(
+                nameID=name_id,
+                platformID=plat_id,
+                platEncID=enc_id,
+                langID=lang_id,
+            )
+            if family_name_rec is not None:
+                old_value = family_name_rec.toUnicode()
+                if old_value != value:
+                    print(f"Changing name record {name_id} from '{old_value}' to '{value}'")
+                    table.setName(
+                        value,
+                        nameID=name_id,
+                        platformID=plat_id,
+                        platEncID=enc_id,
+                        langID=lang_id,
+                    )
+
+
+# Low-profile attribution: append a single line to the OpenType
+# `name` table's Description (nameID 10). Everything else — Copyright
+# (0), Manufacturer (8), Designer (9), Vendor URL (11), Version (5) —
+# is left exactly as the base font set it. This matches the design
+# intent of "respect all real design work by the base font and
+# annotation font; Wing Font is a tooling step, not a designer or
+# manufacturer."
+#
+# Wording is deliberately framed as a modification note ("Annotations
+# added via Wing Font") rather than a claim of ownership. URL is
+# included so a curious user opening the font in macOS Font Book or
+# Windows Font Properties has a one-step lookup back to the project.
+# ASCII-only by design — NameID 10 is written to both Windows-English
+# (UTF-16, would accept Unicode) AND Mac-Roman, and Mac-Roman lacks
+# the em-dash (U+2014). Using `-` instead of `—` makes the same
+# string round-trip cleanly on both platforms with no encoding loss.
+WING_FONT_PROVENANCE_NOTE = (
+    "Annotations added via Wing Font - https://wing-font.chunlaw.io"
+)
+
+# Marker appended to NameID 5 (Version) so downstream tools can
+# distinguish a Wing Font derivative from the original base. The
+# leading "Version X.Y" substring of NameID 5 stays intact (most
+# font-info parsers look at that part); the trailing toolchain
+# cruft from the base record is dropped to keep the result inside
+# VERSION_MAX_LEN. Idempotent — re-running over an already-tagged
+# font is a no-op because we look for "Wing Font" in the string.
+WING_FONT_VERSION_TAG = "modified by Wing Font"
+
+
+def tag_wing_font_provenance(font):
+    """Append a low-profile Wing Font note to the output font's
+    Description (nameID 10).
+
+    For each of the two name-table records Wing Font's pipeline
+    consistently writes to (Windows-English and Mac-Roman), this:
+      * Reads the existing Description record (may be missing —
+        not every base font ships nameID 10).
+      * If present, appends our note after a blank line so visual
+        separation is preserved between the upstream description
+        and the Wing Font line.
+      * If absent, creates the record with just our note.
+
+    No other nameIDs are touched. Manufacturer / Designer /
+    Copyright / Vendor URL / Version stay exactly as the base font
+    set them — Wing Font is a tooling step in the pipeline, not a
+    designer or manufacturer of the typeface itself.
+    """
+    table = font["name"]
+    for plat_id, enc_id, lang_id in (WINDOWS_ENGLISH_IDS, MAC_ROMAN_IDS):
+        existing = table.getName(
+            nameID=10,
+            platformID=plat_id,
+            platEncID=enc_id,
+            langID=lang_id,
+        )
+        if existing is not None:
+            existing_text = existing.toUnicode()
+            # Idempotent — re-running the pipeline on an already-
+            # tagged font (e.g. a regenerate-with-different-params
+            # pass that reads a previously-built TTF) wouldn't
+            # double-stamp it. Cheap substring check; the URL is
+            # the stable signature regardless of whether we ever
+            # tweak the leading text.
+            if "wing-font.chunlaw.io" in existing_text:
+                continue
+            new_text = f"{existing_text}\n\n{WING_FONT_PROVENANCE_NOTE}"
+        else:
+            new_text = WING_FONT_PROVENANCE_NOTE
+        table.setName(
+            new_text,
+            nameID=10,
+            platformID=plat_id,
+            platEncID=enc_id,
+            langID=lang_id,
+        )
+
+
+def tag_wing_font_version(font):
+    """Tag NameID 5 (Version) with a Wing Font modification marker.
+
+    Why: by convention, a derived font's NameID 5 records the
+    upstream version *plus* a sub-version / modification note so
+    font managers can distinguish derivatives from originals. Most
+    parsers (Windows Font Properties dialog, font-management apps,
+    Microsoft Font Validator) bind to the leading `"Version X.Y"`
+    substring and treat anything after as informational metadata.
+
+    Behaviour: preserves the leading `"Version X.Y"` portion of the
+    base record (everything up to the first `;`), drops the
+    trailing toolchain cruft (`hotconv 1.0.118;makeotfexe ...`),
+    and substitutes a Wing Font marker. Total result stays inside
+    VERSION_MAX_LEN (63 chars).
+
+    Idempotent — re-running over an already-tagged font is a no-op.
+
+    Only the Windows-English + Mac-Roman records are touched, same
+    as the rest of the name-table writes. Other language records
+    (zh-CN / ja-JP / ko-KR / …), if present, are left untouched —
+    same trade-off as set_family_name / tag_wing_font_provenance.
+    """
+    table = font["name"]
+    for plat_id, enc_id, lang_id in (WINDOWS_ENGLISH_IDS, MAC_ROMAN_IDS):
+        rec = table.getName(
+            nameID=5,
+            platformID=plat_id,
+            platEncID=enc_id,
+            langID=lang_id,
+        )
+        if rec is None:
+            continue
+        existing = rec.toUnicode()
+        # Idempotency check — the marker text is the stable signature.
+        if WING_FONT_VERSION_TAG in existing:
+            continue
+        # Keep the leading "Version X.Y" portion only — anything
+        # after the first semicolon is build-chain cruft that varies
+        # across fontTools / makeotfexe versions and isn't useful to
+        # carry into the derivative.
+        head = existing.split(";", 1)[0].strip()
+        # The build date tells two builds of the same family apart: IVS /
+        # mark numbering can differ between them, so the Office add-in
+        # shows this string for the user to compare with the installed
+        # font (Font Book / Windows font properties show NameID 5).
+        # The head is what gets trimmed if the record would exceed the
+        # cap some downstream tools' fixed buffers can hold.
+        tag = f"; {WING_FONT_VERSION_TAG} {date.today().isoformat()}"
+        new_value = head[: VERSION_MAX_LEN - len(tag)] + tag
+        table.setName(
+            new_value,
+            nameID=5,
+            platformID=plat_id,
+            platEncID=enc_id,
+            langID=lang_id,
+        )
+
+
+def _check_glyph_count_budget(
+    output_font, char_mapping, optimize, mapping_path, diy_pua_map=None
+):
+    """Pre-flight check: bail early if the predicted output glyph count
+    would exceed OpenType's hard 65,535 ceiling. Returns a dict carrying
+    the per-feature emit decisions the caller should honour:
+
+        {"emit_bare_bases": bool}
+
+    Most builds get ``{"emit_bare_bases": True}`` — every annotated
+    single-char entry gets a paired bare (un-annotated) glyph so the
+    1-indexed digit-trigger semantics can render `字0` → bare. On very
+    large mappings (Mandarin pinyin in particular) the bare bases push
+    the predicted glyph count over the cap; in that case we return
+    ``{"emit_bare_bases": False}`` and log a one-line note. The
+    `字0` rule then degrades to a no-op (typing `字0` renders as
+    literal `0` after the glyph), which is the same behaviour as
+    older pre-1-indexed builds where `0` had no special meaning.
+
+    Why here, not at save time:
+    The composition phase (Phase 1) and the GSUB build phase (Phase 2)
+    each take many seconds to minutes on large mappings — on Pyodide,
+    saving with subset is also expensive. fontTools doesn't surface
+    the overflow until ``output_font.save(...)`` packs the maxp table,
+    by which time the user has spent minutes burning CPU on something
+    that was structurally doomed from row count alone. We can predict
+    it cheaply right after ``load_mapping`` and fail in milliseconds
+    with an actionable message instead.
+
+    Estimation:
+      * each (key, [variant1, variant2, ...]) entry in char_mapping
+        contributes ``len(variants)`` NEW glyphs — both for single-char
+        bases (the variant glyphs sit alongside the original in the
+        font) and for word-unit keys (the composed word glyph is
+        entirely new — the base font doesn't have it);
+      * EVERY single-char entry also contributes one BARE glyph (the
+        un-annotated scaled-base used by the `(base, 0) → bare`
+        ligature), unless we decide to disable that branch below;
+      * with ``-opt``, fontTools.subset keeps only the glyphs Phase 4's
+        keep-list explicitly names, plus a small set of structurally
+        required ones (.notdef, .null, space, basic ASCII for fallback)
+        — call that ~1,000 as a safe overestimate;
+      * without ``-opt``, every glyph already in ``output_font`` survives
+        AS WELL AS the new ones we add;
+      * DIY (--diy-annotations) adds one mark glyph per distinct DIY
+        annotation, on top of the per-character bare base.
+
+    So:
+        predicted = NEW + bare_bases + diy_marks + (1000 if optimize else existing)
+
+    Two-stage overflow handling:
+      1. If predicted with bare bases overflows but WITHOUT bare bases
+         fits, disable bare bases and return early (the caller will
+         skip the (base, 0) → bare rule too).
+      2. If predicted WITHOUT bare bases still overflows, raise the
+         original budget error — there's no way to fit, and the user
+         needs to trim the CSV.
+    """
+    predicted_new = sum(len(v) for v in char_mapping.values())
+    existing = output_font["maxp"].numGlyphs
+    # Bare bases — one per single-char mapped entry — are ALWAYS emitted
+    # by default now (was DIY-only). They survive --optimize because
+    # main()'s keep-list explicitly retains them.
+    bare_bases = sum(1 for k in char_mapping if len(k) == 1)
+    # DIY adds one mark glyph per distinct annotation.
+    diy_marks = len(diy_pua_map or {})
+
+    if optimize:
+        # Subset will discard most of `existing`. The keep-list is
+        # essentially char_mapping's keys + a small structural retain
+        # set; 1,000 is a generous overestimate of "what the subsetter
+        # holds onto regardless of mapping".
+        structural = 1000
+    else:
+        structural = existing
+
+    predicted_with_bare = predicted_new + bare_bases + diy_marks + structural
+    predicted_without_bare = predicted_new + diy_marks + structural
+    extras_note_with_bare = (
+        f"{bare_bases} bare bases"
+        + (f" + {diy_marks} DIY marks" if diy_marks else "")
+    )
+    extras_note_without_bare = (
+        f"{diy_marks} DIY marks" if diy_marks else ""
+    )
+    budget_explanation_with_bare = (
+        f"{predicted_new} new glyphs from your CSV + {extras_note_with_bare} + ~"
+        f"{structural:,} structural glyphs kept by "
+        f"{'--optimize subset' if optimize else 'base-font passthrough'}"
+    )
+    budget_explanation_without_bare = (
+        f"{predicted_new} new glyphs from your CSV"
+        + (f" + {extras_note_without_bare}" if extras_note_without_bare else "")
+        + f" + ~{structural:,} structural glyphs"
+    )
+
+    # Happy path: bare-bases fit.
+    if predicted_with_bare <= GLYPH_BUDGET_SOFT_CAP:
+        return {"emit_bare_bases": True}
+
+    # Bare-bases would overflow; check whether dropping them fits.
+    if predicted_without_bare <= GLYPH_BUDGET_SOFT_CAP:
+        print(
+            f"[wing-font] Mapping has {bare_bases:,} single-char entries; "
+            f"emitting bare bases for each would push the glyph count to "
+            f"{predicted_with_bare:,} (cap {GLYPH_BUDGET_SOFT_CAP:,}). "
+            f"Disabling bare-base emission for this build — typing "
+            f"`字0` will render literal `0` instead of stripping the "
+            f"annotation. All other digit-trigger paths "
+            f"(`字1`, `字２`, `字丅一`, …) remain available.",
+            flush=True,
+        )
+        return {"emit_bare_bases": False}
+
+    # Even without bare bases, the mapping is too large — raise the
+    # original budget error so the user knows to trim the CSV.
+    predicted_total = predicted_without_bare
+    budget_explanation = budget_explanation_without_bare
+    # Hand the caller a concrete trim target rather than a vague
+    # "make it smaller": ROWS = predicted_new − overshoot, capped
+    # below SOFT - structural-glyph buffer.
+    budget_remaining_for_new = GLYPH_BUDGET_SOFT_CAP - structural
+    target_row_estimate = max(0, budget_remaining_for_new)
+    # Two-step error reporting: print the long friendly diagnostic
+    # to stdout FIRST (so it lands in runner.py's tee'd progress
+    # log — Step 4 in /generate displays everything captured here),
+    # then raise a short RuntimeError to abort the pipeline.
+    diagnostic = (
+        f"\n[wing-font] Pre-flight glyph budget exceeded.\n"
+        f"\n"
+        f"  Predicted output glyph count: {predicted_total:,}\n"
+        f"  (Bare-base emission already auto-disabled to try fitting;\n"
+        f"   with bare bases the count would have been "
+        f"{predicted_with_bare:,}.)\n"
+        f"  Computed as: {budget_explanation}.\n"
+        f"  OpenType `maxp` hard cap:     "
+        f"{OPENTYPE_NUMGLYPHS_CAP:,} (uint16).\n"
+        f"  Safe budget (with margin):    "
+        f"{GLYPH_BUDGET_SOFT_CAP:,}.\n"
+        f"\n"
+        f"Each row in the mapping CSV whose first column uses only\n"
+        f"characters present in the base font becomes its own glyph\n"
+        f"in the output (one composed glyph per word for word-unit\n"
+        f"scripts like Thai/Arabic; one variant glyph per reading\n"
+        f"for CJK). Mapping: {mapping_path}\n"
+        f"\n"
+        + (
+            "DIY build: re-run with --optimize (-opt). Subsetting keeps\n"
+            "only the glyphs your mapping reaches plus the DIY marks /\n"
+            "bare bases, which fits — whereas un-subsetted the ~50k-glyph\n"
+            "base font alone already overflows. DIY annotation then\n"
+            "works for any character present in the mapping.\n\n"
+            if (diy_pua_map and not optimize)
+            else (
+                f"Trim the CSV so the result stays under the cap. As a\n"
+                f"rough target: keep about the top {target_row_estimate:,}\n"
+                f"rows (by weight — the third CSV column), then retry.\n\n"
+            )
+        )
+        + f"Aborting before the {('composition + ') if not optimize else ''}"
+        + f"save phase to spare you the wasted compute.\n"
+    )
+    print(diagnostic, flush=True)
+    raise RuntimeError(
+        f"Pre-flight glyph budget exceeded: predicted "
+        f"{predicted_total:,} glyphs > soft cap "
+        f"{GLYPH_BUDGET_SOFT_CAP:,} (OpenType uint16 hard cap is "
+        f"{OPENTYPE_NUMGLYPHS_CAP:,}). See the diagnostic printed "
+        f"above for the recommended fix."
+    )
+
+
+def _repacker_available() -> bool:
+    """True if uharfbuzz (the HarfBuzz GSUB/GPOS repacker fontTools
+    delegates to when USE_HARFBUZZ_REPACKER is on) can be imported.
+    When it can't, fontTools quietly serializes in pure Python — correct
+    but, for big word-unit tables, catastrophically slow."""
+    import importlib.util
+
+    return importlib.util.find_spec("uharfbuzz") is not None
+
+
+def _check_word_unit_save_budget(char_mapping, mapping_path):
+    """Pre-flight guard for word-unit (Arabic/Thai/Indic) mappings.
+
+    Counts word entries (multi-character keys — each becomes ~3 GSUB
+    chain rules) and, when the count crosses
+    WORD_UNIT_REPACKER_REQUIRED_THRESHOLD, ensures the build won't wedge
+    at save time:
+
+      * repacker present  → emit a heads-up warning and proceed (the
+        save stays in the seconds range);
+      * repacker missing  → abort in milliseconds with an actionable
+        message, UNLESS WING_FONT_ALLOW_SLOW_SAVE is set (opt-in to the
+        pure-Python slow path).
+
+    Runs right after the glyph-budget check so an oversized CSV fails
+    before the multi-minute composition phase, not after it. No-op for
+    CJK / small mappings — they never approach the threshold and the
+    pure-Python serializer handles them fine.
+    """
+    word_count = sum(1 for k in char_mapping if len(k) > 1)
+    if word_count <= WORD_UNIT_REPACKER_REQUIRED_THRESHOLD:
+        return
+
+    if _repacker_available():
+        print(
+            f"\n[wing-font] Large word-unit mapping: {word_count:,} word "
+            f"entries (> {WORD_UNIT_REPACKER_REQUIRED_THRESHOLD:,}).\n"
+            f"  The HarfBuzz repacker is available, so the save will use "
+            f"it and stay fast. Proceeding.\n",
+            flush=True,
+        )
+        return
+
+    import os
+
+    if os.environ.get("WING_FONT_ALLOW_SLOW_SAVE"):
+        print(
+            f"\n[wing-font] WARNING: {word_count:,} word entries and "
+            f"uharfbuzz is NOT installed.\n"
+            f"  WING_FONT_ALLOW_SLOW_SAVE is set, so continuing on the "
+            f"pure-Python serializer.\n"
+            f"  Expect the 'TTF save' step to take many minutes to over "
+            f"an hour at this size.\n",
+            flush=True,
+        )
+        return
+
+    # Fail fast with the same print-then-raise pattern as the glyph
+    # budget check (keeps the friendly diagnostic in runner.py's tee'd
+    # Step-4 log, with a short traceback behind it).
+    diagnostic = (
+        f"\n[wing-font] Word-unit mapping too large for the pure-Python "
+        f"save path.\n"
+        f"\n"
+        f"  Word entries in CSV:   {word_count:,}\n"
+        f"  Safe without repacker: {WORD_UNIT_REPACKER_REQUIRED_THRESHOLD:,}\n"
+        f"  Mapping:               {mapping_path}\n"
+        f"\n"
+        f"Each word becomes ~3 GSUB chain-context rules. Without the\n"
+        f"HarfBuzz repacker (uharfbuzz), fontTools packs the GSUB table\n"
+        f"in pure Python, whose time grows superlinearly with rule\n"
+        f"count — roughly 90 MINUTES at 25k words. The build would\n"
+        f"appear to hang at the 'TTF save' step.\n"
+        f"\n"
+        f"Pick one:\n"
+        f"  * Install the repacker:  pip install uharfbuzz   (it is in\n"
+        f"    python/requirements.txt; main() auto-enables it for\n"
+        f"    word-unit builds). This is the recommended fix.\n"
+        f"  * Trim the CSV to <= {WORD_UNIT_REPACKER_REQUIRED_THRESHOLD:,} "
+        f"rows (keep the\n"
+        f"    highest-weight words — the third CSV column).\n"
+        f"  * Force the slow path anyway: set WING_FONT_ALLOW_SLOW_SAVE=1.\n"
+        f"\n"
+        f"Aborting before the composition phase to spare you the wasted "
+        f"compute.\n"
+    )
+    print(diagnostic, flush=True)
+    raise RuntimeError(
+        f"Word-unit mapping too large for pure-Python save: "
+        f"{word_count:,} word entries > "
+        f"{WORD_UNIT_REPACKER_REQUIRED_THRESHOLD:,} and uharfbuzz is not "
+        f"installed. See the diagnostic printed above."
+    )
+
+
+def _format_cli_invocation(
+    base_font_file,
+    anno_font_file,
+    mapping,
+    output_prefix,
+    new_family_name,
+    base_scale,
+    anno_scale,
+    anno_spacing,
+    upper_y_offset_ratio,
+    invert,
+    anno_below,
+    optimize,
+    trigger_char,
+    out_ascent,
+    base_axis_location,
+    anno_axis_location,
+    diy_annotations=None,
+    cell_width=None,
+):
+    """Build the equivalent `python wing-font.py ...` command from
+    the kwargs main() actually received.
+
+    Printed at the top of every run so the log shows what's about to
+    happen in a copy-paste-runnable form. For CLI invocations the
+    output is essentially the user's own command line round-tripped
+    through argparse defaults; for Pyodide / runner.py invocations
+    it's the same information but constructed from the runner's
+    kwargs, giving the user a clean fallback CLI command they can
+    run locally if Pyodide crashes mid-run (file paths will be
+    Pyodide temp dirs they'd need to substitute).
+
+    Args matching the CLI default are omitted to keep the line
+    short. Variable-font axis_location dicts have no CLI flag yet
+    and are surfaced as `# NOTE:` lines underneath.
+    """
+    import shlex
+
+    parts = [
+        "python wing-font.py",
+        f"-i {shlex.quote(str(base_font_file))}",
+        f"-a {shlex.quote(str(anno_font_file))}",
+        f"-m {shlex.quote(str(mapping))}",
+        f"-o {shlex.quote(str(output_prefix))}",
+    ]
+    if new_family_name:
+        parts.append(f"-f {shlex.quote(str(new_family_name))}")
+    if base_scale != 0.75:
+        parts.append(f"-bs {base_scale}")
+    if anno_scale != 0.25:
+        parts.append(f"-as {anno_scale}")
+    if anno_spacing != 0.0:
+        parts.append(f"--anno-spacing {anno_spacing}")
+    if cell_width is not None:
+        parts.append(f"--cell-width {cell_width}")
+    if upper_y_offset_ratio != 0.8:
+        parts.append(f"-y {upper_y_offset_ratio}")
+    if invert:
+        parts.append("-v")
+    if anno_below:
+        parts.append("--anno-below")
+    if optimize:
+        parts.append("-opt")
+    if trigger_char != DEFAULT_TRIGGER_CHAR:
+        # Empty string is a legitimate value (disables the trigger
+        # + numeral path); shlex.quote handles it correctly.
+        parts.append(f"--trigger-char {shlex.quote(str(trigger_char))}")
+    # "auto" is the default — omit it. Surface an explicit pin or an
+    # opt-out ("off") so the printed command round-trips faithfully.
+    _asc_mode, _asc_val = _resolve_out_ascent(out_ascent)
+    if _asc_mode == "explicit":
+        parts.append(f"--out-ascent {_asc_val}")
+    elif _asc_mode == "off":
+        parts.append("--out-ascent off")
+    if diy_annotations:
+        parts.append(f"--diy-annotations {shlex.quote(str(diy_annotations))}")
+
+    # Variable-font axis pins: --base-axis TAG=VALUE / --anno-axis
+    # TAG=VALUE, repeated per axis. Mirrors the CLI flag shape so the
+    # printed command round-trips through argparse cleanly. Values
+    # are emitted as int when they have no fractional part (cleaner
+    # log) and as float otherwise.
+    def _fmt_axis(value):
+        return str(int(value)) if float(value).is_integer() else str(value)
+    if base_axis_location:
+        for tag, value in base_axis_location.items():
+            parts.append(f"--base-axis {tag}={_fmt_axis(value)}")
+    if anno_axis_location:
+        for tag, value in anno_axis_location.items():
+            parts.append(f"--anno-axis {tag}={_fmt_axis(value)}")
+
+    return " ".join(parts)
+
+
+def main(
+    base_font_file,
+    anno_font_file,
+    output_prefix,
+    mapping,
+    new_family_name=None,
+    base_scale=0.75,
+    anno_scale=0.25,
+    anno_spacing=0.0,
+    cell_width=None,
+    upper_y_offset_ratio=0.8,
+    invert=False,
+    anno_below=False,
+    optimize=False,
+    skip_woff=False,
+    base_axis_location=None,
+    anno_axis_location=None,
+    # --- Override-trigger character ---
+    #
+    # Controls the character that goes between a base char and a
+    # Chinese numeral when the user wants to manually select a
+    # variant via the IME-friendly path (e.g. `行<trigger>一` →
+    # variant 1 of 行). Default `丅` (U+4E05) is a deliberately-rare
+    # Han character that won't collide with normal text; users can
+    # override to something easier to type with their IME (e.g.
+    # `々`, `〇`). Empty string disables the trigger+numeral path
+    # entirely while leaving the universal digit-suffix path
+    # (`行1`, `行2`, …) intact.
+    trigger_char=DEFAULT_TRIGGER_CHAR,
+    # --- Output ascent policy --------------------------------------
+    #
+    # Controls the output font's hhea.ascent and OS/2.usWinAscent (the
+    # "clipping" ascent honoured by Word, Pages, Keynote, Canva).
+    # Pairings where the annotation cascades far above the base
+    # character (Urdu Nastaliq, tall Thai marks, tall Hangul jamo) need
+    # more headroom than a low-ascent base (e.g. Xiaolai 880u) provides,
+    # or the annotation's top is clipped in those apps.
+    #
+    # Accepts (see _resolve_out_ascent):
+    #   * None / "auto"  → AUTO-FIT (default). After composition the
+    #     pipeline knows the tallest composed glyph's ink (char_metrics),
+    #     and widens hhea.ascent + usWinAscent just enough to clear it
+    #     (+AUTO_ASCENT_MARGIN). No guessing, no clipping. Widen-only —
+    #     a base font with a generous ascent is left as-is.
+    #   * a positive int → EXPLICIT pin. Sets both metrics to exactly
+    #     that value and skips auto-fit (honours hand-tuned values such
+    #     as the CI matrix's Xiaolai+Urdu 1300).
+    #   * "off"          → legacy behaviour: keep the BASE font's ascent
+    #     unchanged (matches builds before the June 2026 auto-fit).
+    #
+    # sTypoAscender is never touched here, so apps that respect typo
+    # metrics keep the base font's line spacing either way.
+    out_ascent=None,
+    # --- DIY manual-annotation inventory ---------------------------
+    #
+    # Optional path to CSV `A` (`input,annotation` per line): the
+    # bounded set of annotations a user may suffix onto ANY base
+    # character via the manual mark path (see
+    # HYBRID_ANNOTATION_DESIGN.md). None disables the DIY path
+    # entirely — the automatic ccmp output is unaffected either way.
+    # Phase 1 parses the file and assigns each annotation a stable
+    # Plane-15 PUA id (internal mark naming only — there is no cmap /
+    # PUA-typing route and no sidecar file). Later phases consume this
+    # inventory to compose the shared mark glyphs.
+    diy_annotations=None,
+    # --- DIY mark horizontal offset --------------------------------
+    #
+    # Renderer-compensation nudge for the DIY shared mark, as a
+    # fraction of the output em. Default 0.0 keeps the geometric
+    # centre, which is correct in DirectWrite/Word and print. Some
+    # browsers position the orphaned cross-run mark from a pen origin
+    # ~0.125em right of the font's assumption; set e.g. -0.0625 to
+    # split that difference, or -0.125 to favour the browser. Trades
+    # Word centring for browser centring — see
+    # HYBRID_ANNOTATION_DESIGN.md §"Cross-run positioning".
+    mark_x_offset=0.0,
+):
+    # First log line: the equivalent CLI command this invocation
+    # corresponds to. Useful both for CLI users (round-tripping the
+    # canonical flag forms) and for Pyodide / runner.py callers
+    # (gives the Step 4 progress log a copy-paste-ready local-CLI
+    # fallback if Pyodide crashes mid-run — the file paths will be
+    # Pyodide temp dirs the user needs to substitute, but the
+    # numeric / boolean args are exactly what was passed).
+    print(_format_cli_invocation(
+        base_font_file=base_font_file,
+        anno_font_file=anno_font_file,
+        mapping=mapping,
+        output_prefix=output_prefix,
+        new_family_name=new_family_name,
+        base_scale=base_scale,
+        anno_scale=anno_scale,
+        anno_spacing=anno_spacing,
+        cell_width=cell_width,
+        upper_y_offset_ratio=upper_y_offset_ratio,
+        invert=invert,
+        anno_below=anno_below,
+        optimize=optimize,
+        trigger_char=trigger_char,
+        out_ascent=out_ascent,
+        base_axis_location=base_axis_location,
+        anno_axis_location=anno_axis_location,
+        diy_annotations=diy_annotations,
+    ))
+
+    # ── DIY inventory: parse `A`, assign internal PUA mark ids ─────
+    # Done up front so a malformed file or an oversized inventory
+    # fails in milliseconds rather than after the multi-minute
+    # composition phase. Phase 1 only produces the in-memory inventory
+    # (pua_map + typed inputs); the mark-glyph composition that
+    # consumes `diy_pua_map` is wired in a later phase.
+    diy_pua_map = {}
+    diy_inputs = []
+    if diy_annotations:
+        _diy = build_diy_inventory(diy_annotations)
+        diy_pua_map = _diy.pua_map
+        diy_inputs = _diy.inputs
+        print(
+            f"[diy] inventory: {len(diy_pua_map):,} annotation(s), "
+            f"{len(diy_inputs):,} typed input(s)"
+        )
+        # DIY needs --optimize, not the opposite. A full CJK base font is
+        # ~50k glyphs on its own, so an UN-subsetted build of any large
+        # mapping already overflows the 65,535 cap before DIY adds a
+        # single mark. With --optimize the subsetter keeps only
+        # mapping-reached glyphs (+ the DIY marks / bare bases / typed
+        # inputs we add to the keep-list below), which fits comfortably.
+        # The trade-off: DIY annotation then works for any character that
+        # SURVIVES the subset — i.e. anything in the mapping — which for a
+        # comprehensive mapping like canto-lshk is every common character.
+        # See HYBRID_ANNOTATION_DESIGN.md §5.
+        if not optimize:
+            print(
+                "[diy] note: DIY builds normally need --optimize (-opt) — a "
+                "full CJK base alone is ~50k glyphs, so an un-subsetted "
+                "build overflows the 65,535-glyph cap. Re-run with -opt if "
+                "the pre-flight budget check below aborts."
+            )
+
+    # ── Family-name length check (very early fail) ────────────────
+    # Windows GDI caps `LOGFONT.lfFaceName` at 32 bytes including the
+    # null terminator (31 effective characters). Family names over
+    # the limit install on Windows fine but Word's font registry
+    # silently truncates them, breaking the strict CJK / HKSCS
+    # routing path so chars like 啲 嘅 嗰 噉 嚟 咗 唔 攞 fall back
+    # to Microsoft JhengHei UI instead of rendering through our
+    # font. The browser (/showcase) doesn't hit the LOGFONT path
+    # so the bug is invisible there.
+    #
+    # Run this BEFORE the multi-minute composition + GSUB phases —
+    # a typo in the matrix entry's `name:` should be caught in
+    # milliseconds, not after 5+ minutes of wasted compute.
+    if new_family_name is not None and len(new_family_name) > LF_FACESIZE_LIMIT:
+        raise SystemExit(
+            f"\n[wing-font] Family name overflow: "
+            f"{new_family_name!r}\n"
+            f"\n"
+            f"  Length: {len(new_family_name)} characters\n"
+            f"  Windows GDI LF_FACESIZE limit: "
+            f"{LF_FACESIZE_LIMIT} characters\n"
+            f"\n"
+            f"Names over the limit install on Windows fine but get\n"
+            f"silently truncated in Word's font registry. The truncated\n"
+            f"name then fails the Word per-codepoint font-fallback\n"
+            f"table's strict CJK check, and Word routes HKSCS-extension\n"
+            f"Cantonese characters (啲 嘅 嗰 噉 嚟 咗 唔 攞 …) to\n"
+            f"Microsoft JhengHei UI even though the font's cmap has\n"
+            f"them. The browser (/showcase) doesn't hit this code\n"
+            f"path so the bug is invisible there.\n"
+            f"\n"
+            f"Shorten the matrix entry's `name:` (or the `-f` CLI arg)\n"
+            f"to {LF_FACESIZE_LIMIT} characters or fewer and retry.\n"
+        )
+
+    # Sanity-check input font sizes before letting fontTools blow up
+    # with a cryptic "bad sfntVersion" error. A common failure mode
+    # is the input download silently returning an error page (e.g.
+    # `404: Not Found` saved with a .ttf extension), which TTFont
+    # would crash on at table-parse time with no hint that the file
+    # is just a tiny text blob. Any legitimate base/annotation font
+    # is >> 1 KiB; flagging anything smaller catches the
+    # download-broke-but-saved-anyway case cleanly.
+    import os as _os
+    for label, path in (("base font", base_font_file),
+                        ("annotation font", anno_font_file)):
+        try:
+            size = _os.path.getsize(path)
+        except OSError as e:
+            raise SystemExit(f"Cannot read {label} {path!r}: {e}") from e
+        if size < 1024:
+            head = ""
+            try:
+                with open(path, "rb") as f:
+                    head = f.read(64).decode("utf-8", errors="replace")
+            except OSError:
+                pass
+            raise SystemExit(
+                f"{label.capitalize()} {path!r} is only {size} byte(s) — "
+                f"this almost certainly isn't a real TTF. "
+                f"Did the download fail and save an error page? "
+                f"First bytes: {head!r}"
+            )
+
+    # Load the fonts and mapping.
+    base_font = TTFont(base_font_file)
+    anno_font = TTFont(anno_font_file)
+    output_font = TTFont(base_font_file)
+
+    # ── Tier 1: auto-instance a variable BASE font ──────────────────
+    # If the base font is variable and the caller didn't pick an
+    # explicit axis location, derive a sensible static instance. The
+    # composition step rewrites glyf outlines and the subsetter cannot
+    # reconcile a leftover gvar against them (it crashes in
+    # TupleVariation.decompileDeltas_), so a variable base MUST be made
+    # static before we touch glyf. This lets callers pass e.g.
+    # NotoSansTC-VariableFont_wght.ttf directly.
+    #
+    # We pin the weight axis to Regular (400), NOT the font's own axis
+    # default: several CJK variable fonts — Noto Sans TC among them —
+    # default `wght` to Thin (100), which is far too light to read as
+    # an annotation base. 400 is clamped into the axis's range; every
+    # other axis (width, optical size, …) takes its default. Callers
+    # can still override via `base_axis_location`.
+    if "fvar" in base_font and not base_axis_location:
+        base_axis_location = {}
+        for axis in base_font["fvar"].axes:
+            if axis.axisTag == "wght":
+                base_axis_location[axis.axisTag] = min(
+                    max(400.0, axis.minValue), axis.maxValue
+                )
+            else:
+                base_axis_location[axis.axisTag] = axis.defaultValue
+
+    # Annotation fonts get the SAME default-weight treatment as the
+    # base. Without this, a variable annotation font shapes and draws
+    # at its fvar default weight — which for Noto Sans JP/KR is Thin
+    # (wght=100) — producing hairline annotations that are far too
+    # light once scaled down to annotation size. Clamp to at least
+    # Regular (400). This is a no-op for fonts whose default is already
+    # >= 400 (Google Sans, Noto Nastaliq Urdu) and for static fonts
+    # with no fvar (Noto Sans Tagalog, Noto Serif, Huninn). The chosen
+    # location is instanced into both the drawn outlines and the
+    # HarfBuzz shaping bytes below, so weight stays consistent. Callers
+    # can still override via `anno_axis_location`.
+    if "fvar" in anno_font and not anno_axis_location:
+        anno_axis_location = {}
+        for axis in anno_font["fvar"].axes:
+            if axis.axisTag == "wght":
+                anno_axis_location[axis.axisTag] = min(
+                    max(400.0, axis.minValue), axis.maxValue
+                )
+            else:
+                anno_axis_location[axis.axisTag] = axis.defaultValue
+
+    # ── Tier 2: variable-font axis instancing ───────────────────────
+    # When the caller picked an axis location for a VARIABLE font,
+    # bake the chosen instance into the glyf table NOW and drop
+    # fvar/gvar/HVAR/etc. Why upfront, not lazily inside
+    # build_glyph?
+    #
+    # The composition pipeline writes new outlines into
+    # output_font["glyf"][name] for every annotated variant glyph.
+    # If output_font still has its original gvar table, the
+    # subsetter later walks gvar lazily and tries to decompile delta
+    # blocks whose point counts no longer match what's in glyf —
+    # crashes with IndexError inside TupleVariation.decompileDeltas_.
+    # Instancing destroys gvar entirely, which sidesteps the whole
+    # class of "static glyf, variable gvar, inconsistent" bugs.
+    #
+    # Also: instancing the base/output fonts means the downstream
+    # `getGlyphSet(location=...)` calls become no-ops — the font is
+    # already at the right location. We keep the kwargs anyway as
+    # belt-and-braces (and to spare a wider refactor).
+    if base_axis_location and "fvar" in base_font:
+        from fontTools.varLib.instancer import instantiateVariableFont
+        base_font = instantiateVariableFont(
+            base_font, base_axis_location, inplace=True
+        )
+        # output_font was opened from the same file, so it carries
+        # the same variations. Instance it to the same location so
+        # the un-annotated glyphs (kept via scale_glyphs) match the
+        # weight we picked.
+        output_font = instantiateVariableFont(
+            output_font, base_axis_location, inplace=True
+        )
+        # `instantiateVariableFont` cleanly drops fvar / gvar / HVAR
+        # / MVAR / avar, but leaves STAT (Style Attributes Table) in
+        # place. STAT only carries meaningful semantics for variable
+        # fonts — it describes axis values for the design space —
+        # so a STAT-without-fvar font advertises axes it can't
+        # support. An earlier attempt to drop STAT regressed Word
+        # rendering, but that was eventually traced to the
+        # LF_FACESIZE family-name overflow (since fixed by the
+        # guard at the top of main). Retry as part of the
+        # spec-compliance pass.
+        for f in (base_font, output_font):
+            if "STAT" in f:
+                del f["STAT"]
+
+    if anno_axis_location and "fvar" in anno_font:
+        from fontTools.varLib.instancer import instantiateVariableFont
+        anno_font = instantiateVariableFont(
+            anno_font, anno_axis_location, inplace=True
+        )
+        # Same STAT-residue cleanup as the base-instance path above.
+        if "STAT" in anno_font:
+            del anno_font["STAT"]
+
+    # Raw annotation-font bytes for HarfBuzz. Two paths:
+    #   • If the anno font was instanced, the on-disk bytes are
+    #     STILL the variable-font master and don't match the static
+    #     anno_font TTFont we now hold. Re-serialise so HB sees the
+    #     same weight as fontTools does — keeps shaping output
+    #     consistent with what the composition pipeline draws.
+    #   • Otherwise, just slurp the file. Cheaper than serialising
+    #     a 10+ MB CJK font when nothing changed.
+    if anno_axis_location and "fvar" not in anno_font:
+        # `not in` is true post-instancing (instantiateVariableFont
+        # removes fvar). Serialise the in-memory static font.
+        import io as _io
+        _buf = _io.BytesIO()
+        anno_font.save(_buf)
+        anno_font_bytes = _buf.getvalue()
+    else:
+        with open(anno_font_file, "rb") as _f:
+            anno_font_bytes = _f.read()
+
+    word_mapping, char_mapping = load_mapping(base_font, mapping)
+
+    # ── Pre-flight: glyph count vs OpenType's uint16 ceiling ─────────
+    # Most word-unit mappings (Thai, Arabic) and the larger CJK
+    # mappings can, in principle, push the output past `maxp`'s
+    # 65,535-glyph hard cap. Without this check the failure surfaces
+    # ~4 minutes in, deep inside `output_font.save(...)`, with an
+    # opaque `struct.error: 'H' format requires 0 <= number <= 65535`.
+    # Check now so we can bail with an actionable error in milliseconds.
+    # Returns a dict carrying the per-feature emit decisions: currently
+    # only `emit_bare_bases`. False when bare-base emission would push
+    # the count over the cap but dropping bare bases keeps it under;
+    # raises RuntimeError when even without bare bases the count would
+    # overflow.
+    _budget_advice = _check_glyph_count_budget(
+        output_font, char_mapping, optimize, mapping, diy_pua_map=diy_pua_map
+    )
+    emit_bare_bases = _budget_advice["emit_bare_bases"]
+    # Same spirit, different ceiling: guard word-unit mappings against
+    # the pure-Python save blow-up when uharfbuzz is missing.
+    _check_word_unit_save_budget(char_mapping, mapping)
+
+    # ── Arabic word-unit entries ─────────────────────────────────────
+    # Multi-character keys in char_mapping are joining-script (Arabic)
+    # WORD entries: build_glyph shapes them against the BASE font and
+    # composes the whole word into one glyph, word_liga_handler makes
+    # them reachable via guarded ccmp ligation, and GDEF ligature
+    # carets keep the text cursor steppable inside the word glyph.
+    #
+    # The HarfBuzz face for base-font shaping needs raw bytes that
+    # MATCH the (possibly instanced) base_font TTFont — same two-path
+    # logic as anno_font_bytes below.
+    has_word_entries = any(len(k) > 1 for k in char_mapping)
+    base_font_bytes = None
+    if has_word_entries:
+        # NB: output_font may be REPLACED here (round-trip through
+        # hb-packed bytes when the base was instanced) — see the
+        # helper's docstring for the save-time perf rationale.
+        base_font_bytes, output_font = _prepare_word_mode_fonts(
+            base_font, output_font, base_font_file, base_axis_location
+        )
+
+    # Filled by generate_annotated_glyphs with caret X positions at
+    # letter boundaries of each composed word glyph; consumed by
+    # buildLigCarets after the GSUB phase.
+    ligature_carets: dict = {}
+
+    # Filled with the extreme ink Y of the composed word glyphs.
+    # Word-mode annotations sit BELOW the word by default, under the
+    # base font's descent — Phase 4 extends the output font's descent
+    # metrics to cover them so winDescent-clipping apps (Word, Pages,
+    # Keynote, Canva) don't truncate the annotation.
+    word_metrics: dict = {}
+
+    # Filled with the exact ligature-component glyph sequence per word
+    # (post shaper-preprocessing — matters for Thai SARA AM); consumed
+    # by buildWordLiga and the subset keep-list.
+    word_components: dict = {}
+
+    # Filled with the extreme ink Y of the composed SINGLE-character
+    # glyphs (base + above/below annotation). Phase 4 uses max_y to
+    # auto-fit the output font's clipping ascent so tall annotations
+    # aren't truncated — the CJK counterpart to word_metrics.
+    char_metrics: dict = {}
+
+    # ── DIY manual-annotation state (empty unless --diy-annotations) ──
+    # `bare_base_map` is filled by generate_annotated_glyphs
+    # (emit_bare_bases) with {default_base_glyph: bare_base_glyph};
+    # `diy_mark_names` is returned by generate_mark_glyphs. Both feed the
+    # base-strip + GDEF wiring in the GSUB phase.
+    bare_base_map: dict = {}
+    diy_mark_names: list = []
+
+    # ── Memory: drop CSV-parse transients before Phase 1 ─────────────
+    # load_mapping does four stable sorts in succession (each allocates
+    # a fresh list) plus builds char_cnt as a nested defaultdict that's
+    # not returned. Pyodide's GC won't reap those until something
+    # forces it; ~5-10 MB of transient state can be reclaimed before
+    # the heavy compose+build phases kick in.
+    gc.collect()
+
+    if new_family_name is not None:
+        # Set the new family name
+        set_family_name(output_font, new_family_name)
+
+    # Append a low-profile "Annotations added via Wing Font — URL"
+    # line to the output font's Description (nameID 10). All other
+    # name-table fields stay exactly as the base font set them, so
+    # the upstream designer and manufacturer keep full attribution;
+    # Wing Font is acknowledged only as a tooling step. See
+    # tag_wing_font_provenance() above for the rationale + wording
+    # decisions.
+    tag_wing_font_provenance(output_font)
+
+    # Append a Wing Font marker to NameID 5 (Version) so the output
+    # is distinguishable from the upstream base in font managers /
+    # validators. See tag_wing_font_version() for the format and
+    # idempotency guarantees.
+    tag_wing_font_version(output_font)
+
+    # --- Phase 1: compose annotated variant glyphs -----------------------
+    # generate_annotated_glyphs only handles the variant composition
+    # (formerly Part 1 of generate_glyphs). It mutates `char_mapping`
+    # in place to fill in (glyph_name, variant_index) tuples that the
+    # GSUB handlers need. Returns the set of base-font glyph names that
+    # got processed so scale_glyphs() later can skip them — their
+    # outlines are already at the right scale.
+    processed = generate_annotated_glyphs(
+        base_font,
+        anno_font,
+        anno_font_bytes,
+        output_font,
+        char_mapping,
+        base_scale=base_scale,
+        anno_scale=anno_scale,
+        anno_spacing=anno_spacing,
+        cell_width=cell_width,
+        upper_y_offset_ratio=upper_y_offset_ratio,
+        invert=invert,
+        anno_below=anno_below,
+        base_axis_location=base_axis_location,
+        anno_axis_location=anno_axis_location,
+        base_font_bytes=base_font_bytes,
+        ligature_carets=ligature_carets,
+        word_metrics=word_metrics,
+        word_components=word_components,
+        char_metrics=char_metrics,
+        # emit_bare_bases is decided by the pre-flight budget check —
+        # True for nearly all builds (it's the default that lets the
+        # 1-indexed `字0` → bare semantics work), False when the mapping
+        # is large enough that adding one bare glyph per single-char
+        # entry would push the output past `maxp.numGlyphs`'s 65,535
+        # uint16 cap (Mandarin pinyin in particular). When False, the
+        # `(base, 0)` ligature is skipped — typing `字0` falls through
+        # to rendering literal `0`, which matches the pre-1-indexed
+        # behaviour. All other digit-trigger paths (`字1`, `字２`,
+        # `字丅一`, …) remain unaffected.
+        emit_bare_bases=emit_bare_bases,
+        bare_base_map=bare_base_map,
+    )
+    # Resolve auto (None) --cell-width to what composition picked.
+    cell_width = char_metrics.get("cell_width", cell_width or 1.0)
+    # The base-font blob was only needed for HarfBuzz shaping of word
+    # entries during composition; release it before the GSUB phase.
+    del base_font_bytes
+
+    # ── DIY: compose the shared mark glyphs (route A + route B target) ──
+    # Must run while the annotation font is still alive (it's closed just
+    # below). Adds one zero-advance combining mark per inventory entry,
+    # mapped to its Plane-15 PUA codepoint. Tall marks feed the same
+    # char_metrics that drives the ascent auto-fit.
+    if diy_pua_map:
+        diy_mark_names = generate_mark_glyphs(
+            anno_font,
+            anno_font_bytes,
+            output_font,
+            diy_pua_map,
+            anno_scale=anno_scale,
+            anno_spacing=anno_spacing,
+            upper_y_offset_ratio=upper_y_offset_ratio,
+            invert=invert,
+            anno_below=anno_below,
+            # Pass base_descent and base_scale through so the mark's
+            # below-baseline placement matches what _compose_char_entry
+            # uses for baked composites — a DIY mark and a baked
+            # composite of the same string should land at identical y.
+            base_descent=min(0, base_font["hhea"].descent),
+            base_scale=base_scale,
+            assumed_base_advance=round(
+                output_font["head"].unitsPerEm * cell_width
+            ),
+            mark_x_offset=mark_x_offset,
+            anno_axis_location=anno_axis_location,
+            base_axis_location=base_axis_location,
+            char_metrics=char_metrics,
+        )
+
+    # ── Memory: release the annotation font ASAP ────────────────────
+    # After composition completes, anno_font + anno_font_bytes are
+    # dead weight. The GSUB build phase that follows (chain_context +
+    # liga + ivs) is the pipeline's peak-memory phase — every MB freed
+    # here is a MB the Pyodide tab doesn't have to fit alongside the
+    # in-progress GSUB tree. For a CJK annotation font that's ~10-20
+    # MB for the TTFont object + another ~10-20 MB for the raw bytes
+    # that HarfBuzz needed.
+    #
+    # `base_font` STAYS alive — Phase 3's scale_glyphs reads outlines
+    # from base_font['glyf'] to scale them down into output_font, so
+    # it's a hard dependency through the end of the pipeline.
+    anno_font.close()
+    del anno_font, anno_font_bytes
+    gc.collect()
+
+    # --- Phase 2: build GSUB rules + IVS cmap supplement -----------------
+    #
+    # We DELIBERATELY do NOT strip the source font's existing GSUB
+    # lookups before adding ours. They carry genuinely useful features
+    # — `locl` (language-specific Han variants for zh-Hans vs zh-Hant
+    # readers), `vert` / `vrt2` (vertical-text forms for CJK vertical
+    # typesetting), `ruby` (smaller variants used in furigana), `liga`
+    # (source's own typography ligatures) — and there is no good
+    # reason to drop them in our output. Earlier diagnoses suspected
+    # them of causing the "Don't know how to split GSUB lookup type 5"
+    # crash on the Mandarin mapping, but the root cause turned out to
+    # be hb.repack's Type 6 → Type 5 lookup downgrade (see Phase 4's
+    # `USE_HARFBUZZ_REPACKER = False`), not the source lookups at all.
+    #
+    # If a future user reports an actual lookup-interaction problem
+    # (e.g. source `locl` swapping a glyph our chain context expects),
+    # `utils.clear_source_layout_lookups` is available as an opt-in
+    # escape hatch — it preserves the GSUB structural shell so our
+    # handlers can still register into it cleanly. Not wired in by
+    # default because no such conflict has been observed.
+    #
+    # Step 2a — GSUB rules: chain context for word-level disambiguation,
+    # then per-character ligature substitution under `ccmp`. Both
+    # families build into the same `ccmp` lookup family — see the
+    # docstrings in chain_context_handler.py / liga_handler.py for why.
+    #
+    # Step 2b — IVS: cmap format-14 lives outside GSUB entirely, so it
+    # can't interfere with the ccmp lookups we just built. It
+    # supplements them with a zero-width `<base> + <VS17+N>` path for
+    # users on IMEs that expose Variation Selectors (Japanese IMEs,
+    # macOS Character Viewer, Adobe Glyphs panel). The existing
+    # digit-suffix and 丅+numeral paths in liga_handler stay as
+    # human-readable fallbacks for users without VS input.
+
+    # Step 2 preamble — guarantee GSUB exists on the output font before
+    # any handler tries to append lookups. Most base fonts we ship carry
+    # a GSUB skeleton already, but user-uploaded / minimal display base
+    # fonts can omit it entirely; in that case buildMarkInputLiga /
+    # buildLiga / buildChainSub used to fail at their first
+    # `output_font["GSUB"].table` dereference with a KeyError. This is
+    # a no-op when GSUB is already present.
+    ensure_gsub_table(output_font)
+
+    # Step 2(0) — DIY manual-annotation GSUB, built FIRST (lowest lookup
+    # indices). Historically this slot also called buildBareStripLiga to
+    # emit (base, ０) → bare for the DIY path; that's now redundant
+    # because liga_handler.buildLiga (called below with bare_base_map)
+    # emits (base, 0) → bare AND (base, ０) → bare unconditionally as
+    # part of the standard 1-indexed digit-trigger semantics. Keeping
+    # buildBareStripLiga around in mark_strip_handler.py for back-compat /
+    # explicit DIY use, but the standard pipeline no longer calls it.
+    if diy_pua_map:
+        buildMarkInputLiga(output_font, diy_inputs)
+        # Tag the marks GDEF class 3 (mark). This is what tells a shaper
+        # the zero-advance glyph is a COMBINING mark that overlaps the
+        # preceding base rather than a spacing glyph. It matters when the
+        # base and the mark land in DIFFERENT runs — browsers itemise by
+        # Unicode script, so `ｚａａ１` (Latin) splits off from the Han
+        # `行０`; without the mark tag the browser does not treat the
+        # trailing zero-advance mark as combining and the annotation
+        # drifts right. Word keeps everything in one run (EAW=Fullwidth),
+        # so it was already correct either way. There is no GPOS anchor on
+        # these marks, so engines fall back to the glyph's own (baked −em)
+        # outline for the position — no double-shift.
+        tagMarksAsGdefMarks(output_font, diy_mark_names)
+
+    # ────────────────────────────────────────────────────────────────
+    # GSUB LOOKUP ORDER — three layers, ordered to satisfy two user
+    # requirements that cannot coexist in a single-pass design:
+    #
+    #   (a) `佗位2` → cycle the compound's 2nd variant (tueh _).
+    #       Requires the compound chain to consume the digit BEFORE
+    #       liga sees it (else liga eats `位+2` first and the chain
+    #       can't match the bases).
+    #
+    #   (b) `斷０ｐａｎｎ６` after `一刀兩斷` → strip only the trailing
+    #       `斷`, leave 一刀兩 alone, then float pa̋nn above bare-斷.
+    #       Requires liga's per-char `(斷, ０) → bare-斷` to fire and
+    #       the default-compound chain to FAIL afterwards (because
+    #       pos 3 is no longer default-斷).
+    #
+    # The two-pass split — see chain_context_handler module docstring
+    # for the full design rationale:
+    #
+    #   PASS 1 (buildChainSubVariantOverrides, BEFORE liga): chain
+    #     rules ONLY for compounds with variant_idx ≥ 1. Input is
+    #     `[base_chars, digit_for_(idx+1)]`; digit position is
+    #     substituted to a zero-width invisible glyph. Covers (a).
+    #
+    #   LIGA (buildLiga, BETWEEN): per-char digit overrides and bare-
+    #     strip `(base, '0')`. Covers (b) — liga eats the digit per-
+    #     char, breaking the default chain match in pass 2.
+    #
+    #   PASS 2 (buildChainSub, AFTER liga): default chain rules
+    #     (variant_idx == 0, no digit input). Fires only when neither
+    #     liga nor pass 1 has consumed the relevant input.
+    #
+    # The shared invisible-glyph (digit-eater target) is injected
+    # once before pass 1 and reused by both passes if the strip path
+    # ever needs it (currently only pass 1 references it).
+    # ────────────────────────────────────────────────────────────────
+
+    # The compound-variant override pass needs a zero-width invisible
+    # glyph as the substitution target for the consumed digit. Inject
+    # it once here so both pass 1 and any future pass can share the
+    # same glyph name.
+    invisible_glyph_name = ensure_invisible_glyph(output_font)
+
+    # Pass 1 — variant-override chain (compounds with ≥ 2 variants).
+    # No-op when no compound carries multiple weighted entries; the
+    # implementation early-exits if word_mapping has no multi-variant
+    # entries, so there's no per-call cost for monotype mappings.
+    buildChainSubVariantOverrides(
+        output_font,
+        word_mapping,
+        char_mapping,
+        invisible_glyph=invisible_glyph_name,
+    )
+
+    # Auto-inject the trigger glyph into the output font's cmap if the
+    # base font doesn't already encode it. Without this, NotoSansHK /
+    # NotoSansTC / Huninn / NotoSerif-based outputs silently lose the
+    # (base, trigger, numeral) ligature path entirely — `丅` (U+4E05)
+    # isn't in any of those cmaps, only the Chiron pair has it. The
+    # injection is a zero-width empty glyph so the trigger reads as
+    # invisible when typed bare (clean partial-input UX) and gets
+    # consumed by the ligature when the user completes the sequence.
+    # See utils.ensure_trigger_char_glyph for the full rationale.
+    if trigger_char:
+        ensure_trigger_char_glyph(output_font, trigger_char)
+    # Pass bare_base_map so liga_handler can emit `(base, 0) → bare`
+    # rules for the new 1-indexed digit semantics: 0 = no annotation,
+    # 1 = default reading, N = N-th reading (variant N-1).
+    buildLiga(
+        output_font,
+        char_mapping,
+        trigger_char=trigger_char,
+        bare_base_map=bare_base_map,
+    )
+
+    # Pass 2 — default compound chain (variant 0, no digit input).
+    # This is the original buildChainSub behaviour, modified to read
+    # variants[0] off the new {word: [variants...]} word_mapping shape.
+    buildChainSub(output_font, word_mapping, char_mapping)
+    ivs_unicodes = buildIvs(output_font, char_mapping, bare_base_map)
+
+    # Step 2c — Arabic word entries: guarded ccmp word→glyph ligation
+    # (+ tatweel variant cycling) and GDEF ligature carets. Both are
+    # no-ops when the mapping has no multi-character keys.
+    if has_word_entries:
+        buildWordLiga(output_font, char_mapping, word_components)
+        buildLigCarets(output_font, ligature_carets)
+
+    # ── Memory: drop GSUB build transients before Phase 3 ───────────
+    # The Chain Context / Ligature builders allocate large intermediate
+    # rule dicts (~100k+ entries combined on Mandarin) that go out of
+    # scope when each build*() returns — but Pyodide's GC may not have
+    # collected them yet by the time scale_glyphs() starts allocating
+    # outline buffers. Forcing a sweep here keeps the two peaks from
+    # overlapping.
+    #
+    # word_mapping is also no longer needed after this point — Phase 3
+    # only reads from char_mapping. Drop the reference so the dict can
+    # be reclaimed. For mandarin.csv that's ~40k phrase entries.
+    del word_mapping
+    gc.collect()
+
+    # --- Phase 3: subset + scale (the perf-critical reordering) ----------
+    #
+    # The old order scaled all ~50k base-font glyphs BEFORE subsetting,
+    # which threw away ~99% of that work. The new order:
+    #
+    #   optimize=True : compute keep list → scale only kept glyphs → subset
+    #   optimize=False: scale every glyph in the base font (full output)
+    #
+    # In the optimize=True path this typically reduces the scaling loop
+    # from ~50,000 iterations to ~200, which is a ~100x speedup on the
+    # step that dominates the Pyodide runtime.
+    if optimize:
+        # Build the keep list. Same logic as before; just hoisted out
+        # of the inline block so we can pass it to scale_glyphs BEFORE
+        # we actually subset.
+        glyphs_to_be_kept = [
+            get_glyph_name_by_char(base_font, str(i)) for i in range(0, 10)
+        ]
+        for value in char_mapping.values():
+            for composed in value.values():
+                # Entries whose composition was skipped (e.g. a word
+                # whose shaping produced nothing) still hold the
+                # parser's None placeholder — don't unpack those.
+                if isinstance(composed, tuple):
+                    glyphs_to_be_kept.append(composed[0])
+
+        # ASCII punctuation/letters + full-width Chinese punctuation +
+        # the 丅+numeral fallback triggers (without these the IME
+        # fallback silently breaks in subsetted output).
+        chars_to_keep_additionally = (
+            string.punctuation
+            + string.ascii_letters
+            + '，。！？《》「」『』｛｝〖〗【】［］、……——＠＃￥％＆＊+-/“”：；‘’／'
+            + '丅零一二三四五六七八九'
+            # Fullwidth digits ０..９ (U+FF10–FF19). The subsetter's
+            # cmap rebuild drops codepoints not in this keep list even
+            # when their target glyphs survive via GSUB closure (our
+            # (base, FW_digit) → variant ligatures keep the glyphs
+            # alive but the codepoint→glyph cmap entry would be
+            # discarded). Without these chars listed here Word's
+            # DirectWrite can't find U+FF10–FF19 in our font and
+            # falls back to a system font for them, which both
+            # splits the shaping run (defeating the EAW=F merge
+            # behaviour we're relying on) and renders the digit in
+            # a different typeface from the surrounding CJK. Listing
+            # them ensures both the codepoints and the glyphs survive.
+            + '０１２３４５６７８９'
+            # Hiragana (U+3041–309F) + Katakana (U+30A0–30FF). Kana
+            # appear as ANNOTATIONS in the Japanese mapping (kanji →
+            # kana furigana stacked on top), so they're not in the
+            # mapping's BASE column and don't make it into the
+            # composed-glyph keep list. But Japanese text mixes
+            # kanji with literal kana ("学校で日本語と漢字を勉強する"
+            # — only 学校 / 日本語 / 漢字 / 勉強 are kanji; everything
+            # else is kana the user types directly). Without these
+            # ranges, the subsetter prunes our kana glyphs, the
+            # browser falls back to a system Japanese font for kana,
+            # and the user sees full-em-size kana sitting next to our
+            # 75 %-scaled kanji — a glaring visual mismatch that's
+            # especially obvious when the base font and the system
+            # fallback are both Noto Sans JP. Keeping the kana ranges
+            # makes the subsetter retain the glyphs, scale_glyphs()
+            # below applies the same 0.75 base scale to them, and
+            # the rendered line stays visually consistent.
+            #
+            # Non-Japanese builds (Cantonese, Mandarin, Teochew, …)
+            # carry the ~200 extra kana glyphs at zero benefit, but
+            # ~200 glyphs in a font that already weighs 36k+ glyphs
+            # is rounding-error file-size cost (~50–100 KB / font).
+            # The unconditional keep is the simplest design and
+            # forward-compatible with future custom mappings that
+            # mix Japanese into other scripts.
+            + ''.join(chr(cp) for cp in range(0x3041, 0x30FF + 1))
+        )
+        for char in chars_to_keep_additionally:
+            glyph_name = get_glyph_name_by_char(base_font, char)
+            if glyph_name:
+                glyphs_to_be_kept.append(glyph_name)
+
+        if has_word_entries:
+            glyphs_to_be_kept.extend(
+                _word_mode_keep_glyphs(
+                    base_font, char_mapping, word_components
+                )
+            )
+
+        # DIY: keep the mark glyphs and bare scaled-base glyphs through the
+        # subset. Marks are reached via the typed-input ligature and bare
+        # bases via the (base,０) ligature; listing them explicitly
+        # guarantees survival regardless of GSUB-closure quirks. The
+        # typed-input codepoints (the full-width letters/digits the user
+        # types) go into `unicodes` below so their cmap entries — and the
+        # full-width input glyphs they map to — aren't pruned. (There is no
+        # PUA route: marks carry no cmap entry.)
+        diy_unicodes: set = set()
+        # Bare bases are requested unconditionally: GSUB closure would
+        # keep the glyphs anyway, but the subsetter only keeps a cmap-14
+        # entry whose glyph was explicitly requested, so without this a
+        # non-DIY build loses every `<base> + BARE_SELECTOR` mapping.
+        glyphs_to_be_kept.extend(bare_base_map.values())
+        if diy_pua_map:
+            glyphs_to_be_kept.extend(diy_mark_names)
+            diy_unicodes |= {
+                ord(ch) for inp, _cp in diy_inputs for ch in inp
+            }
+
+        valid_glyphs_to_keep = list(
+            set(g for g in glyphs_to_be_kept if g is not None)
+        )
+
+        # Scale ONLY the kept glyphs (excluding annotated variants
+        # already at the right size). This is the big perf win — instead
+        # of iterating ~50k glyphs we iterate the ~200 in the keep list.
+        scale_glyphs(
+            base_font,
+            output_font,
+            valid_glyphs_to_keep,
+            base_scale,
+            skip_glyph_names=processed,
+            base_axis_location=base_axis_location,
+            cell_width=cell_width,
+        )
+
+        # Variation-selector codepoints for the IVS (cmap format-14)
+        # path. fontTools' subsetter drops the entire format-14 subtable
+        # unless the variation selectors are explicitly in the requested
+        # `unicodes` — a glyph-only `populate(glyphs=...)` keeps the
+        # variant *glyphs* but strips the `<base> + <VS>` mappings that
+        # reach them. `ivs_unicodes` is exactly the selector set buildIvs
+        # emitted. Base codepoints don't need listing — their glyphs are
+        # already in the keep list.
+
+        # Now apply the actual subset. The set of glyphs surviving might
+        # be slightly larger than valid_glyphs_to_keep because the
+        # Subsetter's GSUB closure pulls in any glyphs reachable via
+        # lookups (notably the wingfont* variants). Unscaled extras are
+        # rare and visually minor.
+        with step_timer("font subset") as timer:
+            # NB: a previous edit set sub_opts.prune_unicode_ranges =
+            # False + .prune_codepage_ranges = False, intending to
+            # preserve the base font's coverage advertisement through
+            # subset so Word would route HKSCS-extension chars (啲 嘅
+            # 嗰 噉) correctly. User bisection (commit 5b50600)
+            # showed that disabling pruning has the OPPOSITE
+            # net effect: Word treats the resulting "claims more
+            # than the cmap delivers" mismatch as a sign the font
+            # is broken and falls back to system CJK for ALL CJK
+            # codepoints, not just HKSCS. The pruned defaults (True)
+            # produce a font whose advertised coverage matches its
+            # actual cmap, which Word trusts.
+            #
+            # HKSCS rendering needs a different fix path — separately
+            # investigated; tracking outside this block.
+            subsetter = subset.Subsetter()
+            subsetter.populate(
+                glyphs=valid_glyphs_to_keep,
+                unicodes=sorted(ivs_unicodes | diy_unicodes),
+            )
+            subsetter.subset(output_font)
+            timer.note(f"{len(valid_glyphs_to_keep)} glyphs kept")
+
+        # Word only lets a font be applied to Han text if OS/2 declares a
+        # CJK code page (bits 17-21). Pruning intersects the SOURCE's bits
+        # with what the output cmap covers, which can leave none: XiaolaiSC
+        # declares only GB2312 (18), whose fontTools test char ㄅ gets
+        # subset away -> output claims Latin-1 only and Word refuses it for
+        # CJK. Re-add the CJK bits recalculated from the output cmap itself,
+        # so the claim stays honest (see the "claims more than the cmap
+        # delivers" notes below).
+        from fontTools.ttLib.tables.O_S_2f_2 import calcCodePageRanges
+        os2 = output_font["OS/2"]
+        cjk_bits = {
+            b for b in calcCodePageRanges(set(output_font.getBestCmap()))
+            if 17 <= b <= 21
+        }
+        os2.setCodePageRanges(os2.getCodePageRanges() | cjk_bits)
+
+        # ── NB: previous edits in this slot, both reverted ────────────
+        #
+        # 1. Whole-range OS/2 restore. An earlier "Fix E" did
+        #    ``ulCodePageRange1 |= src_os2.ulCodePageRange1`` to undo the
+        #    subsetter's `prune_codepage_ranges=True` default. The
+        #    intent was to make Word reuse our font's typeface for
+        #    ASCII digits typed inside CJK runs (`呀1` was rendering
+        #    its `1` in Calibri). Reverted: that OR re-introduced the
+        #    same "claims more than the cmap delivers" trap that
+        #    commit 5b50600 hit. For NotoSansJP-japanese specifically
+        #    it caused browsers to reject the font and fall back to a
+        #    system CJK font for every kanji — even the ones whose
+        #    composed-with-furigana glyph was structurally fine.
+        #
+        # 2. Bit-0-only OR. A narrowing of (1) that only OR'd back
+        #    ``ulCodePageRange1 |= 0x01`` (cp1252) when the source had
+        #    it set. Didn't regress the kanji-rendering case but also
+        #    didn't actually fix the Word `呀1` ligature: DirectWrite
+        #    still splits Han + Common into separate shaping runs
+        #    regardless of OS/2 bits, so the ligature never fires —
+        #    the bit-0 OR only made the rendered `1` cosmetically
+        #    typeface-consistent with the surrounding kanji. The
+        #    documented Word-side workaround is to type `呀１`
+        #    (fullwidth) or `呀丅一` (IME trigger); neither needs the
+        #    ASCII digit so the cp1252 bit doesn't matter for the
+        #    actually-working interactions. Removed to keep the
+        #    pipeline strictly to the subsetter's honest coverage.
+        #
+        # The subsetter's pruned defaults stay in force.
+        #
+        # NB: an earlier edit downgraded OS/2 from v4 to v3 here in
+        # the belief that Word's HKSCS routing keyed on the version
+        # field. A/B testing eventually showed the actual gate is
+        # Windows GDI's LF_FACESIZE = 32 cap on NameID 1 — names
+        # over 31 chars get truncated in the font registry and break
+        # the strict CJK path. The v3 downgrade just happened to be
+        # one of several structural perturbations that ALSO worked
+        # in the test fixture; it wasn't the cause. Reverted because
+        # the name-length guard at the top of `set_family_name` is
+        # the real fix (see LF_FACESIZE_LIMIT at module top).
+    else:
+        # Un-optimised path keeps the original behaviour: every glyph in
+        # the base font's glyph order gets scaled so an un-subset output
+        # is visually consistent. Slow but expected.
+        scale_glyphs(
+            base_font,
+            output_font,
+            base_font.getGlyphOrder(),
+            base_scale,
+            skip_glyph_names=processed,
+            base_axis_location=base_axis_location,
+            cell_width=cell_width,
+        )
+
+    # --- Phase 4: save ---------------------------------------------------
+    # The TTF is always emitted. The WOFF2 is optional and only the CLI
+    # path produces it:
+    #
+    #   * CLI callers (.github/workflows/deploy-pages.yml) keep the
+    #     default skip_woff=False. The matrix uploads both .ttf AND
+    #     .woff2 artifacts; the deploy job places both under /fonts/
+    #     on the published site. Switched from WOFF (zlib) → WOFF2
+    #     (Brotli) in June 2026 to cut the published-site footprint
+    #     by ~30-50% and ease the 100 GB/month GH Pages bandwidth
+    #     ceiling. Verified ccmp / GSUB are byte-identical after the
+    #     WOFF2 encode round-trip on representative builds — see
+    #     python/tools/verify_woff2_ccmp.py for the empirical check.
+    #
+    #   * The in-browser pipeline (runner.py) sets skip_woff=True
+    #     because the web app converts TTF → WOFF (1.0) locally via
+    #     the browser's CompressionStream, which is ~20-50x faster
+    #     than round-tripping through Pyodide's zlib. WOFF2 requires
+    #     a Brotli ENCODER which browsers don't ship natively (only
+    #     decoder), so the in-browser path stays on WOFF1 — different
+    #     audience (single user's own machine, not bandwidth-bound).
+    #
+    # ── hb.repack on save: off for CJK, ON for word-unit builds ─────
+    # fontTools' default serializer for GSUB/GPOS calls into HarfBuzz's
+    # repacker (uharfbuzz.repack) for compactness. For the Mandarin
+    # pinyin CJK build (~40k chain context + ~140k ligature rules)
+    # hb.repack runs out of resolution moves and, as part of its
+    # attempt, DOWNGRADES some of our Type 6 (Chain Context
+    # Substitution) lookups to Type 5 (Context Substitution) — valid
+    # because the rules have empty backtrack/lookahead, but then
+    # fontTools' fallback `splitOverflowingSubtable` doesn't implement
+    # Type-5 splitting and the recovery loop spins forever logging
+    # "Don't know how to split GSUB lookup type 5". The user has to
+    # Ctrl+C. So for CJK chain-context builds we force the pure-Python
+    # serializer, which handles overflow by wrapping lookups in
+    # Extension format (Type 7, 32-bit offsets) instead of splitting.
+    #
+    # BUT the pure-Python serializer is catastrophically slow on the
+    # word-unit (Arabic / Thai / Indic) builds. Those emit ~3 chain
+    # rules per word, so the 25k-word Arabic romanization set produces
+    # ~76k chain rules whose pure-Python pack time grows superlinearly:
+    # measured 0.4 s @500 words → 9.4 s @8k → ~90 MIN at the full 25k
+    # (the save never finished). The word-unit handler already PRE-wraps
+    # its big lookups in Extension subtables (see
+    # word_liga_handler.maybe_wrap_lookup_in_extension), so hb.repack
+    # never needs to split/downgrade them — it packs the Extension graph
+    # directly in seconds with no Type-5 path. We therefore KEEP
+    # hb.repack ON for word-unit builds and OFF only for the CJK case
+    # that actually needs the workaround.
+    #
+    # (If uharfbuzz is unavailable, fontTools silently falls back to the
+    # pure-Python serializer regardless of this flag — correct output,
+    # just slow.)
+    from fontTools.ttLib.tables.otBase import USE_HARFBUZZ_REPACKER
+    output_font.cfg[USE_HARFBUZZ_REPACKER] = has_word_entries
+
+    # ── Ascent: auto-fit (default), explicit pin, or off ──────────
+    # Set the output font's clipping ascent so the annotation has
+    # somewhere to grow. We touch:
+    #   * hhea.ascent      — used by macOS / iOS / CoreText layout
+    #   * OS/2.usWinAscent — the "clipping" ascent honored by
+    #                        Windows-derived apps (Word, Pages,
+    #                        Keynote, Canva). Without enough here,
+    #                        those apps clip anything above winAscent.
+    # We deliberately leave OS/2.sTypoAscender unchanged: that's
+    # the "designer's preferred baseline" used by apps that respect
+    # typo metrics (Adobe InDesign, modern browsers in some
+    # contexts), and keeping it constant means typo-metrics
+    # consumers get the same line spacing as before. The "useTypo
+    # metrics" bit in fsSelection isn't toggled by this path
+    # either — apps that DO respect typo metrics inherit the base
+    # font's setting (NotoSansHK / Xiaolai both have it off, so
+    # winAscent is what most renderers actually use).
+    #
+    # `out_ascent` may be None/"auto" (auto-fit — the default), a
+    # positive int (explicit pin, no auto-fit), or "off" (legacy:
+    # leave the base ascent). `_resolve_out_ascent` normalises every
+    # shape it can arrive in — including the in-browser worker's
+    # JsNull (JS `null` through `pyodide.toPy`) — so the int() below
+    # never sees a non-numeric value.
+    out_ascent_mode, explicit_ascent = _resolve_out_ascent(out_ascent)
+    if out_ascent_mode == "explicit":
+        # Caller pinned an exact value — honour it verbatim and skip
+        # auto-fit (e.g. the CI matrix's hand-tuned Xiaolai+Urdu 1300).
+        output_font["hhea"].ascent = explicit_ascent
+        output_font["OS/2"].usWinAscent = explicit_ascent
+    elif out_ascent_mode == "auto":
+        # Widen the clipping ascent to clear the tallest composed
+        # single-char glyph's ink (no-op for word-unit-only builds —
+        # _auto_extend_vertical_metrics handles those just below).
+        _auto_fit_ascent(output_font, char_metrics)
+        # Mirror auto-fit-ascent for the descent side. Fires when
+        # `--anno-below` (or any future "ink below baseline" mode)
+        # has pushed annotation glyphs deep enough that the base
+        # font's native descent metrics no longer reserve enough
+        # line-box space. No-op for the default above-the-baseline
+        # build because min_y stays at 0.
+        _auto_fit_descent(output_font, char_metrics)
+
+    # ── Auto-extend metrics for word-unit (Arabic/Thai) outputs ───
+    # Composed word glyphs can carry ink below the base font's
+    # descent (below-the-word annotations) or above its ascent
+    # (`-v`). Explicit --out-ascent above still wins if it asked for
+    # more — this only ever widens.
+    _auto_extend_vertical_metrics(output_font, word_metrics)
+
+    # ── Pre-save GSUB-cleanup re-subset ──────────────────────────────
+    #
+    # Empirically required: without this pass, Chrome/Firefox reject
+    # variable-base (NotoSansJP-instantiated, …) outputs and fall back
+    # to a system CJK font for every character, including glyphs whose
+    # composed-with-furigana outline IS present and structurally valid.
+    # Static-base builds (Xiaolai, ChironHei, …) don't hit the bug.
+    #
+    # The trigger isn't visible in font-table diffs — OS/2, cmap, glyf,
+    # GDEF, STAT all match a known-working build byte-for-byte at the
+    # fontTools level. What re-subsetting silently fixes is some GSUB
+    # / GPOS layout-table inconsistency that fontTools can serialise +
+    # read back fine but the browsers' OpenType layout engines reject.
+    # The likely root is something `instantiateVariableFont` leaves in
+    # the GSUB Subst-Lookup records after dropping fvar/gvar, that our
+    # downstream chain-context + ligature appends then preserve in a
+    # state that's technically inconsistent.
+    #
+    # A no-op subset (keep every surviving glyph) is enough — the
+    # cleanup happens inside Subsetter regardless of what gets stripped.
+    # `prune_unicode_ranges` / `prune_codepage_ranges` defaults stay
+    # True; idempotent on the already-pruned OS/2, so harmless.
+    #
+    # Runs IN MEMORY on `output_font` before the first save, so:
+    #   * The TTF on disk is already cleaned-up — no save/load/save
+    #     round-trip just to clean state.
+    #   * The WOFF2 save below reuses the same cleaned in-memory font,
+    #     so both formats carry identical layout-table structure
+    #     without a second reload.
+    #   * `output_font.cfg[USE_HARFBUZZ_REPACKER]` was set near the top
+    #     of the save block (`= has_word_entries`); the subset call
+    #     inherits that, so hb.repack stays OFF for CJK chain-context
+    #     builds (avoids the "Don't know how to split GSUB lookup type
+    #     5" loop) and ON for word-unit builds.
+    #
+    # See investigation transcript dated 2026-06-25 for the bisect
+    # that landed on this. The proper fix is to find what wing-font.py
+    # produces in GSUB that browsers reject and stop producing it;
+    # until that's tracked down, this cleanup pass is the workaround.
+    with step_timer("pre-save GSUB cleanup") as _t:
+        _sub = subset.Subsetter()
+        # Same format-14 trap as the optimize subset above: glyph-only
+        # populate strips every IVS mapping, so re-request the selectors.
+        _sub.populate(
+            glyphs=output_font.getGlyphOrder(),
+            unicodes=sorted(
+                vs
+                for t in output_font["cmap"].tables
+                if t.format == 14
+                for vs in t.uvsDict
+            ),
+        )
+        _sub.subset(output_font)
+        _t.note(f"{output_font['maxp'].numGlyphs} glyphs preserved")
+
+    # Every glyph WE make GSUB produce must also be reachable through
+    # cmap alone (IVS / PUA) — PowerPoint doesn't run GSUB on CJK, and
+    # the Office add-in can only rewrite text to glyphs that have such a
+    # path. Source-font lookups (vert, locl, kana voicing…) are not ours
+    # to fix, hence the name filter.
+    _unreach = sorted(
+        g for g in unreachable_glyphs(output_font)
+        # The invisible glyph only swallows a typed digit; "no character"
+        # is its cmap equivalent.
+        if g.startswith(GLYPH_PREFIX) and g != invisible_glyph_name
+    )
+    if _unreach:
+        print(
+            f"Warning: {len(_unreach):,} generated glyph(s) have no cmap "
+            f"path (GSUB-only; invisible to the Office add-in), e.g. "
+            f"{', '.join(_unreach[:5])}"
+        )
+
+    os.makedirs(os.path.dirname(str(output_prefix)) or ".", exist_ok=True)
+    with step_timer("TTF save"):
+        output_font.save(str(output_prefix) + ".ttf")
+
+    if not skip_woff:
+        # WOFF2 = Brotli-compressed sfnt. fontTools' encoder picks up
+        # the local `brotli` (or `brotlicffi`) package automatically;
+        # both are in python/requirements.txt. Encoder is lossless —
+        # every GSUB lookup (including ccmp chain-context rules) is
+        # byte-preserved across the round-trip.
+        #
+        # Reuses the cleaned-up `output_font` in memory — no need to
+        # reload from the just-written .ttf, since the same TTFont
+        # instance is in the post-cleanup state and we only need to
+        # flip the flavor for the WOFF2 encoder to wrap it differently.
+        output_font.flavor = "woff2"
+        with step_timer("WOFF2 save"):
+            output_font.save(str(output_prefix + ".woff2"))
+
+    # Close the font objects. `anno_font` was already closed + deleted
+    # right after Phase 1 (see the "release the annotation font ASAP"
+    # block) so it isn't repeated here — referring to it would raise
+    # NameError on every successful run.
+    base_font.close()
+    output_font.close()
+
+def run(argv=None):
+    """Console entry point (`wing-font ...`). `wing-font fetch ...` downloads
+    fonts / mappings; anything else is a build (see main() for the Python API)."""
+    argv = sys.argv[1:] if argv is None else list(argv)
+    if argv[:1] == ["fetch"]:
+        from .fetch import main as fetch_main
+        return fetch_main(argv[1:])
+
+    parser = argparse.ArgumentParser(
+        prog="wing-font",
+        epilog="Need fonts or a mapping CSV? See `wing-font fetch --help` "
+        "(and `wing-font fetch --list`).",
+    )
+    parser.add_argument('-i', '--base-font-file', help="Base font in .ttf fomrat", required=True)
+    parser.add_argument('-a', '--anno-font_file', help="Annotation font in .ttf fomrat", required=True)
+    parser.add_argument('-o', '--output-prefix', help="Output prefix for .ttf and .woff file", required=True)
+    parser.add_argument('-m', '--mapping', help="CSV file for the mapping between base font and annotation font", required=True)
+    parser.add_argument('-f', '--family-name', help="Replace with the new family name")
+    parser.add_argument('-y', '--upper_y_offset_ratio', type=float, default=0.8, help="Y offset in (percentage) for the upper string")
+    parser.add_argument('-bs', '--base-scale', type=float, default=0.75, help="The scaling factor for the base font")
+    parser.add_argument('-as', '--anno-scale', type=float, default=0.25, help="The scaling factor for the annotation glyphs, as a fraction of the output em (UPM-independent: same visual size regardless of the annotation font's unitsPerEm)")
+    parser.add_argument(
+        '--cell-width',
+        type=float,
+        default=None,
+        help=(
+            "Advance of every full-width (CJK) glyph as a multiple of the "
+            "base font's advance. >1 widens the cell uniformly so wider "
+            "annotations fit without colliding (acts like letter-spacing "
+            "on CJK only). Default: auto — just wide enough that the "
+            "longest single-syllable annotation (readings with a space "
+            "are ignored) keeps a 0.05 em gap to its neighbour "
+            "(never below 1.0). Pass 1.0 to keep the base font's width."
+        ),
+    )
+    parser.add_argument(
+        '--anno-spacing',
+        type=float,
+        default=0.0,
+        help=(
+            "Extra inter-glyph gap inside an annotation string, in em "
+            "units. 0 = natural advance (each glyph sits at its native "
+            "advance position). Positive opens up — useful for CJK "
+            "radical annotations (e.g. cangjie's 一弓十山) where the "
+            "default packing looks like a single visual blob. Negative "
+            "tightens; push too far and glyphs visibly overlap. The "
+            "in-browser /generate Step 3 'Annotation spacing' slider "
+            "drives this same parameter."
+        ),
+    )
+    parser.add_argument(
+        '-v', '--invert', action='store_true',
+        help=(
+            "Legacy invert: lift the base CJK glyph by upper_y_offset_ratio "
+            "(~0.8em) and park the annotation at y=0. Preserved for "
+            "back-compat with builds that already depend on this geometry. "
+            "Prefer --anno-below for new builds — it has the more natural "
+            "semantics of keeping the base on the baseline."
+        ),
+    )
+    parser.add_argument(
+        '--anno-below',
+        dest='anno_below',
+        action='store_true',
+        help=(
+            "Place the annotation BELOW the baseline (inside an "
+            "auto-extended descent) instead of above. The base CJK glyph "
+            "stays on the baseline, so text rendered with this font has "
+            "the same baseline as un-annotated CJK in mixed runs. The "
+            "output font's hhea.descent, OS/2.usWinDescent, and "
+            "OS/2.sTypoDescender are widened to fit the annotation ink "
+            "with a small margin (line-height grows correspondingly in "
+            "apps that honour the metric — Chrome, Firefox, Word, "
+            "InDesign). Wins over --invert when both are passed."
+        ),
+    )
+    parser.add_argument('-opt', '--optimize', action="store_true", help="Optimizing size by subsetting annotated glyph only")
+    parser.add_argument(
+        '--diy-annotations',
+        dest='diy_annotations',
+        default=None,
+        metavar='A.csv',
+        help=(
+            "Optional CSV `A` of annotations a user may suffix onto ANY "
+            "base character (the bounded DIY manual-annotation inventory). "
+            "Two columns per line, `input,annotation` (e.g. `ｚａａ１,zaa1`): "
+            "column 1 is what the user types, column 2 is what renders. A "
+            "single column is also accepted (the full-width input is then "
+            "derived from it). Blank lines and `#` comments are skipped. "
+            "Omit to disable the DIY path; the automatic ccmp output is "
+            "unaffected either way. Note: a DIY-enabled build REQUIRES "
+            "--optimize (-opt) — an un-subsetted full CJK base alone "
+            "(~50k glyphs) already overflows the 65,535-glyph cap. With "
+            "-opt the subsetter keeps the mapping-reached glyphs plus the "
+            "DIY marks/bare bases, so annotation works for any character "
+            "in the mapping. See HYBRID_ANNOTATION_DESIGN.md."
+        ),
+    )
+    parser.add_argument(
+        '--mark-x-offset',
+        dest='mark_x_offset',
+        type=float,
+        default=0.0,
+        help=(
+            "Horizontal offset for the DIY shared mark, as a fraction of "
+            "the output em. Default 0.0 = geometric centre (correct in "
+            "Word/DirectWrite and print). Browsers position the orphaned "
+            "cross-run mark from a pen origin ~0.125em right of the font's "
+            "assumption, so the mark looks shifted right there; pass a "
+            "negative value (e.g. -0.0625 to split the difference, -0.125 "
+            "to favour the browser) to compensate. This trades Word "
+            "centring for browser centring — see "
+            "HYBRID_ANNOTATION_DESIGN.md §'Cross-run positioning'."
+        ),
+    )
+    parser.add_argument(
+        '--trigger-char',
+        default=DEFAULT_TRIGGER_CHAR,
+        help=(
+            "Override-trigger character for the IME-friendly variant "
+            "path: `<base><trigger><numeral>` → variant N. Default "
+            f"`{DEFAULT_TRIGGER_CHAR}` (U+4E05). Pass an empty string "
+            "to disable the trigger+numeral path while keeping "
+            "the digit-suffix path (`<base><number>`, e.g. `行1` … `行11`)."
+        ),
+    )
+    parser.add_argument(
+        '--out-ascent',
+        default="auto",
+        metavar="auto|off|INT",
+        help=(
+            "Output font's clipping ascent (hhea.ascent + "
+            "OS/2.usWinAscent; font units, UPM=1000). Default `auto` "
+            "fits it to the tallest composed glyph's ink so tall "
+            "annotations (Urdu Nastaliq, Thai marks, Hangul jamo on "
+            "low-ascent bases like Xiaolai 880u) aren't clipped by apps "
+            "that strictly honour winAscent (Word, Pages, Keynote, "
+            "Canva) — no manual tuning needed. Pass an integer to pin an "
+            "exact value (disables auto-fit; e.g. 1300 for Xiaolai + "
+            "Urdu). Pass `off` to keep the base font's ascent unchanged "
+            "(the pre-auto-fit behaviour)."
+        ),
+    )
+    # ── Variable-font axis pin ─────────────────────────────────────
+    # Both flags repeat: pass `--base-axis tag=value` once per axis
+    # you want to pin. Mirrors what the in-browser /generate Step 1
+    # axis sliders set on the base / annotation font slots.
+    # Example:
+    #   --base-axis wght=700 --base-axis ital=1
+    # Each invocation collects one string; the post-parse loop below
+    # splits the strings into a {tag: float} dict that's forwarded
+    # to main() as base_axis_location / anno_axis_location.
+    parser.add_argument(
+        '--base-axis',
+        action='append',
+        default=[],
+        metavar='TAG=VALUE',
+        help=(
+            "Pin a base-font variable axis. TAG is the 4-character "
+            "OpenType axis tag (e.g. wght, ital, opsz, wdth); VALUE "
+            "is a float within the axis's declared range. Repeat the "
+            "flag for each axis. Mirrors the per-axis sliders in "
+            "/generate Step 1. Example: --base-axis wght=700"
+        ),
+    )
+    parser.add_argument(
+        '--anno-axis',
+        action='append',
+        default=[],
+        metavar='TAG=VALUE',
+        help=(
+            "Pin an annotation-font variable axis. Same syntax as "
+            "--base-axis. Example: --anno-axis wght=500"
+        ),
+    )
+    try:
+        options = parser.parse_args(argv)
+    except:
+        parser.print_help()
+        sys.exit()
+
+    # Parse the TAG=VALUE strings collected by --base-axis /
+    # --anno-axis into the {tag: float} dicts main() expects. None
+    # when no flag was passed so the existing "skip instancing"
+    # branch fires (matches the pre-flag default behaviour).
+    def _parse_axis_args(items, label):
+        if not items:
+            return None
+        loc = {}
+        for raw in items:
+            if "=" not in raw:
+                parser.error(
+                    f"--{label}-axis expects TAG=VALUE; got {raw!r}"
+                )
+            tag, value = raw.split("=", 1)
+            tag = tag.strip()
+            if not tag:
+                parser.error(f"--{label}-axis: empty TAG in {raw!r}")
+            try:
+                loc[tag] = float(value)
+            except ValueError:
+                parser.error(
+                    f"--{label}-axis: VALUE must be a number; "
+                    f"got {value!r} in {raw!r}"
+                )
+        return loc
+
+    base_axis_location = _parse_axis_args(options.base_axis, "base")
+    anno_axis_location = _parse_axis_args(options.anno_axis, "anno")
+
+    # Validate --out-ascent up front so a typo fails loudly instead of
+    # silently falling back to auto inside main(). Accept auto / off /
+    # none / a positive integer.
+    _oa = str(options.out_ascent).strip().lower()
+    if _oa not in ("auto", "off", "none"):
+        try:
+            if int(_oa) <= 0:
+                raise ValueError
+        except ValueError:
+            parser.error(
+                f"--out-ascent expects 'auto', 'off', or a positive "
+                f"integer; got {options.out_ascent!r}"
+            )
+
+    main(
+        base_font_file = options.base_font_file,
+        anno_font_file = options.anno_font_file,
+        output_prefix = options.output_prefix,
+        mapping = options.mapping,
+        new_family_name = options.family_name,
+        base_scale=options.base_scale,
+        anno_scale=options.anno_scale,
+        anno_spacing=options.anno_spacing,
+        cell_width=options.cell_width,
+        upper_y_offset_ratio=options.upper_y_offset_ratio,
+        invert=options.invert,
+        anno_below=options.anno_below,
+        optimize=options.optimize,
+        trigger_char=options.trigger_char,
+        out_ascent=options.out_ascent,
+        base_axis_location=base_axis_location,
+        anno_axis_location=anno_axis_location,
+        diy_annotations=options.diy_annotations,
+        mark_x_offset=options.mark_x_offset,
+    )
+
+
+if __name__ == "__main__":
+    run()

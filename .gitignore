@@ -36,3 +36,11 @@ python/outputs/
 *.woff2
 mappings/canto-lshk-all.csv
 python/mappings/canto-lshk-all.csv
+
+# Tiny subset fonts for the hero example / test (a few KB, OFL + Apache-2.0).
+!python/examples/**/*.ttf
+
+# pip / build artifacts for the wing-font package
+python/build/
+python/dist/
+python/*.egg-info/

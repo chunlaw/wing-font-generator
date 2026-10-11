@@ -15,12 +15,10 @@
  *   (see package.json scripts). The output directory `public/wingfont/`
  *   is gitignored — only the source under `python/` is checked in.
  *
- * One important transformation:
- *   `python/wing-font.py` is copied as `wingfont_main.py` because Python
- *   import names can't contain hyphens, and the Pyodide worker does
- *   `import wingfont_main`. The hyphen is fine for shell invocation but
- *   breaks `importlib`. Doing the rename here lets the CLI keep its
- *   conventional name while still being importable from JS.
+ * Layout:
+ *   the `python/wingfont/` package is copied flat into public/wingfont/;
+ *   the worker writes it to /home/pyodide/wingfont/ (the package dir) and
+ *   does `import wingfont.runner`. Data files (CSVs, fonts) sit alongside.
  */
 
 import { copyFile, mkdir, rm, stat, writeFile } from "node:fs/promises";
@@ -45,26 +43,28 @@ const WORKER_MANIFEST_OUT = join(
 // Edit this list when adding a new Python module that should be visible
 // to the Pyodide pipeline, a new default mapping, or a new bundled font.
 const MANIFEST = [
-  // Core pipeline — these match the `import` statements in runner.py
-  ["wing-font.py", "wingfont_main.py"], // hyphen → underscore, see header comment
-  ["build_glyph.py", "build_glyph.py"],
-  ["chain_context_handler.py", "chain_context_handler.py"],
-  ["ivs_handler.py", "ivs_handler.py"],
-  ["check_cmap_reachability.py", "check_cmap_reachability.py"], // GSUB-only glyph check
-  ["liga_handler.py", "liga_handler.py"],
-  ["word_liga_handler.py", "word_liga_handler.py"],
-  ["diy_handler.py", "diy_handler.py"], // DIY manual-annotation inventory (CSV A → PUA)
-  ["mark_input_handler.py", "mark_input_handler.py"], // DIY typed-romanization ligatures
-  ["mark_strip_handler.py", "mark_strip_handler.py"], // DIY base-strip chain sub + GDEF mark class
-  ["utils.py", "utils.py"],
-  ["runner.py", "runner.py"],
+  // The `wingfont` package. Copied flat into public/wingfont/, which the
+  // worker writes to /home/pyodide/wingfont/ — i.e. the package directory
+  // itself — and imports as `wingfont.runner` with /home/pyodide on sys.path.
+  ["wingfont/__init__.py", "__init__.py"],
+  ["wingfont/cli.py", "cli.py"],
+  ["wingfont/csv_parser.py", "csv_parser.py"],
+  ["wingfont/build_glyph.py", "build_glyph.py"],
+  ["wingfont/chain_context_handler.py", "chain_context_handler.py"],
+  ["wingfont/ivs_handler.py", "ivs_handler.py"],
+  ["wingfont/check_cmap_reachability.py", "check_cmap_reachability.py"], // GSUB-only glyph check
+  ["wingfont/liga_handler.py", "liga_handler.py"],
+  ["wingfont/word_liga_handler.py", "word_liga_handler.py"],
+  ["wingfont/diy_handler.py", "diy_handler.py"], // DIY manual-annotation inventory (CSV A → PUA)
+  ["wingfont/mark_input_handler.py", "mark_input_handler.py"], // DIY typed-romanization ligatures
+  ["wingfont/mark_strip_handler.py", "mark_strip_handler.py"], // DIY base-strip chain sub + GDEF mark class
+  ["wingfont/utils.py", "utils.py"],
+  ["wingfont/runner.py", "runner.py"],
 
-  // mappings/ package — csv_parser plus the CSVs we ship as built-in
-  // preset options in Step 2. Keep the list in sync with the
-  // `BUILT_IN_MAPPINGS` array in web/src/utils/wingfontPresets.ts —
-  // both should reference the same set of files.
-  ["mappings/__init__.py", "mappings/__init__.py"],
-  ["mappings/csv_parser.py", "mappings/csv_parser.py"],
+  // Mapping CSVs we ship as built-in preset options in Step 2. Keep the
+  // list in sync with the `BUILT_IN_MAPPINGS` array in
+  // web/src/utils/wingfontPresets.ts — both should reference the same
+  // set of files.
   ["mappings/cantonese/canto-lshk.csv", "mappings/canto-lshk.csv"],
   ["mappings/cantonese/canto-yale.csv", "mappings/canto-yale.csv"],
   ["mappings/cantonese/canto-lau.csv", "mappings/canto-lau.csv"],

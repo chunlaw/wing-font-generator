@@ -85,6 +85,11 @@ SIDDHAM_RANGES = (
     (0x11580, 0x115FF),  # Siddham (悉曇文字; abugida, supplementary plane)
 )
 
+CANADIAN_SYLLABICS_RANGES = (
+    (0x1400, 0x167F),   # Unified Canadian Aboriginal Syllabics
+    (0x18B0, 0x18FF),   # Unified Canadian Aboriginal Syllabics Extended
+)
+
 
 class WordScript(NamedTuple):
     """Everything that differs between word-unit scripts, as data.
@@ -175,6 +180,16 @@ WORD_SCRIPTS = {
     # once a Siddham base font (e.g. Noto Sans Siddham) is wired in.
     "sidd": WordScript(
         "sidd", SIDDHAM_RANGES, True, "digits", None, "basic", "pres"
+    ),
+    # Experimental — Canadian syllabics (Inuktitut, Cree, Carrier …).
+    # Space-separated, but boundary_guards is False on purpose: two-symbol
+    # spelling rules such as Inuktitut ᖅᑭ → "qqi" must match INSIDE
+    # unlisted words, so matching is longest-first like Thai. A listed
+    # word can therefore also match inside a longer word; the reading
+    # stays correct, only the visual word boundary can be off.
+    # The default shaper does no preprocessing for syllabics → "cmap".
+    "cans": WordScript(
+        "cans", CANADIAN_SYLLABICS_RANGES, False, "digits", None, "cmap", "ccmp"
     ),
 }
 

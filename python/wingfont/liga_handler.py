@@ -105,7 +105,7 @@ from typing import Dict, Tuple
 
 from fontTools.otlLib.builder import LigatureSubstBuilder
 
-from utils import get_glyph_name_by_char, register_feature_lookup, step_timer
+from .utils import get_glyph_name_by_char, register_feature_lookup, step_timer
 
 # Chinese numeral fallback. When typing Latin digits is inconvenient, the
 # user can type 字 + <trigger> + 一/二/三/... to pick a variant. The

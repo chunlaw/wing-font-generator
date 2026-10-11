@@ -33,8 +33,8 @@ from typing import List, Tuple
 
 from fontTools.otlLib.builder import LigatureSubstBuilder
 
-from build_glyph import MARK_PREFIX
-from utils import get_glyph_name_by_char, register_feature_lookup, step_timer
+from .build_glyph import MARK_PREFIX
+from .utils import get_glyph_name_by_char, register_feature_lookup, step_timer
 
 # Inputs sharing a first glyph live in one LigatureSet; keep them in a
 # single subtable while under the GSUB Type-4 64 KiB offset budget. Past

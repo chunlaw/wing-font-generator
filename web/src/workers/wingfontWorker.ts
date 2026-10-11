@@ -1,6 +1,6 @@
 /// <reference lib="webworker" />
 /**
- * wingfontWorker — runs wing-font.py inside Pyodide.
+ * wingfontWorker — runs the wingfont package (python/wingfont/) inside Pyodide.
  *
  * Lifecycle:
  *   1. On first message the worker downloads Pyodide from a CDN, loads the
@@ -217,9 +217,9 @@ await micropip.install("${uharfbuzzUrl}")
     // Preload the runner module; this also surfaces any syntax errors early.
     await pyodide.runPythonAsync(`
 import sys
-if "/home/pyodide/wingfont" not in sys.path:
-    sys.path.insert(0, "/home/pyodide/wingfont")
-import runner
+if "/home/pyodide" not in sys.path:
+    sys.path.insert(0, "/home/pyodide")
+import wingfont.runner
 `);
 
     emitProgress("Pyodide ready.");
@@ -336,7 +336,7 @@ async function handleGenerate(id: string, payload: GeneratePayload): Promise<voi
   // `.to_py()` on it (that method only exists on JsProxy). `**_params`
   // unpacks the dict directly into kwargs.
   const result = (await pyodide.runPythonAsync(`
-from runner import generate
+from wingfont.runner import generate
 
 _result = generate(
     bytes(_base_bytes),
@@ -417,7 +417,7 @@ async function handlePrepareTrim(
   );
 
   const result = (await pyodide.runPythonAsync(`
-from runner import prepare_preview_fonts
+from wingfont.runner import prepare_preview_fonts
 
 _pt_result = prepare_preview_fonts(
     bytes(_pt_base_bytes),

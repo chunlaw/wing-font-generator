@@ -93,3 +93,17 @@ jobs:
           echo "Validating changed mapping CSVs:"
           echo "$changed"
           python python/mappings/validate_mappings.py $changed
+
+  # Installs python/ as the `wing-font` package and runs the Python
+  # tests, including the end-to-end hero build (tests/test_hero_example.py).
+  python-package:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - run: pip install "./python[test]"
+      - run: pytest -q python/tests
+      - name: CLI entry point works
+        run: wing-font --help

@@ -45,7 +45,8 @@ HERE = Path(__file__).resolve().parent
 
 # Reuse the canonical script ranges + provenance vocabulary so the
 # validator can never drift from what the parser / generator use.
-from csv_parser import (  # noqa: E402
+sys.path.insert(0, str(HERE.parent))  # python/, so `wingfont` imports
+from wingfont.csv_parser import (  # noqa: E402
     ARABIC_RANGES, THAI_RANGES, DEVANAGARI_RANGES, MALAYALAM_RANGES,
     is_word_unit_word,
 )

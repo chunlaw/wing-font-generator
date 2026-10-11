@@ -1,9 +1,8 @@
 """
-Runner shim that adapts wing-font.py for invocation from JavaScript via Pyodide.
+Runner shim that adapts wingfont.cli for invocation from JavaScript via Pyodide.
 
-The original CLI in `wingfont_main.py` (renamed from `wing-font.py` because
-hyphens are not valid in Python module names) reads file paths and writes
-outputs to disk. In a browser there is no real disk, so this module:
+The CLI (`wingfont.cli`, imported here as `wingfont_main`) reads file paths
+and writes outputs to disk. In a browser there is no real disk, so this module:
 
   1. Writes the uploaded base font, annotation font, and mapping CSV to a
      scratch directory in Pyodide's in-memory filesystem (MEMFS).
@@ -36,11 +35,8 @@ import time
 import traceback
 from typing import Optional, Tuple
 
-# Ensure /home/pyodide/wingfont is on sys.path so `import wingfont_main`,
-# `import mappings.csv_parser`, etc. resolve to our bundled sources.
-_WINGFONT_DIR = "/home/pyodide/wingfont"
-if _WINGFONT_DIR not in sys.path:
-    sys.path.insert(0, _WINGFONT_DIR)
+# Imported as `wingfont.runner`: the worker writes the package to
+# /home/pyodide/wingfont/ and puts /home/pyodide on sys.path.
 
 
 # ---------------------------------------------------------------------------
@@ -292,7 +288,7 @@ def generate(
 
     # Reset the process-global timing recorder so we don't accumulate
     # across runs in a long-lived Pyodide session.
-    from utils import (
+    from .utils import (
         get_step_timings,
         record_step_time,
         reset_step_timings,
@@ -380,7 +376,7 @@ def generate(
     _t0 = time.perf_counter()
     _emit(progress_cb, "Processing module imports...")
     # Imported lazily so the import cost only hits when we actually generate.
-    import wingfont_main  # noqa: E402
+    from . import cli as wingfont_main  # noqa: E402
     _elapsed = time.perf_counter() - _t0
     record_step_time("module imports", _elapsed)
     _emit(progress_cb, f"Processing module imports... DONE ({_elapsed:.1f}s)")

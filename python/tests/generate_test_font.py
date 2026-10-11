@@ -36,17 +36,11 @@ sys.path.insert(0, str(REPO_ROOT))
 
 # These imports come from the repo root; they exercise the refactored
 # chain_context_handler / liga_handler.
-import importlib.util
 
 
 def _import_wing_font():
-    """Import wing-font.py despite the hyphen in the filename."""
-    spec = importlib.util.spec_from_file_location(
-        "wing_font_main", REPO_ROOT / "wing-font.py"
-    )
-    mod = importlib.util.module_from_spec(spec)
-    assert spec.loader is not None
-    spec.loader.exec_module(mod)
+    """Import the pipeline module (wingfont.cli)."""
+    from wingfont import cli as mod
     return mod
 
 

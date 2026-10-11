@@ -55,7 +55,22 @@ Pairings include ChironSung HK, ChironHei HK, Noto Sans HK / TC / SC, Source Han
 
 Visit [wing-font.chunlaw.io/generate](https://wing-font.chunlaw.io/generate), pick a base font + annotation font + mapping CSV (or upload your own), click Generate, and download the resulting `.woff` / `.ttf`. First generation takes ~10-15 s for Pyodide to boot; subsequent runs are warm.
 
-### CLI
+### CLI / Python package
+
+```sh
+pip install "git+https://github.com/chunlaw/wing-font-generator#subdirectory=python"
+# (or, from a clone: pip install ./python — once on PyPI: pip install wing-font)
+
+wing-font fetch ChironSungHK-R.ttf NotoSerif-Regular.ttf --dest input_fonts
+wing-font fetch cantonese/canto-lshk.csv --dest mappings
+wing-font -i input_fonts/ChironSungHK-R.ttf -a input_fonts/NotoSerif-Regular.ttf \
+          -m mappings/canto-lshk.csv -o out/ChironSungHK-Noto-lshk -opt -as 0.13
+```
+
+From Python: `from wingfont.cli import main; main(base_font_file=..., anno_font_file=..., mapping=..., output_prefix=...)`.
+The smallest end-to-end build (8 characters, fonts included, <1 s) is [`python/examples/hero/`](python/examples/hero/README.md) — start there to add a new language. Coding agents: read [`AGENTS.md`](AGENTS.md).
+
+Inside a clone, the original form still works:
 
 ```sh
 cd python

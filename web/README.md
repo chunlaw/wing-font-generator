@@ -36,9 +36,9 @@ Vercel, GitHub Pages, Cloudflare Pages, …).
 │ ↓                │                   │ ↓                        │
 │ utils/wingfont.ts│                   │ Pyodide (WebAssembly)    │
 │                  │ ◀───────────────  │ ↓                        │
-│ FontFace.load()  │   ttf + woff      │ runner.py                │
+│ FontFace.load()  │   ttf + woff      │ wingfont.runner          │
 │ + Blob download  │   ArrayBuffers    │ ↓                        │
-└──────────────────┘                   │ wingfont_main.main(...)  │
+└──────────────────┘                   │ wingfont.cli.main(...)   │
                                        │ ↓                        │
                                        │ build_glyph.py            │
                                        │ chain_context_handler.py  │
@@ -48,15 +48,15 @@ Vercel, GitHub Pages, Cloudflare Pages, …).
 
 The worker boots Pyodide from the jsdelivr CDN on demand, fetches the
 bundled Python files from `/wingfont/*.py`, writes them into Pyodide's
-in-memory filesystem, then exposes `runner.generate(...)` as a callable.
+in-memory filesystem, then exposes `wingfont.runner.generate(...)` as a callable.
 The main thread sends the user's base font + annotation font + mapping
 CSV as transferable `ArrayBuffer`s, gets back the generated TTF + WOFF,
 registers the WOFF as an `@font-face`, and offers the TTF for download.
 
-`runner.py` is a thin shim that adapts `wing-font.py`'s file-based CLI
+`wingfont/runner.py` is a thin shim that adapts `wingfont.cli.main()`'s file-based
 signature (`base_font_file=path, ...`) to a bytes-in/bytes-out callable
 suitable for invocation from JavaScript. It writes the uploaded buffers
-to `/tmp/` in MEMFS, calls `wingfont_main.main(...)`, reads the
+to `/tmp/` in MEMFS, calls `wingfont.cli.main(...)`, reads the
 generated `.ttf` and `.woff` back, returns them as bytes.
 
 ---
@@ -65,9 +65,10 @@ generated `.ttf` and `.woff` back, returns them as bytes.
 
 Anything under `public/wingfont/` is **generated** by
 [`scripts/sync-python.mjs`](scripts/sync-python.mjs) — never edit those
-files. The script copies the canonical sources from `../python/` (and
-renames `wing-font.py` → `wingfont_main.py` because Python imports can't
-contain hyphens). It runs automatically before `yarn dev` and
+files. The script copies the canonical sources from `../python/` (the
+`wingfont/` package is copied flat into `public/wingfont/`, which the
+worker writes to `/home/pyodide/wingfont/` and imports as
+`wingfont.runner`). It runs automatically before `yarn dev` and
 `yarn build` because the package.json scripts are wired as:
 
 ```json

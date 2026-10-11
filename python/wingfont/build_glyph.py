@@ -24,10 +24,10 @@ from fontTools.pens.ttGlyphPen import TTGlyphPen
 from fontTools.pens.transformPen import TransformPen
 from fontTools.pens.recordingPen import DecomposingRecordingPen
 
-from mappings.csv_parser import WORD_SCRIPTS, get_word_unit_script
-from utils import get_glyph_name_by_char, step_timer
-from diy_handler import DIY_PUA_BASE, mark_sequence
-from ivs_handler import _find_or_create_uvs_subtable
+from .csv_parser import WORD_SCRIPTS, get_word_unit_script
+from .utils import get_glyph_name_by_char, step_timer
+from .diy_handler import DIY_PUA_BASE, mark_sequence
+from .ivs_handler import _find_or_create_uvs_subtable
 
 import math
 

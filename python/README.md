@@ -17,7 +17,7 @@ generate their own font without installing Python.
 ## How it works in one paragraph
 
 Each annotated glyph (e.g. `行` with `hang4` above it) is **a single
-TrueType glyph** drawn by [`build_glyph.py`](build_glyph.py): the base
+TrueType glyph** drawn by [`build_glyph.py`](wingfont/build_glyph.py): the base
 character outline is scaled down and placed at the bottom, the romanization
 glyphs are scaled smaller and laid out above it. Because the annotation is
 inside the glyph itself, it survives copy-paste into a `<textarea>`, a Word
@@ -52,29 +52,34 @@ paths, not a replacement. See the `ivs_handler.py` deep-dive below.
 
 ```
 python/
-├── wing-font.py                # CLI entry point — argparse + main()
-├── runner.py                   # Pyodide wrapper (called from the web app)
-├── build_glyph.py              # Pen-based glyph composition (base + anno)
-├── chain_context_handler.py    # Builds the `ccmp` GSUB rules
-├── liga_handler.py             # Builds the `ccmp` ligature-substitution rules
-├── word_liga_handler.py        # Arabic/Thai word-unit GSUB (ligation w/
-│                               #   per-script guards + variant override,
-│                               #   GDEF lig carets)
-├── ivs_handler.py              # Builds the cmap format-14 IVS supplement
-├── utils.py                    # cmap lookup + GSUB feature registration helper
-├── mappings/                   # CSVs that map char → romanization (+csv_parser)
+├── wingfont/                   # The pip package (`pip install ./python` → `wing-font` command)
+│   ├── cli.py                  #   main() build API + run() CLI (argparse)
+│   ├── fetch.py                #   `wing-font fetch` — fonts from wing-font-hub, mapping CSVs from this repo
+│   ├── runner.py               #   Pyodide wrapper (called from the web app)
+│   ├── build_glyph.py          #   Pen-based glyph composition (base + anno)
+│   ├── chain_context_handler.py#   Builds the `ccmp` GSUB rules
+│   ├── liga_handler.py         #   Builds the `ccmp` ligature-substitution rules
+│   ├── word_liga_handler.py    #   Arabic/Thai word-unit GSUB (ligation w/
+│   │                           #     per-script guards + variant override,
+│   │                           #     GDEF lig carets)
+│   ├── ivs_handler.py          #   Builds the cmap format-14 IVS supplement
+│   ├── csv_parser.py           #   Mapping CSV parser + WORD_SCRIPTS registry
+│   └── utils.py                #   cmap lookup + GSUB feature registration helper
+├── wing-font.py                # Shim: `python wing-font.py …` == `wing-font …`
+├── pyproject.toml              # Package metadata (PyPI name: wing-font)
+├── mappings/                   # CSVs that map char → romanization (data only; not in the wheel)
+├── examples/hero/              # 8-character end-to-end example with tiny fonts
 ├── input_fonts/                # Source TTFs (Chiron, NotoSerif, NotoSansTC, …)
 │                               #   — populated by `python init_fonts.py`
-├── init_fonts.py               # Fetch source TTFs from the input-fonts CDN
-├── tests/                      # Local test rig — small font + HTML viewer
-├── requirements.txt            # Pinned: fontTools, Brotli, unicodedata2
+├── init_fonts.py               # Fetch every source TTF the CI build needs
+├── tests/                      # pytest suite + visual test rig
+├── requirements.txt            # Pinned: fontTools, uharfbuzz, Brotli, unicodedata2
 └── README.md
 ```
 
-The five hand-written modules at the top are the core. Everything else is
-data, tooling, or tests. `runner.py` is only invoked from the in-browser
-pipeline (it imports `wingfont_main`, which is the sync-renamed name for
-`wing-font.py` — see [`../web/scripts/sync-python.mjs`](../web/scripts/sync-python.mjs)).
+`wingfont/runner.py` is only invoked from the in-browser pipeline: the
+web build copies the package into Pyodide and imports `wingfont.runner`
+— see [`../web/scripts/sync-python.mjs`](../web/scripts/sync-python.mjs).
 
 ---
 
@@ -310,7 +315,7 @@ Devanagari (Hindi) is supported as an **experimental** third script
 verified against HarfBuzz-based renderers (browsers, Android, Linux,
 LibreOffice); CoreText / DirectWrite use their own Indic engines and
 are unverified, see the Indic notes in
-[`word_liga_handler.py`](word_liga_handler.py).
+[`word_liga_handler.py`](wingfont/word_liga_handler.py).
 
 Per-script behaviour is data, not code: `csv_parser.WORD_SCRIPTS` maps
 each script tag to a `WordScript` record (detection ranges, boundary
@@ -323,7 +328,7 @@ family, Khmer, Myanmar) need the `calt`-stage treatment Devanagari
 uses, and each script needs a sensible variant-trigger choice.
 
 How the pieces map to OpenType (details in
-[`word_liga_handler.py`](word_liga_handler.py)):
+[`word_liga_handler.py`](wingfont/word_liga_handler.py)):
 
 - **Reaching the glyph** — the composed glyph has no codepoint, so a
   GSUB Type 4 ligature keyed on the word's nominal letter glyphs

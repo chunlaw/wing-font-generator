@@ -44,7 +44,7 @@ from fontTools.otlLib.builder import (
     SingleSubstBuilder,
 )
 
-from utils import get_glyph_name_by_char, register_feature_lookup, step_timer
+from .utils import get_glyph_name_by_char, register_feature_lookup, step_timer
 
 # Full-width digit zero (U+FF10) — the bare-strip trigger. Script Common,
 # so it joins the preceding CJK run (unlike the Latin full-width letters).

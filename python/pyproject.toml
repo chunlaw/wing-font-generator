@@ -1,0 +1,37 @@
+[build-system]
+requires = ["setuptools>=77"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "wing-font"
+dynamic = ["version"]
+description = "Build phonetic-annotation fonts (ruby above each character) from a base font, an annotation font and a character→reading CSV."
+readme = "PYPI.md"
+license = "MIT"
+license-files = ["LICENSE"]
+requires-python = ">=3.10"
+authors = [{ name = "Law Wai Chun" }]
+keywords = ["font", "opentype", "ruby", "annotation", "jyutping", "pinyin", "romanization"]
+# Same pins as requirements.txt: uharfbuzz must match the Pyodide wheel in
+# wheels/ so the CLI and the web demo produce identical fonts.
+dependencies = [
+    "fonttools==4.55.3",
+    "uharfbuzz==0.55.0",
+    "brotli>=1.0.9",
+    "unicodedata2>=15.1.0",
+]
+
+[project.optional-dependencies]
+test = ["pytest"]
+
+[project.scripts]
+wing-font = "wingfont.cli:run"
+
+[project.urls]
+Homepage = "https://github.com/chunlaw/wing-font-generator"
+
+[tool.setuptools]
+packages = ["wingfont"]
+
+[tool.setuptools.dynamic]
+version = { attr = "wingfont.__version__" }

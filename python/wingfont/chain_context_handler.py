@@ -135,7 +135,7 @@ from fontTools.otlLib.builder import (
     ChainContextualRule,
     SingleSubstBuilder,
 )
-from utils import (
+from .utils import (
     get_glyph_name_by_char,
     maybe_wrap_lookup_in_extension,
     register_feature_lookup,

@@ -155,11 +155,11 @@ from fontTools.otlLib.builder import (
 from fontTools.ttLib import newTable
 from fontTools.ttLib.tables import otTables
 
-from mappings.csv_parser import (
+from .csv_parser import (
     WORD_SCRIPTS,
     get_word_unit_script,
 )
-from utils import (
+from .utils import (
     get_glyph_name_by_char,
     maybe_wrap_lookup_in_extension,
     register_feature_lookup,
