@@ -68,6 +68,7 @@ const MANIFEST = [
   ["mappings/cantonese/canto-lshk.csv", "mappings/canto-lshk.csv"],
   ["mappings/cantonese/canto-yale.csv", "mappings/canto-yale.csv"],
   ["mappings/cantonese/canto-lau.csv", "mappings/canto-lau.csv"],
+  ["mappings/cantonese/canto-wong.csv", "mappings/canto-wong.csv"],
   ["mappings/cantonese/canto-guangdong.csv", "mappings/canto-guangdong.csv"],
   ["mappings/cantonese/canto-chishima.csv", "mappings/canto-chishima.csv"],
   ["mappings/cantonese/canto-thai.csv", "mappings/canto-thai.csv"],

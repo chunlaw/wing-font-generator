@@ -348,7 +348,7 @@ export const BUILT_IN_ANNO_FONTS: BuiltInPreset[] = [
 //     canto-lshk. Useful for advanced users but too chunky to be a
 //     default option.
 export const BUILT_IN_MAPPINGS: BuiltInPreset[] = [
-  // ─ Cantonese romanizations (5) ───────────────────────────────────
+  // ─ Cantonese romanizations (6) ───────────────────────────────────
   {
     key: "canto-lshk",
     label: "粵拼 (LSHK Jyutping)",
@@ -368,6 +368,13 @@ export const BUILT_IN_MAPPINGS: BuiltInPreset[] = [
     label: "劉錫祥 (Lau)",
     url: "/wingfont/mappings/canto-lau.csv",
     filename: "canto-lau.csv",
+    group: "粵語拼音 (Cantonese romanization)",
+  },
+  {
+    key: "canto-wong",
+    label: "黃錫凌 (Wong, 粵音韻彙)",
+    url: "/wingfont/mappings/canto-wong.csv",
+    filename: "canto-wong.csv",
     group: "粵語拼音 (Cantonese romanization)",
   },
   {

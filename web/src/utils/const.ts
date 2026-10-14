@@ -284,6 +284,7 @@ export interface FontOption {
 export const CANTO_GROUP_JYUTPING = "粵拼 Jyutping";
 export const CANTO_GROUP_YALE = "耶魯 Yale";
 export const CANTO_GROUP_LAU = "劉錫祥 Lau";
+export const CANTO_GROUP_WONG = "黃錫凌 Wong";
 export const CANTO_GROUP_GUANGDONG = "廣州話拼音方案 Guangdong";
 export const CANTO_GROUP_CHISHIMA = "千島 Chishima";
 export const CANTO_GROUP_SORAMIMI = "空耳 Other scripts";
@@ -295,6 +296,7 @@ export const FONT_GROUP_ORDER: string[] = [
   CANTO_GROUP_JYUTPING,
   CANTO_GROUP_YALE,
   CANTO_GROUP_LAU,
+  CANTO_GROUP_WONG,
   CANTO_GROUP_GUANGDONG,
   CANTO_GROUP_CHISHIMA,
   CANTO_GROUP_SORAMIMI,
@@ -386,6 +388,12 @@ export const AVAILABLE_FONTS: FontSet = {
         source: `url(${import.meta.env.VITE_FONT_URL}/NotoSansHK-NotoCond-lau.woff2) format('woff2')`,
         group: CANTO_GROUP_LAU,
       },
+      "NotoSansHK-NotoCond-wong": {
+        displayName: "思源黑體 香港（黃錫凌）",
+        name: "NotoSansHK-NotoCond-wong",
+        source: `url(${import.meta.env.VITE_FONT_URL}/NotoSansHK-NotoCond-wong.woff2) format('woff2')`,
+        group: CANTO_GROUP_WONG,
+      },
       "NotoSansHK-NotoCond-guangdong": {
         displayName: "思源黑體 香港（廣州話拼音方案）",
         name: "NotoSansHK-NotoCond-guangdong",
@@ -453,6 +461,12 @@ export const AVAILABLE_FONTS: FontSet = {
         name: "ChironSungHK-NotoCond-lau",
         source: `url(${import.meta.env.VITE_FONT_URL}/ChironSungHK-NotoCond-lau.woff2) format('woff2')`,
         group: CANTO_GROUP_LAU,
+      },
+      "ChironSungHK-NotoCond-wong": {
+        displayName: "昭源宋體（黃錫凌）",
+        name: "ChironSungHK-NotoCond-wong",
+        source: `url(${import.meta.env.VITE_FONT_URL}/ChironSungHK-NotoCond-wong.woff2) format('woff2')`,
+        group: CANTO_GROUP_WONG,
       },
       "ChironSungHK-NotoCond-guangdong": {
         displayName: "昭源宋體（廣州話拼音方案）",
@@ -522,6 +536,12 @@ export const AVAILABLE_FONTS: FontSet = {
         name: "Xiaolai-NotoCond-lau",
         source: `url(${import.meta.env.VITE_FONT_URL}/Xiaolai-NotoCond-lau.woff2) format('woff2')`,
         group: CANTO_GROUP_LAU,
+      },
+      "Xiaolai-NotoCond-wong": {
+        displayName: "小賴字體（黃錫凌）",
+        name: "Xiaolai-NotoCond-wong",
+        source: `url(${import.meta.env.VITE_FONT_URL}/Xiaolai-NotoCond-wong.woff2) format('woff2')`,
+        group: CANTO_GROUP_WONG,
       },
       "Xiaolai-NotoCond-guangdong": {
         displayName: "小賴字體（廣州話拼音方案）",

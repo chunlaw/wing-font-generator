@@ -152,6 +152,7 @@ jobs:
           - { name: ChironSungHK-NotoCond-chishima,            args: "-opt -i input_fonts/ChironSungHK-R.ttf -a 'input_fonts/NotoSans-VariableFont_wdth,wght.ttf' --anno-axis wdth=75 -m mappings/cantonese/canto-chishima.csv -as 0.41 -bs 0.70 -y 0.71" }
           - { name: ChironSungHK-NotoCond-guangdong,           args: "-opt -i input_fonts/ChironSungHK-R.ttf -a 'input_fonts/NotoSans-VariableFont_wdth,wght.ttf' --anno-axis wdth=75 -m mappings/cantonese/canto-guangdong.csv -as 0.41 -bs 0.70 -y 0.71" }
           - { name: ChironSungHK-NotoCond-lau,                 args: "-opt -i input_fonts/ChironSungHK-R.ttf -a 'input_fonts/NotoSans-VariableFont_wdth,wght.ttf' --anno-axis wdth=75 -m mappings/cantonese/canto-lau.csv -as 0.41 -bs 0.70 -y 0.71" }
+          - { name: ChironSungHK-NotoCond-wong,                 args: "-opt -i input_fonts/ChironSungHK-R.ttf -a 'input_fonts/NotoSans-VariableFont_wdth,wght.ttf' --anno-axis wdth=75 -m mappings/cantonese/canto-wong.csv -as 0.41 -bs 0.70 -y 0.71" }
           - { name: ChironSungHK-cangjie,                  args: "-i input_fonts/ChironSungHK-R.ttf -a input_fonts/ChironSungHK-R.ttf -m mappings/cangjie.csv -as 0.25 -bs 0.70 -y 0.77 --cell-width 1.0" }
           # === Script-specific annotation variants =================
           # ChironSung Regular base only — the Italic, Invert, and
@@ -176,6 +177,7 @@ jobs:
           - { name: NotoSansHK-NotoCond-chishima,              args: "-opt -i input_fonts/NotoSansHK-VariableFont_wght.ttf -a 'input_fonts/NotoSans-VariableFont_wdth,wght.ttf' --anno-axis wdth=75 -m mappings/cantonese/canto-chishima.csv -as 0.39 -bs 0.70 -y 0.70" }
           - { name: NotoSansHK-NotoCond-guangdong,             args: "-opt -i input_fonts/NotoSansHK-VariableFont_wght.ttf -a 'input_fonts/NotoSans-VariableFont_wdth,wght.ttf' --anno-axis wdth=75 -m mappings/cantonese/canto-guangdong.csv -as 0.39 -bs 0.70 -y 0.70" }
           - { name: NotoSansHK-NotoCond-lau,                   args: "-opt -i input_fonts/NotoSansHK-VariableFont_wght.ttf -a 'input_fonts/NotoSans-VariableFont_wdth,wght.ttf' --anno-axis wdth=75 -m mappings/cantonese/canto-lau.csv -as 0.39 -bs 0.70 -y 0.70" }
+          - { name: NotoSansHK-NotoCond-wong,                   args: "-opt -i input_fonts/NotoSansHK-VariableFont_wght.ttf -a 'input_fonts/NotoSans-VariableFont_wdth,wght.ttf' --anno-axis wdth=75 -m mappings/cantonese/canto-wong.csv -as 0.39 -bs 0.70 -y 0.70" }
           # Cangjie under Noto Sans HK: annotation IS the base font
           # (so the radicals render in HK style), no -opt because
           # subsetting would chase the self-reference.
@@ -311,6 +313,7 @@ jobs:
           - { name: Xiaolai-NotoCond-lshk,                   args: "-opt -i input_fonts/XiaolaiSC-Regular.ttf -a 'input_fonts/NotoSans-VariableFont_wdth,wght.ttf' --anno-axis wdth=75 -m mappings/cantonese/canto-lshk.csv --diy-annotations diy-mappings/cantonese/lshk.diy-annotation.csv -as 0.38 -bs 0.70 -y 0.67" }
           - { name: Xiaolai-NotoCond-yale,                   args: "-opt -i input_fonts/XiaolaiSC-Regular.ttf -a 'input_fonts/NotoSans-VariableFont_wdth,wght.ttf' --anno-axis wdth=75 -m mappings/cantonese/canto-yale.csv -as 0.38 -bs 0.70 -y 0.67" }
           - { name: Xiaolai-NotoCond-lau,                    args: "-opt -i input_fonts/XiaolaiSC-Regular.ttf -a 'input_fonts/NotoSans-VariableFont_wdth,wght.ttf' --anno-axis wdth=75 -m mappings/cantonese/canto-lau.csv -as 0.38 -bs 0.70 -y 0.67" }
+          - { name: Xiaolai-NotoCond-wong,                    args: "-opt -i input_fonts/XiaolaiSC-Regular.ttf -a 'input_fonts/NotoSans-VariableFont_wdth,wght.ttf' --anno-axis wdth=75 -m mappings/cantonese/canto-wong.csv -as 0.38 -bs 0.70 -y 0.67" }
           - { name: Xiaolai-NotoCond-guangdong,              args: "-opt -i input_fonts/XiaolaiSC-Regular.ttf -a 'input_fonts/NotoSans-VariableFont_wdth,wght.ttf' --anno-axis wdth=75 -m mappings/cantonese/canto-guangdong.csv -as 0.38 -bs 0.70 -y 0.67" }
           - { name: Xiaolai-NotoCond-chishima,               args: "-opt -i input_fonts/XiaolaiSC-Regular.ttf -a 'input_fonts/NotoSans-VariableFont_wdth,wght.ttf' --anno-axis wdth=75 -m mappings/cantonese/canto-chishima.csv -as 0.38 -bs 0.70 -y 0.67" }
           # Cantonese non-romanization variants on Xiaolai base. Cangjie

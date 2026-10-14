@@ -71,7 +71,7 @@ Apply the standard the file already uses; don't mix schemes within a file.
 | Family | File(s) | Standard |
 |---|---|---|
 | Cantonese | `canto-lshk` | LSHK Jyutping |
-| Cantonese (other) | `canto-yale`, `canto-lau`, `canto-guangdong`, `canto-chishima` | Yale / Lau / Guangdong / Chishima |
+| Cantonese (other) | `canto-yale`, `canto-lau`, `canto-wong`, `canto-guangdong`, `canto-chishima` | Yale / Lau / Wong (黃錫凌) / Guangdong / Chishima |
 | Mandarin | `mandarin-cn`, `mandarin-tw`, `mandarin-tw-toned`, `mandarin-tw-zhuyin` | Hanyu Pinyin; 注音符號 (`mandarin-tw-zhuyin`, MOE) |
 | Taiwanese / Southern Min | `taigi-tl*`, `taigi-poj*`, `taigi-tps`, `taigi-kana` | Tâi-lô, POJ, Bopomofo, Taiwanese Kana |
 | Teochew | `teochew-gdpi`, `teochew-tlo`, … | Peng'im (GDPI), Pe̍h-ūe-jī — see `teochew-README.md` |
