@@ -14,6 +14,7 @@ import {
   AVAILABLE_FONTS,
   FontOption,
   findDialectKey,
+  findTemplateKey,
   getDialectLabel,
 } from "../utils/const";
 import { FontHeader } from "../components/components/FonttHeader";
@@ -155,7 +156,7 @@ const Specimen = () => {
   // annotations) on real prose. As soon as the user types, native
   // textarea behavior hides the placeholder and they edit their own
   // text in the same font.
-  const msgShown = useTemplateRotation(msg, dialectKey);
+  const msgShown = useTemplateRotation(msg, findTemplateKey(fontOption.name));
 
   // Dim the editor while the FontFace is still resolving — same
   // affordance as the showcase cards. The rotation-fade transition

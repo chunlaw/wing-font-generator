@@ -123,6 +123,10 @@ export type TranslationKey =
   | "ack.thai.body"
   | "ack.thai.tcahk"
   | "ack.thai.pythainlp"
+  | "ack.inuktitut.title"
+  | "ack.inuktitut.body"
+  | "ack.inuktitut.hansard"
+  | "ack.inuktitut.qaniujaaqpait"
   | "ack.license"
   | "ack.cta.showcase"
   // Home
@@ -160,6 +164,8 @@ export type TranslationKey =
   | "home.features.f3.body"
   | "home.features.f4.title"
   | "home.features.f4.body"
+  | "home.features.f5.title"
+  | "home.features.f5.body"
   // Showcase (existing Main page)
   | "showcase.tryIt"
   | "showcase.share"
@@ -494,6 +500,10 @@ export const TRANSLATIONS: Record<Language, Record<TranslationKey, string>> = {
     "ack.thai.body": "泰文詞語嘅羅馬拼音方案取自香港泰國文化協會（TCAHK）以廣東話教授泰文嘅課程教材，經 thai-ink 項目整理成拼讀規則同人手校對嘅詞彙表（約 900 個詞，一律優先）；其餘約 8.4 萬個常用詞取自 PyThaiNLP 嘅詞表，按同一套規則自動轉換，屬近似結果。",
     "ack.thai.tcahk": "泰文拼音方案同詞彙嘅來源：協會以廣東話教授泰文嘅課程教材。",
     "ack.thai.pythainlp": "泰文詞表同詞頻（Apache-2.0），用嚟擴充自動轉換嘅詞彙。",
+    "ack.inuktitut.title": "因紐特文　字音資料",
+    "ack.inuktitut.body": "因紐特文（Inuktitut）嘅讀音用 ICI 標準羅馬字，由 qaniujaaqpait 將音節文字轉換。詞表（約 2 萬條）根據 Nunavut 議會議事錄（Nunavut Hansard）嘅詞頻整理；原文 © Legislative Assembly of Nunavut，CC BY 4.0。唔喺詞表嘅長詞會按統計學出嚟嘅片段切開，未必等於真正嘅詞素。",
+    "ack.inuktitut.hansard": "Nunavut 議會議事錄（CC BY 4.0），由加拿大國家研究委員會（NRC）對齊，經 OPUS 發佈；用嚟計詞頻。",
+    "ack.inuktitut.qaniujaaqpait": "音節文字轉羅馬字工具（MIT），用嚟產生所有讀音。",
     "ack.license":
       "各項資料與字型均依其原有授權條款使用；如需轉載或再發佈，請先參閱各來源之授權。",
     "ack.cta.showcase": "睇睇成品字體",
@@ -553,6 +563,9 @@ export const TRANSLATIONS: Record<Language, Record<TranslationKey, string>> = {
     "home.features.f4.title": "完全本機運算",
     "home.features.f4.body":
       "你的字體與對應表全程不會離開瀏覽器，所有處理皆在本機進行。",
+    "home.features.f5.title": "自訂標注",
+    "home.features.f5.body":
+      "生成字型時喺步驟 3 加入「自訂標注」清單，用家就可以為任何字自行指定讀音：喺字後面打全形「０」清除原有標注，再打全形拼音，例如「行０ｚａａ１」會喺「行」上面顯示 zaa1。內置粵拼、漢語拼音、注音、台羅清單，亦可上載自己嘅 CSV。暫時只支援中文（漢字）底字。",
     // Showcase
     "showcase.tryIt": "隨便試 (Try it!!)",
     "showcase.share": "分享連結",
@@ -647,7 +660,7 @@ export const TRANSLATIONS: Record<Language, Record<TranslationKey, string>> = {
     "generate.step5.label": "預覽與下載",
     "generate.stepDiy.label": "自訂標注",
     "stepDiy.title": "步驟 3：自訂標注（選用）",
-    "stepDiy.description": "加入一份「手動標注」清單（--diy-annotations），讓字型使用者可以為任何字自行指定讀音：在字後面先打全形 ０ 清除原有標注，再打全形拼音，例如「行０ｚａａ１」會在「行」上顯示 zaa1。不需要的話可以略過此步驟。",
+    "stepDiy.description": "加入一份「手動標注」清單（--diy-annotations），讓字型使用者可以為任何字自行指定讀音：在字後面先打全形 ０ 清除原有標注，再打全形拼音，例如「行０ｚａａ１」會在「行」上顯示 zaa1。暫時只支援中文（漢字）底字。不需要的話可以略過此步驟。",
     "stepDiy.preset": "預設清單",
     "stepDiy.none": "不使用",
     "stepDiy.custom": "自訂檔案",
@@ -916,6 +929,10 @@ export const TRANSLATIONS: Record<Language, Record<TranslationKey, string>> = {
     "ack.thai.body": "The Thai romanization follows the teaching materials of the Thai Culture Association of Hong Kong (TCAHK), whose Thai classes are taught in Cantonese. The thai-ink project turned those materials into spelling-to-sound rules and a hand-checked vocabulary (~900 words, always preferred); the remaining ~84k common words come from PyThaiNLP's word lists, romanized automatically by the same rules, so they are approximations.",
     "ack.thai.tcahk": "Source of the romanization scheme and vocabulary: the association's Cantonese-medium Thai course materials.",
     "ack.thai.pythainlp": "Thai word lists and frequencies (Apache-2.0), used to extend the automatically romanized vocabulary.",
+    "ack.inuktitut.title": "Inuktitut — reading data",
+    "ack.inuktitut.body": "Inuktitut readings use the ICI standard roman orthography, converted from syllabics by qaniujaaqpait. The word list (~20k entries) is derived from word frequencies in the Nunavut Hansard; text © Legislative Assembly of Nunavut, CC BY 4.0. Long words not on the list are split into statistically learned pieces, which are not always true morphemes.",
+    "ack.inuktitut.hansard": "Proceedings of the Legislative Assembly of Nunavut (CC BY 4.0), aligned by the National Research Council of Canada; distributed via OPUS. Used for word frequencies.",
+    "ack.inuktitut.qaniujaaqpait": "Syllabics-to-roman converter (MIT), used to generate every reading.",
     "ack.license":
       "Each dataset and font is used under its own licence — check the upstream source before redistributing.",
     "ack.cta.showcase": "Browse the fonts",
@@ -975,6 +992,9 @@ export const TRANSLATIONS: Record<Language, Record<TranslationKey, string>> = {
     "home.features.f4.title": "Fully local",
     "home.features.f4.body":
       "Your fonts and mapping never leave your browser. Everything runs client-side.",
+    "home.features.f5.title": "DIY annotations",
+    "home.features.f5.body":
+      "Add a DIY annotation inventory in Step 3 when generating, and people using the font can set any character's reading themselves: after a character, type a full-width ０ to strip its reading, then the full-width romanization — e.g. 行０ｚａａ１ shows zaa1 over 行. Built-in inventories for Jyutping, Pinyin, Zhuyin and Tâi-lô, or upload your own CSV. Currently Chinese (Han) base fonts only.",
     // Showcase
     "showcase.tryIt": "Try typing here",
     "showcase.share": "Share link",
@@ -1070,7 +1090,7 @@ export const TRANSLATIONS: Record<Language, Record<TranslationKey, string>> = {
     "generate.step5.label": "Preview & download",
     "generate.stepDiy.label": "DIY annotations",
     "stepDiy.title": "Step 3: DIY annotations (optional)",
-    "stepDiy.description": "Add a manual-annotation inventory (--diy-annotations) so people using the font can set any character's reading themselves: after a character, type a full-width ０ to strip its reading, then the full-width romanization — e.g. 行０ｚａａ１ shows zaa1 over 行. Skip this step if you don't need it.",
+    "stepDiy.description": "Add a manual-annotation inventory (--diy-annotations) so people using the font can set any character's reading themselves: after a character, type a full-width ０ to strip its reading, then the full-width romanization — e.g. 行０ｚａａ１ shows zaa1 over 行. Currently Chinese (Han) base fonts only. Skip this step if you don't need it.",
     "stepDiy.preset": "Built-in inventory",
     "stepDiy.none": "None",
     "stepDiy.custom": "Custom file",

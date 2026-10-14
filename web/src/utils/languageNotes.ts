@@ -22,6 +22,7 @@ export const NOTE_LANGUAGES: NoteLanguage[] = [
   { key: "thai", native: "ภาษาไทย", en: "Thai" },
   { key: "hindi", native: "हिन्दी", en: "Hindi" },
   { key: "arabic", native: "العربية", en: "Arabic" },
+  { key: "inuktitut", native: "ᐃᓄᒃᑎᑐᑦ", en: "Inuktitut" },
 ];
 
 // Mapping preset keys (canto-lshk, taigi-tl, japanese-onkun, …) → language

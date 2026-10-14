@@ -168,9 +168,9 @@ export const BUILT_IN_BASE_FONTS: BuiltInPreset[] = [
   //
   // The pipeline composes each WORD of the base script into one glyph
   // carrying the romanization above it (see python/word_liga_handler.py).
-  // Annotation slot wants Noto Serif Regular for both — that's what the
-  // pre-built showcase fonts (NotoSansArabic-Noto-romanization,
-  // Hind-Noto-romanization) ship with.
+  // The pre-built showcase fonts (NotoSansArabic-Noto-DIN31635,
+  // Hind-Noto-romanization) use condensed Noto Sans (wdth 75) at
+  // -as 0.42 -bs 0.70; Noto Serif Regular also works as the annotation.
   //
   // Hind-Regular also appears in BUILT_IN_ANNO_FONTS (key `anno-hind`)
   // for use as Devanagari ANNOTATION over Cantonese (canto-hindi.csv).

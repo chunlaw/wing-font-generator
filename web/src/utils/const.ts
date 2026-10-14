@@ -7,8 +7,10 @@
  * only through Mandarin lyrics, etc.
  *
  * Dialect keys here MUST match the keys in `AVAILABLE_FONTS` below
- * (cantonese / taiwanese / teochew / mandarin) so the per-card
- * lookup in Main.tsx can route correctly via `findDialectKey()`.
+ * (cantonese / taiwanese / teochew / …) so the per-card lookup in
+ * Main.tsx can route correctly via `findTemplateKey()`. Exception:
+ * mandarin is split into mandarin-tw (繁體) / mandarin-cn (简体)
+ * because each font only covers one script.
  *
  * The flat `TEMPLATES` export underneath is preserved for the
  * Specimen page, which renders one font in isolation and doesn't
@@ -145,7 +147,8 @@ export const TEMPLATES_BY_DIALECT: Record<string, string[]> = {
     "दिल",
     "एक दो तीन",
   ],
-  mandarin: [
+  // Same lines in both scripts: -tw fonts only map 繁體, -cn only 简体.
+  "mandarin-tw": [
     "夜空中最亮的星　能否聽清",
     "月亮代表我的心",
     "甜蜜蜜　你笑得甜蜜蜜",
@@ -154,6 +157,18 @@ export const TEMPLATES_BY_DIALECT: Record<string, string[]> = {
     "我願意為你　被放逐天際",
     "當愛已成往事",
     "明天會更好",
+    "朋友一生一起走",
+    "我看到滿片花兒的開放　隱隱約約有聲歌唱",
+  ],
+  "mandarin-cn": [
+    "夜空中最亮的星　能否听清",
+    "月亮代表我的心",
+    "甜蜜蜜　你笑得甜蜜蜜",
+    "童年的纸飞机　现在飞回我手里",
+    "光阴似箭　一寸光阴一寸金",
+    "我愿意为你　被放逐天际",
+    "当爱已成往事",
+    "明天会更好",
     "朋友一生一起走",
     "我看到满片花儿的开放　隐隐约约有声歌唱",
   ],
@@ -197,6 +212,20 @@ export const TEMPLATES_BY_DIALECT: Record<string, string[]> = {
     "ดอกไม้บานสวย",
     "ดวงจันทร์ลอยฟ้า",
     "น้ำใจคนไทย",
+  ],
+  // Inuktitut — syllabics with qaniujaaqpait romanization below
+  // (NotoSansCanAb-NotoCond-iu). Every word here is in the Hansard
+  // word list, so each renders as one whole-word reading.
+  inuktitut: [
+    "ᖁᔭᓐᓇᒦᒃ",
+    "ᓄᓇᕗᑦ",
+    "ᐃᓄᒃᑎᑐᑦ",
+    "ᐃᓄᐃᑦ ᐃᖃᓗᐃᑦ",
+    "ᐅᖃᐅᓯᒃᑯᑦ ᐊᐱᖅᑯᑎᑦ",
+    "ᐅᖃᖅᑎ ᒥᓂᔅᑕ",
+    "ᐅᓪᓛᒃᑯᑦ",
+    "ᐃᓕᓐᓂᐊᖅᑐᓄᑦ",
+    "ᐱᕙᓪᓕᐊᔪᓕᕆᓂᕐᒧᑦ",
   ],
 };
 
@@ -870,6 +899,23 @@ export const AVAILABLE_FONTS: FontSet = {
       },
     },
   },
+  // Inuktitut — Canadian Aboriginal syllabics annotated below with
+  // qaniujaaqpait romanization (condensed Noto Sans). Word-unit rows
+  // from the Nunavut Hansard; unknown words fall back to per-symbol
+  // readings. See the matching matrix entry in deploy-pages.yml.
+  inuktitut: {
+    lang: {
+      zh: "因紐特文",
+      en: "Inuktitut",
+    },
+    fonts: {
+      "NotoSansCanAb-NotoCond-iu": {
+        displayName: "Noto Sans 因紐特文（qaniujaaqpait 拼寫）",
+        name: "NotoSansCanAb-NotoCond-iu",
+        source: `url(${import.meta.env.VITE_FONT_URL}/NotoSansCanAb-NotoCond-iu.woff2) format('woff2')`,
+      },
+    },
+  },
   // ── Arabic-base word-unit tier (experimental) ─────────────────
   // First curated font using the word-unit pipeline with a non-Han
   // BASE script. Each Arabic word composes into one annotated glyph
@@ -958,6 +1004,14 @@ export function findDialectKey(fontName: string): string | undefined {
     if (fontName in group.fonts) return dialectKey;
   }
   return undefined;
+}
+
+/** Sample-pool key for a font: the dialect key, except Mandarin picks
+ *  the 繁體 / 简体 pool matching the font's -tw / -cn mapping. */
+export function findTemplateKey(fontName: string): string | undefined {
+  const dialectKey = findDialectKey(fontName);
+  if (dialectKey !== "mandarin") return dialectKey;
+  return fontName.includes("-mandarin-cn") ? "mandarin-cn" : "mandarin-tw";
 }
 
 /**

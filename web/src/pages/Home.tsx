@@ -165,6 +165,7 @@ const Home = () => {
     { title: "home.features.f2.title", body: "home.features.f2.body" },
     { title: "home.features.f3.title", body: "home.features.f3.body" },
     { title: "home.features.f4.title", body: "home.features.f4.body" },
+    { title: "home.features.f5.title", body: "home.features.f5.body" },
   ] as const;
 
   /*
@@ -601,7 +602,7 @@ const Home = () => {
           gridTemplateColumns={{
             xs: "1fr",
             sm: "1fr 1fr",
-            md: "repeat(4, 1fr)",
+            md: "repeat(3, 1fr)",
           }}
           gap={{ xs: 2, md: 3 }}
         >

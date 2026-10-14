@@ -35,6 +35,7 @@ import japanese from "../notes/japanese.md?raw";
 import thai from "../notes/thai.md?raw";
 import hindi from "../notes/hindi.md?raw";
 import arabic from "../notes/arabic.md?raw";
+import inuktitut from "../notes/inuktitut.md?raw";
 
 const MARKDOWN: Record<string, string> = {
   cantonese,
@@ -45,6 +46,7 @@ const MARKDOWN: Record<string, string> = {
   thai,
   hindi,
   arabic,
+  inuktitut,
 };
 
 export default function Notes() {

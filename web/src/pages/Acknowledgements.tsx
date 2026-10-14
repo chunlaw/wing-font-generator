@@ -204,6 +204,19 @@ const THAI_SOURCES: Source[] = [
   },
 ];
 
+const INUKTITUT_SOURCES: Source[] = [
+  {
+    name: "Nunavut Hansard Inuktitut–English Parallel Corpus 3.0",
+    url: "https://opus.nlpl.eu/",
+    descKey: "ack.inuktitut.hansard",
+  },
+  {
+    name: "qaniujaaqpait",
+    url: "https://github.com/ColemanHaley/qaniujaaqpait",
+    descKey: "ack.inuktitut.qaniujaaqpait",
+  },
+];
+
 const Acknowledgements = () => {
   const { t } = useTranslation();
   const navigate = useNavigate();
@@ -304,6 +317,13 @@ const Acknowledgements = () => {
         title={t("ack.thai.title")}
         body={t("ack.thai.body")}
         sources={THAI_SOURCES}
+      />
+
+      {/* Inuktitut — word list derived from the Nunavut Hansard (CC BY 4.0) */}
+      <CreditSection
+        title={t("ack.inuktitut.title")}
+        body={t("ack.inuktitut.body")}
+        sources={INUKTITUT_SOURCES}
       />
 
       {/* Licence note + CTA */}

@@ -375,10 +375,12 @@ jobs:
           # via gen_arabic_romanization.py later.
           #
           # `--out-ascent` not needed for this pairing: NotoSansArabic's
-          # ascent (~1500u) already accommodates the Latin annotation
-          # above. `-as 0.25` is a starting guess — may want tuning
-          # after eyeballing the first build.
-          - { name: NotoSansArabic-Noto-DIN31635,      args: "-opt -i 'input_fonts/NotoSansArabic-VariableFont_wdth,wght.ttf' -a input_fonts/NotoSerif-Regular.ttf -m mappings/arabic/arabic-romanization.csv -as 0.25 --cell-width 1.0" }
+          # ascent (~1500u) already accommodates the Latin annotation.
+          # Sizing shared by the non-Han word-unit bases (Arabic, Hindi,
+          # Thai, Inuktitut): condensed Noto Sans (wdth 75) at
+          # `-as 0.42 -bs 0.70` — the earlier NotoSerif at -as 0.25/0.30
+          # read too small next to the base script.
+          - { name: NotoSansArabic-Noto-DIN31635,      args: "-opt -i 'input_fonts/NotoSansArabic-VariableFont_wdth,wght.ttf' -a 'input_fonts/NotoSans-VariableFont_wdth,wght.ttf' --anno-axis wdth=75 -m mappings/arabic/arabic-romanization.csv -as 0.42 -bs 0.70 --cell-width 1.0" }
           # ── Hindi-base word-unit font (Devanagari tier) ──────────
           # Second non-Han word-unit base, the Devanagari analogue of
           # the Arabic font above. Each Hindi word composes into one
@@ -396,22 +398,16 @@ jobs:
           # annotation below. Word-unit mode auto-extends the win
           # metrics around the annotation, so no --out-ascent is needed.
           #
-          # `-y 0.88 -as 0.30` are tuned (not Arabic's 0.25/default):
-          # measured against the rendered output, -as 0.25 left the
-          # romanization small/timid (~0.25 em, ratio ~0.33 of the
-          # base) and y 1.15 left a ~0.5 em dead gap that read as
-          # floaty. -as 0.30 grows the annotation to a ratio of
-          # ~0.4–0.6 (furigana-like legibility) and y 0.88 halves the
-          # gap to ~0.15–0.25 em while keeping a safe clearance even on
-          # tall-conjunct words (दुनिया ≈ 0.14 em). anno-spacing stays
-          # at its 0.0 default — Latin romanization shapes naturally and
-          # needs no inter-glyph opening.
-          - { name: Hind-Noto-romanization,               args: "-opt -v -y 0.88 -i input_fonts/Hind-Regular.ttf -a input_fonts/NotoSerif-Regular.ttf -m mappings/hindi/hindi-romanization.csv -as 0.30 --cell-width 1.0" }
+          # `-y 0.88`: y 1.15 left a ~0.5 em dead gap that read as
+          # floaty; 0.88 keeps a safe clearance even on tall-conjunct
+          # words (दुनिया). Size: condensed Noto Sans at -as 0.42
+          # -bs 0.70, shared with Arabic above.
+          - { name: Hind-Noto-romanization,               args: "-opt -v -y 0.88 -i input_fonts/Hind-Regular.ttf -a 'input_fonts/NotoSans-VariableFont_wdth,wght.ttf' --anno-axis wdth=75 -m mappings/hindi/hindi-romanization.csv -as 0.42 -bs 0.70 --cell-width 1.0" }
           # Thai — Thai-script base annotated with the TCAHK (thai-ink)
           # romanization (Latin with IPA-ish vowels and combining tone
           # marks). GoogleSans is used as the base font because it ships
           # the full 87-char Thai block with proper mark positioning;
-          # NotoSerif supplies the Latin TCAHK romanization.
+          # condensed Noto Sans supplies the Latin TCAHK romanization.
           #
           # `--anno-below` is the entire point of this entry: Thai's
           # above-line marks (sara-i ◌ิ, sara-ii ◌ี, mai-aek ◌่,
@@ -423,10 +419,14 @@ jobs:
           # `--invert` flag's baseline-drift artefact (see
           # `--anno-below` help in wing-font.py for full design notes).
           #
-          # `-as 0.30` matches the Hindi entry above (same NotoSerif
-          # Latin face, same approximate target on-screen size for
-          # 4-8 character romanizations like `sà-wàt-dii`).
-          - { name: GoogleSans-Noto-thai-tcahk,         args: "-opt --anno-below -i 'input_fonts/GoogleSans-VariableFont_GRAD,opsz,wght.ttf' -a input_fonts/NotoSerif-Regular.ttf -m mappings/thai/thai-tcahk.csv -as 0.30 --cell-width 1.0" }
+          # `-as 0.42 -bs 0.70` matches the Arabic/Hindi entries above.
+          - { name: GoogleSans-Noto-thai-tcahk,         args: "-opt --anno-below -i 'input_fonts/GoogleSans-VariableFont_GRAD,opsz,wght.ttf' -a 'input_fonts/NotoSans-VariableFont_wdth,wght.ttf' --anno-axis wdth=75 -m mappings/thai/thai-tcahk.csv -as 0.42 -bs 0.70 --cell-width 1.0" }
+          # Inuktitut — syllabics with qaniujaaqpait romanization below.
+          # Word-unit rows from the Nunavut Hansard 3.0 corpus (CC BY 4.0,
+          # see mappings/inuktitut/NOTES.md); ~20k entries keeps the WOFF2
+          # under Chrome's decode limit (a 31k build was rejected).
+          # -as 0.42 -bs 0.70: same sizing as Arabic/Hindi/Thai above.
+          - { name: NotoSansCanAb-NotoCond-iu,          args: "-opt --anno-below -i input_fonts/NotoSansCanadianAboriginal-VariableFont_wght.ttf -a 'input_fonts/NotoSans-VariableFont_wdth,wght.ttf' --anno-axis wdth=75 -m mappings/inuktitut/inuktitut-hansard.csv -as 0.42 -bs 0.70" }
           - { name: Xiaolai-NotoCond-poj,                    args: "-opt -i input_fonts/XiaolaiSC-Regular.ttf -a 'input_fonts/NotoSans-VariableFont_wdth,wght.ttf' --anno-axis wdth=75 -m mappings/taiwanese/taigi-poj-toned.csv -as 0.38 -bs 0.70 -y 0.67" }
           - { name: Xiaolai-NotoCond-teochew-pengim,         args: "-opt -i input_fonts/XiaolaiSC-Regular.ttf -a 'input_fonts/NotoSans-VariableFont_wdth,wght.ttf' --anno-axis wdth=75 -m mappings/teochew/teochew-gdpi.csv -as 0.38 -bs 0.70 -y 0.67" }
           - { name: Xiaolai-NotoCond-teochew-puj,            args: "-opt -i input_fonts/XiaolaiSC-Regular.ttf -a 'input_fonts/NotoSans-VariableFont_wdth,wght.ttf' --anno-axis wdth=75 -m mappings/teochew/teochew-duffus.csv -as 0.38 -bs 0.70 -y 0.67" }

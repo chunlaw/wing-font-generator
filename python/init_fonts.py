@@ -87,6 +87,7 @@ FONT_FILES: list[str] = [
     # OFL (Google Fonts).
     "NotoSansArabic-VariableFont_wdth,wght.ttf",
     "Hind-Regular.ttf",
+    "NotoSansCanadianAboriginal-VariableFont_wght.ttf",
     "NotoSerif-Regular.ttf",
     # Noto Sans (Latin) with a wdth axis — condensed (--anno-axis
     # wdth=75) annotation font for the CJK romanization fonts.

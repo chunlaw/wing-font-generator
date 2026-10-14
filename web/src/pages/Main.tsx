@@ -36,6 +36,7 @@ import {
   FontOption,
   USER_FONTS_GROUP_KEY,
   findDialectKey,
+  findTemplateKey,
   getDialectLabel,
 } from "../utils/const";
 import {
@@ -645,7 +646,11 @@ const FontShowcaseCard = ({
   // the shared tick so all cards roll together. When dialectKey is
   // undefined (e.g. for user fonts, or stale entries) the hook
   // falls back to the global flat TEMPLATES list.
-  const msgShown = useTemplateRotation(msg, builtInDialectKey, sharedTick);
+  const msgShown = useTemplateRotation(
+    msg,
+    findTemplateKey(pickedFont.name),
+    sharedTick,
+  );
 
   // Per-card writing direction. Drives the Typography render below
   // so a card showing an Arabic-base font right-anchors the prose
