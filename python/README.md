@@ -205,6 +205,7 @@ on a value visually before committing to a CLI invocation.
 | `-y` | `--upper_y_offset_ratio` | `0.8` | Where to put the annotation (fraction of em) |
 | `-v` | `--invert` | off | Swap positions: annotation below, base above |
 | `-opt` | `--optimize` | off | Subset the output to just glyphs we actually use (drops it from ~30 MB to ~200–500 KB per font). The base font's Latin, punctuation and U+25CC are always kept |
+| | `--no-woff2` | off | Write only the `.ttf`; skips the WOFF2 compression (about a minute for a CJK font) |
 | | `--trigger-char` | `丅` (U+4E05) | Override-trigger character for the IME-friendly variant selection path (`<base><trigger><numeral>`). Pass an empty string to disable the trigger+numeral path while keeping the digit-suffix path (`<base><number>`, e.g. `行1` … `行11`) intact. |
 | | `--out-ascent` | `auto` | Output font's clipping ascent (`hhea.ascent` + `OS/2.usWinAscent`, font units, UPM=1000). `auto` widens it just enough to fit the tallest composed glyph, so apps that strictly honour `winAscent` (Word, Pages, Keynote, Canva) don't truncate tall annotations (Urdu Nastaliq, Thai marks, Hangul jamo on low-ascent bases like Xiaolai 880u). Pass an integer to pin an exact value (disables auto-fit, e.g. `1300` for Xiaolai + Urdu), or `off` to keep the base font's ascent. `sTypoAscender` is never changed. See [above](#tall-annotations-on-low-ascent-bases----out-ascent-auto-by-default). |
 | | `--keep-base-names` | off | Skip the name-table rewrite below; keep the base font's copyright, vendor and license records |

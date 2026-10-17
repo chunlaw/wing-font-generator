@@ -2317,6 +2317,8 @@ def run(argv=None):
         ),
     )
     parser.add_argument('-opt', '--optimize', action="store_true", help="Optimizing size by subsetting annotated glyph only")
+    parser.add_argument('--no-woff2', dest='skip_woff', action='store_true',
+                        help="Write only the .ttf (skips the slow WOFF2 compression)")
     parser.add_argument(
         '--diy-annotations',
         dest='diy_annotations',
@@ -2497,6 +2499,7 @@ def run(argv=None):
         invert=options.invert,
         anno_below=options.anno_below,
         optimize=options.optimize,
+        skip_woff=options.skip_woff,
         trigger_char=options.trigger_char,
         out_ascent=options.out_ascent,
         base_axis_location=base_axis_location,
