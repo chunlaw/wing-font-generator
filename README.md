@@ -144,6 +144,10 @@ Input fonts and mapping data carry their own licenses (the fonts are mostly **SI
 
 Wing Font stands on the shoulders of excellent open-source data and fonts. Full credits live at <https://wing-font.chunlaw.io/credits>; the headline contributions:
 
+### Prior art
+
+- [Mengshen pinyin font (萌神拼音字體)](https://github.com/MaruTama/Mengshen-pinyin-font) — MaruTama. A Chinese font with pinyin annotations built into the glyphs, first released in July 2019. Since v1.0 (November 2020) it picks polyphone readings from context with OpenType GSUB (`rclt`). Wing Font takes the same approach.
+
 ### Fonts
 
 - [Noto Sans HK / TC / SC / JP / KR](https://fonts.google.com/noto) — Google

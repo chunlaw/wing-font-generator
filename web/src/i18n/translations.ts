@@ -84,6 +84,9 @@ export type TranslationKey =
   | "ack.intro"
   | "ack.dataQuality.title"
   | "ack.dataQuality.body"
+  | "ack.prior.title"
+  | "ack.prior.body"
+  | "ack.prior.mengshen"
   | "ack.taigi.title"
   | "ack.taigi.body"
   | "ack.taigi.sutian"
@@ -438,6 +441,11 @@ export const TRANSLATIONS: Record<Language, Record<TranslationKey, string>> = {
     "ack.dataQuality.title": "資料來源同準確性",
     "ack.dataQuality.body":
       "Wing Font 係一個個人開源項目，作者並非語言學者。每一份預生成字型嘅拼音對應表，原始資料都嚟自下面列出嘅上游開源項目；但各個來源嘅格式、用詞、聲調符號慣例都唔同，所以資料係透過**人手編輯、正則轉換，加上 AI 輔助工具**（LLM 用嚟清理數據、程式化轉換用嚟統一聲調同詞語切分、有覆蓋唔到嘅地方亦會生成 fallback 讀音）正規化、去重、消歧。\n\n換言之，**錯誤難免** —— 多音字嘅預設讀音可能揀錯、某啲方言變體可能漏咗、多字詞嘅切分可能唔啱、聲調連讀（tone sandhi）嘅邊界個案有機會處理唔到。\n\n如果你係母語使用者、語言學者，或者單純眼利見到出錯，**歡迎你[喺 GitHub 提 issue](https://github.com/chunlaw/wing-font-generator/issues) 或者[加入 Telegram 群組](https://t.me/wingfont)** 指正——修正會喺下一次 CI 構建發佈。",
+    "ack.prior.title": "前人作品",
+    "ack.prior.body":
+      "喺漢字字型入面內建注音，再用 OpenType 按上下文揀多音字讀音，呢個做法唔係 Wing Font 首創。Wing Font 用嘅係同一個方法。",
+    "ack.prior.mengshen":
+      "內建漢語拼音嘅中文字型，2019 年 7 月首次發佈；2020 年 11 月 v1.0 起用 OpenType GSUB（rclt）按上下文自動揀多音字讀音。",
     "ack.taigi.title": "臺語／河洛話　字音資料",
     "ack.taigi.body":
       "臺語（河洛話）嘅標準（優勢腔）讀音同九種「腔」嘅語音差異，源自教育部《臺灣台語常用詞辭典》（CC BY-ND 3.0 TW），台羅／白話字直接取自辭典，TLPA／閩拼則由台羅推導。多字詞逐字標音，可用作多音字辨義。",
@@ -863,6 +871,11 @@ export const TRANSLATIONS: Record<Language, Record<TranslationKey, string>> = {
     "ack.dataQuality.title": "Sources & accuracy",
     "ack.dataQuality.body":
       "Wing Font is a personal open-source project. The author is not a trained linguist. Every romanization table shipped with the pre-built fonts originates from one of the upstream open-source sources credited below — but those sources are heterogeneous in format, vocabulary, and tone-mark convention, so the data has been **normalised, deduplicated, and disambiguated using a mix of hand editing, regex, and AI-assisted tooling** (LLMs for cleanup; programmatic transformation for tone-mark and segmentation conversions; generated fallback readings where coverage gaps existed).\n\nThis means **errors are likely** — wrong default readings for polyphonic characters, missing dialect-specific variants, occasional mis-segmented multi-character entries, edge cases around tone sandhi.\n\nNative speakers, linguists, and curious readers who spot a mistake are warmly invited to **[file a GitHub issue](https://github.com/chunlaw/wing-font-generator/issues) or join the [Telegram group](https://t.me/wingfont)** — fixes ship in the next CI build.",
+    "ack.prior.title": "Prior art",
+    "ack.prior.body":
+      "Building pronunciation annotations into a Chinese font, and using OpenType to pick polyphone readings from context, did not start with Wing Font. Wing Font takes the same approach.",
+    "ack.prior.mengshen":
+      "A Chinese font with built-in Hanyu Pinyin, first released in July 2019. Since v1.0 (November 2020) it picks polyphone readings from context with OpenType GSUB (rclt).",
     "ack.taigi.title": "Taiwanese / Southern Min — reading data",
     "ack.taigi.body":
       "The standard (優勢腔) readings and the nine accent (腔) variants come from the MOE 臺灣台語常用詞辭典 (sutian / kautian.ods, CC BY-ND 3.0 TW). Tâi-lô and POJ are taken straight from the dictionary; TLPA and 閩拼 are derived from Tâi-lô. Multi-character words carry one syllable per character so they drive 多音字 disambiguation.",

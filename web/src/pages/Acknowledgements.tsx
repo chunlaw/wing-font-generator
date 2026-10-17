@@ -37,6 +37,15 @@ interface Source {
 // descriptions go through i18n. Keep in sync with the ack.* keys in
 // i18n/translations.ts and the "Mapping sources" section of
 // python/README.md.
+// Earlier projects whose technique Wing Font shares.
+const PRIOR_ART_SOURCES: Source[] = [
+  {
+    name: "萌神拼音字體（Mengshen pinyin font）— MaruTama",
+    url: "https://github.com/MaruTama/Mengshen-pinyin-font",
+    descKey: "ack.prior.mengshen",
+  },
+];
+
 const TAIGI_SOURCES: Source[] = [
   {
     name: "教育部《臺灣台語常用詞辭典》(MOE sutian)",
@@ -278,6 +287,13 @@ const Acknowledgements = () => {
         </Typography>
         <Markdown>{t("ack.dataQuality.body")}</Markdown>
       </Box>
+
+      {/* Prior art — earlier projects using the same technique */}
+      <CreditSection
+        title={t("ack.prior.title")}
+        body={t("ack.prior.body")}
+        sources={PRIOR_ART_SOURCES}
+      />
 
       {/* Taiwanese / Southern Min — the section this page exists for */}
       <CreditSection
