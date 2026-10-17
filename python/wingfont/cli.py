@@ -512,24 +512,16 @@ def set_family_name(font, new_family_name):
 
 
 # Low-profile attribution: append a single line to the OpenType
-# `name` table's Description (nameID 10). Everything else — Copyright
-# (0), Manufacturer (8), Designer (9), Vendor URL (11), Version (5) —
-# is left exactly as the base font set it. This matches the design
-# intent of "respect all real design work by the base font and
-# annotation font; Wing Font is a tooling step, not a designer or
-# manufacturer."
+# `name` table's Description (nameID 10). Copyright / vendor /
+# designer / license records are handled separately by
+# apply_release_names() (on by default, --keep-base-names skips it),
+# which keeps the upstream copyright lines and designer credits.
 #
 # Wording is deliberately framed as a modification note ("Annotations
-# added via Wing Font") rather than a claim of ownership. URL is
-# included so a curious user opening the font in macOS Font Book or
-# Windows Font Properties has a one-step lookup back to the project.
-# ASCII-only by design — NameID 10 is written to both Windows-English
-# (UTF-16, would accept Unicode) AND Mac-Roman, and Mac-Roman lacks
-# the em-dash (U+2014). Using `-` instead of `—` makes the same
-# string round-trip cleanly on both platforms with no encoding loss.
-WING_FONT_PROVENANCE_NOTE = (
-    "Annotations added via Wing Font - https://wing-font.chunlaw.io"
-)
+# added via Wing Font") rather than a claim of ownership. No URL: it
+# already sits in nameID 11, and GF warns when nameID 10 exceeds 200
+# chars (the upstream Noto CJK credits alone take ~130).
+WING_FONT_PROVENANCE_NOTE = "Annotations added via Wing Font"
 
 # Marker appended to NameID 5 (Version) so downstream tools can
 # distinguish a Wing Font derivative from the original base. The
@@ -572,10 +564,10 @@ def tag_wing_font_provenance(font):
             # Idempotent — re-running the pipeline on an already-
             # tagged font (e.g. a regenerate-with-different-params
             # pass that reads a previously-built TTF) wouldn't
-            # double-stamp it. Cheap substring check; the URL is
-            # the stable signature regardless of whether we ever
-            # tweak the leading text.
-            if "wing-font.chunlaw.io" in existing_text:
+            # double-stamp it. The URL check covers fonts tagged by
+            # older builds.
+            if (WING_FONT_PROVENANCE_NOTE in existing_text
+                    or "wing-font.chunlaw.io" in existing_text):
                 continue
             new_text = f"{existing_text}\n\n{WING_FONT_PROVENANCE_NOTE}"
         else:
@@ -646,6 +638,111 @@ def tag_wing_font_version(font):
             platEncID=enc_id,
             langID=lang_id,
         )
+
+
+# Release-name defaults (Google Fonts onboarding). Applied unless the
+# caller passes keep_base_names=True. Upstream copyright lines are kept
+# verbatim after ours, as OFL requires.
+DEFAULT_COPYRIGHT_LINE = (
+    "Copyright {year} The Wing Font Project Authors "
+    "(https://github.com/chunlaw/wing-font-generator)"
+)
+DEFAULT_VENDOR_ID = "WING"
+DEFAULT_TRADEMARK = "Wing Font"
+DEFAULT_MANUFACTURER = "Wing Font"
+DEFAULT_VENDOR_URL = "https://wing-font.chunlaw.io"
+OFL_DESC = ("This Font Software is licensed under the SIL Open Font "
+            "License, Version 1.1. This license is available with a FAQ "
+            "at: https://openfontlicense.org")
+OFL_URL = "https://openfontlicense.org"
+# Codepoint ranges always kept through --optimize: Latin (incl. extended
+# and combining marks), general punctuation, currency, letterlike, and the
+# dotted circle U+25CC.
+KEEP_LATIN_RANGES = (
+    (0x0020, 0x024F), (0x02B0, 0x036F), (0x1E00, 0x1EFF),
+    (0x2000, 0x214F), (0x2212, 0x2212), (0x25CC, 0x25CC),
+)
+
+
+def _get_name(font, name_id):
+    rec = font["name"].getName(name_id, *WINDOWS_ENGLISH_IDS)
+    return rec.toUnicode() if rec is not None else ""
+
+
+def _set_name(table, name_id, value):
+    for ids in (WINDOWS_ENGLISH_IDS, MAC_ROMAN_IDS):
+        if ids == MAC_ROMAN_IDS:
+            # Mac-Roman can't hold CJK designer names etc.; skip it
+            # rather than fail at save time.
+            try:
+                value.encode("mac_roman")
+            except UnicodeEncodeError:
+                table.removeNames(name_id, *ids)
+                continue
+        table.setName(value, name_id, *ids)
+
+
+def apply_release_names(font, anno_font, copyright_line=None,
+                        vendor_id=None, manufacturer=None, designer=None,
+                        vendor_url=None, designer_url=None, trademark=None,
+                        postscript_name=None):
+    """Rewrite the provenance name records for a releasable derivative.
+
+    None means "use the Wing Font default" for every argument:
+      * 0  copyright   ← copyright_line + base copyright + anno copyright
+      * 7  trademark   ← "Wing Font" (upstream marks don't cover the derivative)
+      * 6  PostScript  ← "<Family without spaces>-<Subfamily>" (GF style)
+      * 8  manufacturer, 11 vendor URL, 12 designer URL ← Wing Font
+      * 9  designer    ← base designers + "; Wing Font (annotations)"
+      * 3  unique ID   ← vendor segment swapped to vendor_id
+      * OS/2.achVendID ← vendor_id
+      * 13/14 license  ← OFL 1.1 text/URL, only when BOTH inputs are OFL
+    """
+    table = font["name"]
+    year = date.today().year
+    ours = (copyright_line or DEFAULT_COPYRIGHT_LINE).format(year=year)
+    lines = [ours]
+    for c in (_get_name(font, 0), _get_name(anno_font, 0)):
+        for line in c.split("\n"):  # per line: idempotent, no dupes
+            if line and line not in lines:
+                lines.append(line)
+    _set_name(table, 0, "\n".join(lines))
+
+    _set_name(table, 7, trademark or DEFAULT_TRADEMARK)
+    _set_name(table, 6, _to_postscript_name(postscript_name or (
+        _get_name(font, 1).replace(" ", "") + "-"
+        + (_get_name(font, 2) or "Regular").replace(" ", ""))))
+
+    base_designer = _get_name(font, 9)
+    if designer is None:
+        designer = base_designer
+        if "Wing Font" not in designer:
+            designer = f"{designer}; Wing Font (annotations)".lstrip("; ")
+    _set_name(table, 9, designer)
+    _set_name(table, 8, manufacturer or DEFAULT_MANUFACTURER)
+    _set_name(table, 11, vendor_url or DEFAULT_VENDOR_URL)
+    _set_name(table, 12, designer_url or DEFAULT_VENDOR_URL)
+
+    vendor_id = (vendor_id or DEFAULT_VENDOR_ID)[:4].ljust(4)
+    font["OS/2"].achVendID = vendor_id
+    uid = _get_name(font, 3).split(";")
+    if len(uid) >= 3:
+        uid[1] = vendor_id.strip()
+        _set_name(table, 3, ";".join(uid))
+
+    if all("Open Font License" in _get_name(f, 13) for f in (font, anno_font)):
+        _set_name(table, 13, OFL_DESC)
+        _set_name(table, 14, OFL_URL)
+
+
+def _subset_options():
+    """Subsetter defaults minus two losses: name records beyond ID 6
+    (designer, URLs, license 13/14 vanished) and the .notdef outline
+    (blanked .notdef fails FontBakery mandatory_glyphs)."""
+    o = subset.Options()
+    o.name_IDs = ["*"]
+    o.notdef_outline = True
+    return o
 
 
 def _check_glyph_count_budget(
@@ -1085,6 +1182,10 @@ def main(
     # Word centring for browser centring — see
     # HYBRID_ANNOTATION_DESIGN.md §"Cross-run positioning".
     mark_x_offset=0.0,
+    # Release-name overrides; see apply_release_names(). None = Wing Font
+    # default. keep_base_names=True skips the whole rewrite.
+    release_names=None,
+    keep_base_names=False,
 ):
     # First log line: the equivalent CLI command this invocation
     # corresponds to. Useful both for CLI users (round-tripping the
@@ -1421,13 +1522,9 @@ def main(
         # Set the new family name
         set_family_name(output_font, new_family_name)
 
-    # Append a low-profile "Annotations added via Wing Font — URL"
-    # line to the output font's Description (nameID 10). All other
-    # name-table fields stay exactly as the base font set them, so
-    # the upstream designer and manufacturer keep full attribution;
-    # Wing Font is acknowledged only as a tooling step. See
-    # tag_wing_font_provenance() above for the rationale + wording
-    # decisions.
+    # Append a low-profile "Annotations added via Wing Font"
+    # line to the output font's Description (nameID 10). See
+    # tag_wing_font_provenance() above for the wording decisions.
     tag_wing_font_provenance(output_font)
 
     # Append a Wing Font marker to NameID 5 (Version) so the output
@@ -1435,6 +1532,9 @@ def main(
     # validators. See tag_wing_font_version() for the format and
     # idempotency guarantees.
     tag_wing_font_version(output_font)
+
+    if not keep_base_names:
+        apply_release_names(output_font, anno_font, **(release_names or {}))
 
     # --- Phase 1: compose annotated variant glyphs -----------------------
     # generate_annotated_glyphs only handles the variant composition
@@ -1802,6 +1902,14 @@ def main(
                 ord(ch) for inp, _cp in diy_inputs for ch in inp
             }
 
+        # Keep the base font's Latin, punctuation and U+25CC so the output
+        # still covers GF Latin Core / FontBakery whitespace + dotted_circle.
+        base_cmap = base_font.getBestCmap()
+        glyphs_to_be_kept.extend(
+            g for u, g in base_cmap.items()
+            if any(lo <= u <= hi for lo, hi in KEEP_LATIN_RANGES)
+        )
+
         valid_glyphs_to_keep = list(
             set(g for g in glyphs_to_be_kept if g is not None)
         )
@@ -1849,7 +1957,7 @@ def main(
             #
             # HKSCS rendering needs a different fix path — separately
             # investigated; tracking outside this block.
-            subsetter = subset.Subsetter()
+            subsetter = subset.Subsetter(options=_subset_options())
             subsetter.populate(
                 glyphs=valid_glyphs_to_keep,
                 unicodes=sorted(ivs_unicodes | diy_unicodes),
@@ -2073,7 +2181,7 @@ def main(
     # produces in GSUB that browsers reject and stop producing it;
     # until that's tracked down, this cleanup pass is the workaround.
     with step_timer("pre-save GSUB cleanup") as _t:
-        _sub = subset.Subsetter()
+        _sub = subset.Subsetter(options=_subset_options())
         # Same format-14 trap as the optimize subset above: glyph-only
         # populate strips every IVS mapping, so re-request the selectors.
         _sub.populate(
@@ -2307,6 +2415,25 @@ def run(argv=None):
             "--base-axis. Example: --anno-axis wght=500"
         ),
     )
+    rel = parser.add_argument_group(
+        "release names",
+        "Provenance name records written by default (Google Fonts-ready). "
+        "Each defaults to Wing Font's value; pass --keep-base-names to "
+        "leave the base font's records untouched.")
+    rel.add_argument('--keep-base-names', action='store_true',
+                     help="Skip the copyright / vendor / license rewrite")
+    rel.add_argument('--copyright-line', metavar='TEXT',
+                     help="Line prepended to nameID 0; {year} is filled in. "
+                          f"Default: {DEFAULT_COPYRIGHT_LINE!r}")
+    rel.add_argument('--vendor-id', metavar='XXXX',
+                     help=f"OS/2 achVendID + nameID 3 vendor (default {DEFAULT_VENDOR_ID})")
+    rel.add_argument('--manufacturer', help=f"nameID 8 (default {DEFAULT_MANUFACTURER!r})")
+    rel.add_argument('--designer', help="nameID 9 (default: base designers + '; Wing Font (annotations)')")
+    rel.add_argument('--vendor-url', help=f"nameID 11 (default {DEFAULT_VENDOR_URL})")
+    rel.add_argument('--designer-url', help=f"nameID 12 (default {DEFAULT_VENDOR_URL})")
+    rel.add_argument('--trademark', help=f"nameID 7 (default {DEFAULT_TRADEMARK!r})")
+    rel.add_argument('--postscript-name',
+                     help="nameID 6 (default: family without spaces + '-' + style, e.g. WingSansCantoneseJyutping-Regular)")
     try:
         options = parser.parse_args(argv)
     except:
@@ -2376,6 +2503,10 @@ def run(argv=None):
         anno_axis_location=anno_axis_location,
         diy_annotations=options.diy_annotations,
         mark_x_offset=options.mark_x_offset,
+        keep_base_names=options.keep_base_names,
+        release_names={k: getattr(options, k) for k in (
+            "copyright_line", "vendor_id", "manufacturer", "designer",
+            "vendor_url", "designer_url", "trademark", "postscript_name")},
     )
 
 

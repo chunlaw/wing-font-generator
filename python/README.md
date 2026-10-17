@@ -204,9 +204,33 @@ on a value visually before committing to a CLI invocation.
 | `-as` | `--anno-scale` | `0.25` | How much to shrink the annotation glyphs, as a fraction of the output em. UPM-independent: the same value renders at the same visual size regardless of the annotation font's unitsPerEm (so e.g. NotoSerif at 2048 UPM and Huninn at 1024 no longer need different numbers). |
 | `-y` | `--upper_y_offset_ratio` | `0.8` | Where to put the annotation (fraction of em) |
 | `-v` | `--invert` | off | Swap positions: annotation below, base above |
-| `-opt` | `--optimize` | off | Subset the output to just glyphs we actually use (drops it from ~30 MB to ~200–500 KB per font) |
+| `-opt` | `--optimize` | off | Subset the output to just glyphs we actually use (drops it from ~30 MB to ~200–500 KB per font). The base font's Latin, punctuation and U+25CC are always kept |
 | | `--trigger-char` | `丅` (U+4E05) | Override-trigger character for the IME-friendly variant selection path (`<base><trigger><numeral>`). Pass an empty string to disable the trigger+numeral path while keeping the digit-suffix path (`<base><number>`, e.g. `行1` … `行11`) intact. |
-| | `--out-ascent` | inherit | Override the output font's `hhea.ascent` + `OS/2.usWinAscent` (font units, UPM=1000). Pairings whose annotation cascades far above the base — Urdu Nastaliq, tall Thai marks, Hangul jamo on low-ascent bases like Xiaolai (880u) — need more headroom than the base provides; without this flag, apps that strictly honour `winAscent` (Word, Pages, Keynote, Canva) truncate the top of the tallest annotation. Typical values: `1200` for Xiaolai paired with Thai / Katakana / Korean, `1300` for Xiaolai paired with Urdu. Leaving unset preserves legacy behaviour. |
+| | `--out-ascent` | `auto` | Output font's clipping ascent (`hhea.ascent` + `OS/2.usWinAscent`, font units, UPM=1000). `auto` widens it just enough to fit the tallest composed glyph, so apps that strictly honour `winAscent` (Word, Pages, Keynote, Canva) don't truncate tall annotations (Urdu Nastaliq, Thai marks, Hangul jamo on low-ascent bases like Xiaolai 880u). Pass an integer to pin an exact value (disables auto-fit, e.g. `1300` for Xiaolai + Urdu), or `off` to keep the base font's ascent. `sTypoAscender` is never changed. See [above](#tall-annotations-on-low-ascent-bases----out-ascent-auto-by-default). |
+| | `--keep-base-names` | off | Skip the name-table rewrite below; keep the base font's copyright, vendor and license records |
+| | `--copyright-line` / `--vendor-id` / `--postscript-name` / `--trademark` / `--manufacturer` / `--designer` / `--vendor-url` / `--designer-url` | Wing Font values | Override one name record; see [Name table](#name-table-google-fonts-ready-by-default) |
+
+## Name table (Google Fonts-ready by default)
+
+Every build rewrites the provenance records so the output is ready for
+Google Fonts onboarding. Upstream copyright lines and designer credits
+are kept; pass `--keep-base-names` to leave all of these as the base font
+set them.
+
+| Record | Default | Override |
+| --- | --- | --- |
+| nameID 0 Copyright | `Copyright {year} The Wing Font Project Authors (https://github.com/chunlaw/wing-font-generator)` on the first line, then the base and annotation fonts' copyright lines | `--copyright-line TEXT` (`{year}` is filled in) |
+| nameID 3 Unique ID / OS/2 `achVendID` | vendor `WING` | `--vendor-id XXXX` |
+| nameID 6 PostScript name | family without spaces + `-` + style, e.g. `WingSansCantoneseJyutping-Regular` | `--postscript-name` |
+| nameID 7 Trademark | `Wing Font` | `--trademark` |
+| nameID 8 Manufacturer | `Wing Font` | `--manufacturer` |
+| nameID 9 Designer | base designers + `; Wing Font (annotations)` | `--designer` |
+| nameID 11 / 12 Vendor / designer URL | `https://wing-font.chunlaw.io` | `--vendor-url`, `--designer-url` |
+| nameID 13 / 14 License | SIL OFL 1.1 text and `https://openfontlicense.org` — only when both input fonts are OFL | — |
+
+nameID 10 (Description) gets `Annotations added via Wing Font` appended
+regardless. `-opt` always keeps the base font's Latin, punctuation and
+U+25CC (dotted circle) so the output covers Google Fonts' Latin Core.
 
 ---
 

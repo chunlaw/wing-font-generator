@@ -92,6 +92,28 @@ main(
 )
 ```
 
+## Name table (Google Fonts-ready by default)
+
+Every build rewrites the provenance records so the output is ready for
+Google Fonts onboarding. Upstream copyright lines and designer credits
+are kept; pass `--keep-base-names` to leave all of these as the base font
+set them.
+
+| Record | Default | Override |
+| --- | --- | --- |
+| nameID 0 Copyright | `Copyright {year} The Wing Font Project Authors (https://github.com/chunlaw/wing-font-generator)` on the first line, then the base and annotation fonts' copyright lines | `--copyright-line TEXT` (`{year}` is filled in) |
+| nameID 3 Unique ID / OS/2 `achVendID` | vendor `WING` | `--vendor-id XXXX` |
+| nameID 6 PostScript name | family without spaces + `-` + style, e.g. `WingSansCantoneseJyutping-Regular` | `--postscript-name` |
+| nameID 7 Trademark | `Wing Font` | `--trademark` |
+| nameID 8 Manufacturer | `Wing Font` | `--manufacturer` |
+| nameID 9 Designer | base designers + `; Wing Font (annotations)` | `--designer` |
+| nameID 11 / 12 Vendor / designer URL | `https://wing-font.chunlaw.io` | `--vendor-url`, `--designer-url` |
+| nameID 13 / 14 License | SIL OFL 1.1 text and `https://openfontlicense.org` — only when both input fonts are OFL | — |
+
+nameID 10 (Description) gets `Annotations added via Wing Font` appended
+regardless. `-opt` always keeps the base font's Latin, punctuation and
+U+25CC (dotted circle) so the output covers Google Fonts' Latin Core.
+
 ## Licences
 
 Code: MIT. Fonts you build inherit the licences of the input fonts (SIL OFL
