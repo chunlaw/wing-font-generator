@@ -54,7 +54,7 @@ paths, not a replacement. See the `ivs_handler.py` deep-dive below.
 python/
 ├── wingfont/                   # The pip package (`pip install ./python` → `wing-font` command)
 │   ├── cli.py                  #   main() build API + run() CLI (argparse)
-│   ├── fetch.py                #   `wing-font fetch` — fonts from wing-font-hub, mapping CSVs from this repo
+│   ├── fetch.py                #   `wing-font fetch` — fonts from wing-font-hub, mapping + DIY CSVs from this repo
 │   ├── runner.py               #   Pyodide wrapper (called from the web app)
 │   ├── build_glyph.py          #   Pen-based glyph composition (base + anno)
 │   ├── chain_context_handler.py#   Builds the `ccmp` GSUB rules

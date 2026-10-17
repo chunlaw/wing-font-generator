@@ -25,6 +25,7 @@ no fonts and no mapping data. You download those once with `wing-font fetch`.
 | Base font (`-i`) | The font for the characters, e.g. Noto Sans HK | your own `.ttf`, or `wing-font fetch <font file>` |
 | Annotation font (`-a`) | The font for the readings, e.g. Noto Sans (Latin) | your own `.ttf`, or `wing-font fetch <font file>` |
 | Mapping (`-m`) | CSV of `character,reading`, e.g. `行,hang4` | your own CSV, or `wing-font fetch <path>.csv` |
+| DIY annotations (`--diy-annotations`, optional) | CSV of readings a user can type after any character to override the mapping, e.g. `ｚａａ１,zaa1` | your own CSV, or `wing-font fetch <path>.diy-annotation.csv` |
 
 ## `wing-font fetch` — when and how
 
@@ -36,7 +37,11 @@ wing-font fetch --list                              # what's available
 wing-font fetch NAME [NAME ...] [--dest DIR] [--force]
 ```
 
-- `NAME` ending in `.csv` → a mapping, path relative to
+- `NAME` ending in `.diy-annotation.csv` → a DIY annotation file, path relative to
+  [`python/diy-mappings/`](https://github.com/chunlaw/wing-font-generator/tree/main/python/diy-mappings)
+  (`cantonese/lshk.diy-annotation.csv`, `mandarin/zhuyin.diy-annotation.csv`,
+  `mandarin/pinyin.diy-annotation.csv`, `taiwanese/sutian.diy-annotation.csv`).
+- Any other `NAME` ending in `.csv` → a mapping, path relative to
   [`python/mappings/`](https://github.com/chunlaw/wing-font-generator/tree/main/python/mappings)
   in the repo (e.g. `cantonese/canto-lshk.csv`, `mandarin/mandarin-cn.csv`,
   `taiwanese/taigi-tl-toned.csv`, `japanese/japanese-onkun.csv`).
@@ -49,11 +54,11 @@ wing-font fetch NAME [NAME ...] [--dest DIR] [--force]
 
 ```sh
 wing-font fetch NotoSansHK-VariableFont_wght.ttf "NotoSans-VariableFont_wdth,wght.ttf" --dest fonts
-wing-font fetch cantonese/canto-lshk.csv --dest mappings
+wing-font fetch cantonese/canto-lshk.csv cantonese/lshk.diy-annotation.csv --dest mappings
 
 wing-font -i fonts/NotoSansHK-VariableFont_wght.ttf \
           -a "fonts/NotoSans-VariableFont_wdth,wght.ttf" --anno-axis wdth=75 \
-          -m mappings/canto-lshk.csv \
+          -m mappings/canto-lshk.csv --diy-annotations mappings/lshk.diy-annotation.csv \
           -o out/NotoSansHK-Jyutping -opt -as 0.39 -bs 0.70 -y 0.70
 ```
 

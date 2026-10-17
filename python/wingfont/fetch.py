@@ -6,10 +6,12 @@ live in this repo under python/mappings/.
 
     wing-font fetch NotoSansHK-VariableFont_wght.ttf NotoSerif-Regular.ttf
     wing-font fetch cantonese/canto-lshk.csv --dest mappings/
+    wing-font fetch cantonese/lshk.diy-annotation.csv   # from python/diy-mappings/
     wing-font fetch --list          # what's available
 
-A name ending in .csv is a mapping path relative to python/mappings/;
-anything else is a font file name on wing-font-hub.
+A name ending in .diy-annotation.csv is a DIY annotation file relative to
+python/diy-mappings/; any other .csv is a mapping path relative to
+python/mappings/; anything else is a font file name on wing-font-hub.
 """
 
 from __future__ import annotations
@@ -29,6 +31,12 @@ MAPPINGS_URL = os.environ.get(
 )
 
 # A real TTF is at least a few hundred KB; under 1 KiB is an error page saved as .ttf.
+DIY_URL = os.environ.get(
+    "WING_FONT_DIY_URL",
+    "https://raw.githubusercontent.com/chunlaw/wing-font-generator/main/python/diy-mappings",
+)
+DIY_SUFFIX = ".diy-annotation.csv"
+
 MIN_FONT_BYTES = 1024
 
 # urllib's default "Python-urllib/X.Y" user-agent gets a 403 from the
@@ -66,8 +74,8 @@ def fetch_file(url: str, dest: Path, min_bytes: int = 1) -> None:
     tmp.replace(dest)
 
 
-def list_available() -> tuple[list[str], list[str]]:
-    """(font names, mapping paths) currently on GitHub, via the git-trees API."""
+def list_available() -> tuple[list[str], list[str], list[str]]:
+    """(font names, mapping paths, DIY paths) on GitHub, via the git-trees API."""
     def tree(repo: str) -> list[str]:
         url = f"https://api.github.com/repos/{repo}/git/trees/main?recursive=1"
         req = urllib.request.Request(url, headers={"User-Agent": _USER_AGENT})
@@ -77,14 +85,19 @@ def list_available() -> tuple[list[str], list[str]]:
         except urllib.error.URLError as e:  # includes HTTPError (e.g. 403 rate limit)
             raise SystemExit(f"Could not list {repo}: {e}")
     fonts = [p for p in tree("chunlaw/wing-font-hub") if p.endswith(".ttf")]
-    prefix = "python/mappings/"
-    mappings = [p[len(prefix):] for p in tree("chunlaw/wing-font-generator")
-                if p.startswith(prefix) and p.endswith(".csv")]
-    return sorted(fonts), sorted(mappings)
+    gen = tree("chunlaw/wing-font-generator")
+
+    def under(prefix, suffix):
+        return sorted(p[len(prefix):] for p in gen
+                      if p.startswith(prefix) and p.endswith(suffix))
+    return (sorted(fonts), under("python/mappings/", ".csv"),
+            under("python/diy-mappings/", DIY_SUFFIX))
 
 
 def url_for(name: str) -> tuple[str, int]:
     """(download URL, minimum plausible size) for a font or mapping name."""
+    if name.endswith(DIY_SUFFIX):
+        return f"{DIY_URL}/{name.lstrip('/')}", 1
     if name.endswith(".csv"):
         return f"{MAPPINGS_URL}/{name.lstrip('/')}", 1
     return f"{FONTS_URL.rstrip('/')}/{name}", MIN_FONT_BYTES
@@ -94,7 +107,8 @@ def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(
         prog="wing-font fetch",
         description="Download Wing Font input fonts (from wing-font-hub) "
-        "or mapping CSVs (e.g. cantonese/canto-lshk.csv).",
+        "or mapping / DIY CSVs (e.g. cantonese/canto-lshk.csv, "
+        "cantonese/lshk.diy-annotation.csv).",
     )
     parser.add_argument("names", nargs="*", help="font file names or mapping paths")
     parser.add_argument("--list", action="store_true", help="list fonts and mappings available to fetch")
@@ -102,11 +116,13 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("--force", action="store_true", help="re-download files already present")
     args = parser.parse_args(argv)
     if args.list:
-        fonts, mappings = list_available()
+        fonts, mappings, diy = list_available()
         print("Fonts (wing-font-hub):")
         print("\n".join(f"  {f}" for f in fonts))
         print("Mappings (python/mappings/):")
         print("\n".join(f"  {m}" for m in mappings))
+        print("DIY annotations (python/diy-mappings/):")
+        print("\n".join(f"  {d}" for d in diy))
         return 0
     if not args.names:
         parser.error("give one or more names, or --list")

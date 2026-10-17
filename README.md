@@ -62,9 +62,10 @@ pip install "git+https://github.com/chunlaw/wing-font-generator#subdirectory=pyt
 # (or, from a clone: pip install ./python — once on PyPI: pip install wing-font)
 
 wing-font fetch ChironSungHK-R.ttf NotoSerif-Regular.ttf --dest input_fonts
-wing-font fetch cantonese/canto-lshk.csv --dest mappings
+wing-font fetch cantonese/canto-lshk.csv cantonese/lshk.diy-annotation.csv --dest mappings
 wing-font -i input_fonts/ChironSungHK-R.ttf -a input_fonts/NotoSerif-Regular.ttf \
-          -m mappings/canto-lshk.csv -o out/ChironSungHK-Noto-lshk -opt -as 0.13
+          -m mappings/canto-lshk.csv --diy-annotations mappings/lshk.diy-annotation.csv \
+          -o out/ChironSungHK-Noto-lshk -opt -as 0.13
 ```
 
 From Python: `from wingfont.cli import main; main(base_font_file=..., anno_font_file=..., mapping=..., output_prefix=...)`.
