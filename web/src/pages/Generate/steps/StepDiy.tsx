@@ -2,10 +2,11 @@
  * Step 3 — DIY annotations (optional).
  *
  * Picks the `--diy-annotations` inventory: a CSV of `input,annotation`
- * rows (e.g. `ｚａａ１,zaa1`). In the generated font, typing the
- * full-width input after a character — with ０ first to strip its baked
- * reading, e.g. `行０ｚａａ１` — draws that annotation over it. Off by
- * default; only the full Generate run uses it (live previews skip it).
+ * rows (e.g. `ｚａａ１,zaa1`). In the generated font, typing the input
+ * (full- or half-width) after a character — with 0 first to strip its baked
+ * reading, e.g. `行0zaa1` — draws that annotation over it. Word needs the
+ * full-width ０ trigger. Off by default; only the full Generate run uses it
+ * (live previews skip it).
  */
 import {
   Alert,
@@ -24,6 +25,10 @@ import { useTranslation } from "../../../i18n/LanguageContext";
 import { BUILT_IN_DIY } from "../../../utils/wingfontPresets";
 
 const CUSTOM = "__custom";
+
+/** `ｚａａ１` → `zaa1`: the font accepts both, the example shows the easier one. */
+const toHalfwidth = (s: string) =>
+  s.replace(/[\uFF01-\uFF5E]/g, (c) => String.fromCharCode(c.charCodeAt(0) - 0xfee0));
 
 /** First usable `input,annotation` row + row count, for the status line. */
 function summarise(csv: string): { count: number; input: string; anno: string } {
@@ -137,7 +142,7 @@ const StepDiy = () => {
             <>
               <br />
               {t("stepDiy.example")
-                .replace("{input}", `行０${summary.input}`)
+                .replace("{input}", `行0${toHalfwidth(summary.input)}`)
                 .replace("{anno}", summary.anno)}
             </>
           )}

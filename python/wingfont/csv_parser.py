@@ -22,7 +22,7 @@ MAX_base_chars = 7
 # times across the entire Mandarin set).
 #
 # Historical note: briefly reverted to 10 during a bisect chasing
-# the NotoSansJP-japanese rendering regression (Jun 2026). The bisect
+# the WingSansJapaneseFurigana rendering regression (Jun 2026). The bisect
 # eventually traced to the variable-base GSUB-cleanup issue — re-
 # running subset.Subsetter() after the pipeline fixes it without
 # capping variants, so the 240 ceiling is restored.

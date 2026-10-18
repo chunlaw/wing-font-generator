@@ -7,4 +7,4 @@ Python: from wingfont.cli import main; main(base_font_file=..., ...)
 Kept import-free on purpose: the Pyodide runner times its own lazy imports.
 """
 
-__version__ = "1.1.0"
+__version__ = "1.2.0"

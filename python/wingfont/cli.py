@@ -26,6 +26,7 @@ from .mark_input_handler import buildMarkInputLiga
 # that doesn't go through liga_handler at all).
 from .mark_strip_handler import tagMarksAsGdefMarks
 import gc
+import re
 import os
 import sys
 from datetime import date
@@ -745,6 +746,18 @@ def _subset_options():
     return o
 
 
+def set_font_version(font, version):
+    """Give the output its own version (e.g. "1.000"): nameID 5 becomes
+    "Version 1.000" (replacing the base's version + Wing Font tag),
+    head.fontRevision matches it, and the version segment of nameID 3."""
+    _set_name(font["name"], 5, f"Version {version}")
+    font["head"].fontRevision = float(version)
+    uid = _get_name(font, 3).split(";")
+    if len(uid) >= 3:
+        uid[0] = version
+        _set_name(font["name"], 3, ";".join(uid))
+
+
 def _check_glyph_count_budget(
     output_font, char_mapping, optimize, mapping_path, diy_pua_map=None
 ):
@@ -1186,6 +1199,8 @@ def main(
     # default. keep_base_names=True skips the whole rewrite.
     release_names=None,
     keep_base_names=False,
+    # "X.YYY" sets the font's own version; None keeps base version + Wing tag.
+    font_version=None,
 ):
     # First log line: the equivalent CLI command this invocation
     # corresponds to. Useful both for CLI users (round-tripping the
@@ -1532,6 +1547,8 @@ def main(
     # validators. See tag_wing_font_version() for the format and
     # idempotency guarantees.
     tag_wing_font_version(output_font)
+    if font_version:
+        set_font_version(output_font, font_version)
 
     if not keep_base_names:
         apply_release_names(output_font, anno_font, **(release_names or {}))
@@ -1990,7 +2007,7 @@ def main(
         #    ASCII digits typed inside CJK runs (`呀1` was rendering
         #    its `1` in Calibri). Reverted: that OR re-introduced the
         #    same "claims more than the cmap delivers" trap that
-        #    commit 5b50600 hit. For NotoSansJP-japanese specifically
+        #    commit 5b50600 hit. For WingSansJapaneseFurigana specifically
         #    it caused browsers to reject the font and fall back to a
         #    system CJK font for every kanji — even the ones whose
         #    composed-with-furigana glyph was structurally fine.
@@ -2434,8 +2451,12 @@ def run(argv=None):
     rel.add_argument('--vendor-url', help=f"nameID 11 (default {DEFAULT_VENDOR_URL})")
     rel.add_argument('--designer-url', help=f"nameID 12 (default {DEFAULT_VENDOR_URL})")
     rel.add_argument('--trademark', help=f"nameID 7 (default {DEFAULT_TRADEMARK!r})")
+    parser.add_argument('--font-version', metavar='X.YYY',
+                        help="Font version, e.g. 1.000: sets nameID 5 ('Version 1.000'), "
+                             "head.fontRevision and nameID 3. Default: the base font's "
+                             "version plus a 'modified by Wing Font <date>' tag")
     rel.add_argument('--postscript-name',
-                     help="nameID 6 (default: family without spaces + '-' + style, e.g. WingSansCantoneseJyutping-Regular)")
+                     help="nameID 6 (default: family without spaces + '-' + style, e.g. WingSansYueJyutping-Regular)")
     try:
         options = parser.parse_args(argv)
     except:
@@ -2470,6 +2491,9 @@ def run(argv=None):
 
     base_axis_location = _parse_axis_args(options.base_axis, "base")
     anno_axis_location = _parse_axis_args(options.anno_axis, "anno")
+
+    if options.font_version and not re.fullmatch(r"\d+\.\d{3}", options.font_version):
+        parser.error(f"--font-version expects X.YYY (e.g. 1.000); got {options.font_version!r}")
 
     # Validate --out-ascent up front so a typo fails loudly instead of
     # silently falling back to auto inside main(). Accept auto / off /
@@ -2507,6 +2531,7 @@ def run(argv=None):
         diy_annotations=options.diy_annotations,
         mark_x_offset=options.mark_x_offset,
         keep_base_names=options.keep_base_names,
+        font_version=options.font_version,
         release_names={k: getattr(options, k) for k in (
             "copyright_line", "vendor_id", "manufacturer", "designer",
             "vendor_url", "designer_url", "trademark", "postscript_name")},

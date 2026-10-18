@@ -28,7 +28,7 @@
  * Why the filename caption + filename search:
  *   Catalogue fonts have a Chinese-only `displayName`, opaque to a user
  *   who doesn't read Chinese. Each option therefore also shows its Latin
- *   filename (`name`, e.g. NotoSansHK-NotoKR-korean) as a dimmed caption
+ *   filename (`name`, e.g. WingSansYueHangul) as a dimmed caption
  *   line, and that filename is folded into the Autocomplete filter so
  *   typing "korean" / "thai" finds the font without Chinese input. Both
  *   are gated to catalogue fonts — user fonts' `name` is an opaque id.
@@ -173,7 +173,7 @@ const FontPicker = () => {
   // Built-in catalogue fonts carry a Chinese-only `displayName`
   // (e.g. 思源黑體 香港（諺文標注）) — unreadable to a user who doesn't
   // read Chinese. The `name` is the Latin filename
-  // (NotoSansHK-NotoKR-korean), which encodes base font + annotation +
+  // (WingSansYueHangul), which encodes base font + annotation +
   // variant and is far more guessable. We surface it as a dimmed
   // caption line under each option (see renderOption below) AND fold it
   // into the search text here, so typing "korean" / "thai" reaches the

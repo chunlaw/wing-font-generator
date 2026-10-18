@@ -82,22 +82,22 @@ button:focus-visible {
  *   NotoSansTC-Huninn-hero-pengim     (Teochew,   before Xiaolai swap)
  */
 @font-face {
-  font-family: "Xiaolai-NotoCond-hero-sample";
-  src: url("https://wing-font.chunlaw.io/fonts/Xiaolai-NotoCond-hero-sample.woff2")
+  font-family: "WingHandHeroSample";
+  src: url("https://wing-font.chunlaw.io/fonts/WingHandHeroSample.woff2")
     format("woff2");
   font-display: swap;
 }
 
 @font-face {
-  font-family: "Xiaolai-NotoCond-hero-tailo";
-  src: url("https://wing-font.chunlaw.io/fonts/Xiaolai-NotoCond-hero-tailo.woff2")
+  font-family: "WingHandHeroTailo";
+  src: url("https://wing-font.chunlaw.io/fonts/WingHandHeroTailo.woff2")
     format("woff2");
   font-display: swap;
 }
 
 @font-face {
-  font-family: "Xiaolai-NotoCond-hero-pengim";
-  src: url("https://wing-font.chunlaw.io/fonts/Xiaolai-NotoCond-hero-pengim.woff2")
+  font-family: "WingHandHeroPengim";
+  src: url("https://wing-font.chunlaw.io/fonts/WingHandHeroPengim.woff2")
     format("woff2");
   font-display: swap;
 }

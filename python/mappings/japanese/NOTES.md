@@ -17,7 +17,10 @@ of the data is shaped entirely by working around it.
 Text engines — every one of them — split a string into **runs by Unicode
 script** *before* a font is ever consulted, and an OpenType `GSUB`/`GPOS`
 lookup can only act on glyphs **within a single run**. Kanji are script `Hani`,
-hiragana `Hira`, katakana `Kana` — three different scripts. So `遠い` is shaped
+hiragana `Hira`, katakana `Kana`. Engines fold the two kana scripts together
+(OpenType gives both the one tag `kana`; Chrome's itemizer maps `Kana` →
+`Hira` in `GetScriptForOpenType`), so `テレビを` is one run — but kanji and kana
+never merge. So `遠い` is shaped
 as two runs, `遠` and `い`, and a rule that would read `遠` as `とお` *because*
 it is followed by `い` can never match: the `い` is in a different run.
 
@@ -34,9 +37,19 @@ verbs and adjectives, e.g. `行く`, `食べる`, `遠い`) is **out of reach**.
 is not a Wing Font bug and not fixable in the font: run segmentation happens in
 the layout engine, on the text's Unicode properties, and the OpenType spec
 itself states that itemization into single-script runs is a precondition done
-*before* the font applies. It reproduces identically across HarfBuzz
-(Chrome, Firefox, Edge, Android, Linux, LibreOffice), CoreText (macOS, iOS,
-Safari, Pages/Keynote), and DirectWrite (Windows, Microsoft Office).
+*before* the font applies. HarfBuzz itself does **not** split runs — it shapes
+whatever single buffer the app hands it (`hb_buffer_guess_segment_properties`
+just takes the first non-Common script). The splitting is done by each app's
+own itemizer before calling HarfBuzz (Chrome/Edge: Blink's `RunSegmenter` +
+`ScriptRunIterator`, which read only the text, never the font; likewise
+Firefox, Android, LibreOffice), and inside CoreText (macOS, iOS, Safari,
+Pages/Keynote) and DirectWrite (Windows, Microsoft Office). The result is the
+same everywhere.
+
+Sources (checked 2026-10-17):
+HarfBuzz [`hb-buffer.cc` `guess_segment_properties`](https://github.com/harfbuzz/harfbuzz/blob/bb702ff6dec2cf201608bab28ac5c676f0ebaabe/src/hb-buffer.cc#L705-L720);
+Blink [`script_run_iterator.cc` `GetScriptForOpenType` / `GetScripts`](https://github.com/chromium/chromium/blob/f84d18237e4e6cbc1b80b6167c6960501cc328dc/third_party/blink/renderer/platform/fonts/script_run_iterator.cc#L26-L36)
+and [`run_segmenter.cc`](https://github.com/chromium/chromium/blob/main/third_party/blink/renderer/platform/fonts/shaping/run_segmenter.cc).
 
 ## Design decisions that follow from it
 
@@ -123,8 +136,9 @@ available but not relied upon.
 ## The only path beyond the cap
 
 Lifting the ceiling for distributed plain text requires an **upstream change**,
-because no single engine fix is universal (HarfBuzz, CoreText and DirectWrite
-each itemize independently) and preprocessing is off the table. The leverage
+because no single engine fix is universal (Blink, Gecko, CoreText,
+DirectWrite and the other HarfBuzz callers each itemize independently) and
+preprocessing is off the table. The leverage
 order:
 
 1. **W3C i18n / [JLReq](https://github.com/w3c/jlreq/issues)** — frame the
@@ -133,8 +147,9 @@ order:
    dependency of every engine; the only place a change propagates everywhere
    (ISO&nbsp;15924 already defines `Jpan` = Han+Hira+Kana as precedent for
    "Japanese as one script").
-3. **[HarfBuzz](https://github.com/harfbuzz/harfbuzz/issues)** — technical
-   feasibility and the largest single coverage win (see prior art:
+3. **Browser itemizers** — Chromium/Blink (`ScriptRunIterator`) is the
+   largest single coverage win. HarfBuzz has no itemizer, so it is a venue for
+   technical discussion only, not the fix (see prior art:
    [#717](https://github.com/harfbuzz/harfbuzz/issues/717),
    [#2730](https://github.com/harfbuzz/harfbuzz/issues/2730)).
 4. **Apple (CoreText)** and **Microsoft (DirectWrite)** — engaged separately for

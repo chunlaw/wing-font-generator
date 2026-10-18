@@ -35,6 +35,7 @@ from fontTools.otlLib.builder import LigatureSubstBuilder
 
 from .build_glyph import MARK_PREFIX
 from .utils import get_glyph_name_by_char, register_feature_lookup, step_timer
+from .word_liga_handler import _prepend_lookups
 
 # Inputs sharing a first glyph live in one LigatureSet; keep them in a
 # single subtable while under the GSUB Type-4 64 KiB offset budget. Past
@@ -108,11 +109,12 @@ def buildMarkInputLiga(output_font, inputs: List[Tuple[str, int]]) -> int:
             return 0
 
         lookup = builder.build()
-        lookup_index = len(gsub.LookupList.Lookup)
-        gsub.LookupList.Lookup.append(lookup)
-        gsub.LookupList.LookupCount = len(gsub.LookupList.Lookup)
+        # Prepend, not append: shapers run ccmp/locl lookups in index
+        # order, and a base font's locl (e.g. Noto Sans HK's latn digit
+        # swap) would otherwise replace an ASCII '1' before we ligate.
+        _prepend_lookups(gsub, [lookup])
         # ccmp, not liga — iWork/CoreText-proof feature.
-        register_feature_lookup(gsub, "ccmp", lookup_index)
+        register_feature_lookup(gsub, "ccmp", 0)
 
         if skipped:
             print(

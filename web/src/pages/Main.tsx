@@ -68,7 +68,7 @@ import type { Language } from "../i18n/translations";
 // Query-string parameter for the picked-font list. Comma-separated
 // font NAMES (the stable identifier in AVAILABLE_FONTS), not
 // displayNames. Example:
-//   /showcase?fonts=ChironSungHK-NotoCond-lshk,NotoSansTC-NotoCond-tailo
+//   /showcase?fonts=WingSerifYueJyutping,WingSansTaigiTailo
 //
 // Names are URL-encoded by react-router automatically, so spaces /
 // punctuation in future font names won't break the encoding.

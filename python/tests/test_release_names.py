@@ -12,6 +12,7 @@ def _font(copyright, designer, license):
                        "designer": designer, "licenseDescription": license})
     fb.setupHorizontalMetrics({".notdef": (500, 0)})
     fb.setupOS2(achVendID="ADBO")
+    fb.setupHead()
     return fb.font
 
 
@@ -45,3 +46,13 @@ def test_overrides_and_non_ofl_license_untouched():
     assert _n(f, 0).split("\n")[0].endswith(" Me")
     assert f["OS/2"].achVendID == "ABCD" and _n(f, 7) == "TM"
     assert _n(f, 13) == "Proprietary"
+
+
+def test_font_version():
+    from wingfont.cli import set_font_version
+    f = _font("(c) Base", "D", "Proprietary")
+    f["name"].setName("Version 2.004;hotconv", 5, 3, 1, 0x409)
+    set_font_version(f, "1.000")
+    assert _n(f, 5) == "Version 1.000"
+    assert f["head"].fontRevision == 1.0
+    assert _n(f, 3) == "1.000;ADBO;X"

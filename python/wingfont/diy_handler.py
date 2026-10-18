@@ -24,7 +24,10 @@ Two columns, ``input,annotation``::
 
 One column is shorthand: ``zaa1`` ≡ ``ｚａａ１,zaa1`` — the input is the
 auto-derived full-width form of the annotation (skipped if the annotation
-isn't printable ASCII). An explicit empty input (``,ザー``) means "PUA
+isn't printable ASCII). Every full-width input also gets its half-width
+alias (``ｚａａ１`` and ``zaa1`` both ligate), so users can type
+``行0zaa1`` in browsers; Word still needs the full-width ``０`` trigger
+(it splits a half-width digit into its own run). An explicit empty input (``,ザー``) means "PUA
 codepoint only, no typed route".
 
 Multiple rows may share one annotation (several inputs → one mark).
@@ -92,6 +95,14 @@ def _derive_fullwidth(s: str) -> Optional[str]:
         else:
             return None
     return "".join(out)
+
+
+def _derive_halfwidth(s: str) -> Optional[str]:
+    """ASCII form of an all-full-width string (``ｚａａ１`` → ``zaa1``), or
+    None if any character isn't a full-width ASCII form."""
+    if not all(0xFF01 <= ord(ch) <= 0xFF5E for ch in s):
+        return None
+    return "".join(chr(ord(ch) - _FULLWIDTH_OFFSET) for ch in s)
 
 
 def load_diy_rows(path: str) -> List[Tuple[Optional[str], str]]:
@@ -178,7 +189,8 @@ def build_diy_inventory(path: str) -> DiyInventory:
     """Parse ``A`` and return the :class:`DiyInventory`.
 
     Distinct annotations (in CSV row order) get PUA codepoints; each row with a
-    typed input yields one ``(input, codepoint)`` ligature. Duplicate
+    typed input yields one ``(input, codepoint)`` ligature, plus one for
+    the half-width alias of a full-width input. Duplicate
     inputs are de-duplicated (first wins). Returns empty maps for an empty
     file."""
     rows = load_diy_rows(path)
@@ -192,10 +204,14 @@ def build_diy_inventory(path: str) -> DiyInventory:
     inputs: List[Tuple[str, int]] = []
     seen: set[str] = set()
     for input_str, annotation in rows:
-        if input_str is None or input_str in seen:
+        if input_str is None:
             continue
-        seen.add(input_str)
-        inputs.append((input_str, pua_map[annotation]))
+        # Every full-width input also gets its half-width alias, so
+        # `行0zaa1` works as well as `行０ｚａａ１` (one shared mark).
+        for inp in (input_str, _derive_halfwidth(input_str)):
+            if inp and inp not in seen:
+                seen.add(inp)
+                inputs.append((inp, pua_map[annotation]))
     # Stable order for deterministic GSUB diffs: by codepoint, then input.
     inputs.sort(key=lambda pair: (pair[1], pair[0]))
     return DiyInventory(pua_map=pua_map, inputs=inputs)

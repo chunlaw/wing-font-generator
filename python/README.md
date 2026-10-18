@@ -124,11 +124,11 @@ python wing-font.py \
   -i input_fonts/ChironSungHK-R.ttf \
   -a input_fonts/NotoSerif-Regular.ttf \
   -m mappings/cantonese/canto-lshk.csv \
-  -o ChironSungHK-NotoCond-lshk \
+  -o WingSerifYueJyutping \
   -opt -as 0.27
 ```
 
-This writes `ChironSungHK-NotoCond-lshk.ttf` and `ChironSungHK-NotoCond-lshk.woff2`
+This writes `WingSerifYueJyutping.ttf` and `WingSerifYueJyutping.woff2`
 to the working directory. Drop the WOFF2 into a page with
 `@font-face { font-family: …; src: url('…') format('woff2') }` and any
 Chinese text using mapped characters will render with romanization
@@ -169,7 +169,7 @@ python wing-font.py \
   -i input_fonts/XiaolaiSC-Regular.ttf \
   -a input_fonts/NotoNastaliqUrdu-VariableFont_wght.ttf \
   -m mappings/cantonese/canto-urdu.csv \
-  -o Xiaolai-NotoNastaliq-urdu \
+  -o WingHandYueUrdu \
   -opt -as 0.22
 
 # Same pairing, but pin an exact (roomier) ascent
@@ -177,7 +177,7 @@ python wing-font.py \
   -i input_fonts/XiaolaiSC-Regular.ttf \
   -a input_fonts/NotoNastaliqUrdu-VariableFont_wght.ttf \
   -m mappings/cantonese/canto-urdu.csv \
-  -o Xiaolai-NotoNastaliq-urdu \
+  -o WingHandYueUrdu \
   -opt -as 0.22 --out-ascent 1300
 ```
 
@@ -208,6 +208,7 @@ on a value visually before committing to a CLI invocation.
 | | `--no-woff2` | off | Write only the `.ttf`; skips the WOFF2 compression (about a minute for a CJK font) |
 | | `--trigger-char` | `丅` (U+4E05) | Override-trigger character for the IME-friendly variant selection path (`<base><trigger><numeral>`). Pass an empty string to disable the trigger+numeral path while keeping the digit-suffix path (`<base><number>`, e.g. `行1` … `行11`) intact. |
 | | `--out-ascent` | `auto` | Output font's clipping ascent (`hhea.ascent` + `OS/2.usWinAscent`, font units, UPM=1000). `auto` widens it just enough to fit the tallest composed glyph, so apps that strictly honour `winAscent` (Word, Pages, Keynote, Canva) don't truncate tall annotations (Urdu Nastaliq, Thai marks, Hangul jamo on low-ascent bases like Xiaolai 880u). Pass an integer to pin an exact value (disables auto-fit, e.g. `1300` for Xiaolai + Urdu), or `off` to keep the base font's ascent. `sTypoAscender` is never changed. See [above](#tall-annotations-on-low-ascent-bases----out-ascent-auto-by-default). |
+| | `--font-version` | base version + Wing Font tag | Font's own version, `X.YYY` (e.g. `1.000`): sets nameID 5 to `Version 1.000`, `head.fontRevision` and the version part of nameID 3 |
 | | `--keep-base-names` | off | Skip the name-table rewrite below; keep the base font's copyright, vendor and license records |
 | | `--copyright-line` / `--vendor-id` / `--postscript-name` / `--trademark` / `--manufacturer` / `--designer` / `--vendor-url` / `--designer-url` | Wing Font values | Override one name record; see [Name table](#name-table-google-fonts-ready-by-default) |
 
@@ -222,7 +223,7 @@ set them.
 | --- | --- | --- |
 | nameID 0 Copyright | `Copyright {year} The Wing Font Project Authors (https://github.com/chunlaw/wing-font-generator)` on the first line, then the base and annotation fonts' copyright lines | `--copyright-line TEXT` (`{year}` is filled in) |
 | nameID 3 Unique ID / OS/2 `achVendID` | vendor `WING` | `--vendor-id XXXX` |
-| nameID 6 PostScript name | family without spaces + `-` + style, e.g. `WingSansCantoneseJyutping-Regular` | `--postscript-name` |
+| nameID 6 PostScript name | family without spaces + `-` + style, e.g. `WingSansYueJyutping-Regular` | `--postscript-name` |
 | nameID 7 Trademark | `Wing Font` | `--trademark` |
 | nameID 8 Manufacturer | `Wing Font` | `--manufacturer` |
 | nameID 9 Designer | base designers + `; Wing Font (annotations)` | `--designer` |

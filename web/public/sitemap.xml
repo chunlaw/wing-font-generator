@@ -73,40 +73,40 @@
   </url>
 
   <!-- ── Cantonese (廣東話) specimens ───────────────────────────── -->
-  <url><loc>https://wing-font.chunlaw.io/specimen/NotoSansHK-NotoCond-lshk</loc><lastmod>2026-06-11</lastmod><priority>0.4</priority></url>
-  <url><loc>https://wing-font.chunlaw.io/specimen/NotoSansHK-NotoCond-yale</loc><lastmod>2026-06-11</lastmod><priority>0.4</priority></url>
-  <url><loc>https://wing-font.chunlaw.io/specimen/NotoSansHK-cangjie</loc><lastmod>2026-06-11</lastmod><priority>0.4</priority></url>
-  <url><loc>https://wing-font.chunlaw.io/specimen/NotoSansHK-Google-thai</loc><lastmod>2026-06-11</lastmod><priority>0.4</priority></url>
-  <url><loc>https://wing-font.chunlaw.io/specimen/NotoSansHK-NotoJP-katakana</loc><lastmod>2026-06-11</lastmod><priority>0.4</priority></url>
-  <url><loc>https://wing-font.chunlaw.io/specimen/NotoSansHK-NotoKR-korean</loc><lastmod>2026-06-11</lastmod><priority>0.4</priority></url>
-  <url><loc>https://wing-font.chunlaw.io/specimen/ChironSungHK-NotoCond-lshk</loc><lastmod>2026-06-11</lastmod><priority>0.4</priority></url>
-  <url><loc>https://wing-font.chunlaw.io/specimen/ChironSungHK-NotoCond-yale</loc><lastmod>2026-06-11</lastmod><priority>0.4</priority></url>
-  <url><loc>https://wing-font.chunlaw.io/specimen/ChironSungHK-cangjie</loc><lastmod>2026-06-11</lastmod><priority>0.4</priority></url>
-  <url><loc>https://wing-font.chunlaw.io/specimen/ChironSungHK-Google-thai</loc><lastmod>2026-06-11</lastmod><priority>0.4</priority></url>
-  <url><loc>https://wing-font.chunlaw.io/specimen/ChironSungHK-NotoJP-katakana</loc><lastmod>2026-06-11</lastmod><priority>0.4</priority></url>
-  <url><loc>https://wing-font.chunlaw.io/specimen/ChironSungHK-NotoKR-korean</loc><lastmod>2026-06-11</lastmod><priority>0.4</priority></url>
-  <url><loc>https://wing-font.chunlaw.io/specimen/Xiaolai-NotoCond-lshk</loc><lastmod>2026-06-11</lastmod><priority>0.4</priority></url>
-  <url><loc>https://wing-font.chunlaw.io/specimen/Xiaolai-NotoCond-yale</loc><lastmod>2026-06-11</lastmod><priority>0.4</priority></url>
-  <url><loc>https://wing-font.chunlaw.io/specimen/Xiaolai-NotoCond-lau</loc><lastmod>2026-06-11</lastmod><priority>0.4</priority></url>
-  <url><loc>https://wing-font.chunlaw.io/specimen/Xiaolai-NotoCond-wong</loc><lastmod>2026-10-14</lastmod><priority>0.4</priority></url>
-  <url><loc>https://wing-font.chunlaw.io/specimen/Xiaolai-NotoCond-guangdong</loc><lastmod>2026-06-11</lastmod><priority>0.4</priority></url>
-  <url><loc>https://wing-font.chunlaw.io/specimen/Xiaolai-NotoCond-chishima</loc><lastmod>2026-06-11</lastmod><priority>0.4</priority></url>
-  <url><loc>https://wing-font.chunlaw.io/specimen/Xiaolai-cangjie</loc><lastmod>2026-06-11</lastmod><priority>0.4</priority></url>
-  <url><loc>https://wing-font.chunlaw.io/specimen/Xiaolai-Google-thai</loc><lastmod>2026-06-11</lastmod><priority>0.4</priority></url>
-  <url><loc>https://wing-font.chunlaw.io/specimen/Xiaolai-NotoJP-katakana</loc><lastmod>2026-06-11</lastmod><priority>0.4</priority></url>
-  <url><loc>https://wing-font.chunlaw.io/specimen/Xiaolai-NotoKR-korean</loc><lastmod>2026-06-11</lastmod><priority>0.4</priority></url>
+  <url><loc>https://wing-font.chunlaw.io/specimen/WingSansYueJyutping</loc><lastmod>2026-06-11</lastmod><priority>0.4</priority></url>
+  <url><loc>https://wing-font.chunlaw.io/specimen/WingSansYueYale</loc><lastmod>2026-06-11</lastmod><priority>0.4</priority></url>
+  <url><loc>https://wing-font.chunlaw.io/specimen/WingSansCangjie</loc><lastmod>2026-06-11</lastmod><priority>0.4</priority></url>
+  <url><loc>https://wing-font.chunlaw.io/specimen/WingSansYueThai</loc><lastmod>2026-06-11</lastmod><priority>0.4</priority></url>
+  <url><loc>https://wing-font.chunlaw.io/specimen/WingSansYueKatakana</loc><lastmod>2026-06-11</lastmod><priority>0.4</priority></url>
+  <url><loc>https://wing-font.chunlaw.io/specimen/WingSansYueHangul</loc><lastmod>2026-06-11</lastmod><priority>0.4</priority></url>
+  <url><loc>https://wing-font.chunlaw.io/specimen/WingSerifYueJyutping</loc><lastmod>2026-06-11</lastmod><priority>0.4</priority></url>
+  <url><loc>https://wing-font.chunlaw.io/specimen/WingSerifYueYale</loc><lastmod>2026-06-11</lastmod><priority>0.4</priority></url>
+  <url><loc>https://wing-font.chunlaw.io/specimen/WingSerifCangjie</loc><lastmod>2026-06-11</lastmod><priority>0.4</priority></url>
+  <url><loc>https://wing-font.chunlaw.io/specimen/WingSerifYueThai</loc><lastmod>2026-06-11</lastmod><priority>0.4</priority></url>
+  <url><loc>https://wing-font.chunlaw.io/specimen/WingSerifYueKatakana</loc><lastmod>2026-06-11</lastmod><priority>0.4</priority></url>
+  <url><loc>https://wing-font.chunlaw.io/specimen/WingSerifYueHangul</loc><lastmod>2026-06-11</lastmod><priority>0.4</priority></url>
+  <url><loc>https://wing-font.chunlaw.io/specimen/WingHandYueJyutping</loc><lastmod>2026-06-11</lastmod><priority>0.4</priority></url>
+  <url><loc>https://wing-font.chunlaw.io/specimen/WingHandYueYale</loc><lastmod>2026-06-11</lastmod><priority>0.4</priority></url>
+  <url><loc>https://wing-font.chunlaw.io/specimen/WingHandYueLau</loc><lastmod>2026-06-11</lastmod><priority>0.4</priority></url>
+  <url><loc>https://wing-font.chunlaw.io/specimen/WingHandYueWong</loc><lastmod>2026-10-14</lastmod><priority>0.4</priority></url>
+  <url><loc>https://wing-font.chunlaw.io/specimen/WingHandYueGuangdong</loc><lastmod>2026-06-11</lastmod><priority>0.4</priority></url>
+  <url><loc>https://wing-font.chunlaw.io/specimen/WingHandYueChishima</loc><lastmod>2026-06-11</lastmod><priority>0.4</priority></url>
+  <url><loc>https://wing-font.chunlaw.io/specimen/WingHandCangjie</loc><lastmod>2026-06-11</lastmod><priority>0.4</priority></url>
+  <url><loc>https://wing-font.chunlaw.io/specimen/WingHandYueThai</loc><lastmod>2026-06-11</lastmod><priority>0.4</priority></url>
+  <url><loc>https://wing-font.chunlaw.io/specimen/WingHandYueKatakana</loc><lastmod>2026-06-11</lastmod><priority>0.4</priority></url>
+  <url><loc>https://wing-font.chunlaw.io/specimen/WingHandYueHangul</loc><lastmod>2026-06-11</lastmod><priority>0.4</priority></url>
 
   <!-- ── Taiwanese / Southern Min (臺語) specimens ──────────────── -->
-  <url><loc>https://wing-font.chunlaw.io/specimen/NotoSansTC-NotoCond-tailo</loc><lastmod>2026-06-11</lastmod><priority>0.4</priority></url>
-  <url><loc>https://wing-font.chunlaw.io/specimen/NotoSansTC-NotoCond-poj</loc><lastmod>2026-06-11</lastmod><priority>0.4</priority></url>
-  <url><loc>https://wing-font.chunlaw.io/specimen/Xiaolai-NotoCond-tailo</loc><lastmod>2026-06-11</lastmod><priority>0.4</priority></url>
-  <url><loc>https://wing-font.chunlaw.io/specimen/Xiaolai-NotoCond-poj</loc><lastmod>2026-06-11</lastmod><priority>0.4</priority></url>
+  <url><loc>https://wing-font.chunlaw.io/specimen/WingSansTaigiTailo</loc><lastmod>2026-06-11</lastmod><priority>0.4</priority></url>
+  <url><loc>https://wing-font.chunlaw.io/specimen/WingSansTaigiPOJ</loc><lastmod>2026-06-11</lastmod><priority>0.4</priority></url>
+  <url><loc>https://wing-font.chunlaw.io/specimen/WingHandTaigiTailo</loc><lastmod>2026-06-11</lastmod><priority>0.4</priority></url>
+  <url><loc>https://wing-font.chunlaw.io/specimen/WingHandTaigiPOJ</loc><lastmod>2026-06-11</lastmod><priority>0.4</priority></url>
 
   <!-- ── Teochew / Min Nan (潮州話) specimens ───────────────────── -->
-  <url><loc>https://wing-font.chunlaw.io/specimen/NotoSansTC-NotoCond-pengim</loc><lastmod>2026-06-11</lastmod><priority>0.4</priority></url>
-  <url><loc>https://wing-font.chunlaw.io/specimen/NotoSansTC-NotoCond-teochew-puj</loc><lastmod>2026-06-11</lastmod><priority>0.4</priority></url>
-  <url><loc>https://wing-font.chunlaw.io/specimen/Xiaolai-NotoCond-teochew-pengim</loc><lastmod>2026-06-11</lastmod><priority>0.4</priority></url>
-  <url><loc>https://wing-font.chunlaw.io/specimen/Xiaolai-NotoCond-teochew-puj</loc><lastmod>2026-06-11</lastmod><priority>0.4</priority></url>
+  <url><loc>https://wing-font.chunlaw.io/specimen/WingSansTeochewPengim</loc><lastmod>2026-06-11</lastmod><priority>0.4</priority></url>
+  <url><loc>https://wing-font.chunlaw.io/specimen/WingSansTeochewPUJ</loc><lastmod>2026-06-11</lastmod><priority>0.4</priority></url>
+  <url><loc>https://wing-font.chunlaw.io/specimen/WingHandTeochewPengim</loc><lastmod>2026-06-11</lastmod><priority>0.4</priority></url>
+  <url><loc>https://wing-font.chunlaw.io/specimen/WingHandTeochewPUJ</loc><lastmod>2026-06-11</lastmod><priority>0.4</priority></url>
 
   <!-- ── Mandarin (普通話 / 國語) specimens ─────────────────────── -->
   <url><loc>https://wing-font.chunlaw.io/specimen/SourceHanSerif-Mplus-mandarin</loc><lastmod>2026-06-11</lastmod><priority>0.4</priority></url>
@@ -114,5 +114,5 @@
   <url><loc>https://wing-font.chunlaw.io/specimen/Xiaolai-Huninn-mandarin</loc><lastmod>2026-06-11</lastmod><priority>0.4</priority></url>
 
   <!-- ── Arabic-base specimens (word-unit tier) ─────────────────── -->
-  <url><loc>https://wing-font.chunlaw.io/specimen/NotoSansArabic-Noto-DIN31635</loc><lastmod>2026-06-11</lastmod><priority>0.4</priority></url>
+  <url><loc>https://wing-font.chunlaw.io/specimen/WingSansArabicDIN31635</loc><lastmod>2026-06-11</lastmod><priority>0.4</priority></url>
 </urlset>

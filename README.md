@@ -32,8 +32,8 @@ For development docs:
 CI builds the font set on every push and publishes it across two surfaces — WOFF2 lives on the Pages site (used by the in-page previews), TTF lives in rolling GitHub Releases (heavier file, off-loaded so the Pages bandwidth budget covers visitor traffic). Browse and download from the [showcase page](https://wing-font.chunlaw.io/showcase), or use a direct URL like:
 
 ```
-https://wing-font.chunlaw.io/fonts/NotoSansHK-NotoCond-lshk.woff2
-https://github.com/chunlaw/wing-font-generator/releases/latest/download/NotoSansTC-NotoCond-tailo.ttf
+https://wing-font.chunlaw.io/fonts/WingSansYueJyutping.woff2
+https://github.com/chunlaw/wing-font-generator/releases/latest/download/WingSansTaigiTailo.ttf
 ```
 
 The `releases/latest/download/` redirect always tracks the most recent `build-<sha>` release; CI keeps the 3 most recent releases for rollback headroom and prunes older ones, so the TTF URL is stable but the bytes are not guaranteed to be byte-identical across deploys (this is a generator, not a versioned font archive).
@@ -82,7 +82,7 @@ python wing-font.py \
   -i input_fonts/ChironSungHK-R.ttf \
   -a input_fonts/NotoSerif-Regular.ttf \
   -m mappings/cantonese/canto-lshk.csv \
-  -o ChironSungHK-NotoCond-lshk \
+  -o WingSerifYueJyutping \
   -opt -as 0.13
 ```
 
@@ -118,7 +118,7 @@ A sibling repo, [`chunlaw/wing-font-hub`](https://github.com/chunlaw/wing-font-h
 ## Examples
 
 - **[Showcase](https://wing-font.chunlaw.io/showcase)** — every pre-built font with a rotating sample of dialect-appropriate lyrics, plus direct `.ttf` / `.woff2` download buttons. Shareable URLs via `?fonts=` query string.
-- **[Specimen pages](https://wing-font.chunlaw.io/specimen/NotoSansHK-NotoCond-lshk)** — single-font large-size preview with a custom-text field.
+- **[Specimen pages](https://wing-font.chunlaw.io/specimen/WingSansYueJyutping)** — single-font large-size preview with a custom-text field.
 - **[Generate](https://wing-font.chunlaw.io/generate)** — the 5-step in-browser pipeline (fonts → mappings → parameters → generate → download + CSS snippet).
 
 ## Contributing

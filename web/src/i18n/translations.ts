@@ -573,7 +573,7 @@ export const TRANSLATIONS: Record<Language, Record<TranslationKey, string>> = {
       "你的字體與對應表全程不會離開瀏覽器，所有處理皆在本機進行。",
     "home.features.f5.title": "自訂標注",
     "home.features.f5.body":
-      "生成字型時喺步驟 3 加入「自訂標注」清單，用家就可以為任何字自行指定讀音：喺字後面打全形「０」清除原有標注，再打全形拼音，例如「行０ｚａａ１」會喺「行」上面顯示 zaa1。內置粵拼、漢語拼音、注音、台羅清單，亦可上載自己嘅 CSV。暫時只支援中文（漢字）底字。",
+      "生成字型時喺步驟 3 加入「自訂標注」清單，用家就可以為任何字自行指定讀音：喺字後面打「0」清除原有標注，再打拼音，例如「行0zaa1」會喺「行」上面顯示 zaa1（Word 請用全形「行０zaa1」）。內置粵拼、漢語拼音、注音、台羅清單，亦可上載自己嘅 CSV。暫時只支援中文（漢字）底字。",
     // Showcase
     "showcase.tryIt": "隨便試 (Try it!!)",
     "showcase.share": "分享連結",
@@ -668,7 +668,7 @@ export const TRANSLATIONS: Record<Language, Record<TranslationKey, string>> = {
     "generate.step5.label": "預覽與下載",
     "generate.stepDiy.label": "自訂標注",
     "stepDiy.title": "步驟 3：自訂標注（選用）",
-    "stepDiy.description": "加入一份「手動標注」清單（--diy-annotations），讓字型使用者可以為任何字自行指定讀音：在字後面先打全形 ０ 清除原有標注，再打全形拼音，例如「行０ｚａａ１」會在「行」上顯示 zaa1。暫時只支援中文（漢字）底字。不需要的話可以略過此步驟。",
+    "stepDiy.description": "加入一份「手動標注」清單（--diy-annotations），讓字型使用者可以為任何字自行指定讀音：在字後面先打 0 清除原有標注，再打拼音，例如「行0zaa1」會在「行」上顯示 zaa1（Word 須用全形 ０：「行０zaa1」）。暫時只支援中文（漢字）底字。不需要的話可以略過此步驟。",
     "stepDiy.preset": "預設清單",
     "stepDiy.none": "不使用",
     "stepDiy.custom": "自訂檔案",
@@ -677,7 +677,7 @@ export const TRANSLATIONS: Record<Language, Record<TranslationKey, string>> = {
     "stepDiy.loaded": "已載入 {name}：共 {count} 個標注",
     "stepDiy.example": "例：輸入「{input}」→ 顯示 {anno}",
     "stepDiy.needsOptimize": "自訂標注需要開啟「最佳化」（-opt），否則字型可能超出 65,535 個字形的上限。請在參數設定中開啟。",
-    "stepDiy.format": "CSV 格式：每行「輸入,標注」，例如 ｚａａ１,zaa1。輸入須為全形英數字；只填一欄時會自動轉成全形作為輸入。只會套用在完整生成，即時預覽不包括自訂標注。",
+    "stepDiy.format": "CSV 格式：每行「輸入,標注」，例如 ｚａａ１,zaa1。只填一欄時會自動轉成全形作為輸入；全形輸入同時接受半形打法（ｚａａ１ 與 zaa1 皆可）。只會套用在完整生成，即時預覽不包括自訂標注。",
     // Step 1
     "step1.title": "步驟 1：選擇字體",
     "step1.description":
@@ -1007,7 +1007,7 @@ export const TRANSLATIONS: Record<Language, Record<TranslationKey, string>> = {
       "Your fonts and mapping never leave your browser. Everything runs client-side.",
     "home.features.f5.title": "DIY annotations",
     "home.features.f5.body":
-      "Add a DIY annotation inventory in Step 3 when generating, and people using the font can set any character's reading themselves: after a character, type a full-width ０ to strip its reading, then the full-width romanization — e.g. 行０ｚａａ１ shows zaa1 over 行. Built-in inventories for Jyutping, Pinyin, Zhuyin and Tâi-lô, or upload your own CSV. Currently Chinese (Han) base fonts only.",
+      "Add a DIY annotation inventory in Step 3 when generating, and people using the font can set any character's reading themselves: after a character, type 0 to strip its reading, then the romanization — e.g. 行0zaa1 shows zaa1 over 行 (in Word, use the full-width ０: 行０zaa1). Built-in inventories for Jyutping, Pinyin, Zhuyin and Tâi-lô, or upload your own CSV. Currently Chinese (Han) base fonts only.",
     // Showcase
     "showcase.tryIt": "Try typing here",
     "showcase.share": "Share link",
@@ -1103,7 +1103,7 @@ export const TRANSLATIONS: Record<Language, Record<TranslationKey, string>> = {
     "generate.step5.label": "Preview & download",
     "generate.stepDiy.label": "DIY annotations",
     "stepDiy.title": "Step 3: DIY annotations (optional)",
-    "stepDiy.description": "Add a manual-annotation inventory (--diy-annotations) so people using the font can set any character's reading themselves: after a character, type a full-width ０ to strip its reading, then the full-width romanization — e.g. 行０ｚａａ１ shows zaa1 over 行. Currently Chinese (Han) base fonts only. Skip this step if you don't need it.",
+    "stepDiy.description": "Add a manual-annotation inventory (--diy-annotations) so people using the font can set any character's reading themselves: after a character, type 0 to strip its reading, then the romanization — e.g. 行0zaa1 shows zaa1 over 行 (in Word, use the full-width ０: 行０zaa1). Currently Chinese (Han) base fonts only. Skip this step if you don't need it.",
     "stepDiy.preset": "Built-in inventory",
     "stepDiy.none": "None",
     "stepDiy.custom": "Custom file",
@@ -1112,7 +1112,7 @@ export const TRANSLATIONS: Record<Language, Record<TranslationKey, string>> = {
     "stepDiy.loaded": "Loaded {name}: {count} annotations",
     "stepDiy.example": "Example: type {input} → shows {anno}",
     "stepDiy.needsOptimize": "DIY annotations need Optimize (-opt) turned on, or the font may exceed the 65,535-glyph limit. Turn it on in Parameters.",
-    "stepDiy.format": "CSV format: one \"input,annotation\" per line, e.g. ｚａａ１,zaa1. Inputs must be full-width letters/digits; a single column is converted to full-width automatically. Applied to the full Generate only — the live preview doesn't include DIY annotations.",
+    "stepDiy.format": "CSV format: one \"input,annotation\" per line, e.g. ｚａａ１,zaa1. A single column is converted to a full-width input automatically; every full-width input also accepts its half-width form (ｚａａ１ or zaa1). Applied to the full Generate only — the live preview doesn't include DIY annotations.",
     // Step 1
     "step1.title": "Step 1: Choose fonts",
     "step1.description":

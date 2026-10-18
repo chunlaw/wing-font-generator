@@ -108,11 +108,12 @@ set them.
 | --- | --- | --- |
 | nameID 0 Copyright | `Copyright {year} The Wing Font Project Authors (https://github.com/chunlaw/wing-font-generator)` on the first line, then the base and annotation fonts' copyright lines | `--copyright-line TEXT` (`{year}` is filled in) |
 | nameID 3 Unique ID / OS/2 `achVendID` | vendor `WING` | `--vendor-id XXXX` |
-| nameID 6 PostScript name | family without spaces + `-` + style, e.g. `WingSansCantoneseJyutping-Regular` | `--postscript-name` |
+| nameID 6 PostScript name | family without spaces + `-` + style, e.g. `WingSansYueJyutping-Regular` | `--postscript-name` |
 | nameID 7 Trademark | `Wing Font` | `--trademark` |
 | nameID 8 Manufacturer | `Wing Font` | `--manufacturer` |
 | nameID 9 Designer | base designers + `; Wing Font (annotations)` | `--designer` |
 | nameID 11 / 12 Vendor / designer URL | `https://wing-font.chunlaw.io` | `--vendor-url`, `--designer-url` |
+| nameID 5 Version / head.fontRevision | base version + `; modified by Wing Font <date>` | `--font-version X.YYY` (e.g. `1.000`) |
 | nameID 13 / 14 License | SIL OFL 1.1 text and `https://openfontlicense.org` — only when both input fonts are OFL | — |
 
 nameID 10 (Description) gets `Annotations added via Wing Font` appended
