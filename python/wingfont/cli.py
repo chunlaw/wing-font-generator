@@ -343,7 +343,8 @@ def _auto_fit_descent(output_font, char_metrics, margin=AUTO_ASCENT_MARGIN):
     `_auto_extend_vertical_metrics`:
       * hhea.descent (signed, negative) ← min(current, ink_floor)
       * OS/2.usWinDescent (unsigned positive) ← max(current, -ink_floor)
-      * OS/2.sTypoDescender (signed, negative) ← min(current, ink_floor)
+      * OS/2.sTypoDescender (signed, negative) ← min(current, ink_floor),
+        only when USE_TYPO_METRICS is set
 
     Widen-only: never raises a descent the base font already set deeper.
 
@@ -365,8 +366,12 @@ def _auto_fit_descent(output_font, char_metrics, margin=AUTO_ASCENT_MARGIN):
         output_font["hhea"].descent = ink_floor
     if -ink_floor > output_font["OS/2"].usWinDescent:
         output_font["OS/2"].usWinDescent = -ink_floor
-    if ink_floor < output_font["OS/2"].sTypoDescender:
-        output_font["OS/2"].sTypoDescender = ink_floor
+    # Typo metrics only steer layout with USE_TYPO_METRICS (fsSelection
+    # bit 7); without it win/hhea above already cover the ink, and GF's
+    # CJK schema wants the base 880/-120 kept.
+    os2 = output_font["OS/2"]
+    if os2.fsSelection & (1 << 7) and ink_floor < os2.sTypoDescender:
+        os2.sTypoDescender = ink_floor
 
 
 def _to_postscript_name(family_name: str) -> str:
@@ -448,12 +453,13 @@ def set_family_name(font, new_family_name):
                                      base record so the output gets a
                                      globally-unique ID instead of
                                      inheriting the base font's.
-      * 4  Full Name               ← new family verbatim
+      * 4  Full Name               ← "<family> <nameID 2>" (GF style)
       * 6  PostScript Name         ← _to_postscript_name() — ASCII +
                                      forbidden-char strip so the
                                      output complies with the OT spec
                                      for PS names.
-      * 16 Typographic Family      ← new family verbatim
+      * 16 Typographic Family      ← new family; for RIBBI styles
+                                     16/17 are removed instead
 
     Earlier attempts to rewrite NameID 3 caused Word-rendering
     regressions, eventually traced to the LF_FACESIZE family-name
@@ -482,14 +488,22 @@ def set_family_name(font, new_family_name):
         new_family_name,
     )
     new_postscript_name = _to_postscript_name(new_family_name)
+    subfamily = _get_name(font, 2) or "Regular"
+    ribbi = subfamily in ("Regular", "Bold", "Italic", "Bold Italic")
 
     name_id_to_value = {
         1: new_family_name,        # Family
         3: new_unique_id,          # Unique Font Identifier (NEW)
-        4: new_family_name,        # Full Name
+        4: f"{new_family_name} {subfamily}",  # Full Name
         6: new_postscript_name,    # PostScript Name (sanitized)
-        16: new_family_name,       # Typographic Family
     }
+    if ribbi:
+        # 16/17 are only for non-RIBBI styles; a static instance of a VF
+        # base otherwise keeps the VF default's "Thin" in 17.
+        table.removeNames(nameID=16)
+        table.removeNames(nameID=17)
+    else:
+        name_id_to_value[16] = new_family_name  # Typographic Family
 
     for plat_id, enc_id, lang_id in (WINDOWS_ENGLISH_IDS, MAC_ROMAN_IDS):
         for name_id, value in name_id_to_value.items():
@@ -570,7 +584,7 @@ def tag_wing_font_provenance(font):
             if (WING_FONT_PROVENANCE_NOTE in existing_text
                     or "wing-font.chunlaw.io" in existing_text):
                 continue
-            new_text = f"{existing_text}\n\n{WING_FONT_PROVENANCE_NOTE}"
+            new_text = f"{existing_text} {WING_FONT_PROVENANCE_NOTE}"
         else:
             new_text = WING_FONT_PROVENANCE_NOTE
         table.setName(
@@ -661,7 +675,8 @@ OFL_URL = "https://openfontlicense.org"
 # dotted circle U+25CC.
 KEEP_LATIN_RANGES = (
     (0x0020, 0x024F), (0x02B0, 0x036F), (0x1E00, 0x1EFF),
-    (0x2000, 0x214F), (0x2212, 0x2212), (0x25CC, 0x25CC),
+    (0x2000, 0x20CF), (0x2100, 0x214F), (0x2212, 0x2212), (0x25CC, 0x25CC),
+    (0xFF01, 0xFF5E),  # full fullwidth ASCII, so case pairs are complete
 )
 
 
@@ -704,10 +719,10 @@ def apply_release_names(font, anno_font, copyright_line=None,
     ours = (copyright_line or DEFAULT_COPYRIGHT_LINE).format(year=year)
     lines = [ours]
     for c in (_get_name(font, 0), _get_name(anno_font, 0)):
-        for line in c.split("\n"):  # per line: idempotent, no dupes
+        for line in re.split(r"\n|; ", c):  # per line: idempotent, no dupes
             if line and line not in lines:
                 lines.append(line)
-    _set_name(table, 0, "\n".join(lines))
+    _set_name(table, 0, "; ".join(lines))
 
     _set_name(table, 7, trademark or DEFAULT_TRADEMARK)
     _set_name(table, 6, _to_postscript_name(postscript_name or (
