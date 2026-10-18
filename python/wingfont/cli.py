@@ -584,7 +584,8 @@ def tag_wing_font_provenance(font):
             if (WING_FONT_PROVENANCE_NOTE in existing_text
                     or "wing-font.chunlaw.io" in existing_text):
                 continue
-            new_text = f"{existing_text} {WING_FONT_PROVENANCE_NOTE}"
+            sep = " " if existing_text.rstrip().endswith(".") else ". "
+            new_text = f"{existing_text.rstrip()}{sep}{WING_FONT_PROVENANCE_NOTE}"
         else:
             new_text = WING_FONT_PROVENANCE_NOTE
         table.setName(
@@ -663,7 +664,6 @@ DEFAULT_COPYRIGHT_LINE = (
     "(https://github.com/chunlaw/wing-font-generator)"
 )
 DEFAULT_VENDOR_ID = "WING"
-DEFAULT_TRADEMARK = "Wing Font"
 DEFAULT_MANUFACTURER = "Wing Font"
 DEFAULT_VENDOR_URL = "https://wing-font.chunlaw.io"
 OFL_DESC = ("This Font Software is licensed under the SIL Open Font "
@@ -698,6 +698,11 @@ def _set_name(table, name_id, value):
         table.setName(value, name_id, *ids)
 
 
+# Notices are joined into one line ("A. B. C.") for FontBakery's no-line-break
+# rule; this splits both that form and the base fonts' newline-separated one.
+COPYRIGHT_SPLIT = r"\n|; |(?<=\.) (?=Copyright|\(c\)|©)"
+
+
 def apply_release_names(font, anno_font, copyright_line=None,
                         vendor_id=None, manufacturer=None, designer=None,
                         vendor_url=None, designer_url=None, trademark=None,
@@ -706,7 +711,8 @@ def apply_release_names(font, anno_font, copyright_line=None,
 
     None means "use the Wing Font default" for every argument:
       * 0  copyright   ← copyright_line + base copyright + anno copyright
-      * 7  trademark   ← "Wing Font" (upstream marks don't cover the derivative)
+      * 7  trademark   ← removed unless given: the base font's notice names
+                          another mark (e.g. Adobe's "Source") the derivative doesn't use
       * 6  PostScript  ← "<Family without spaces>-<Subfamily>" (GF style)
       * 8  manufacturer, 11 vendor URL, 12 designer URL ← Wing Font
       * 9  designer    ← base designers + "; Wing Font (annotations)"
@@ -719,12 +725,16 @@ def apply_release_names(font, anno_font, copyright_line=None,
     ours = (copyright_line or DEFAULT_COPYRIGHT_LINE).format(year=year)
     lines = [ours]
     for c in (_get_name(font, 0), _get_name(anno_font, 0)):
-        for line in re.split(r"\n|; ", c):  # per line: idempotent, no dupes
+        for line in re.split(COPYRIGHT_SPLIT, c):  # per line: idempotent, no dupes
+            line = line.strip().rstrip(".")
             if line and line not in lines:
                 lines.append(line)
-    _set_name(table, 0, "; ".join(lines))
+    _set_name(table, 0, " ".join(f"{line}." for line in lines))
 
-    _set_name(table, 7, trademark or DEFAULT_TRADEMARK)
+    if trademark:
+        _set_name(table, 7, trademark)
+    else:
+        table.removeNames(nameID=7)
     _set_name(table, 6, _to_postscript_name(postscript_name or (
         _get_name(font, 1).replace(" ", "") + "-"
         + (_get_name(font, 2) or "Regular").replace(" ", ""))))
@@ -2465,7 +2475,7 @@ def run(argv=None):
     rel.add_argument('--designer', help="nameID 9 (default: base designers + '; Wing Font (annotations)')")
     rel.add_argument('--vendor-url', help=f"nameID 11 (default {DEFAULT_VENDOR_URL})")
     rel.add_argument('--designer-url', help=f"nameID 12 (default {DEFAULT_VENDOR_URL})")
-    rel.add_argument('--trademark', help=f"nameID 7 (default {DEFAULT_TRADEMARK!r})")
+    rel.add_argument('--trademark', help="nameID 7 (default: none; the base font's notice is removed)")
     parser.add_argument('--font-version', metavar='X.YYY',
                         help="Font version, e.g. 1.000: sets nameID 5 ('Version 1.000'), "
                              "head.fontRevision and nameID 3. Default: the base font's "

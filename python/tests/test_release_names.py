@@ -28,11 +28,11 @@ def test_defaults_keep_upstream_and_are_idempotent():
     anno = _font("Copyright 2022 The Noto Project Authors", "Monotype", ofl)
     for _ in range(2):
         apply_release_names(f, anno)
-    lines = _n(f, 0).split("; ")
+    lines = _n(f, 0)[:-1].split(". ")
     assert lines[0].startswith("Copyright ") and "The Wing Font Project Authors (https://" in lines[0]
-    assert lines[1:] == ["Copyright 2014-2021 Adobe, with Reserved Font Name 'Source'.",
+    assert lines[1:] == ["Copyright 2014-2021 Adobe, with Reserved Font Name 'Source'",
                          "Copyright 2022 The Noto Project Authors"]
-    assert _n(f, 7) == "Wing Font"
+    assert _n(f, 7) is None  # base notice for another mark removed
     assert _n(f, 6) == "X-Regular"
     assert _n(f, 9) == "Ryoko NISHIZUKA 西塚涼子; Wing Font (annotations)"
     assert f["name"].getName(9, 1, 0, 0) is None  # CJK can't go in Mac-Roman
@@ -44,7 +44,7 @@ def test_overrides_and_non_ofl_license_untouched():
     f = _font("(c) Base", "D", "Proprietary")
     apply_release_names(f, _font("(c) Anno", "A", "Proprietary"),
                         copyright_line="Copyright {year} Me", vendor_id="ABCD", trademark="TM")
-    assert _n(f, 0).split("; ")[0].endswith(" Me")
+    assert _n(f, 0).split(". ")[0].endswith(" Me")
     assert f["OS/2"].achVendID == "ABCD" and _n(f, 7) == "TM"
     assert _n(f, 13) == "Proprietary"
 
@@ -78,3 +78,12 @@ def test_descent_fit_leaves_typo_without_use_typo_metrics():
     f["OS/2"].fsSelection |= 1 << 7
     _auto_fit_descent(f, {"min_y": -129})
     assert f["OS/2"].sTypoDescender == -149
+
+
+def test_provenance_note_is_its_own_sentence():
+    from wingfont.cli import tag_wing_font_provenance
+    f = _font("(c) Base", "D", "Proprietary")
+    f["name"].setName("Dr. Ken Lunde (project architect)", 10, 3, 1, 0x409)
+    tag_wing_font_provenance(f)
+    tag_wing_font_provenance(f)
+    assert _n(f, 10) == "Dr. Ken Lunde (project architect). Annotations added via Wing Font"
