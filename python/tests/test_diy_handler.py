@@ -72,9 +72,8 @@ def test_build_inventory_pua_and_inputs(tmp_path):
     assert inv.pua_map == {"zaa1": DIY_PUA_BASE, "hoeng1": DIY_PUA_BASE + 1}
     # inputs: hoeng1 derived full-width, zaa1 explicit 'ABC'
     assert (_fw("hoeng1"), DIY_PUA_BASE + 1) in inv.inputs
-    assert ("hoeng1", DIY_PUA_BASE + 1) in inv.inputs  # half-width alias
     assert ("ABC", DIY_PUA_BASE) in inv.inputs
-    assert len(inv.inputs) == 3
+    assert len(inv.inputs) == 2
 
 
 def test_multiple_inputs_one_annotation(tmp_path):
@@ -89,16 +88,7 @@ def test_pua_only_row_has_no_input(tmp_path):
     inv = build_diy_inventory(p)
     assert set(inv.pua_map) == {"ザー", "zaa1"}
     # only zaa1 has a typed input; ザー is PUA-only
-    assert sorted(i[0] for i in inv.inputs) == sorted([_fw("zaa1"), "zaa1"])
-
-
-def test_fullwidth_input_gets_halfwidth_alias(tmp_path):
-    # Explicit full-width input → also its ASCII form, same mark; an
-    # explicit half-width row for the same text isn't duplicated.
-    p = _write(tmp_path, "A.csv", f"{_fw('diu4')},diu4\ndiu4,diu4\n")
-    inv = build_diy_inventory(str(p))
-    cp = inv.pua_map["diu4"]
-    assert sorted(inv.inputs) == sorted([(_fw("diu4"), cp), ("diu4", cp)])
+    assert [i[0] for i in inv.inputs] == [_fw("zaa1")]
 
 
 def test_assign_pua_capacity_guard():

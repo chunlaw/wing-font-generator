@@ -27,7 +27,6 @@ sys.path.insert(0, str(REPO_ROOT))
 from wingfont.build_glyph import MARK_PREFIX, generate_mark_glyphs  # noqa: E402
 from wingfont.diy_handler import DIY_PUA_BASE  # noqa: E402
 from wingfont.mark_input_handler import buildMarkInputLiga  # noqa: E402
-from wingfont.utils import register_feature_lookup  # noqa: E402
 
 UPM = 1000
 _BOX = [(50, 0), (550, 0), (550, 700), (50, 700)]
@@ -169,41 +168,6 @@ def test_unresolvable_input_glyph_is_skipped():
     ligs = _ligature_map(out)
     assert ligs.get(("fj", "fa", "ft", "f1")) == f"{MARK_PREFIX}F0000"
     assert not any(c == f"{MARK_PREFIX}F0001" for c in ligs.values())
-
-
-def test_ascii_input_beats_base_font_locl():
-    # A base font whose latn locl swaps a glyph (Noto Sans HK swaps ASCII
-    # digits) must not break an ASCII input shaped in a Latin run: the
-    # DIY ligature has to run first.
-    import uharfbuzz as hb
-    from fontTools.otlLib.builder import SingleSubstBuilder
-
-    pua = {"zaa1": DIY_PUA_BASE}
-    out = _setup(pua)
-    gsub = out["GSUB"].table
-    order = out.getGlyphOrder() + ["x.locl"]
-    out.setGlyphOrder(order)
-    out["glyf"]["x.locl"] = _glyph()
-    out["hmtx"]["x.locl"] = (UPM, 50)
-    out["maxp"].numGlyphs = len(order)
-    locl = SingleSubstBuilder(out, None)
-    locl.mapping["x"] = "x.locl"
-    gsub.LookupList.Lookup.append(locl.build())
-    gsub.LookupList.LookupCount = 1
-    register_feature_lookup(gsub, "locl", 0)
-
-    buildMarkInputLiga(out, [("xy", DIY_PUA_BASE)])
-    buf = io.BytesIO()
-    out.save(buf)
-    font = hb.Font(hb.Face(buf.getvalue()))
-    b = hb.Buffer()
-    b.add_str("xy")
-    b.guess_segment_properties()
-    assert b.script == "Latn"
-    hb.shape(font, b)
-    assert [font.glyph_to_string(i.codepoint) for i in b.glyph_infos] == [
-        f"{MARK_PREFIX}F0000"
-    ]
 
 
 def test_empty_inputs_returns_zero():

@@ -769,33 +769,33 @@ export const DEFAULT_MAPPING_PRESET = BUILT_IN_MAPPINGS[0];
 
 /**
  * DIY manual-annotation inventories for Step 3 (`--diy-annotations`).
- * Each row is `input,annotation`: typing the input (full-width, or its
- * half-width form) after a base character (with 0 to strip its baked
- * reading, e.g. `行0zaa1`; Word needs `行０zaa1`) draws that annotation over it.
- * Copied into public/wingfont/diy/ by scripts/sync-python.mjs from python/diy-mappings/<group>/.
+ * Each row is `input,annotation`: typing the full-width input after a
+ * base character (with ０ to strip its baked reading, e.g. `行０ｚａａ１`)
+ * draws that annotation over it. Copied into public/wingfont/diy/ by
+ * scripts/sync-python.mjs from python/diy-mappings/<group>/.
  */
 export const BUILT_IN_DIY: BuiltInPreset[] = [
   {
     key: "lshk",
-    label: "粵拼 (LSHK Jyutping) — zaa1 → zaa1",
+    label: "粵拼 (LSHK Jyutping) — ｚａａ１ → zaa1",
     url: "/wingfont/diy/lshk.diy-annotation.csv",
     filename: "cantonese/lshk.diy-annotation.csv",
   },
   {
     key: "pinyin",
-    label: "漢語拼音 (Pinyin, tone marks) — zhong1 → zhōng",
+    label: "漢語拼音 (Pinyin, tone marks) — ｚｈｏｎｇ１ → zhōng",
     url: "/wingfont/diy/pinyin.diy-annotation.csv",
     filename: "mandarin/pinyin.diy-annotation.csv",
   },
   {
     key: "zhuyin",
-    label: "注音符號 (Zhuyin) — zhong1 → ㄓㄨㄥ",
+    label: "注音符號 (Zhuyin) — ｚｈｏｎｇ１ → ㄓㄨㄥ",
     url: "/wingfont/diy/zhuyin.diy-annotation.csv",
     filename: "mandarin/zhuyin.diy-annotation.csv",
   },
   {
     key: "sutian",
-    label: "台羅 (Tâi-lô, tone marks) — pa2 → pá",
+    label: "台羅 (Tâi-lô, tone marks) — ｐａ２ → pá",
     url: "/wingfont/diy/sutian.diy-annotation.csv",
     filename: "taiwanese/sutian.diy-annotation.csv",
   },
