@@ -353,17 +353,23 @@ export const AVAILABLE_FONTS: FontSet = {
     //     name exceeding 31 chars (see LF_FACESIZE_LIMIT in
     //     python/wing-font.py).
     //   * WingSansYueJyutping — default again (Oct 2026): the
-    //     Huninn-tonemark font was dropped; its tone marks were too
-    //     small to read.
+    //     Huninn-tonemark font (now WingSansYueJyutpingMarks) stays
+    //     as an option, but its tone marks read too small to lead.
     //
-    // Every previously-default font except NotoSansHK-Huninn-tonemark
-    // is still built by CI and downloadable via direct URL.
+    // Previously-default fonts are still built by CI, under their
+    // Oct 2026 Wing names (old URLs no longer resolve).
     fonts: {
       // ─ Current default ──────────────────────────────────────────
       "WingSansYueJyutping": {
         displayName: "思源黑體 香港（粵拼）",
         name: "WingSansYueJyutping",
         source: `url(${import.meta.env.VITE_FONT_URL}/WingSansYueJyutping.woff2) format('woff2')`,
+        group: CANTO_GROUP_JYUTPING,
+      },
+      "WingSansYueJyutpingMarks": {
+        displayName: "思源黑體 香港（粵拼・Huninn 調符）",
+        name: "WingSansYueJyutpingMarks",
+        source: `url(${import.meta.env.VITE_FONT_URL}/WingSansYueJyutpingMarks.woff2) format('woff2')`,
         group: CANTO_GROUP_JYUTPING,
       },
       "WingSansYueYale": {
