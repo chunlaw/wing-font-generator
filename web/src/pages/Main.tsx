@@ -776,6 +776,7 @@ const FontShowcaseCard = ({
       <FontHeader
         family={pickedFont.name}
         displayName={pickedFont.displayName}
+        note={pickedFont.note}
         idx={idx}
       />
       <Box>

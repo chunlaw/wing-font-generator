@@ -275,6 +275,7 @@ const Specimen = () => {
       <FontHeader
         family={fontOption.name}
         displayName={fontOption.displayName}
+        note={fontOption.note}
       />
       <TypographyControls
         defaults={SPECIMEN_TYPO_DEFAULTS}

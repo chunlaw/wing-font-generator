@@ -45,8 +45,8 @@ export const TEMPLATES_BY_DIALECT: Record<string, string[]> = {
     "永遠有一個吻未嘗",
     "望着他雙眼想別人　人留下了留不低那片心",
   ],
-  // Taiwanese / Southern Min samples — render with the 思源黑體（台羅）
-  // or （白話字）showcase fonts to see Tâi-lô / POJ tone marks above.
+  // Taiwanese / Southern Min samples — render with the Wing Sans Taigi Tailo
+  // or Taigi POJ showcase fonts to see Tâi-lô / POJ tone marks above.
   // Mix of pre-war Taiwanese folk (鄧雨賢's 雨夜花 / 望春風), 50s-60s
   // 文夏 era classics, and modern 蔡振南 / 江蕙 / 葉啟田 / 林淑容
   // works — chosen for one-line memorability and broad recognition
@@ -65,8 +65,8 @@ export const TEMPLATES_BY_DIALECT: Record<string, string[]> = {
     "思慕的人　啊　怎樣會這呢無情",
     "六月的炎天引阮牽掛可愛的薄情郎",
   ],
-  // Teochew (潮州話) samples — render with the 思源黑體（潮拼）or
-  // （潮州白話字）showcase fonts to see Peng'im / PUJ above the chars.
+  // Teochew (潮州話) samples — render with the Wing Sans Teochew Pengim
+  // or PUJ showcase fonts to see Peng'im / PUJ above the chars.
   // Lyric + proverb mix sourced from 潮州歌仔 / 潮州歌冊 traditions plus
   // modern Teochew compositions. Falls back to 童謠 / 諺語 for lines
   // pop catalogues don't cover well.
@@ -85,7 +85,7 @@ export const TEMPLATES_BY_DIALECT: Record<string, string[]> = {
     "落雨大　水浸街",
   ],
   // Mandarin (普通話 / 國語) samples — render with the Mandarin
-  // showcase fonts (思源宋體 拼音 / 小賴字體 拼音) to see Hanyu Pinyin
+  // showcase fonts (Wing Serif / Wing Hand Putonghua Pinyin) to see Hanyu Pinyin
   // stacked above each character. The 普通話 (-cn) fonts now render
   // diacritic tone marks (mā) from the common-set mandarin-cn-toned-
   // trimmed mapping (+ full-width pinyin DIY input); the 國語 (-tw) fonts
@@ -239,7 +239,10 @@ export const TEMPLATES: string[] = Object.values(TEMPLATES_BY_DIALECT).flat();
 
 export interface FontOption {
   name: string;
+  /** Font family name, exactly as it shows in Word / Pages font menus. */
   displayName: string;
+  /** Short Chinese description (scheme / accent), shown under the name in pickers. */
+  note?: string;
   source: string;
   /**
    * Optional subgrouping within a dialect — surfaced as a
@@ -361,73 +364,85 @@ export const AVAILABLE_FONTS: FontSet = {
     fonts: {
       // ─ Current default ──────────────────────────────────────────
       "WingSansYueJyutping": {
-        displayName: "思源黑體 香港（粵拼）",
+        displayName: "Wing Sans Yue Jyutping",
+        note: "粵拼",
         name: "WingSansYueJyutping",
         source: `url(${import.meta.env.VITE_FONT_URL}/WingSansYueJyutping.woff2) format('woff2')`,
         group: CANTO_GROUP_JYUTPING,
       },
       "WingSansYueJyutpingMarks": {
-        displayName: "思源黑體 香港（粵拼・Huninn 調符）",
+        displayName: "Wing Sans Yue Jyutping Marks",
+        note: "粵拼・Huninn 調符",
         name: "WingSansYueJyutpingMarks",
         source: `url(${import.meta.env.VITE_FONT_URL}/WingSansYueJyutpingMarks.woff2) format('woff2')`,
         group: CANTO_GROUP_JYUTPING,
       },
       "WingSansYueYale": {
-        displayName: "思源黑體 香港（耶魯拼音）",
+        displayName: "Wing Sans Yue Yale",
+        note: "耶魯拼音",
         name: "WingSansYueYale",
         source: `url(${import.meta.env.VITE_FONT_URL}/WingSansYueYale.woff2) format('woff2')`,
         group: CANTO_GROUP_YALE,
       },
       "WingSansYueLau": {
-        displayName: "思源黑體 香港（劉錫祥）",
+        displayName: "Wing Sans Yue Lau",
+        note: "劉錫祥",
         name: "WingSansYueLau",
         source: `url(${import.meta.env.VITE_FONT_URL}/WingSansYueLau.woff2) format('woff2')`,
         group: CANTO_GROUP_LAU,
       },
       "WingSansYueWong": {
-        displayName: "思源黑體 香港（黃錫凌）",
+        displayName: "Wing Sans Yue Wong",
+        note: "黃錫凌",
         name: "WingSansYueWong",
         source: `url(${import.meta.env.VITE_FONT_URL}/WingSansYueWong.woff2) format('woff2')`,
         group: CANTO_GROUP_WONG,
       },
       "WingSansYueGuangdong": {
-        displayName: "思源黑體 香港（廣州話拼音方案）",
+        displayName: "Wing Sans Yue Guangdong",
+        note: "廣州話拼音方案",
         name: "WingSansYueGuangdong",
         source: `url(${import.meta.env.VITE_FONT_URL}/WingSansYueGuangdong.woff2) format('woff2')`,
         group: CANTO_GROUP_GUANGDONG,
       },
       "WingSansYueChishima": {
-        displayName: "思源黑體 香港（千島）",
+        displayName: "Wing Sans Yue Chishima",
+        note: "千島",
         name: "WingSansYueChishima",
         source: `url(${import.meta.env.VITE_FONT_URL}/WingSansYueChishima.woff2) format('woff2')`,
         group: CANTO_GROUP_CHISHIMA,
       },
       "WingSansCangjie": {
-        displayName: "思源黑體 香港（倉頡）",
+        displayName: "Wing Sans Cangjie",
+        note: "倉頡",
         name: "WingSansCangjie",
         source: `url(${import.meta.env.VITE_FONT_URL}/WingSansCangjie.woff2) format('woff2')`,
         group: CANTO_GROUP_CANGJIE,
       },
       "WingSansYueThai": {
-        displayName: "思源黑體 香港（泰文標注）",
+        displayName: "Wing Sans Yue Thai",
+        note: "泰文標注",
         name: "WingSansYueThai",
         source: `url(${import.meta.env.VITE_FONT_URL}/WingSansYueThai.woff2) format('woff2')`,
         group: CANTO_GROUP_SORAMIMI,
       },
       "WingSansYueKatakana": {
-        displayName: "思源黑體 香港（片假名標注）",
+        displayName: "Wing Sans Yue Katakana",
+        note: "片假名標注",
         name: "WingSansYueKatakana",
         source: `url(${import.meta.env.VITE_FONT_URL}/WingSansYueKatakana.woff2) format('woff2')`,
         group: CANTO_GROUP_SORAMIMI,
       },
       "WingSansYueHangul": {
-        displayName: "思源黑體 香港（諺文標注）",
+        displayName: "Wing Sans Yue Hangul",
+        note: "諺文標注",
         name: "WingSansYueHangul",
         source: `url(${import.meta.env.VITE_FONT_URL}/WingSansYueHangul.woff2) format('woff2')`,
         group: CANTO_GROUP_SORAMIMI,
       },
       "WingSansYueUrdu": {
-        displayName: "思源黑體 香港（烏爾都文標注）",
+        displayName: "Wing Sans Yue Urdu",
+        note: "烏爾都文標注",
         name: "WingSansYueUrdu",
         source: `url(${import.meta.env.VITE_FONT_URL}/WingSansYueUrdu.woff2) format('woff2')`,
         group: CANTO_GROUP_SORAMIMI,
@@ -441,67 +456,78 @@ export const AVAILABLE_FONTS: FontSet = {
       // The FontPicker dropdown surfaces both — HK Sans first (as
       // the default), Chiron Sung after.
       "WingSerifYueJyutping": {
-        displayName: "昭源宋體（粵拼）",
+        displayName: "Wing Serif Yue Jyutping",
+        note: "粵拼",
         name: "WingSerifYueJyutping",
         source: `url(${import.meta.env.VITE_FONT_URL}/WingSerifYueJyutping.woff2) format('woff2')`,
         group: CANTO_GROUP_JYUTPING,
       },
       "WingSerifYueYale": {
-        displayName: "昭源宋體（耶魯拼音）",
+        displayName: "Wing Serif Yue Yale",
+        note: "耶魯拼音",
         name: "WingSerifYueYale",
         source: `url(${import.meta.env.VITE_FONT_URL}/WingSerifYueYale.woff2) format('woff2')`,
         group: CANTO_GROUP_YALE,
       },
       "WingSerifYueLau": {
-        displayName: "昭源宋體（劉錫祥）",
+        displayName: "Wing Serif Yue Lau",
+        note: "劉錫祥",
         name: "WingSerifYueLau",
         source: `url(${import.meta.env.VITE_FONT_URL}/WingSerifYueLau.woff2) format('woff2')`,
         group: CANTO_GROUP_LAU,
       },
       "WingSerifYueWong": {
-        displayName: "昭源宋體（黃錫凌）",
+        displayName: "Wing Serif Yue Wong",
+        note: "黃錫凌",
         name: "WingSerifYueWong",
         source: `url(${import.meta.env.VITE_FONT_URL}/WingSerifYueWong.woff2) format('woff2')`,
         group: CANTO_GROUP_WONG,
       },
       "WingSerifYueGuangdong": {
-        displayName: "昭源宋體（廣州話拼音方案）",
+        displayName: "Wing Serif Yue Guangdong",
+        note: "廣州話拼音方案",
         name: "WingSerifYueGuangdong",
         source: `url(${import.meta.env.VITE_FONT_URL}/WingSerifYueGuangdong.woff2) format('woff2')`,
         group: CANTO_GROUP_GUANGDONG,
       },
       "WingSerifYueChishima": {
-        displayName: "昭源宋體（千島）",
+        displayName: "Wing Serif Yue Chishima",
+        note: "千島",
         name: "WingSerifYueChishima",
         source: `url(${import.meta.env.VITE_FONT_URL}/WingSerifYueChishima.woff2) format('woff2')`,
         group: CANTO_GROUP_CHISHIMA,
       },
       "WingSerifCangjie": {
-        displayName: "昭源宋體（倉頡）",
+        displayName: "Wing Serif Cangjie",
+        note: "倉頡",
         name: "WingSerifCangjie",
         source: `url(${import.meta.env.VITE_FONT_URL}/WingSerifCangjie.woff2) format('woff2')`,
         group: CANTO_GROUP_CANGJIE,
       },
       "WingSerifYueThai": {
-        displayName: "昭源宋體（泰文標注）",
+        displayName: "Wing Serif Yue Thai",
+        note: "泰文標注",
         name: "WingSerifYueThai",
         source: `url(${import.meta.env.VITE_FONT_URL}/WingSerifYueThai.woff2) format('woff2')`,
         group: CANTO_GROUP_SORAMIMI,
       },
       "WingSerifYueKatakana": {
-        displayName: "昭源宋體（片假名標注）",
+        displayName: "Wing Serif Yue Katakana",
+        note: "片假名標注",
         name: "WingSerifYueKatakana",
         source: `url(${import.meta.env.VITE_FONT_URL}/WingSerifYueKatakana.woff2) format('woff2')`,
         group: CANTO_GROUP_SORAMIMI,
       },
       "WingSerifYueHangul": {
-        displayName: "昭源宋體（諺文標注）",
+        displayName: "Wing Serif Yue Hangul",
+        note: "諺文標注",
         name: "WingSerifYueHangul",
         source: `url(${import.meta.env.VITE_FONT_URL}/WingSerifYueHangul.woff2) format('woff2')`,
         group: CANTO_GROUP_SORAMIMI,
       },
       "WingSerifYueUrdu": {
-        displayName: "昭源宋體（烏爾都文標注）",
+        displayName: "Wing Serif Yue Urdu",
+        note: "烏爾都文標注",
         name: "WingSerifYueUrdu",
         source: `url(${import.meta.env.VITE_FONT_URL}/WingSerifYueUrdu.woff2) format('woff2')`,
         group: CANTO_GROUP_SORAMIMI,
@@ -516,43 +542,50 @@ export const AVAILABLE_FONTS: FontSet = {
       // romanization schemes that weren't previously surfaced in
       // the showcase: Lau (劉錫祥), Guangdong PRC, and Chishima.
       "WingHandYueJyutping": {
-        displayName: "小賴字體（粵拼）",
+        displayName: "Wing Hand Yue Jyutping",
+        note: "粵拼",
         name: "WingHandYueJyutping",
         source: `url(${import.meta.env.VITE_FONT_URL}/WingHandYueJyutping.woff2) format('woff2')`,
         group: CANTO_GROUP_JYUTPING,
       },
       "WingHandYueYale": {
-        displayName: "小賴字體（耶魯拼音）",
+        displayName: "Wing Hand Yue Yale",
+        note: "耶魯拼音",
         name: "WingHandYueYale",
         source: `url(${import.meta.env.VITE_FONT_URL}/WingHandYueYale.woff2) format('woff2')`,
         group: CANTO_GROUP_YALE,
       },
       "WingHandYueLau": {
-        displayName: "小賴字體（劉錫祥）",
+        displayName: "Wing Hand Yue Lau",
+        note: "劉錫祥",
         name: "WingHandYueLau",
         source: `url(${import.meta.env.VITE_FONT_URL}/WingHandYueLau.woff2) format('woff2')`,
         group: CANTO_GROUP_LAU,
       },
       "WingHandYueWong": {
-        displayName: "小賴字體（黃錫凌）",
+        displayName: "Wing Hand Yue Wong",
+        note: "黃錫凌",
         name: "WingHandYueWong",
         source: `url(${import.meta.env.VITE_FONT_URL}/WingHandYueWong.woff2) format('woff2')`,
         group: CANTO_GROUP_WONG,
       },
       "WingHandYueGuangdong": {
-        displayName: "小賴字體（廣州話拼音方案）",
+        displayName: "Wing Hand Yue Guangdong",
+        note: "廣州話拼音方案",
         name: "WingHandYueGuangdong",
         source: `url(${import.meta.env.VITE_FONT_URL}/WingHandYueGuangdong.woff2) format('woff2')`,
         group: CANTO_GROUP_GUANGDONG,
       },
       "WingHandYueChishima": {
-        displayName: "小賴字體（千島）",
+        displayName: "Wing Hand Yue Chishima",
+        note: "千島",
         name: "WingHandYueChishima",
         source: `url(${import.meta.env.VITE_FONT_URL}/WingHandYueChishima.woff2) format('woff2')`,
         group: CANTO_GROUP_CHISHIMA,
       },
       "WingHandHeroSample": {
-        displayName: "小賴字體（首頁示範・粵拼，只含示範字）",
+        displayName: "Wing Hand Hero Sample",
+        note: "首頁示範・粵拼，只含示範字",
         name: "WingHandHeroSample",
         source: `url(${import.meta.env.VITE_FONT_URL}/WingHandHeroSample.woff2) format('woff2')`,
         group: CANTO_GROUP_JYUTPING,
@@ -563,43 +596,50 @@ export const AVAILABLE_FONTS: FontSet = {
       // transliterations) — see deploy-pages.yml matrix for the
       // exact CI invocation.
       "WingHandCangjie": {
-        displayName: "小賴字體（倉頡）",
+        displayName: "Wing Hand Cangjie",
+        note: "倉頡",
         name: "WingHandCangjie",
         source: `url(${import.meta.env.VITE_FONT_URL}/WingHandCangjie.woff2) format('woff2')`,
         group: CANTO_GROUP_CANGJIE,
       },
       "WingHandYueThai": {
-        displayName: "小賴字體（泰文標注）",
+        displayName: "Wing Hand Yue Thai",
+        note: "泰文標注",
         name: "WingHandYueThai",
         source: `url(${import.meta.env.VITE_FONT_URL}/WingHandYueThai.woff2) format('woff2')`,
         group: CANTO_GROUP_SORAMIMI,
       },
       "WingHandYueKatakana": {
-        displayName: "小賴字體（片假名標注）",
+        displayName: "Wing Hand Yue Katakana",
+        note: "片假名標注",
         name: "WingHandYueKatakana",
         source: `url(${import.meta.env.VITE_FONT_URL}/WingHandYueKatakana.woff2) format('woff2')`,
         group: CANTO_GROUP_SORAMIMI,
       },
       "WingHandYueHangul": {
-        displayName: "小賴字體（諺文標注）",
+        displayName: "Wing Hand Yue Hangul",
+        note: "諺文標注",
         name: "WingHandYueHangul",
         source: `url(${import.meta.env.VITE_FONT_URL}/WingHandYueHangul.woff2) format('woff2')`,
         group: CANTO_GROUP_SORAMIMI,
       },
       "WingHandYueUrdu": {
-        displayName: "小賴字體（烏爾都文標注）",
+        displayName: "Wing Hand Yue Urdu",
+        note: "烏爾都文標注",
         name: "WingHandYueUrdu",
         source: `url(${import.meta.env.VITE_FONT_URL}/WingHandYueUrdu.woff2) format('woff2')`,
         group: CANTO_GROUP_SORAMIMI,
       },
       "WingHandYueHindi": {
-        displayName: "小賴字體（印地文標注）",
+        displayName: "Wing Hand Yue Hindi",
+        note: "印地文標注",
         name: "WingHandYueHindi",
         source: `url(${import.meta.env.VITE_FONT_URL}/WingHandYueHindi.woff2) format('woff2')`,
         group: CANTO_GROUP_SORAMIMI,
       },
       "WingHandYuePunjabi": {
-        displayName: "小賴字體（旁遮普文標注）",
+        displayName: "Wing Hand Yue Punjabi",
+        note: "旁遮普文標注",
         name: "WingHandYuePunjabi",
         source: `url(${import.meta.env.VITE_FONT_URL}/WingHandYuePunjabi.woff2) format('woff2')`,
         group: CANTO_GROUP_SORAMIMI,
@@ -607,43 +647,50 @@ export const AVAILABLE_FONTS: FontSet = {
       // ─ Toneless / decorative (souvenir) set — Xiaolai base, tone
       // digit stripped so the script reads as clean native text.
       "WingHandYueThaiNotone": {
-        displayName: "小賴字體（泰文・無聲調）",
+        displayName: "Wing Hand Yue Thai Notone",
+        note: "泰文・無聲調",
         name: "WingHandYueThaiNotone",
         source: `url(${import.meta.env.VITE_FONT_URL}/WingHandYueThaiNotone.woff2) format('woff2')`,
         group: CANTO_GROUP_SORAMIMI,
       },
       "WingHandYueHangulNotone": {
-        displayName: "小賴字體（諺文・無聲調）",
+        displayName: "Wing Hand Yue Hangul Notone",
+        note: "諺文・無聲調",
         name: "WingHandYueHangulNotone",
         source: `url(${import.meta.env.VITE_FONT_URL}/WingHandYueHangulNotone.woff2) format('woff2')`,
         group: CANTO_GROUP_SORAMIMI,
       },
       "WingHandYueKatakanaNotone": {
-        displayName: "小賴字體（片假名・無聲調）",
+        displayName: "Wing Hand Yue Katakana Notone",
+        note: "片假名・無聲調",
         name: "WingHandYueKatakanaNotone",
         source: `url(${import.meta.env.VITE_FONT_URL}/WingHandYueKatakanaNotone.woff2) format('woff2')`,
         group: CANTO_GROUP_SORAMIMI,
       },
       "WingHandYueBaybayinNotone": {
-        displayName: "小賴字體（貝貝因・無聲調）",
+        displayName: "Wing Hand Yue Baybayin Notone",
+        note: "貝貝因・無聲調",
         name: "WingHandYueBaybayinNotone",
         source: `url(${import.meta.env.VITE_FONT_URL}/WingHandYueBaybayinNotone.woff2) format('woff2')`,
         group: CANTO_GROUP_SORAMIMI,
       },
       "WingHandYueUrduNotone": {
-        displayName: "小賴字體（烏爾都文・無聲調）",
+        displayName: "Wing Hand Yue Urdu Notone",
+        note: "烏爾都文・無聲調",
         name: "WingHandYueUrduNotone",
         source: `url(${import.meta.env.VITE_FONT_URL}/WingHandYueUrduNotone.woff2) format('woff2')`,
         group: CANTO_GROUP_SORAMIMI,
       },
       "WingHandYueHindiNotone": {
-        displayName: "小賴字體（印地文・無聲調）",
+        displayName: "Wing Hand Yue Hindi Notone",
+        note: "印地文・無聲調",
         name: "WingHandYueHindiNotone",
         source: `url(${import.meta.env.VITE_FONT_URL}/WingHandYueHindiNotone.woff2) format('woff2')`,
         group: CANTO_GROUP_SORAMIMI,
       },
       "WingHandYuePunjabiNotone": {
-        displayName: "小賴字體（旁遮普文・無聲調）",
+        displayName: "Wing Hand Yue Punjabi Notone",
+        note: "旁遮普文・無聲調",
         name: "WingHandYuePunjabiNotone",
         source: `url(${import.meta.env.VITE_FONT_URL}/WingHandYuePunjabiNotone.woff2) format('woff2')`,
         group: CANTO_GROUP_SORAMIMI,
@@ -668,23 +715,27 @@ export const AVAILABLE_FONTS: FontSet = {
       // Tâi-lô and 白話字. The 優勢腔 is the MOE prestige/"common"
       // reading; it is NOT any single one of the nine survey points below.
       "WingSansTaigiTailo": {
-        displayName: "思源黑體（台羅・優勢腔）",
+        displayName: "Wing Sans Taigi Tailo",
+        note: "台羅・優勢腔",
         name: "WingSansTaigiTailo",
         source: `url(${import.meta.env.VITE_FONT_URL}/WingSansTaigiTailo.woff2) format('woff2')`,
       },
       "WingSansTaigiPOJ": {
-        displayName: "思源黑體（白話字・優勢腔）",
+        displayName: "Wing Sans Taigi POJ",
+        note: "白話字・優勢腔",
         name: "WingSansTaigiPOJ",
         source: `url(${import.meta.env.VITE_FONT_URL}/WingSansTaigiPOJ.woff2) format('woff2')`,
       },
       // 優勢腔 standard on the Xiaolai handwritten 楷書 base.
       "WingHandTaigiPOJ": {
-        displayName: "小賴字體（白話字・優勢腔）",
+        displayName: "Wing Hand Taigi POJ",
+        note: "白話字・優勢腔",
         name: "WingHandTaigiPOJ",
         source: `url(${import.meta.env.VITE_FONT_URL}/WingHandTaigiPOJ.woff2) format('woff2')`,
       },
       "WingHandTaigiTailo": {
-        displayName: "小賴字體（台羅・優勢腔）",
+        displayName: "Wing Hand Taigi Tailo",
+        note: "台羅・優勢腔",
         name: "WingHandTaigiTailo",
         source: `url(${import.meta.env.VITE_FONT_URL}/WingHandTaigiTailo.woff2) format('woff2')`,
       },
@@ -693,107 +744,128 @@ export const AVAILABLE_FONTS: FontSet = {
       // (雞 ke/kue/kere, 飯 pn̄g/puīnn) are real here; the entries above
       // are the 優勢腔 standard, which is not one of these nine points.
       "WingSansTaigiTailoTaipak": {
-        displayName: "思源黑體（台北腔）",
+        displayName: "Wing Sans Taigi Tailo Taipak",
+        note: "台北腔",
         name: "WingSansTaigiTailoTaipak",
         source: `url(${import.meta.env.VITE_FONT_URL}/WingSansTaigiTailoTaipak.woff2) format('woff2')`,
       },
       "WingHandTaigiTailoTaipak": {
-        displayName: "小賴字體（台北腔）",
+        displayName: "Wing Hand Taigi Tailo Taipak",
+        note: "台北腔",
         name: "WingHandTaigiTailoTaipak",
         source: `url(${import.meta.env.VITE_FONT_URL}/WingHandTaigiTailoTaipak.woff2) format('woff2')`,
       },
       "WingSansTaigiTailoSannkiap": {
-        displayName: "思源黑體（三峽腔）",
+        displayName: "Wing Sans Taigi Tailo Sannkiap",
+        note: "三峽腔",
         name: "WingSansTaigiTailoSannkiap",
         source: `url(${import.meta.env.VITE_FONT_URL}/WingSansTaigiTailoSannkiap.woff2) format('woff2')`,
       },
       "WingHandTaigiTailoSannkiap": {
-        displayName: "小賴字體（三峽腔）",
+        displayName: "Wing Hand Taigi Tailo Sannkiap",
+        note: "三峽腔",
         name: "WingHandTaigiTailoSannkiap",
         source: `url(${import.meta.env.VITE_FONT_URL}/WingHandTaigiTailoSannkiap.woff2) format('woff2')`,
       },
       "WingSansTaigiTailoSintik": {
-        displayName: "思源黑體（新竹腔）",
+        displayName: "Wing Sans Taigi Tailo Sintik",
+        note: "新竹腔",
         name: "WingSansTaigiTailoSintik",
         source: `url(${import.meta.env.VITE_FONT_URL}/WingSansTaigiTailoSintik.woff2) format('woff2')`,
       },
       "WingHandTaigiTailoSintik": {
-        displayName: "小賴字體（新竹腔）",
+        displayName: "Wing Hand Taigi Tailo Sintik",
+        note: "新竹腔",
         name: "WingHandTaigiTailoSintik",
         source: `url(${import.meta.env.VITE_FONT_URL}/WingHandTaigiTailoSintik.woff2) format('woff2')`,
       },
       "WingSansTaigiTailoTaitiong": {
-        displayName: "思源黑體（台中腔）",
+        displayName: "Wing Sans Taigi Tailo Taitiong",
+        note: "台中腔",
         name: "WingSansTaigiTailoTaitiong",
         source: `url(${import.meta.env.VITE_FONT_URL}/WingSansTaigiTailoTaitiong.woff2) format('woff2')`,
       },
       "WingHandTaigiTailoTaitiong": {
-        displayName: "小賴字體（台中腔）",
+        displayName: "Wing Hand Taigi Tailo Taitiong",
+        note: "台中腔",
         name: "WingHandTaigiTailoTaitiong",
         source: `url(${import.meta.env.VITE_FONT_URL}/WingHandTaigiTailoTaitiong.woff2) format('woff2')`,
       },
       "WingSansTaigiTailoLokkang": {
-        displayName: "思源黑體（鹿港腔）",
+        displayName: "Wing Sans Taigi Tailo Lokkang",
+        note: "鹿港腔",
         name: "WingSansTaigiTailoLokkang",
         source: `url(${import.meta.env.VITE_FONT_URL}/WingSansTaigiTailoLokkang.woff2) format('woff2')`,
       },
       "WingHandTaigiTailoLokkang": {
-        displayName: "小賴字體（鹿港腔）",
+        displayName: "Wing Hand Taigi Tailo Lokkang",
+        note: "鹿港腔",
         name: "WingHandTaigiTailoLokkang",
         source: `url(${import.meta.env.VITE_FONT_URL}/WingHandTaigiTailoLokkang.woff2) format('woff2')`,
       },
       "WingSansTaigiTailoTailam": {
-        displayName: "思源黑體（台南腔）",
+        displayName: "Wing Sans Taigi Tailo Tailam",
+        note: "台南腔",
         name: "WingSansTaigiTailoTailam",
         source: `url(${import.meta.env.VITE_FONT_URL}/WingSansTaigiTailoTailam.woff2) format('woff2')`,
       },
       "WingHandTaigiTailoTailam": {
-        displayName: "小賴字體（台南腔）",
+        displayName: "Wing Hand Taigi Tailo Tailam",
+        note: "台南腔",
         name: "WingHandTaigiTailoTailam",
         source: `url(${import.meta.env.VITE_FONT_URL}/WingHandTaigiTailoTailam.woff2) format('woff2')`,
       },
       "WingSansTaigiTailoKohiong": {
-        displayName: "思源黑體（高雄腔）",
+        displayName: "Wing Sans Taigi Tailo Kohiong",
+        note: "高雄腔",
         name: "WingSansTaigiTailoKohiong",
         source: `url(${import.meta.env.VITE_FONT_URL}/WingSansTaigiTailoKohiong.woff2) format('woff2')`,
       },
       "WingHandTaigiTailoKohiong": {
-        displayName: "小賴字體（高雄腔）",
+        displayName: "Wing Hand Taigi Tailo Kohiong",
+        note: "高雄腔",
         name: "WingHandTaigiTailoKohiong",
         source: `url(${import.meta.env.VITE_FONT_URL}/WingHandTaigiTailoKohiong.woff2) format('woff2')`,
       },
       "WingSansTaigiTailoGilan": {
-        displayName: "思源黑體（宜蘭腔）",
+        displayName: "Wing Sans Taigi Tailo Gilan",
+        note: "宜蘭腔",
         name: "WingSansTaigiTailoGilan",
         source: `url(${import.meta.env.VITE_FONT_URL}/WingSansTaigiTailoGilan.woff2) format('woff2')`,
       },
       "WingHandTaigiTailoGilan": {
-        displayName: "小賴字體（宜蘭腔）",
+        displayName: "Wing Hand Taigi Tailo Gilan",
+        note: "宜蘭腔",
         name: "WingHandTaigiTailoGilan",
         source: `url(${import.meta.env.VITE_FONT_URL}/WingHandTaigiTailoGilan.woff2) format('woff2')`,
       },
       "WingSansTaigiTailoManking": {
-        displayName: "思源黑體（馬公腔）",
+        displayName: "Wing Sans Taigi Tailo Manking",
+        note: "馬公腔",
         name: "WingSansTaigiTailoManking",
         source: `url(${import.meta.env.VITE_FONT_URL}/WingSansTaigiTailoManking.woff2) format('woff2')`,
       },
       "WingHandTaigiTailoManking": {
-        displayName: "小賴字體（馬公腔）",
+        displayName: "Wing Hand Taigi Tailo Manking",
+        note: "馬公腔",
         name: "WingHandTaigiTailoManking",
         source: `url(${import.meta.env.VITE_FONT_URL}/WingHandTaigiTailoManking.woff2) format('woff2')`,
       },
       "WingSansTaigiTPS": {
-        displayName: "思源黑體（方音符號）",
+        displayName: "Wing Sans Taigi TPS",
+        note: "方音符號",
         name: "WingSansTaigiTPS",
         source: `url(${import.meta.env.VITE_FONT_URL}/WingSansTaigiTPS.woff2) format('woff2')`,
       },
       "WingSansTaigiKana": {
-        displayName: "思源黑體（台灣語假名）",
+        displayName: "Wing Sans Taigi Kana",
+        note: "台灣語假名",
         name: "WingSansTaigiKana",
         source: `url(${import.meta.env.VITE_FONT_URL}/WingSansTaigiKana.woff2) format('woff2')`,
       },
       "WingHandHeroTailo": {
-        displayName: "小賴字體（首頁示範・台羅，只含示範字）",
+        displayName: "Wing Hand Hero Tailo",
+        note: "首頁示範・台羅，只含示範字",
         name: "WingHandHeroTailo",
         source: `url(${import.meta.env.VITE_FONT_URL}/WingHandHeroTailo.woff2) format('woff2')`,
       },
@@ -816,28 +888,33 @@ export const AVAILABLE_FONTS: FontSet = {
     },
     fonts: {
       "WingSansTeochewPengim": {
-        displayName: "思源黑體（潮拼）",
+        displayName: "Wing Sans Teochew Pengim",
+        note: "潮拼",
         name: "WingSansTeochewPengim",
         source: `url(${import.meta.env.VITE_FONT_URL}/WingSansTeochewPengim.woff2) format('woff2')`,
       },
       "WingSansTeochewPUJ": {
-        displayName: "思源黑體（潮州白話字）",
+        displayName: "Wing Sans Teochew PUJ",
+        note: "潮州白話字",
         name: "WingSansTeochewPUJ",
         source: `url(${import.meta.env.VITE_FONT_URL}/WingSansTeochewPUJ.woff2) format('woff2')`,
       },
       // Xiaolai handwritten companions for Teochew.
       "WingHandTeochewPengim": {
-        displayName: "小賴字體（潮拼）",
+        displayName: "Wing Hand Teochew Pengim",
+        note: "潮拼",
         name: "WingHandTeochewPengim",
         source: `url(${import.meta.env.VITE_FONT_URL}/WingHandTeochewPengim.woff2) format('woff2')`,
       },
       "WingHandTeochewPUJ": {
-        displayName: "小賴字體（潮州白話字）",
+        displayName: "Wing Hand Teochew PUJ",
+        note: "潮州白話字",
         name: "WingHandTeochewPUJ",
         source: `url(${import.meta.env.VITE_FONT_URL}/WingHandTeochewPUJ.woff2) format('woff2')`,
       },
       "WingHandHeroPengim": {
-        displayName: "小賴字體（首頁示範・潮拼，只含示範字）",
+        displayName: "Wing Hand Hero Pengim",
+        note: "首頁示範・潮拼，只含示範字",
         name: "WingHandHeroPengim",
         source: `url(${import.meta.env.VITE_FONT_URL}/WingHandHeroPengim.woff2) format('woff2')`,
       },
@@ -864,32 +941,38 @@ export const AVAILABLE_FONTS: FontSet = {
     },
     fonts: {
       "WingSansGuoyuPinyin": {
-        displayName: "思源黑體 台灣（拼音調符 · 國語・教育部辭典）",
+        displayName: "Wing Sans Guoyu Pinyin",
+        note: "拼音調符・國語・教育部辭典",
         name: "WingSansGuoyuPinyin",
         source: `url(${import.meta.env.VITE_FONT_URL}/WingSansGuoyuPinyin.woff2) format('woff2')`,
       },
       "WingSansGuoyuZhuyin": {
-        displayName: "思源黑體 台灣（注音 · 國語・教育部辭典）",
+        displayName: "Wing Sans Guoyu Zhuyin",
+        note: "注音・國語・教育部辭典",
         name: "WingSansGuoyuZhuyin",
         source: `url(${import.meta.env.VITE_FONT_URL}/WingSansGuoyuZhuyin.woff2) format('woff2')`,
       },
       "WingHandGuoyuPinyin": {
-        displayName: "小賴字體（拼音調符 · 國語・教育部辭典）",
+        displayName: "Wing Hand Guoyu Pinyin",
+        note: "拼音調符・國語・教育部辭典",
         name: "WingHandGuoyuPinyin",
         source: `url(${import.meta.env.VITE_FONT_URL}/WingHandGuoyuPinyin.woff2) format('woff2')`,
       },
       "WingSerifPutonghuaPinyin": {
-        displayName: "思源宋體（拼音調符 · 普通話）",
+        displayName: "Wing Serif Putonghua Pinyin",
+        note: "拼音調符・普通話",
         name: "WingSerifPutonghuaPinyin",
         source: `url(${import.meta.env.VITE_FONT_URL}/WingSerifPutonghuaPinyin.woff2) format('woff2')`,
       },
       "WingSansPutonghuaPinyin": {
-        displayName: "思源黑體 簡體（拼音調符 · 普通話）",
+        displayName: "Wing Sans Putonghua Pinyin",
+        note: "拼音調符・普通話",
         name: "WingSansPutonghuaPinyin",
         source: `url(${import.meta.env.VITE_FONT_URL}/WingSansPutonghuaPinyin.woff2) format('woff2')`,
       },
       "WingHandPutonghuaPinyin": {
-        displayName: "小賴字體（拼音調符 · 普通話）",
+        displayName: "Wing Hand Putonghua Pinyin",
+        note: "拼音調符・普通話",
         name: "WingHandPutonghuaPinyin",
         source: `url(${import.meta.env.VITE_FONT_URL}/WingHandPutonghuaPinyin.woff2) format('woff2')`,
       },
@@ -909,7 +992,8 @@ export const AVAILABLE_FONTS: FontSet = {
     },
     fonts: {
       "WingSansThaiTCAHK": {
-        displayName: "Google Sans 泰文（香港泰國文化協會拼音）",
+        displayName: "Wing Sans Thai TCAHK",
+        note: "香港泰國文化協會拼音",
         name: "WingSansThaiTCAHK",
         source: `url(${import.meta.env.VITE_FONT_URL}/WingSansThaiTCAHK.woff2) format('woff2')`,
       },
@@ -926,7 +1010,8 @@ export const AVAILABLE_FONTS: FontSet = {
     },
     fonts: {
       "WingSansInuktitutRoman": {
-        displayName: "Noto Sans 因紐特文（qaniujaaqpait 拼寫）",
+        displayName: "Wing Sans Inuktitut Roman",
+        note: "qaniujaaqpait 拼寫",
         name: "WingSansInuktitutRoman",
         source: `url(${import.meta.env.VITE_FONT_URL}/WingSansInuktitutRoman.woff2) format('woff2')`,
       },
@@ -953,7 +1038,8 @@ export const AVAILABLE_FONTS: FontSet = {
     },
     fonts: {
       "WingSansArabicDIN31635": {
-        displayName: "Noto Sans Arabic（DIN 31635 罗马字）",
+        displayName: "Wing Sans Arabic DIN31635",
+        note: "DIN 31635 羅馬字",
         name: "WingSansArabicDIN31635",
         source: `url(${import.meta.env.VITE_FONT_URL}/WingSansArabicDIN31635.woff2) format('woff2')`,
       },
@@ -977,12 +1063,14 @@ export const AVAILABLE_FONTS: FontSet = {
     },
     fonts: {
       "WingSansJapaneseFurigana": {
-        displayName: "思源黑體 日本（仮名 · 音訓読み）",
+        displayName: "Wing Sans Japanese Furigana",
+        note: "仮名・音訓読み",
         name: "WingSansJapaneseFurigana",
         source: `url(${import.meta.env.VITE_FONT_URL}/WingSansJapaneseFurigana.woff2) format('woff2')`,
       },
       "WingHandJapaneseFurigana": {
-        displayName: "小賴字體（仮名 · 音訓読み）",
+        displayName: "Wing Hand Japanese Furigana",
+        note: "仮名・音訓読み",
         name: "WingHandJapaneseFurigana",
         source: `url(${import.meta.env.VITE_FONT_URL}/WingHandJapaneseFurigana.woff2) format('woff2')`,
       },
@@ -995,7 +1083,8 @@ export const AVAILABLE_FONTS: FontSet = {
     },
     fonts: {
       "WingSansHindiRoman": {
-        displayName: "Hind（ISO 15919 罗马字）",
+        displayName: "Wing Sans Hindi Roman",
+        note: "ISO 15919 羅馬字",
         name: "WingSansHindiRoman",
         source: `url(${import.meta.env.VITE_FONT_URL}/WingSansHindiRoman.woff2) format('woff2')`,
       },

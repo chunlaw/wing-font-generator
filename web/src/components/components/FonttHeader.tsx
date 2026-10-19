@@ -7,6 +7,7 @@ import { useRecentFonts } from "../../RecentFontsContext";
 interface FontHeaderProps {
   family: string;
   displayName: string;
+  note?: string;
   idx?: number;
 }
 
@@ -30,7 +31,7 @@ interface FontHeaderProps {
  *   directly. Both paths surface to the user as identical pill
  *   buttons — the source switch is invisible.
  */
-export const FontHeader = ({ family, displayName, idx }: FontHeaderProps) => {
+export const FontHeader = ({ family, displayName, note, idx }: FontHeaderProps) => {
   const { removePickedFont } = useContext(AppContext);
   const { entries: recentEntries, remove: removeRecentFont } = useRecentFonts();
 
@@ -168,7 +169,7 @@ export const FontHeader = ({ family, displayName, idx }: FontHeaderProps) => {
       // header" reading.
       //
       // Mobile (xs): switch to column. Some font displayNames are
-      // long (e.g. 「思源黑體 香港（香港語言學會）」) and on a
+      // long (e.g. 「Wing Sans Yue Jyutping Marks」) and on a
       // ~360 px viewport there isn't room for that plus two
       // download buttons on one row. Previously the row used
       // flex-wrap, which let the buttons orphan onto a second row
@@ -181,6 +182,11 @@ export const FontHeader = ({ family, displayName, idx }: FontHeaderProps) => {
     >
       <Box display="flex" gap={1} alignItems="center">
         {displayName}
+        {note && (
+          <Box component="span" sx={{ color: "text.secondary" }}>
+            {note}
+          </Box>
+        )}
         {idx !== undefined && (
           <>
             {/*

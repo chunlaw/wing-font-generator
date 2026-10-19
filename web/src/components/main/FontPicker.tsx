@@ -25,13 +25,12 @@
  *   AppContext / RecentFontsContext / useTranslation reads can
  *   cause a re-render.
  *
- * Why the filename caption + filename search:
- *   Catalogue fonts have a Chinese-only `displayName`, opaque to a user
- *   who doesn't read Chinese. Each option therefore also shows its Latin
- *   filename (`name`, e.g. WingSansYueHangul) as a dimmed caption
- *   line, and that filename is folded into the Autocomplete filter so
- *   typing "korean" / "thai" finds the font without Chinese input. Both
- *   are gated to catalogue fonts — user fonts' `name` is an opaque id.
+ * Why the note caption + note search:
+ *   Catalogue fonts' `displayName` is the English family name users pick
+ *   in Word (e.g. Wing Sans Yue Hangul). Each option also shows its
+ *   Chinese `note` (e.g. 諺文標注) as a dimmed caption line, and the note
+ *   is folded into the Autocomplete filter so typing either 諺文 or
+ *   "hangul" finds the font. User fonts have no note.
  *
  * Why useMemo on the option arrays:
  *   Belt-and-braces for the same reason. Even with React.memo, if
@@ -71,6 +70,8 @@ interface FontPickOption {
   name: string;
   /** Display copy shown in the listbox + the input. */
   displayName: string;
+  /** Chinese description caption (catalogue fonts only). */
+  note?: string;
   /** Optional grouping label for Autocomplete's `groupBy`. */
   group?: string;
 }
@@ -150,6 +151,7 @@ const FontPicker = () => {
       .map((opt) => ({
         name: opt.name,
         displayName: opt.displayName,
+        note: opt.note,
         group: opt.group,
       }));
   }, [state.lang, recentEntries]);
@@ -170,27 +172,14 @@ const FontPicker = () => {
   const selectedFont =
     fontOptions.find((f) => f.name === state.fontName) ?? undefined;
 
-  // Built-in catalogue fonts carry a Chinese-only `displayName`
-  // (e.g. 思源黑體 香港（諺文標注）) — unreadable to a user who doesn't
-  // read Chinese. The `name` is the Latin filename
-  // (WingSansYueHangul), which encodes base font + annotation +
-  // variant and is far more guessable. We surface it as a dimmed
-  // caption line under each option (see renderOption below) AND fold it
-  // into the search text here, so typing "korean" / "thai" reaches the
-  // font even without Chinese input.
-  //
-  // User fonts are excluded from both: their `name` is an opaque id, not
-  // a filename, so a caption / search match on it would be noise.
-  const isUserFontsDialect = state.lang === USER_FONTS_GROUP_KEY;
+  // Search the English family name plus the Chinese note, so either
+  // "hangul" or 諺文 reaches the font (see renderOption for the caption).
   const filterFontOptions = useMemo(
     () =>
       createFilterOptions<FontPickOption>({
-        stringify: (opt) =>
-          isUserFontsDialect
-            ? opt.displayName
-            : `${opt.displayName} ${opt.name}`,
+        stringify: (opt) => `${opt.displayName} ${opt.note ?? ""}`,
       }),
-    [isUserFontsDialect],
+    [],
   );
 
   // Keep `state.fontName` valid when the user-fonts list mutates
@@ -285,15 +274,12 @@ const FontPicker = () => {
         }}
         getOptionLabel={(opt) => opt.displayName}
         isOptionEqualToValue={(opt, value) => opt.name === value.name}
-        // Match on displayName + Latin filename (see filterFontOptions)
-        // so the font is reachable without typing Chinese.
+        // Match on displayName + Chinese note (see filterFontOptions).
         filterOptions={filterFontOptions}
         groupBy={(opt) => opt.group ?? ""}
-        // Two-line option: the (Chinese) displayName, plus a dimmed
-        // monospace caption with the filename so a foreign user can
-        // guess what the font is. Caption suppressed for user fonts
-        // (their `name` is an opaque id). The input box still shows
-        // only displayName via getOptionLabel.
+        // Two-line option: the family name, plus the dimmed Chinese
+        // note when there is one. The input box still shows only
+        // displayName via getOptionLabel.
         renderOption={(props, option) => {
           // MUI v6 puts `key` in `props`; it must be passed directly,
           // not spread, or React warns.
@@ -314,17 +300,13 @@ const FontPicker = () => {
               <Typography variant="body2" component="span">
                 {option.displayName}
               </Typography>
-              {!isUserFontsDialect && (
+              {option.note && (
                 <Typography
                   variant="caption"
                   component="span"
-                  sx={{
-                    color: "text.secondary",
-                    fontFamily: "monospace",
-                    lineHeight: 1.3,
-                  }}
+                  sx={{ color: "text.secondary", lineHeight: 1.3 }}
                 >
-                  {option.name}
+                  {option.note}
                 </Typography>
               )}
             </Box>
