@@ -61,12 +61,12 @@ def test_font_version():
 
 def test_family_name_full_name_and_no_stale_typographic_names():
     f = _font("(c) Base", "D", "Proprietary")
-    for i, v in ((4, "Noto Sans HK"), (16, "Noto Sans HK"), (17, "Thin")):
+    for i, v in ((4, "Noto Sans HK"), (16, "Noto Sans HK"), (17, "Thin"), (25, "NotoSansHK")):
         f["name"].setName(v, i, 3, 1, 0x409)
     set_family_name(f, "Wing Sans Yue Jyutping")
     assert _n(f, 1) == "Wing Sans Yue Jyutping"
     assert _n(f, 4) == "Wing Sans Yue Jyutping Regular"
-    assert _n(f, 16) is None and _n(f, 17) is None
+    assert _n(f, 16) is None and _n(f, 17) is None and _n(f, 25) is None
     assert "\n" not in _n(f, 0)
 
 

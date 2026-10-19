@@ -460,6 +460,7 @@ def set_family_name(font, new_family_name):
                                      for PS names.
       * 16 Typographic Family      ← new family; for RIBBI styles
                                      16/17 are removed instead
+      * 25 Variations PS Prefix    ← removed when the output is static
 
     Earlier attempts to rewrite NameID 3 caused Word-rendering
     regressions, eventually traced to the LF_FACESIZE family-name
@@ -504,6 +505,10 @@ def set_family_name(font, new_family_name):
         table.removeNames(nameID=17)
     else:
         name_id_to_value[16] = new_family_name  # Typographic Family
+    if "fvar" not in font:
+        # 25 (Variations PS Name Prefix) is VF-only; a static output would
+        # otherwise keep the base's "NotoSansHK".
+        table.removeNames(nameID=25)
 
     for plat_id, enc_id, lang_id in (WINDOWS_ENGLISH_IDS, MAC_ROMAN_IDS):
         for name_id, value in name_id_to_value.items():
