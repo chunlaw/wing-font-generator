@@ -53,6 +53,7 @@ import TypographyControls, {
   type TypographySettings,
 } from "../components/TypographyControls";
 import { effectiveDir } from "../utils/textDirection";
+import { toFullWidth } from "../utils/fullWidth";
 
 // Showcase-specific default: 48 px — matches the previous
 // md-breakpoint rendering, generous enough that the annotation
@@ -433,18 +434,27 @@ const Main = () => {
         chrome, and the historical "new card prepended to the top
         of the list" behaviour on both breakpoints.
        */}
-      <TextField
-        label={t("showcase.tryIt")}
-        value={msg}
-        onChange={({ target: { value } }) => setMsg(value)}
-        fullWidth
-        // This input feeds every card below, so its direction
-        // tracks the typed text only — no font-dialect hint. An
-        // empty field is LTR; the first strong-RTL keystroke flips
-        // it to RTL. effectiveDir is cheap on short inputs; for the
-        // "Try it" field the text rarely exceeds a few words.
-        slotProps={{ htmlInput: { dir: effectiveDir(msg) } }}
-      />
+      <Box sx={{ display: "flex", gap: 1, width: "100%", alignItems: "center" }}>
+        <TextField
+          label={t("showcase.tryIt")}
+          value={msg}
+          onChange={({ target: { value } }) => setMsg(value)}
+          fullWidth
+          // This input feeds every card below, so its direction
+          // tracks the typed text only — no font-dialect hint. An
+          // empty field is LTR; the first strong-RTL keystroke flips
+          // it to RTL. effectiveDir is cheap on short inputs; for the
+          // "Try it" field the text rarely exceeds a few words.
+          slotProps={{ htmlInput: { dir: effectiveDir(msg) } }}
+        />
+        <Button
+          variant="outlined"
+          onClick={() => setMsg(toFullWidth(msg))}
+          sx={{ flexShrink: 0, whiteSpace: "nowrap" }}
+        >
+          {t("common.toFullWidth")}
+        </Button>
+      </Box>
       <FontPicker />
       {/*
         Secondary-actions row. Right-aligned so the FontPicker

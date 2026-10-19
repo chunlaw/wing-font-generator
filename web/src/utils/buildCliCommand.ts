@@ -3,7 +3,7 @@
  *
  * Given the same generation parameters the in-browser flow hands to the
  * Pyodide runner, produces the equivalent `python wing-font.py …` shell
- * command. Used by Step 3 to show users what the build is about to do
+ * command. Used by Step 4 to show users what the build is about to do
  * BEFORE they trigger it: a copy-paste-runnable command they can use
  * locally to reproduce the same output (substituting their own font
  * paths if they uploaded customs).
@@ -79,7 +79,7 @@ export interface BuildCliCommandInput {
    *  `"canto-lshk"`). For user-supplied custom CSVs, `null` →
    *  `mapping.csv` placeholder. */
   mappingPresetKey: string | null;
-  /** All Step 3 dials (familyName, baseScale, …, outAscent). */
+  /** All Step 4 dials (familyName, baseScale, …, outAscent). */
   params: GenerateParams;
   /** Variable-font axis pin for the base font, if any. */
   baseAxisLocation?: AxisLocation;
@@ -184,6 +184,9 @@ export function buildCliCommand({
   ) {
     parts.push(`--out-ascent ${Math.round(params.outAscent)}`);
   }
+  // The web build never produces WOFF2, so the copied command skips
+  // the slow WOFF2 encode by default too.
+  parts.push("--no-woff2");
   if (diyPath) {
     parts.push(`--diy-annotations ${shellQuote(diyPath)}`);
   }

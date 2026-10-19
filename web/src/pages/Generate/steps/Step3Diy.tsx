@@ -41,7 +41,7 @@ function summarise(csv: string): { count: number; input: string; anno: string } 
   return { count, input: first?.[0] ?? "", anno: first?.[1] ?? "" };
 }
 
-const StepDiy = () => {
+const Step3Diy = () => {
   const { t } = useTranslation();
   const {
     diyCsvText,
@@ -87,9 +87,9 @@ const StepDiy = () => {
   return (
     <Stack spacing={2}>
       <Box>
-        <Typography variant="h6">{t("stepDiy.title")}</Typography>
+        <Typography variant="h6">{t("step3.title")}</Typography>
         <Typography variant="body2" color="text.secondary">
-          {t("stepDiy.description")}
+          {t("step3.description")}
         </Typography>
       </Box>
 
@@ -97,14 +97,14 @@ const StepDiy = () => {
 
       <Stack direction={{ xs: "column", sm: "row" }} spacing={2} alignItems={{ sm: "center" }}>
         <FormControl size="small" sx={{ minWidth: 320 }}>
-          <InputLabel id="diy-preset-label">{t("stepDiy.preset")}</InputLabel>
+          <InputLabel id="diy-preset-label">{t("step3.preset")}</InputLabel>
           <Select
             labelId="diy-preset-label"
-            label={t("stepDiy.preset")}
+            label={t("step3.preset")}
             value={selectValue}
             onChange={(e) => handlePreset(e.target.value)}
           >
-            <MenuItem value="">{t("stepDiy.none")}</MenuItem>
+            <MenuItem value="">{t("step3.none")}</MenuItem>
             {BUILT_IN_DIY.map((p) => (
               <MenuItem key={p.key} value={p.key}>
                 {p.label}
@@ -112,31 +112,31 @@ const StepDiy = () => {
             ))}
             {selectValue === CUSTOM && (
               <MenuItem value={CUSTOM} disabled>
-                {t("stepDiy.custom")}
+                {t("step3.custom")}
               </MenuItem>
             )}
           </Select>
         </FormControl>
         <Button variant="outlined" component="label" size="small">
-          {t("stepDiy.upload")}
+          {t("step3.upload")}
           <input hidden type="file" accept=".csv,text/csv" onChange={handleImport} />
         </Button>
         {diyCsvText && (
           <Button size="small" color="inherit" onClick={() => handlePreset("")}>
-            {t("stepDiy.clear")}
+            {t("step3.clear")}
           </Button>
         )}
       </Stack>
 
       {summary && (
         <Alert severity={summary.count ? "success" : "warning"}>
-          {t("stepDiy.loaded")
+          {t("step3.loaded")
             .replace("{name}", diyName ?? "")
             .replace("{count}", summary.count.toLocaleString())}
           {summary.count > 0 && (
             <>
               <br />
-              {t("stepDiy.example")
+              {t("step3.example")
                 .replace("{input}", `行０${summary.input}`)
                 .replace("{anno}", summary.anno)}
             </>
@@ -145,14 +145,14 @@ const StepDiy = () => {
       )}
 
       {diyCsvText && !params.optimize && (
-        <Alert severity="warning">{t("stepDiy.needsOptimize")}</Alert>
+        <Alert severity="warning">{t("step3.needsOptimize")}</Alert>
       )}
 
       <Typography variant="caption" color="text.secondary">
-        {t("stepDiy.format")}
+        {t("step3.format")}
       </Typography>
     </Stack>
   );
 };
 
-export default StepDiy;
+export default Step3Diy;

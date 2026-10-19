@@ -1,5 +1,5 @@
 /**
- * Step 5 — preview the generated font + download TTF/WOFF.
+ * Step 6 — preview the generated font + download TTF/WOFF.
  *
  * Reads `result` from GenerateContext. The WOFF was already installed
  * into document.fonts by the context's generate() action, so the preview
@@ -29,6 +29,7 @@ import { useTranslation } from "../../../i18n/LanguageContext";
 import { useRecentFonts } from "../../../RecentFontsContext";
 import Markdown from "../../../components/Markdown";
 import { dirForText, isRtlText } from "../../../utils/textDirection";
+import { toFullWidth } from "../../../utils/fullWidth";
 
 /**
  * Wrap each ligature-trigger group (`字1`, `字23`, `字丅一`, …) in a
@@ -94,12 +95,12 @@ function renderWithNoBreaks(text: string): ReactNode[] {
   return parts;
 }
 
-const Step5Preview = () => {
+const Step6Preview = () => {
   const { t } = useTranslation();
   const { result, params, baseFont, annoFont, mappingsPresetKey } =
     useGenerate();
   const { save: saveRecentFont } = useRecentFonts();
-  const [sample, setSample] = useState<string>(() => t("step5.sampleText"));
+  const [sample, setSample] = useState<string>(() => t("step6.sampleText"));
   const [ttfUrl, setTtfUrl] = useState<string | null>(null);
   const [woffUrl, setWoffUrl] = useState<string | null>(null);
   const [snippetCopied, setSnippetCopied] = useState(false);
@@ -159,7 +160,7 @@ const Step5Preview = () => {
   // active locale. Without this it'd freeze to whatever locale was
   // active on first render.
   useEffect(() => {
-    setSample(t("step5.sampleText"));
+    setSample(t("step6.sampleText"));
   }, [t]);
 
   // Manage object URLs in tandem with the result blobs.
@@ -182,9 +183,9 @@ const Step5Preview = () => {
   if (!result) {
     return (
       <Box display="flex" flexDirection="column" gap={2}>
-        <Typography variant="h6">{t("step5.title")}</Typography>
+        <Typography variant="h6">{t("step6.title")}</Typography>
         <Alert severity="info" variant="outlined">
-          {t("step5.noResult")}
+          {t("step6.noResult")}
         </Alert>
       </Box>
     );
@@ -228,9 +229,9 @@ const Step5Preview = () => {
   return (
     <Box display="flex" flexDirection="column" gap={2}>
       <Box>
-        <Typography variant="h6">{t("step5.title")}</Typography>
+        <Typography variant="h6">{t("step6.title")}</Typography>
         <Typography variant="body2" color="text.secondary">
-          {t("step5.description")}
+          {t("step6.description")}
         </Typography>
       </Box>
 
@@ -242,7 +243,7 @@ const Step5Preview = () => {
             href={ttfUrl}
             download={`${baseName}.ttf`}
           >
-            {t("step5.download.ttf")}
+            {t("step6.download.ttf")}
           </Button>
         )}
         {woffUrl && (
@@ -252,7 +253,7 @@ const Step5Preview = () => {
             href={woffUrl}
             download={`${baseName}.woff`}
           >
-            {t("step5.download.woff")}
+            {t("step6.download.woff")}
           </Button>
         )}
         {/*
@@ -268,7 +269,7 @@ const Step5Preview = () => {
           startIcon={<Code />}
           onClick={() => setSnippetDialogOpen(true)}
         >
-          {t("step5.cssSnippet.button")}
+          {t("step6.cssSnippet.button")}
         </Button>
       </Stack>
 
@@ -293,12 +294,12 @@ const Step5Preview = () => {
             pr: 1,
           }}
         >
-          {t("step5.cssSnippet.title")}
+          {t("step6.cssSnippet.title")}
           <Tooltip
             title={
               snippetCopied
-                ? t("step5.cssSnippet.copied")
-                : t("step5.cssSnippet.copy")
+                ? t("step6.cssSnippet.copied")
+                : t("step6.cssSnippet.copy")
             }
             arrow
           >
@@ -339,7 +340,7 @@ const Step5Preview = () => {
           */}
           <Box sx={{ mt: 1.5 }}>
             <Markdown variant="compact">
-              {t("step5.cssSnippet.hint")}
+              {t("step6.cssSnippet.hint")}
             </Markdown>
           </Box>
           {/*
@@ -347,7 +348,7 @@ const Step5Preview = () => {
             it applies to a totally different deployment surface
             (Canva, InDesign, Word, etc. — where the font is uploaded
             as a desktop font, not @font-face'd). Surfaced here
-            because Step 5 is the moment users decide what to do with
+            because Step 6 is the moment users decide what to do with
             the file they just downloaded; both CSS and design-app
             usage start from the same TTF/WOFF.
 
@@ -362,7 +363,7 @@ const Step5Preview = () => {
             variant="subtitle2"
             sx={{ display: "block", mb: 0.5 }}
           >
-            {t("step5.cssSnippet.designAppTitle")}
+            {t("step6.cssSnippet.designAppTitle")}
           </Typography>
           {/*
             Design-app rule list. Markdown lets us bold each
@@ -372,23 +373,32 @@ const Step5Preview = () => {
             immediately rather than reading the whole sentence.
           */}
           <Markdown variant="compact">
-            {t("step5.cssSnippet.designAppHint")}
+            {t("step6.cssSnippet.designAppHint")}
           </Markdown>
         </DialogContent>
         <DialogActions>
           <Button onClick={() => setSnippetDialogOpen(false)}>
-            {t("step5.cssSnippet.close")}
+            {t("step6.cssSnippet.close")}
           </Button>
         </DialogActions>
       </Dialog>
 
-      <TextField
-        fullWidth
-        multiline
-        minRows={2}
-        value={sample}
-        onChange={(e) => setSample(e.target.value)}
-      />
+      <Box sx={{ display: "flex", gap: 1, alignItems: "flex-start" }}>
+        <TextField
+          fullWidth
+          multiline
+          minRows={2}
+          value={sample}
+          onChange={(e) => setSample(e.target.value)}
+        />
+        <Button
+          variant="outlined"
+          onClick={() => setSample(toFullWidth(sample))}
+          sx={{ flexShrink: 0, whiteSpace: "nowrap" }}
+        >
+          {t("common.toFullWidth")}
+        </Button>
+      </Box>
 
       <Paper
         variant="outlined"
@@ -416,4 +426,4 @@ const Step5Preview = () => {
   );
 };
 
-export default Step5Preview;
+export default Step6Preview;

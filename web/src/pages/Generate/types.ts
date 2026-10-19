@@ -71,7 +71,7 @@ export interface GenerateParams {
    * NotoSansHK 1160u). Use for pairings whose annotation cascades
    * far above the base — typical values: 1200 for Thai / Katakana
    * / Korean on Xiaolai, 1300 for Urdu Nastaliq on either base.
-   * Surfaced in Step 3 → Advanced as the "Output ascent" input.
+   * Surfaced in Step 4 → Advanced as the "Output ascent" input.
    */
   outAscent: number | null;
 }
@@ -88,7 +88,7 @@ export interface GenerateResult {
 /**
  * Result of a parameter-tuning preview run.
  *
- * The Preview pane in Step 3 lets the user try the current parameters
+ * The Preview pane in Step 4 lets the user try the current parameters
  * against a representative sample of mappings before committing to a
  * full generation that could take a minute or more. The Python
  * pipeline is run with a CSV containing only the mappings whose

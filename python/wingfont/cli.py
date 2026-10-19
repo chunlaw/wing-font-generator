@@ -908,7 +908,7 @@ def _check_glyph_count_budget(
     target_row_estimate = max(0, budget_remaining_for_new)
     # Two-step error reporting: print the long friendly diagnostic
     # to stdout FIRST (so it lands in runner.py's tee'd progress
-    # log — Step 4 in /generate displays everything captured here),
+    # log — Step 5 in /generate displays everything captured here),
     # then raise a short RuntimeError to abort the pipeline.
     diagnostic = (
         f"\n[wing-font] Pre-flight glyph budget exceeded.\n"
@@ -1230,7 +1230,7 @@ def main(
     # First log line: the equivalent CLI command this invocation
     # corresponds to. Useful both for CLI users (round-tripping the
     # canonical flag forms) and for Pyodide / runner.py callers
-    # (gives the Step 4 progress log a copy-paste-ready local-CLI
+    # (gives the Step 5 progress log a copy-paste-ready local-CLI
     # fallback if Pyodide crashes mid-run — the file paths will be
     # Pyodide temp dirs the user needs to substitute, but the
     # numeric / boolean args are exactly what was passed).
@@ -2328,7 +2328,7 @@ def run(argv=None):
             "radical annotations (e.g. cangjie's 一弓十山) where the "
             "default packing looks like a single visual blob. Negative "
             "tightens; push too far and glyphs visibly overlap. The "
-            "in-browser /generate Step 3 'Annotation spacing' slider "
+            "in-browser /generate Step 4 'Annotation spacing' slider "
             "drives this same parameter."
         ),
     )

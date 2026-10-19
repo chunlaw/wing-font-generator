@@ -337,7 +337,7 @@ export const ThemeProvider = ({ children }: { children: ReactNode }) => {
             //
             // Used by:
             //   - Home page "Browse ready-made fonts" CTA
-            //   - Step 5 "Download WOFF"
+            //   - Step 6 "Download WOFF"
             //   - Step 1 "Upload TTF" (color prop omitted → primary)
             //   - Step 2 "Import CSV" (same)
             props: { variant: "outlined", color: "primary" },

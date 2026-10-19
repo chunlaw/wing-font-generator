@@ -281,11 +281,11 @@ interface GenerateContextValue {
   // --- Step 6: result ---
   result: GenerateResult | null;
 
-  // --- Parameter-tuning preview (Step 3) ---
+  // --- Parameter-tuning preview (Step 4) ---
   /**
    * Manually request a preview. Normally callers don't need this —
    * the context auto-fires a debounced preview whenever the user is
-   * on Step 3 and any input changes. Exposed for tests / future UI
+   * on Step 4 and any input changes. Exposed for tests / future UI
    * affordances. Returns synchronously; the run completes some time
    * later and updates `previewResult`. Subsequent calls before the
    * debounce window elapses are coalesced into one.
@@ -738,10 +738,10 @@ export const GenerateProvider = ({ children }: { children: ReactNode }) => {
     familyName: "MyWingFont",
     // `丅` (U+4E05) is the historical default — a rare Han character
     // that won't collide with normal text. Users can change this in
-    // Step 3 if they prefer something easier to type with their IME.
+    // Step 4 if they prefer something easier to type with their IME.
     triggerChar: "丅",
     // null = inherit from base font's ascent (legacy behaviour).
-    // The Step 3 Advanced "Output ascent" input switches this to a
+    // The Step 4 Advanced "Output ascent" input switches this to a
     // numeric value when the user needs annotation headroom (e.g.
     // Xiaolai paired with Thai/Urdu/Katakana/Korean — see the CI
     // matrix lines in deploy-pages.yml for the canonical values).
@@ -752,7 +752,7 @@ export const GenerateProvider = ({ children }: { children: ReactNode }) => {
     [],
   );
 
-  // --- Step 4: log + run -----------------------------------------------
+  // --- Step 5: log + run -----------------------------------------------
   const [progressLog, setProgressLog] = useState<string[]>([]);
   const [progress, setProgress] = useState<number>(-1);
   const [currentProcessingStep, setCurrentProcessingStep] = useState<string | null>(null);
@@ -847,7 +847,7 @@ export const GenerateProvider = ({ children }: { children: ReactNode }) => {
               setCurrentProcessingStep(null);
             } else {
               // Step just started — show it as the current in-progress
-              // step name (drives the spinner label in Step 4).
+              // step name (drives the spinner label in Step 5).
               setCurrentProcessingStep(step);
             }
           }
@@ -855,7 +855,7 @@ export const GenerateProvider = ({ children }: { children: ReactNode }) => {
         },
       });
 
-      // Install the WOFF as @font-face so Step 5 can render with it.
+      // Install the WOFF as @font-face so Step 6 can render with it.
       const family = `wingfont-preview-${++familyCounter}`;
       if (installedFaceRef.current) {
         document.fonts.delete(installedFaceRef.current);
@@ -887,12 +887,12 @@ export const GenerateProvider = ({ children }: { children: ReactNode }) => {
   // --- Stepper navigation ----------------------------------------------
   // Declared before the live-preview machinery because the
   // auto-trigger useEffect below depends on currentStep (preview only
-  // fires while the user is actually on Step 3).
+  // fires while the user is actually on Step 4).
   const [currentStep, setCurrentStep] = useState(0);
 
   // --- Live parameter-tuning preview -----------------------------------
   //
-  // Auto-fires whenever the user is on Step 3 and any input that
+  // Auto-fires whenever the user is on Step 4 and any input that
   // affects the output (mappings, fonts, params) changes. Rapid input —
   // dragging a slider, typing a family name — is debounced so we
   // launch at most one preview per quiet window.
@@ -1072,7 +1072,7 @@ export const GenerateProvider = ({ children }: { children: ReactNode }) => {
         useTrimCache: true,
         onProgress: (msg) => {
           // Drive only the small preview status indicator; do NOT
-          // touch the main progressLog (Step 4 owns that — it's the
+          // touch the main progressLog (Step 5 owns that — it's the
           // record of the eventual full run, not the previews).
           setPreviewStatus(msg);
         },
@@ -1147,11 +1147,11 @@ export const GenerateProvider = ({ children }: { children: ReactNode }) => {
     }, PREVIEW_DEBOUNCE_MS);
   }, [executePreview]);
 
-  // Auto-trigger: any change to inputs while the user is on Step 3
+  // Auto-trigger: any change to inputs while the user is on Step 4
   // schedules a debounced preview. We deliberately gate on
   // `currentStep === 3` (params) so editing mappings on Step 2 doesn't burn
   // Pyodide cycles for a preview the user isn't looking at — they'll
-  // get a fresh preview when they navigate to Step 3.
+  // get a fresh preview when they navigate to Step 4.
   //
   // We also skip while `isGenerating` is true: the Pyodide worker is
   // single-threaded, and any preview message we send would queue
@@ -1180,9 +1180,9 @@ export const GenerateProvider = ({ children }: { children: ReactNode }) => {
   ]);
 
   // Cancel pending preview work the moment the user navigates away
-  // from Step 3 OR clicks the full-run Generate button. Without this:
+  // from Step 4 OR clicks the full-run Generate button. Without this:
   //
-  //   • a debounce timer scheduled in Step 3 can still fire after
+  //   • a debounce timer scheduled in Step 4 can still fire after
   //     the user has clicked Next, queueing a preview behind the
   //     Generate request and starving it of worker CPU.
   //   • an in-flight preview's `finally` block would see
@@ -1190,7 +1190,7 @@ export const GenerateProvider = ({ children }: { children: ReactNode }) => {
   //     before navigation) and kick off ANOTHER preview, blocking
   //     Generate for a second time.
   //
-  // Clearing the timer + flag here makes "leaving Step 3" a clean
+  // Clearing the timer + flag here makes "leaving Step 4" a clean
   // cancellation: the worker finishes whatever was already running
   // (we can't stop Python mid-execution) but nothing new queues.
   useEffect(() => {
@@ -1224,12 +1224,12 @@ export const GenerateProvider = ({ children }: { children: ReactNode }) => {
   //
   // Triggered while the user is on Mappings, DIY or Params (currentStep ∈
   // {1, 2, 3}) so by the time they finish editing mappings and click
-  // into Step 3 the trim is almost always done. A 1.5 s debounce
+  // into Step 4 the trim is almost always done. A 1.5 s debounce
   // coalesces rapid mapping edits — the trim itself takes 2–3 s,
   // longer than the preview's debounce, so we don't want to fire it
   // on every keystroke.
   //
-  // Critically, the gate STOPS at Step 4: once the user is running
+  // Critically, the gate STOPS at Step 5: once the user is running
   // the full-pipeline Generate, we don't want a pre-trim message
   // queued behind it on the single-threaded Pyodide worker. Same
   // reason we also skip while `isGenerating` is true.
@@ -1243,9 +1243,9 @@ export const GenerateProvider = ({ children }: { children: ReactNode }) => {
   const preTrimInFlightRef = useRef(false);
 
   useEffect(() => {
-    // Only fire on Step 2 or Step 3. Pre-trim is irrelevant outside
+    // Only fire on Steps 2–4. Pre-trim is irrelevant outside
     // the preview-tuning window and dangerous to fire afterwards
-    // because it ties up the Pyodide worker that Step 4's Generate
+    // because it ties up the Pyodide worker that Step 5's Generate
     // needs.
     if (currentStep < 1 || currentStep > 3) return;
     if (isGenerating) return;
@@ -1322,8 +1322,8 @@ export const GenerateProvider = ({ children }: { children: ReactNode }) => {
   ]);
 
   // Cancel any pending pre-trim debounce the moment the user
-  // navigates past Step 3 or starts a full generation. Without this,
-  // a debounce timer scheduled in Step 3 could still fire after the
+  // navigates past Step 4 or starts a full generation. Without this,
+  // a debounce timer scheduled in Step 4 could still fire after the
   // user clicked Generate, queueing pre-trim work behind the user's
   // actual generation on the single-threaded Pyodide worker.
   useEffect(() => {

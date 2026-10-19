@@ -2,6 +2,7 @@ import {
   Box,
   Chip,
   CircularProgress,
+  Fab,
   TextField,
   Typography,
 } from "@mui/material";
@@ -30,6 +31,7 @@ import TypographyControls, {
   type TypographySettings,
 } from "../components/TypographyControls";
 import { effectiveDir } from "../utils/textDirection";
+import { toFullWidth } from "../utils/fullWidth";
 
 // Specimen-specific default: 56 px (the original md-breakpoint
 // rendering) — bigger than the showcase default (36 px) because
@@ -401,6 +403,15 @@ const Specimen = () => {
         compact so the inline GitHub link is themed consistently
         with the rest of the site.
       */}
+      <Fab
+        variant="extended"
+        color="primary"
+        size="medium"
+        onClick={() => setMsg(toFullWidth(msg))}
+        sx={{ position: "fixed", right: 16, bottom: 16 }}
+      >
+        {t("common.toFullWidth")}
+      </Fab>
       <Box sx={{ opacity: 0.85 }}>
         <Markdown variant="compact">
           {t("specimen.reportError").replace(

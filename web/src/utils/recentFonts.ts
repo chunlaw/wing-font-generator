@@ -57,7 +57,7 @@ export interface RecentFontEntry {
   /**
    * Human-readable label for the picker chip. For generated fonts
    * defaults to the font's internal family name (user-overridable
-   * via the Step 3 "family" param); for uploaded fonts defaults to
+   * via the Step 4 "family" param); for uploaded fonts defaults to
    * the file's base name without extension.
    */
   displayName: string;
@@ -72,7 +72,7 @@ export interface RecentFontEntry {
   generatedAt: number;
   /**
    * Provenance of this entry. "generated" means produced by the
-   * Wing Font pipeline (Step 5 of /generate). "uploaded" means the
+   * Wing Font pipeline (Step 6 of /generate). "uploaded" means the
    * user dropped a .ttf/.otf/.woff/.woff2 file onto /showcase or
    * /specimen for comparison. Optional + defaults to "generated" so
    * existing pre-uploads entries in IndexedDB don't break — the

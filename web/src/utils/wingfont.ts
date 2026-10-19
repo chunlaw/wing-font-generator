@@ -281,7 +281,7 @@ export async function generateFont(params: GenerateParams): Promise<GenerateResu
  *
  * Safe to call repeatedly; the runner is idempotent (it no-ops when
  * the cache already covers the requested chars for the same font
- * pair). Cheap to call before navigating to Step 3, since the work
+ * pair). Cheap to call before navigating to Step 4, since the work
  * happens in the worker without blocking the UI.
  */
 export async function preparePreviewFonts(

@@ -171,6 +171,7 @@ export type TranslationKey =
   | "home.features.f5.body"
   // Showcase (existing Main page)
   | "showcase.tryIt"
+  | "common.toFullWidth"
   | "showcase.share"
   | "showcase.shareCopied"
   | "showcase.shareFailed"
@@ -204,8 +205,8 @@ export type TranslationKey =
   | "step1.recentFonts.hoursAgo"
   | "step1.recentFonts.daysAgo"
   | "step1.recentFonts.viewSpecimen"
-  | "step3.family.collisionHint"
-  | "step3.family.tooLong"
+  | "step4.family.collisionHint"
+  | "step4.family.tooLong"
   // Typography controls (shared across /showcase + /specimen)
   | "displayOptions.toggle"
   | "displayOptions.fontSize"
@@ -250,18 +251,18 @@ export type TranslationKey =
   | "generate.step3.label"
   | "generate.step4.label"
   | "generate.step5.label"
-  | "generate.stepDiy.label"
-  | "stepDiy.title"
-  | "stepDiy.description"
-  | "stepDiy.preset"
-  | "stepDiy.none"
-  | "stepDiy.custom"
-  | "stepDiy.upload"
-  | "stepDiy.clear"
-  | "stepDiy.loaded"
-  | "stepDiy.example"
-  | "stepDiy.needsOptimize"
-  | "stepDiy.format"
+  | "generate.step6.label"
+  | "step3.title"
+  | "step3.description"
+  | "step3.preset"
+  | "step3.none"
+  | "step3.custom"
+  | "step3.upload"
+  | "step3.clear"
+  | "step3.loaded"
+  | "step3.example"
+  | "step3.needsOptimize"
+  | "step3.format"
   // Step 1 — fonts
   | "step1.title"
   | "step1.description"
@@ -311,63 +312,63 @@ export type TranslationKey =
   | "step2.coverage.annoLabel"
   | "step2.coverage.andMore"
   | "step2.confirmDelete"
-  // Step 3 — parameters
-  | "step3.title"
-  | "step3.description"
-  | "step3.family"
-  | "step3.familyHint"
-  | "step3.advancedSectionLabel"
-  | "step3.triggerChar.label"
-  | "step3.triggerChar.hint"
-  | "step3.triggerChar.hintDisabled"
-  | "step3.outAscent.label"
-  | "step3.outAscent.hint"
-  | "step3.cli.sectionLabel"
-  | "step3.cli.helperText"
-  | "step3.cli.copyTooltip"
-  | "step3.cli.copiedTooltip"
-  | "step3.cli.copyAriaLabel"
-  | "step3.baseScale"
-  | "step3.annoScale"
-  | "step3.annoSpacing"
-  | "step3.yOffset"
-  | "step3.invert"
-  | "step3.optimize"
-  | "step3.preview.title"
-  | "step3.preview.description"
-  | "step3.preview.updating"
-  | "step3.preview.firstRun"
-  | "step3.preview.idle"
-  | "step3.preview.sampledLabel"
-  | "step3.preview.customLabel"
-  | "step3.preview.notReady"
-  | "step3.preview.showGuides"
-  | "step3.previewText.label"
-  | "step3.previewText.placeholder"
-  | "step3.previewText.helper"
-  // Step 4 — log
+  // Step 4 — parameters
   | "step4.title"
   | "step4.description"
-  | "step4.empty"
-  | "step4.run.idle"
-  | "step4.run.running"
-  | "step4.copy"
-  | "step4.copied"
-  // Step 5 — preview + download
+  | "step4.family"
+  | "step4.familyHint"
+  | "step4.advancedSectionLabel"
+  | "step4.triggerChar.label"
+  | "step4.triggerChar.hint"
+  | "step4.triggerChar.hintDisabled"
+  | "step4.outAscent.label"
+  | "step4.outAscent.hint"
+  | "step4.cli.sectionLabel"
+  | "step4.cli.helperText"
+  | "step4.cli.copyTooltip"
+  | "step4.cli.copiedTooltip"
+  | "step4.cli.copyAriaLabel"
+  | "step4.baseScale"
+  | "step4.annoScale"
+  | "step4.annoSpacing"
+  | "step4.yOffset"
+  | "step4.invert"
+  | "step4.optimize"
+  | "step4.preview.title"
+  | "step4.preview.description"
+  | "step4.preview.updating"
+  | "step4.preview.firstRun"
+  | "step4.preview.idle"
+  | "step4.preview.sampledLabel"
+  | "step4.preview.customLabel"
+  | "step4.preview.notReady"
+  | "step4.preview.showGuides"
+  | "step4.previewText.label"
+  | "step4.previewText.placeholder"
+  | "step4.previewText.helper"
+  // Step 5 — log
   | "step5.title"
   | "step5.description"
-  | "step5.noResult"
-  | "step5.sampleText"
-  | "step5.download.ttf"
-  | "step5.download.woff"
-  | "step5.cssSnippet.title"
-  | "step5.cssSnippet.button"
-  | "step5.cssSnippet.copy"
-  | "step5.cssSnippet.copied"
-  | "step5.cssSnippet.hint"
-  | "step5.cssSnippet.close"
-  | "step5.cssSnippet.designAppTitle"
-  | "step5.cssSnippet.designAppHint";
+  | "step5.empty"
+  | "step5.run.idle"
+  | "step5.run.running"
+  | "step5.copy"
+  | "step5.copied"
+  // Step 6 — preview + download
+  | "step6.title"
+  | "step6.description"
+  | "step6.noResult"
+  | "step6.sampleText"
+  | "step6.download.ttf"
+  | "step6.download.woff"
+  | "step6.cssSnippet.title"
+  | "step6.cssSnippet.button"
+  | "step6.cssSnippet.copy"
+  | "step6.cssSnippet.copied"
+  | "step6.cssSnippet.hint"
+  | "step6.cssSnippet.close"
+  | "step6.cssSnippet.designAppTitle"
+  | "step6.cssSnippet.designAppHint";
 
 export const TRANSLATIONS: Record<Language, Record<TranslationKey, string>> = {
   zh: {
@@ -576,6 +577,7 @@ export const TRANSLATIONS: Record<Language, Record<TranslationKey, string>> = {
       "生成字型時喺步驟 3 加入「自訂標注」清單，用家就可以為任何字自行指定讀音：喺字後面打全形「０」清除原有標注，再打全形拼音，例如「行０ｚａａ１」會喺「行」上面顯示 zaa1。內置粵拼、漢語拼音、注音、台羅清單，亦可上載自己嘅 CSV。暫時只支援中文（漢字）底字。",
     // Showcase
     "showcase.tryIt": "隨便試 (Try it!!)",
+    "common.toFullWidth": "半形轉全形",
     "showcase.share": "分享連結",
     "showcase.shareCopied": "已複製連結到剪貼簿",
     "showcase.shareFailed": "未能複製，請手動複製網址列",
@@ -611,9 +613,9 @@ export const TRANSLATIONS: Record<Language, Record<TranslationKey, string>> = {
     "step1.recentFonts.hoursAgo": "{n} 小時前",
     "step1.recentFonts.daysAgo": "{n} 日前",
     "step1.recentFonts.viewSpecimen": "查看示範",
-    "step3.family.collisionHint":
+    "step4.family.collisionHint":
       "你嘅近期生成裡面已經有同名嘅字型。如果你打算將兩個一齊安裝到電腦或者 Word，建議改個唔同名字避免衝突。",
-    "step3.family.tooLong":
+    "step4.family.tooLong":
       "{n} / {max} 字 — 太長。Windows 字型登記簿會將超過 {max} 字嘅家族名靜默截斷，導致 Word 將粵語 HKSCS 字（啲、嘅、嗰、咗、噉、嚟、唔、攞）轉去用 Microsoft 正黑體渲染。請縮短到 {max} 字以內。",
     "displayOptions.toggle": "顯示選項",
     "displayOptions.fontSize": "字體大小",
@@ -663,21 +665,21 @@ export const TRANSLATIONS: Record<Language, Record<TranslationKey, string>> = {
     "generate.error.prefix": "錯誤：",
     "generate.step1.label": "選擇字體",
     "generate.step2.label": "字符對應",
-    "generate.step3.label": "參數設定",
-    "generate.step4.label": "生成字型",
-    "generate.step5.label": "預覽與下載",
-    "generate.stepDiy.label": "自訂標注",
-    "stepDiy.title": "步驟 3：自訂標注（選用）",
-    "stepDiy.description": "加入一份「手動標注」清單（--diy-annotations），讓字型使用者可以為任何字自行指定讀音：在字後面先打全形 ０ 清除原有標注，再打全形拼音，例如「行０ｚａａ１」會在「行」上顯示 zaa1。暫時只支援中文（漢字）底字。不需要的話可以略過此步驟。",
-    "stepDiy.preset": "預設清單",
-    "stepDiy.none": "不使用",
-    "stepDiy.custom": "自訂檔案",
-    "stepDiy.upload": "載入 CSV",
-    "stepDiy.clear": "移除",
-    "stepDiy.loaded": "已載入 {name}：共 {count} 個標注",
-    "stepDiy.example": "例：輸入「{input}」→ 顯示 {anno}",
-    "stepDiy.needsOptimize": "自訂標注需要開啟「最佳化」（-opt），否則字型可能超出 65,535 個字形的上限。請在參數設定中開啟。",
-    "stepDiy.format": "CSV 格式：每行「輸入,標注」，例如 ｚａａ１,zaa1。輸入須為全形英數字；只填一欄時會自動轉成全形作為輸入。只會套用在完整生成，即時預覽不包括自訂標注。",
+    "generate.step3.label": "自訂標注",
+    "generate.step4.label": "參數設定",
+    "generate.step5.label": "生成字型",
+    "generate.step6.label": "預覽與下載",
+    "step3.title": "步驟 3：自訂標注（選用）",
+    "step3.description": "加入一份「手動標注」清單（--diy-annotations），讓字型使用者可以為任何字自行指定讀音：在字後面先打全形 ０ 清除原有標注，再打全形拼音，例如「行０ｚａａ１」會在「行」上顯示 zaa1。暫時只支援中文（漢字）底字。不需要的話可以略過此步驟。",
+    "step3.preset": "預設清單",
+    "step3.none": "不使用",
+    "step3.custom": "自訂檔案",
+    "step3.upload": "載入 CSV",
+    "step3.clear": "移除",
+    "step3.loaded": "已載入 {name}：共 {count} 個標注",
+    "step3.example": "例：輸入「{input}」→ 顯示 {anno}",
+    "step3.needsOptimize": "自訂標注需要開啟「最佳化」（-opt），否則字型可能超出 65,535 個字形的上限。請在參數設定中開啟。",
+    "step3.format": "CSV 格式：每行「輸入,標注」，例如 ｚａａ１,zaa1。輸入須為全形英數字；只填一欄時會自動轉成全形作為輸入。只會套用在完整生成，即時預覽不包括自訂標注。",
     // Step 1
     "step1.title": "步驟 1：選擇字體",
     "step1.description":
@@ -732,71 +734,71 @@ export const TRANSLATIONS: Record<Language, Record<TranslationKey, string>> = {
     "step2.coverage.annoLabel": "標注字型缺少的字元：",
     "step2.coverage.andMore": "還有 {n} 個未顯示",
     "step2.confirmDelete": "確定要刪除嗎？",
-    // Step 3
-    "step3.title": "步驟 4：參數設定",
-    "step3.description": "微調字形位置、大小與輸出選項。",
-    "step3.family": "字體名稱",
-    "step3.familyHint": "會寫入字型的 name 表",
-    "step3.advancedSectionLabel": "進階",
-    "step3.triggerChar.label": "標注切換字元",
-    "step3.triggerChar.hint":
-      "用「字 + 此字元 + 零/一/二/…」手動切換多音字標注（例：「行丅零」=純漢字無標注；「行丅一」=第 1 個讀音；「行丅二」=第 2 個讀音）。預設「丅」（U+4E05）較為罕用、不易與正文衝突；可改成你的輸入法容易打到的字（如「々」「〇」）。除咗呢個 IME 友善寫法之外，字型亦同時生成半形數字（「字0」、「字1」、「字2」） 同全形數字（「字０」、「字１」、「字２」）兩條 1-indexed 路徑，三種寫法都會生成。**Microsoft Word 特別注意**：DirectWrite 會將半形數字切到唔同 shaping run，「字1」、「字2」喺 Word 唔會觸發；請改用全形數字「字１」、「字２」或 IME 友善嘅「字丅一」、「字丅二」。",
-    "step3.triggerChar.hintDisabled":
-      "已停用「丅 + 中文數字」標注路徑。仲可以用半形數字（「字0」=純漢字、「字1」=第 1 個讀音、「字N」=第 N 個讀音）或全形數字（「字０」、「字１」、「字N」）兩條 1-indexed 後綴路徑切換多音字。Word 用戶請用全形數字（半形喺 Word 入面唔會觸發）。",
-    "step3.outAscent.label": "輸出字型上緣（字單位）",
-    "step3.outAscent.hint":
-      "留空＝自動（auto）：依最高嘅組合字墨水自動撐高 hhea.ascent 同 OS/2.usWinAscent，確保標注頂唔會俾 Word / Pages / Canva 等程式裁切，唔使自己估數值。sTypoAscender 維持不變，行距照舊。淨係想指定固定上緣（停用自動，例如想行距鬆啲）先至填數字。",
-    "step3.cli.sectionLabel": "對應 CLI 指令",
-    "step3.cli.helperText":
-      "Clone wing-font-generator 後，可以喺 python/ 入面執行呢條指令本機重現同一個 build。檔案路徑用咗 repo 內嘅版面（input_fonts/、mappings/），自備字型嘅話請替換成你本機嘅實際路徑。",
-    "step3.cli.copyTooltip": "複製指令",
-    "step3.cli.copiedTooltip": "已複製！",
-    "step3.cli.copyAriaLabel": "複製 CLI 指令",
-    "step3.baseScale": "底字縮放比",
-    "step3.annoScale": "標注縮放比",
-    "step3.annoSpacing": "標注字距（em 比例，正值放寬、負值收緊）",
-    "step3.yOffset": "標注垂直位置（em 比例）",
-    "step3.invert": "倒置：標注在下、底字在上",
-    "step3.optimize": "壓縮輸出（移除未使用字形）",
-    "step3.preview.title": "即時預覽",
-    "step3.preview.description":
-      "改參數後會自動重新生成，無需手動觸發。每次約 10–20 秒，視乎字型大小與對應表規模而定。",
-    "step3.preview.updating": "更新中…",
-    "step3.preview.firstRun": "首次生成樣本中…",
-    "step3.preview.idle": "等待生成…",
-    "step3.preview.sampledLabel": "樣本字詞",
-    "step3.preview.customLabel": "預覽文字",
-    "step3.preview.notReady": "請先載入字體同至少一條字詞配對。",
-    "step3.preview.showGuides": "顯示字體輔助線（基準線、上下緣等）",
-    "step3.previewText.label": "預覽文字",
-    "step3.previewText.placeholder": "留空 = 自動揀字詞",
-    "step3.previewText.helper": "輸入想預覽嘅文字，會根據對應嘅字詞配對顯示。",
     // Step 4
-    "step4.title": "步驟 5：生成字型",
-    "step4.description": "按「開始生成」啟動。下方會即時顯示處理進度與每個步驟的詳細記錄。",
-    "step4.empty": "尚未執行。請按下方按鈕開始生成。",
-    "step4.run.idle": "開始生成",
-    "step4.run.running": "生成中",
-    "step4.copy": "複製記錄",
-    "step4.copied": "已複製",
+    "step4.title": "步驟 4：參數設定",
+    "step4.description": "微調字形位置、大小與輸出選項。",
+    "step4.family": "字體名稱",
+    "step4.familyHint": "會寫入字型的 name 表",
+    "step4.advancedSectionLabel": "進階",
+    "step4.triggerChar.label": "標注切換字元",
+    "step4.triggerChar.hint":
+      "用「字 + 此字元 + 零/一/二/…」手動切換多音字標注（例：「行丅零」=純漢字無標注；「行丅一」=第 1 個讀音；「行丅二」=第 2 個讀音）。預設「丅」（U+4E05）較為罕用、不易與正文衝突；可改成你的輸入法容易打到的字（如「々」「〇」）。除咗呢個 IME 友善寫法之外，字型亦同時生成半形數字（「字0」、「字1」、「字2」） 同全形數字（「字０」、「字１」、「字２」）兩條 1-indexed 路徑，三種寫法都會生成。**Microsoft Word 特別注意**：DirectWrite 會將半形數字切到唔同 shaping run，「字1」、「字2」喺 Word 唔會觸發；請改用全形數字「字１」、「字２」或 IME 友善嘅「字丅一」、「字丅二」。",
+    "step4.triggerChar.hintDisabled":
+      "已停用「丅 + 中文數字」標注路徑。仲可以用半形數字（「字0」=純漢字、「字1」=第 1 個讀音、「字N」=第 N 個讀音）或全形數字（「字０」、「字１」、「字N」）兩條 1-indexed 後綴路徑切換多音字。Word 用戶請用全形數字（半形喺 Word 入面唔會觸發）。",
+    "step4.outAscent.label": "輸出字型上緣（字單位）",
+    "step4.outAscent.hint":
+      "留空＝自動（auto）：依最高嘅組合字墨水自動撐高 hhea.ascent 同 OS/2.usWinAscent，確保標注頂唔會俾 Word / Pages / Canva 等程式裁切，唔使自己估數值。sTypoAscender 維持不變，行距照舊。淨係想指定固定上緣（停用自動，例如想行距鬆啲）先至填數字。",
+    "step4.cli.sectionLabel": "對應 CLI 指令",
+    "step4.cli.helperText":
+      "Clone wing-font-generator 後，可以喺 python/ 入面執行呢條指令本機重現同一個 build。檔案路徑用咗 repo 內嘅版面（input_fonts/、mappings/），自備字型嘅話請替換成你本機嘅實際路徑。",
+    "step4.cli.copyTooltip": "複製指令",
+    "step4.cli.copiedTooltip": "已複製！",
+    "step4.cli.copyAriaLabel": "複製 CLI 指令",
+    "step4.baseScale": "底字縮放比",
+    "step4.annoScale": "標注縮放比",
+    "step4.annoSpacing": "標注字距（em 比例，正值放寬、負值收緊）",
+    "step4.yOffset": "標注垂直位置（em 比例）",
+    "step4.invert": "倒置：標注在下、底字在上",
+    "step4.optimize": "壓縮輸出（移除未使用字形）",
+    "step4.preview.title": "即時預覽",
+    "step4.preview.description":
+      "改參數後會自動重新生成，無需手動觸發。每次約 10–20 秒，視乎字型大小與對應表規模而定。",
+    "step4.preview.updating": "更新中…",
+    "step4.preview.firstRun": "首次生成樣本中…",
+    "step4.preview.idle": "等待生成…",
+    "step4.preview.sampledLabel": "樣本字詞",
+    "step4.preview.customLabel": "預覽文字",
+    "step4.preview.notReady": "請先載入字體同至少一條字詞配對。",
+    "step4.preview.showGuides": "顯示字體輔助線（基準線、上下緣等）",
+    "step4.previewText.label": "預覽文字",
+    "step4.previewText.placeholder": "留空 = 自動揀字詞",
+    "step4.previewText.helper": "輸入想預覽嘅文字，會根據對應嘅字詞配對顯示。",
     // Step 5
-    "step5.title": "步驟 6：預覽與下載",
-    "step5.description":
+    "step5.title": "步驟 5：生成字型",
+    "step5.description": "按「開始生成」啟動。下方會即時顯示處理進度與每個步驟的詳細記錄。",
+    "step5.empty": "尚未執行。請按下方按鈕開始生成。",
+    "step5.run.idle": "開始生成",
+    "step5.run.running": "生成中",
+    "step5.copy": "複製記錄",
+    "step5.copied": "已複製",
+    // Step 6
+    "step6.title": "步驟 6：預覽與下載",
+    "step6.description":
       "生成完成的字型已自動載入到下方輸入框，可即場輸入字符試效果。",
-    "step5.noResult": "尚未有生成結果。請完成步驟 5。",
-    "step5.sampleText":
+    "step6.noResult": "尚未有生成結果。請完成步驟 5。",
+    "step6.sampleText":
       "你好世界 — 試試輸入「銀行」、「行家」、「行0」（純漢字無標注）、「行1」（第 1 個讀音，等同直接打「行」）、「行2」（第 2 個讀音）、「行１」「行２」（全形數字，Word 適用）、「行丅一」、「畫畫」",
-    "step5.download.ttf": "下載 TTF",
-    "step5.download.woff": "下載 WOFF",
-    "step5.cssSnippet.title": "在 CSS 中使用",
-    "step5.cssSnippet.button": "嵌入網站",
-    "step5.cssSnippet.copy": "複製程式碼",
-    "step5.cssSnippet.copied": "已複製",
-    "step5.cssSnippet.hint":
+    "step6.download.ttf": "下載 TTF",
+    "step6.download.woff": "下載 WOFF",
+    "step6.cssSnippet.title": "在 CSS 中使用",
+    "step6.cssSnippet.button": "嵌入網站",
+    "step6.cssSnippet.copy": "複製程式碼",
+    "step6.cssSnippet.copied": "已複製",
+    "step6.cssSnippet.hint":
       "將下載的 `.woff` 與 `.ttf` 放在與 CSS **同目錄**；若放在其他位置，請相應更新 `url()` 內的路徑。",
-    "step5.cssSnippet.close": "關閉",
-    "step5.cssSnippet.designAppTitle": "於設計工具中使用",
-    "step5.cssSnippet.designAppHint":
+    "step6.cssSnippet.close": "關閉",
+    "step6.cssSnippet.designAppTitle": "於設計工具中使用",
+    "step6.cssSnippet.designAppHint":
       "字型的詞語對應、1-indexed 半形數字（「字0」=純漢字、「字1」=第 1 個讀音、「字N」=第 N 個讀音）、全形數字（「字０」、「字１」、「字N」）以及「字丅零/一/二/…」等多種變體切換寫法，全部基於 OpenType `ccmp` 必定啟用功能，**無需任何設定**即可運作。**Canva、InDesign、Pages、Keynote、Adobe 系列**全部三種寫法都用得。\n\n**Microsoft Word 特別注意**：半形數字寫法（「字1」、「字2」）會被 DirectWrite 切到唔同 shaping run，喺 Word 入面唔會觸發；請改用全形數字（「字１」、「字２」）或「字丅一」、「字丅二」呢類 IME 友善寫法。詞語自動切換（如「銀行 / 行人」）唔受影響，喺 Word 入面正常運作。",
   },
   en: {
@@ -1010,6 +1012,7 @@ export const TRANSLATIONS: Record<Language, Record<TranslationKey, string>> = {
       "Add a DIY annotation inventory in Step 3 when generating, and people using the font can set any character's reading themselves: after a character, type a full-width ０ to strip its reading, then the full-width romanization — e.g. 行０ｚａａ１ shows zaa1 over 行. Built-in inventories for Jyutping, Pinyin, Zhuyin and Tâi-lô, or upload your own CSV. Currently Chinese (Han) base fonts only.",
     // Showcase
     "showcase.tryIt": "Try typing here",
+    "common.toFullWidth": "Half-width → full-width",
     "showcase.share": "Share link",
     "showcase.shareCopied": "Link copied to clipboard",
     "showcase.shareFailed": "Couldn't copy — please copy the URL bar manually",
@@ -1045,9 +1048,9 @@ export const TRANSLATIONS: Record<Language, Record<TranslationKey, string>> = {
     "step1.recentFonts.hoursAgo": "{n} h ago",
     "step1.recentFonts.daysAgo": "{n} d ago",
     "step1.recentFonts.viewSpecimen": "View specimen",
-    "step3.family.collisionHint":
+    "step4.family.collisionHint":
       "You've already generated a font with this family name. If you plan to install both on your OS or in Word, consider a distinct name to avoid font-table conflicts.",
-    "step3.family.tooLong":
+    "step4.family.tooLong":
       "{n} / {max} characters — too long. Windows' font registry silently truncates family names over {max} characters, which makes Word route HKSCS Cantonese characters (啲, 嘅, 嗰, 咗, 噉, 嚟, 唔, 攞) to Microsoft JhengHei UI instead of your font. Shorten to {max} characters or fewer.",
     "displayOptions.toggle": "Display options",
     "displayOptions.fontSize": "Font size",
@@ -1098,21 +1101,21 @@ export const TRANSLATIONS: Record<Language, Record<TranslationKey, string>> = {
     "generate.error.prefix": "Error: ",
     "generate.step1.label": "Fonts",
     "generate.step2.label": "Mappings",
-    "generate.step3.label": "Parameters",
-    "generate.step4.label": "Generate",
-    "generate.step5.label": "Preview & download",
-    "generate.stepDiy.label": "DIY annotations",
-    "stepDiy.title": "Step 3: DIY annotations (optional)",
-    "stepDiy.description": "Add a manual-annotation inventory (--diy-annotations) so people using the font can set any character's reading themselves: after a character, type a full-width ０ to strip its reading, then the full-width romanization — e.g. 行０ｚａａ１ shows zaa1 over 行. Currently Chinese (Han) base fonts only. Skip this step if you don't need it.",
-    "stepDiy.preset": "Built-in inventory",
-    "stepDiy.none": "None",
-    "stepDiy.custom": "Custom file",
-    "stepDiy.upload": "Import CSV",
-    "stepDiy.clear": "Remove",
-    "stepDiy.loaded": "Loaded {name}: {count} annotations",
-    "stepDiy.example": "Example: type {input} → shows {anno}",
-    "stepDiy.needsOptimize": "DIY annotations need Optimize (-opt) turned on, or the font may exceed the 65,535-glyph limit. Turn it on in Parameters.",
-    "stepDiy.format": "CSV format: one \"input,annotation\" per line, e.g. ｚａａ１,zaa1. Inputs must be full-width letters/digits; a single column is converted to full-width automatically. Applied to the full Generate only — the live preview doesn't include DIY annotations.",
+    "generate.step3.label": "DIY annotations",
+    "generate.step4.label": "Parameters",
+    "generate.step5.label": "Generate",
+    "generate.step6.label": "Preview & download",
+    "step3.title": "Step 3: DIY annotations (optional)",
+    "step3.description": "Add a manual-annotation inventory (--diy-annotations) so people using the font can set any character's reading themselves: after a character, type a full-width ０ to strip its reading, then the full-width romanization — e.g. 行０ｚａａ１ shows zaa1 over 行. Currently Chinese (Han) base fonts only. Skip this step if you don't need it.",
+    "step3.preset": "Built-in inventory",
+    "step3.none": "None",
+    "step3.custom": "Custom file",
+    "step3.upload": "Import CSV",
+    "step3.clear": "Remove",
+    "step3.loaded": "Loaded {name}: {count} annotations",
+    "step3.example": "Example: type {input} → shows {anno}",
+    "step3.needsOptimize": "DIY annotations need Optimize (-opt) turned on, or the font may exceed the 65,535-glyph limit. Turn it on in Parameters.",
+    "step3.format": "CSV format: one \"input,annotation\" per line, e.g. ｚａａ１,zaa1. Inputs must be full-width letters/digits; a single column is converted to full-width automatically. Applied to the full Generate only — the live preview doesn't include DIY annotations.",
     // Step 1
     "step1.title": "Step 1: Choose fonts",
     "step1.description":
@@ -1169,74 +1172,74 @@ export const TRANSLATIONS: Record<Language, Record<TranslationKey, string>> = {
     "step2.coverage.annoLabel": "Missing from annotation font:",
     "step2.coverage.andMore": "and {n} more",
     "step2.confirmDelete": "Delete this row?",
-    // Step 3
-    "step3.title": "Step 4: Parameters",
-    "step3.description":
-      "Tune glyph sizes, vertical position, and output options.",
-    "step3.family": "Family name",
-    "step3.familyHint": "Written into the font's name table",
-    "step3.advancedSectionLabel": "Advanced",
-    "step3.triggerChar.label": "Variant trigger character",
-    "step3.triggerChar.hint":
-      "Types as `<char><trigger><numeral>` to manually pick a reading: `行丅零` = bare character (no annotation), `行丅一` = 1st reading (default), `行丅二` = 2nd reading, …, `行丅九` = 9th reading. Default trigger `丅` (U+4E05) is deliberately rare so it doesn't collide with normal text — replace it with whatever your IME can produce easily (e.g. `々`, `〇`). The font also ships parallel 1-indexed half-width digit (`字0`, `字1`, `字2`) and **fullwidth digit (`字０`, `字１`, `字２`)** trigger paths, both emitted automatically. **Microsoft Word note**: DirectWrite splits the half-width digit into a separate shaping run, so `字1`, `字2` don't fire in Word — fullwidth `字１`, `字２` or the IME-friendly `字丅一`, `字丅二` are the Word-reliable paths.",
-    "step3.triggerChar.hintDisabled":
-      "Trigger+numeral override is disabled. Users can still pick variants via 1-indexed half-width digits (`字0` = bare, `字1` = 1st reading, `字N` = N-th reading) or fullwidth digits (`字０`, `字１`, `字N`); the fullwidth path is the one that fires in Microsoft Word.",
-    "step3.outAscent.label": "Output ascent (font units)",
-    "step3.outAscent.hint":
-      "Blank = auto: the build measures the tallest composed glyph and raises hhea.ascent + OS/2.usWinAscent just enough to clear it, so Word / Pages / Canva don't clip the top of the annotation — no guessing a value. sTypoAscender is left alone, so line spacing is unchanged. Fill in a number only to pin an exact ascent (disables auto-fit) — e.g. a deliberately roomier line height.",
-    "step3.cli.sectionLabel": "Equivalent CLI command",
-    "step3.cli.helperText":
-      "Run this from `python/` in a wing-font-generator checkout to reproduce the same build locally. File paths use the repo layout (input_fonts/, mappings/); substitute your actual local paths for any custom-uploaded fonts.",
-    "step3.cli.copyTooltip": "Copy command",
-    "step3.cli.copiedTooltip": "Copied!",
-    "step3.cli.copyAriaLabel": "Copy CLI command",
-    "step3.baseScale": "Base glyph scale",
-    "step3.annoScale": "Annotation scale",
-    "step3.annoSpacing": "Annotation letter-spacing (em — positive loosens, negative tightens)",
-    "step3.yOffset": "Annotation vertical offset (em ratio)",
-    "step3.invert": "Invert: annotation below, base above",
-    "step3.optimize": "Subset (drop unused glyphs)",
-    "step3.preview.title": "Live preview",
-    "step3.preview.description":
-      "Re-renders automatically whenever you change a parameter — no need to trigger it manually. Each run takes about 10–20 seconds, depending on font size and mapping length.",
-    "step3.preview.updating": "Updating…",
-    "step3.preview.firstRun": "Rendering the first sample…",
-    "step3.preview.idle": "Waiting to render…",
-    "step3.preview.sampledLabel": "Sampled mapping",
-    "step3.preview.customLabel": "Preview text",
-    "step3.preview.notReady":
-      "Pick fonts and add at least one mapping first.",
-    "step3.preview.showGuides": "Show typographic guides (baseline, ascent, etc.)",
-    "step3.previewText.label": "Preview text",
-    "step3.previewText.placeholder": "Leave empty to auto-pick",
-    "step3.previewText.helper":
-      "Type the text you want to preview — uses whichever mappings cover it.",
     // Step 4
-    "step4.title": "Step 5: Generate font",
-    "step4.description": "Press Generate to start. The progress feed below shows each step of the pipeline in real time.",
-    "step4.empty": "Not started. Click the button below to generate.",
-    "step4.run.idle": "Generate",
-    "step4.run.running": "Generating",
-    "step4.copy": "Copy log",
-    "step4.copied": "Copied",
+    "step4.title": "Step 4: Parameters",
+    "step4.description":
+      "Tune glyph sizes, vertical position, and output options.",
+    "step4.family": "Family name",
+    "step4.familyHint": "Written into the font's name table",
+    "step4.advancedSectionLabel": "Advanced",
+    "step4.triggerChar.label": "Variant trigger character",
+    "step4.triggerChar.hint":
+      "Types as `<char><trigger><numeral>` to manually pick a reading: `行丅零` = bare character (no annotation), `行丅一` = 1st reading (default), `行丅二` = 2nd reading, …, `行丅九` = 9th reading. Default trigger `丅` (U+4E05) is deliberately rare so it doesn't collide with normal text — replace it with whatever your IME can produce easily (e.g. `々`, `〇`). The font also ships parallel 1-indexed half-width digit (`字0`, `字1`, `字2`) and **fullwidth digit (`字０`, `字１`, `字２`)** trigger paths, both emitted automatically. **Microsoft Word note**: DirectWrite splits the half-width digit into a separate shaping run, so `字1`, `字2` don't fire in Word — fullwidth `字１`, `字２` or the IME-friendly `字丅一`, `字丅二` are the Word-reliable paths.",
+    "step4.triggerChar.hintDisabled":
+      "Trigger+numeral override is disabled. Users can still pick variants via 1-indexed half-width digits (`字0` = bare, `字1` = 1st reading, `字N` = N-th reading) or fullwidth digits (`字０`, `字１`, `字N`); the fullwidth path is the one that fires in Microsoft Word.",
+    "step4.outAscent.label": "Output ascent (font units)",
+    "step4.outAscent.hint":
+      "Blank = auto: the build measures the tallest composed glyph and raises hhea.ascent + OS/2.usWinAscent just enough to clear it, so Word / Pages / Canva don't clip the top of the annotation — no guessing a value. sTypoAscender is left alone, so line spacing is unchanged. Fill in a number only to pin an exact ascent (disables auto-fit) — e.g. a deliberately roomier line height.",
+    "step4.cli.sectionLabel": "Equivalent CLI command",
+    "step4.cli.helperText":
+      "Run this from `python/` in a wing-font-generator checkout to reproduce the same build locally. File paths use the repo layout (input_fonts/, mappings/); substitute your actual local paths for any custom-uploaded fonts.",
+    "step4.cli.copyTooltip": "Copy command",
+    "step4.cli.copiedTooltip": "Copied!",
+    "step4.cli.copyAriaLabel": "Copy CLI command",
+    "step4.baseScale": "Base glyph scale",
+    "step4.annoScale": "Annotation scale",
+    "step4.annoSpacing": "Annotation letter-spacing (em — positive loosens, negative tightens)",
+    "step4.yOffset": "Annotation vertical offset (em ratio)",
+    "step4.invert": "Invert: annotation below, base above",
+    "step4.optimize": "Subset (drop unused glyphs)",
+    "step4.preview.title": "Live preview",
+    "step4.preview.description":
+      "Re-renders automatically whenever you change a parameter — no need to trigger it manually. Each run takes about 10–20 seconds, depending on font size and mapping length.",
+    "step4.preview.updating": "Updating…",
+    "step4.preview.firstRun": "Rendering the first sample…",
+    "step4.preview.idle": "Waiting to render…",
+    "step4.preview.sampledLabel": "Sampled mapping",
+    "step4.preview.customLabel": "Preview text",
+    "step4.preview.notReady":
+      "Pick fonts and add at least one mapping first.",
+    "step4.preview.showGuides": "Show typographic guides (baseline, ascent, etc.)",
+    "step4.previewText.label": "Preview text",
+    "step4.previewText.placeholder": "Leave empty to auto-pick",
+    "step4.previewText.helper":
+      "Type the text you want to preview — uses whichever mappings cover it.",
     // Step 5
-    "step5.title": "Step 6: Preview & download",
-    "step5.description":
+    "step5.title": "Step 5: Generate font",
+    "step5.description": "Press Generate to start. The progress feed below shows each step of the pipeline in real time.",
+    "step5.empty": "Not started. Click the button below to generate.",
+    "step5.run.idle": "Generate",
+    "step5.run.running": "Generating",
+    "step5.copy": "Copy log",
+    "step5.copied": "Copied",
+    // Step 6
+    "step6.title": "Step 6: Preview & download",
+    "step6.description":
       "The generated font is loaded as `@font-face` so you can type below to see it in action.",
-    "step5.noResult": "No result yet. Complete Step 5 first.",
-    "step5.sampleText":
+    "step6.noResult": "No result yet. Complete Step 5 first.",
+    "step6.sampleText":
       "Hello world — try typing 銀行, 行家, 行0 (bare, no annotation), 行1 (1st reading, same as 行 alone), 行2 (2nd reading), 行１ 行２ (fullwidth, works in Word), 行丅一, or 畫畫",
-    "step5.download.ttf": "Download TTF",
-    "step5.download.woff": "Download WOFF",
-    "step5.cssSnippet.title": "Use in your stylesheet",
-    "step5.cssSnippet.button": "Embed in website",
-    "step5.cssSnippet.copy": "Copy snippet",
-    "step5.cssSnippet.copied": "Copied",
-    "step5.cssSnippet.hint":
+    "step6.download.ttf": "Download TTF",
+    "step6.download.woff": "Download WOFF",
+    "step6.cssSnippet.title": "Use in your stylesheet",
+    "step6.cssSnippet.button": "Embed in website",
+    "step6.cssSnippet.copy": "Copy snippet",
+    "step6.cssSnippet.copied": "Copied",
+    "step6.cssSnippet.hint":
       "Save the downloaded `.woff` and `.ttf` to the **same folder** as your stylesheet, or update the `url()` paths to point at wherever you host them.",
-    "step5.cssSnippet.close": "Close",
-    "step5.cssSnippet.designAppTitle": "Using it in a design app",
-    "step5.cssSnippet.designAppHint":
+    "step6.cssSnippet.close": "Close",
+    "step6.cssSnippet.designAppTitle": "Using it in a design app",
+    "step6.cssSnippet.designAppHint":
       "Override paths all ride on OpenType `ccmp`, which is mandatory and applied without any text-setting toggles. **Canva, InDesign, Pages, Keynote, the Adobe suite** and modern browsers accept every form: **word-context** (`銀行/行人`), **1-indexed half-width digit** (`字0` = bare, `字1` = 1st reading, `字N` = N-th), **fullwidth digit** (`字０`, `字１`, `字N`), and **trigger+numeral** (`字丅零`, `字丅一`, …).\n\n**Microsoft Word note**: DirectWrite splits the half-width digit (`字1`, `字2`) into a separate shaping run from the adjacent CJK character, so that one path doesn't fire in Word. Use fullwidth digits (`字１`, `字２`) or the IME-friendly `字丅一`, `字丅二` notation instead — both work in Word. Word-context auto-switching (`銀行 / 行人`) is unaffected and works normally.",
   },
 };

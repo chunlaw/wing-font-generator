@@ -1,5 +1,5 @@
 /**
- * Step 3 — generation parameters.
+ * Step 4 — generation parameters.
  *
  * Same controls the original flat Generate.tsx had, just isolated into
  * its own step. Sliders are wired to GenerateContext so changes persist
@@ -46,7 +46,7 @@ import { buildCliCommand } from "../../../utils/buildCliCommand";
 // multi-minute round-trip just to discover the limit.
 const LF_FACESIZE_LIMIT = 31;
 
-const Step3Parameters = () => {
+const Step4Parameters = () => {
   const { t } = useTranslation();
   const {
     params,
@@ -96,7 +96,7 @@ const Step3Parameters = () => {
   })();
 
   // The auto-trigger in GenerateContext fires whenever the user is on
-  // Step 3 and any input changes (debounced). Locally we just need to
+  // Step 4 and any input changes (debounced). Locally we just need to
   // decide which of {empty / loading / result / error} to render. The
   // "previewBlocked" flag covers the cases where no run will ever
   // fire — no mappings, runtime not ready — so the UI can offer a
@@ -128,7 +128,7 @@ const Step3Parameters = () => {
   //     what their slider tweaks translate to.
   //
   // The string is also printed by wing-font.py's main() at the top
-  // of the Step 4 log, but that's AFTER they click Generate. Showing
+  // of the Step 5 log, but that's AFTER they click Generate. Showing
   // it here lets them sanity-check parameters before committing to a
   // multi-minute run.
   const cliCommand = useMemo(
@@ -223,9 +223,9 @@ const Step3Parameters = () => {
   return (
     <Box display="flex" flexDirection="column" gap={3}>
       <Box>
-        <Typography variant="h6">{t("step3.title")}</Typography>
+        <Typography variant="h6">{t("step4.title")}</Typography>
         <Typography variant="body2" color="text.secondary">
-          {t("step3.description")}
+          {t("step4.description")}
         </Typography>
       </Box>
 
@@ -270,9 +270,9 @@ const Step3Parameters = () => {
           */}
           <Box>
             <TextField
-              label={t("step3.previewText.label")}
-              placeholder={t("step3.previewText.placeholder")}
-              helperText={t("step3.previewText.helper")}
+              label={t("step4.previewText.label")}
+              placeholder={t("step4.previewText.placeholder")}
+              helperText={t("step4.previewText.helper")}
               value={previewText}
               onChange={(e) => setPreviewText(e.target.value)}
               fullWidth
@@ -284,7 +284,7 @@ const Step3Parameters = () => {
           <Divider flexItem />
 
           <TextField
-            label={t("step3.family")}
+            label={t("step4.family")}
             // helperText shape:
             //   * over limit  → red error + "N / 31 — too long, …"
             //   * 26-31 chars → neutral hint + " (N / 31)" counter
@@ -294,12 +294,12 @@ const Step3Parameters = () => {
             // (the user sees how close they are to the cap).
             helperText={
               familyTooLong
-                ? t("step3.family.tooLong")
+                ? t("step4.family.tooLong")
                     .replace("{n}", String(familyLen))
                     .replace("{max}", String(LF_FACESIZE_LIMIT))
                 : familyApproachingLimit
-                  ? `${t("step3.familyHint")}  (${familyLen} / ${LF_FACESIZE_LIMIT})`
-                  : t("step3.familyHint")
+                  ? `${t("step4.familyHint")}  (${familyLen} / ${LF_FACESIZE_LIMIT})`
+                  : t("step4.familyHint")
             }
             error={familyTooLong}
             value={params.familyName}
@@ -318,12 +318,12 @@ const Step3Parameters = () => {
           */}
           {hasFamilyCollision && (
             <Alert severity="info" variant="outlined" sx={{ mt: -1 }}>
-              {t("step3.family.collisionHint")}
+              {t("step4.family.collisionHint")}
             </Alert>
           )}
 
           <LabeledSlider
-            label={t("step3.baseScale")}
+            label={t("step4.baseScale")}
             value={params.baseScale}
             min={0.3}
             max={1}
@@ -331,7 +331,7 @@ const Step3Parameters = () => {
             onChange={(v) => setParam("baseScale", v)}
           />
           <LabeledSlider
-            label={t("step3.annoScale")}
+            label={t("step4.annoScale")}
             value={params.annoScale}
             min={0.05}
             max={0.35}
@@ -339,7 +339,7 @@ const Step3Parameters = () => {
             onChange={(v) => setParam("annoScale", v)}
           />
           <LabeledSlider
-            label={t("step3.annoSpacing")}
+            label={t("step4.annoSpacing")}
             value={params.annoSpacing}
             min={-0.02}
             max={0.15}
@@ -347,7 +347,7 @@ const Step3Parameters = () => {
             onChange={(v) => setParam("annoSpacing", v)}
           />
           <LabeledSlider
-            label={t("step3.yOffset")}
+            label={t("step4.yOffset")}
             value={params.yOffsetRatio}
             min={0}
             max={1}
@@ -363,7 +363,7 @@ const Step3Parameters = () => {
                   onChange={(e) => setParam("invert", e.target.checked)}
                 />
               }
-              label={t("step3.invert")}
+              label={t("step4.invert")}
             />
             <FormControlLabel
               control={
@@ -372,51 +372,14 @@ const Step3Parameters = () => {
                   onChange={(e) => setParam("optimize", e.target.checked)}
                 />
               }
-              label={t("step3.optimize")}
+              label={t("step4.optimize")}
             />
           </Stack>
 
-          {/*
-            Advanced section — currently just the trigger-character
-            override. Visually separated by a Divider + small section
-            label so users glancing at Step 3 immediately understand
-            that everything ABOVE is day-to-day visual params, and
-            everything BELOW is opt-in customisation they probably
-            don't need to touch.
-
-            Trigger-character TextField:
-            - `maxLength: 2` on the input limits typing to 2 UTF-16
-              code units (exactly one BMP char or one surrogate pair).
-            - `onChange` normalises via `[...v][0]` (spread-iterator
-              grapheme split) so any multi-codepoint paste collapses
-              to the first codepoint silently — matches how the Python
-              pipeline reads the value via cmap lookup.
-            - Empty string is allowed and flips the helperText to
-              explain the trigger+numeral path is now disabled (the
-              universal digit-suffix path still works).
-            - Width capped at 220px — a single-character input field
-              at fullWidth looks absurd.
-          */}
           <Divider flexItem sx={{ mt: 1 }} />
           <Typography variant="overline" color="text.secondary" sx={{ mt: -1 }}>
-            {t("step3.advancedSectionLabel")}
+            {t("step4.advancedSectionLabel")}
           </Typography>
-          <TextField
-            label={t("step3.triggerChar.label")}
-            helperText={
-              params.triggerChar === ""
-                ? t("step3.triggerChar.hintDisabled")
-                : t("step3.triggerChar.hint")
-            }
-            value={params.triggerChar}
-            onChange={(e) => {
-              const v = e.target.value;
-              const normalised = v === "" ? "" : ([...v][0] ?? "");
-              setParam("triggerChar", normalised);
-            }}
-            slotProps={{ htmlInput: { maxLength: 2 } }}
-            sx={{ maxWidth: 220 }}
-          />
           {/*
             Output-ascent control — the in-browser counterpart of
             wing-font.py's --out-ascent CLI flag. Empty input is the
@@ -437,8 +400,8 @@ const Step3Parameters = () => {
             any other value → Number with a 0/NaN reject.
           */}
           <TextField
-            label={t("step3.outAscent.label")}
-            helperText={t("step3.outAscent.hint")}
+            label={t("step4.outAscent.label")}
+            helperText={t("step4.outAscent.hint")}
             value={params.outAscent === null ? "" : String(params.outAscent)}
             onChange={(e) => {
               const v = e.target.value.trim();
@@ -457,7 +420,7 @@ const Step3Parameters = () => {
               }
             }}
             slotProps={{ htmlInput: { inputMode: "numeric", pattern: "[0-9]*" } }}
-            sx={{ maxWidth: 220 }}
+            fullWidth
           />
 
           {/*
@@ -470,7 +433,7 @@ const Step3Parameters = () => {
                 Pyodide memory limits on very large mappings — the
                 CPython path has much more headroom.
 
-            Same string is printed at the top of the Step 4 log by
+            Same string is printed at the top of the Step 5 log by
             wing-font.py's main(), but only AFTER the user clicks
             Generate. Surfacing it here lets users review FIRST.
 
@@ -482,7 +445,7 @@ const Step3Parameters = () => {
           */}
           <Divider flexItem sx={{ mt: 1 }} />
           <Typography variant="overline" color="text.secondary" sx={{ mt: -1 }}>
-            {t("step3.cli.sectionLabel")}
+            {t("step4.cli.sectionLabel")}
           </Typography>
           <Box>
             <Stack
@@ -525,15 +488,15 @@ const Step3Parameters = () => {
               <Tooltip
                 title={
                   justCopied
-                    ? t("step3.cli.copiedTooltip")
-                    : t("step3.cli.copyTooltip")
+                    ? t("step4.cli.copiedTooltip")
+                    : t("step4.cli.copyTooltip")
                 }
                 placement="top"
               >
                 <IconButton
                   size="small"
                   onClick={handleCopyCli}
-                  aria-label={t("step3.cli.copyAriaLabel")}
+                  aria-label={t("step4.cli.copyAriaLabel")}
                   sx={{ flexShrink: 0 }}
                 >
                   {justCopied ? (
@@ -549,7 +512,7 @@ const Step3Parameters = () => {
               color="text.secondary"
               sx={{ display: "block", mt: 0.5 }}
             >
-              {t("step3.cli.helperText")}
+              {t("step4.cli.helperText")}
             </Typography>
           </Box>
         </Box>
@@ -585,10 +548,10 @@ const Step3Parameters = () => {
           >
             <Box sx={{ minWidth: 0 }}>
               <Typography variant="subtitle1" sx={{ fontWeight: 600 }}>
-                {t("step3.preview.title")}
+                {t("step4.preview.title")}
               </Typography>
               <Typography variant="body2" color="text.secondary">
-                {t("step3.preview.description")}
+                {t("step4.preview.description")}
               </Typography>
             </Box>
             {/* The spinner reserves layout space even when not
@@ -601,7 +564,7 @@ const Step3Parameters = () => {
                 flexShrink: 0,
                 visibility: isPreviewing ? "visible" : "hidden",
               }}
-              aria-label={t("step3.preview.updating")}
+              aria-label={t("step4.preview.updating")}
             />
           </Stack>
 
@@ -610,7 +573,7 @@ const Step3Parameters = () => {
               we don't have a stale result to keep displaying. */}
           {previewBlocked && !previewResult && !isPreviewing && (
             <Typography variant="caption" color="text.secondary">
-              {t("step3.preview.notReady")}
+              {t("step4.preview.notReady")}
             </Typography>
           )}
 
@@ -690,7 +653,7 @@ const Step3Parameters = () => {
                       })(),
                       lineHeight: 1.2,
                       // Defeat the line-break-mid-ligature problem that
-                      // Step 5 also handles — annotated chars should
+                      // Step 6 also handles — annotated chars should
                       // never split across lines.
                       overflowWrap: "normal",
                       wordBreak: "keep-all",
@@ -716,7 +679,7 @@ const Step3Parameters = () => {
               >
                 {previewResult.isCustomText ? (
                   <>
-                    {t("step3.preview.customLabel")}:{" "}
+                    {t("step4.preview.customLabel")}:{" "}
                     <Box
                       component="span"
                       sx={{ fontFamily: "monospace", fontWeight: 600 }}
@@ -726,7 +689,7 @@ const Step3Parameters = () => {
                   </>
                 ) : (
                   <>
-                    {t("step3.preview.sampledLabel")}:{" "}
+                    {t("step4.preview.sampledLabel")}:{" "}
                     <Box
                       component="span"
                       sx={{ fontFamily: "monospace", fontWeight: 600 }}
@@ -755,7 +718,7 @@ const Step3Parameters = () => {
                 }
                 label={
                   <Typography variant="caption" color="text.secondary">
-                    {t("step3.preview.showGuides")}
+                    {t("step4.preview.showGuides")}
                   </Typography>
                 }
                 sx={{ mt: 1, ml: 0, "& .MuiFormControlLabel-label": { ml: 0.5 } }}
@@ -804,7 +767,7 @@ const Step3Parameters = () => {
             >
               <CircularProgress size={32} />
               <Typography variant="body2" color="text.secondary">
-                {t("step3.preview.firstRun")}
+                {t("step4.preview.firstRun")}
               </Typography>
             </Box>
           )}
@@ -817,7 +780,7 @@ const Step3Parameters = () => {
             !previewError &&
             !previewBlocked && (
               <Typography variant="body2" color="text.secondary">
-                {t("step3.preview.idle")}
+                {t("step4.preview.idle")}
               </Typography>
             )}
             </CardContent>
@@ -1083,4 +1046,4 @@ const PreviewWithGuides = ({
 
 // Re-export the type so step files can be self-contained imports.
 export type { GenerateParams };
-export default Step3Parameters;
+export default Step4Parameters;

@@ -1,5 +1,5 @@
 /**
- * Step 4 — Generate the font.
+ * Step 5 — Generate the font.
  *
  * The primary action of this step is pressing the Generate button to
  * kick off the Pyodide pipeline. The streaming progress feed below
@@ -7,7 +7,7 @@
  * the pipeline is doing, not the step's purpose. (Earlier the step
  * was titled "Log" after the feed, but that undersold the action;
  * the other steps are named after what you DO in them and this one
- * follows suit.) On success the context auto-advances to Step 5.
+ * follows suit.) On success the context auto-advances to Step 6.
  */
 import {
   Alert,
@@ -25,7 +25,7 @@ import { useEffect, useRef, useState } from "react";
 import { useGenerate } from "../GenerateContext";
 import { useTranslation } from "../../../i18n/LanguageContext";
 
-const Step4Log = () => {
+const Step5Log = () => {
   const { t } = useTranslation();
   const {
     progressLog,
@@ -63,9 +63,9 @@ const Step4Log = () => {
   return (
     <Box display="flex" flexDirection="column" gap={2}>
       <Box>
-        <Typography variant="h6">{t("step4.title")}</Typography>
+        <Typography variant="h6">{t("step5.title")}</Typography>
         <Typography variant="body2" color="text.secondary">
-          {t("step4.description")}
+          {t("step5.description")}
         </Typography>
       </Box>
 
@@ -170,12 +170,12 @@ const Step4Log = () => {
               <CircularProgress size={16} color="inherit" thickness={5} />
             )}
             {isGenerating
-              ? `${t("step4.run.running")} ${Math.round(progress * 100)}%`
-              : t("step4.run.idle")}
+              ? `${t("step5.run.running")} ${Math.round(progress * 100)}%`
+              : t("step5.run.idle")}
           </Box>
         </Button>
         <Box flex={1} />
-        <Tooltip title={copied ? t("step4.copied") : t("step4.copy")} arrow>
+        <Tooltip title={copied ? t("step5.copied") : t("step5.copy")} arrow>
           <span>
             <IconButton
               size="small"
@@ -232,7 +232,7 @@ const Step4Log = () => {
       >
         {progressLog.length === 0 ? (
           <Typography variant="body2" sx={{ fontStyle: "italic" }}>
-            {t("step4.empty")}
+            {t("step5.empty")}
           </Typography>
         ) : (
           progressLog.join("\n")
@@ -242,4 +242,4 @@ const Step4Log = () => {
   );
 };
 
-export default Step4Log;
+export default Step5Log;

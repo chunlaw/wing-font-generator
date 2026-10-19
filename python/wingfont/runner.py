@@ -12,7 +12,7 @@ and writes outputs to disk. In a browser there is no real disk, so this module:
 
 Two entry points:
 
-  * generate(...) — full pipeline. Used by the Step 4 "real" run that
+  * generate(...) — full pipeline. Used by the Step 5 "real" run that
     produces the user's downloadable font.
 
   * prepare_preview_fonts(...) — pre-trim the input fonts to just the
@@ -274,7 +274,7 @@ def generate(
     pre-trimmed bytes are swapped in before the pipeline runs.
     That collapses the input-font load and the in-pipeline subset
     step from ~3 s to a few hundred ms — the main mechanism for
-    sub-second live previews. The full-run path (Step 4) leaves the
+    sub-second live previews. The full-run path (Step 5) leaves the
     flag at its default `False` so it sees the original full-size
     font.
 
@@ -306,7 +306,7 @@ def generate(
     # emitted on every call when use_trim_cache=True. Previously
     # only the hit case was logged; that made cache misses
     # invisible to debugging — "why is my preview slow?" had no
-    # observable answer. Now the preview status panel in Step 3
+    # observable answer. Now the preview status panel in Step 4
     # always shows one of these two lines, which is the cheapest
     # way to tell at a glance whether the optimisation is firing.
     if use_trim_cache:

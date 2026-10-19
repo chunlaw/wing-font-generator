@@ -479,13 +479,13 @@ _pt_result
 //      the now-clobbered globals. The pipeline runs on GENERATE's
 //      inputs with GENERATE's progress callback — every progress
 //      message routes to the main thread's generate handler, which
-//      appends to Step 4's log as if generate ran.
+//      appends to Step 5's log as if generate ran.
 //   4. Preview "completes." The worker dequeues generate's own
 //      runPythonAsync, which sees the still-set generate globals
 //      and runs the pipeline AGAIN, appending a second complete
 //      run to the log.
 //
-// Net visible effect: Step 4 shows the pipeline running twice
+// Net visible effect: Step 5 shows the pipeline running twice
 // after a preview-then-generate navigation, and the preview's
 // installed font is silently wrong (it's whatever bytes generate
 // produced).

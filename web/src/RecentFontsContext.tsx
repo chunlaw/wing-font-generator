@@ -14,7 +14,7 @@
  *      don't leak object URLs over a long session.
  *
  * Why a context and not just a hook:
- *   - Multiple surfaces consume the list (Step 1 chips, Step 5 save
+ *   - Multiple surfaces consume the list (Step 1 chips, Step 6 save
  *     affordance, Showcase font picker, Specimen lookup). One context
  *     means one IndexedDB read on app boot, not four.
  *   - Mutations need to broadcast to every consumer. Without a shared
@@ -156,7 +156,7 @@ export const RecentFontsProvider = ({ children }: { children: ReactNode }) => {
         const blobUrl = URL.createObjectURL(blob);
         // Register under the opaque `entry.id` rather than the
         // user-provided `fontFamily` so two generations that share a
-        // family name (e.g. user re-generated with the same Step 3
+        // family name (e.g. user re-generated with the same Step 4
         // family field) don't collide in the @font-face registry —
         // each entry gets its own unique FontFace. The visible
         // label (`entry.displayName`) is shown in pickers; the id

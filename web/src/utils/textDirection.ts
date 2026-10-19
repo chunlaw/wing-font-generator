@@ -13,7 +13,7 @@
  *      base glyph unless the container is explicitly marked `dir="rtl"`.
  *
  *   2. Cursive joining. Arabic letters join to their neighbours, and
- *      the Step 5 preview wraps every base+trigger group in its own
+ *      the Step 6 preview wraps every base+trigger group in its own
  *      inline <span> (to stop a line break landing mid-ligature — a
  *      real hazard for CJK, which has a break opportunity on EVERY
  *      character boundary). Splitting a connected Arabic word across
@@ -61,7 +61,7 @@ function isRtlCodepoint(cp: number): boolean {
 /**
  * True when `text` contains at least one strong right-to-left
  * character. Used to (a) set `dir="rtl"` on preview containers and
- * (b) tell the Step 5 no-break splitter to leave cursive text intact.
+ * (b) tell the Step 6 no-break splitter to leave cursive text intact.
  */
 export function isRtlText(text: string): boolean {
   // Iterate by codepoint (not UTF-16 unit) so astral-plane scripts are
