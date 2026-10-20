@@ -93,6 +93,13 @@ export function buildLlmsTxt(host, fonts) {
 
 The site is bilingual: every page exists under /en/ and /zh/ (Traditional Chinese, Cantonese).
 
+## Who it's for
+
+- Ethnic-minority students in Hong Kong who can write Chinese but can't yet read it aloud: every character carries its reading.
+- Teachers making worksheets and slides with readings in Word or PowerPoint, without annotating character by character.
+- Self-learners: a Jyutping / Cantonese pronunciation font to learn Cantonese, and likewise for Taiwanese, Mandarin, Japanese and Thai.
+- Learners who haven't learned Jyutping yet: sound-spelling fonts write Cantonese in a script they already read (Thai, katakana, Hangul, Urdu and more) as a bridge, not a replacement.
+
 ## Start here
 
 - [Home](${host}/en/): what Wing Font is and how to install a font
@@ -105,7 +112,7 @@ The site is bilingual: every page exists under /en/ and /zh/ (Traditional Chines
 
 - [Source code](${REPO_URL}): the generator (Python, also run in the browser via Pyodide)
 - [AGENTS.md](${REPO_URL}/blob/main/AGENTS.md): repo layout, commands, and how to add a language or romanization
-- [CLI reference](${REPO_URL}/blob/main/python/README.md): \`pip install "git+${REPO_URL}#subdirectory=python"\`, then \`wing-font -i <base font> -a <annotation font> -m <mapping.csv> -o <name>\`
+- [CLI reference](${REPO_URL}/blob/main/python/README.md): \`pip install wing-font\` ([PyPI](https://pypi.org/project/wing-font/)), then \`wing-font -i <base font> -a <annotation font> -m <mapping.csv> -o <name>\`
 - [Mapping format](${REPO_URL}/blob/main/python/mappings/CONTRIBUTING-mappings.md): the \`character,reading\` CSVs behind each font
 - [Wing Sans on Google Fonts](https://github.com/Wing-Font/wing-sans-chinese): the Wing Sans families submitted to Google Fonts
 

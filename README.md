@@ -58,8 +58,8 @@ Visit [wing-font.chunlaw.io/generate](https://wing-font.chunlaw.io/generate), pi
 ### CLI / Python package
 
 ```sh
-pip install "git+https://github.com/chunlaw/wing-font-generator#subdirectory=python"
-# (or, from a clone: pip install ./python — once on PyPI: pip install wing-font)
+pip install wing-font
+# (or the latest main: pip install "git+https://github.com/chunlaw/wing-font-generator#subdirectory=python")
 
 wing-font fetch ChironSungHK-R.ttf NotoSerif-Regular.ttf --dest input_fonts
 wing-font fetch cantonese/canto-lshk.csv cantonese/lshk.diy-annotation.csv --dest mappings
