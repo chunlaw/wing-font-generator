@@ -84,12 +84,9 @@ async function main() {
 
   const { default: puppeteer } = await import("puppeteer");
   const { server, origin } = await startServer(CARD_HTML, REPO);
-  const browser = await puppeteer.launch({ headless: true, args: ["--no-sandbox", "--disable-dev-shm-usage"] });
   await mkdir(OUT_DIR, { recursive: true });
+  const missing = new Set();
   try {
-    const page = await browser.newPage();
-    await page.setViewport({ width: 1200, height: 630 });
-    const missing = new Set();
     for (const font of fonts) {
       const out = path.join(OUT_DIR, `${font.name}.png`);
       const sample = OG_SAMPLES[catalog.findTemplateKey(font.name)];
@@ -106,17 +103,23 @@ async function main() {
         name: font.displayName,
         sub: [catalog.getDialectLabel(dialect, "zh"), font.note].filter(Boolean).join(" · "),
       });
-      await page.goto(`${origin}/card?${params}`, { waitUntil: "domcontentloaded" });
-      // Cards load the TTF: Chrome rejects WOFF2 files that decode past ~30 MB.
-      await page.evaluate(() => window.cardReady).catch((err) => {
-        throw new Error(`og-images: ${font.name}.ttf failed to load: ${err.message ?? err}`);
-      });
-      await writeFile(out, await page.screenshot({ type: "png" }));
+      // Fresh Chrome per card: one browser fed dozens of 30 MB fonts hung on CI.
+      const browser = await puppeteer.launch({ headless: true, args: ["--no-sandbox", "--disable-dev-shm-usage"] });
+      try {
+        const page = await browser.newPage();
+        await page.setViewport({ width: 1200, height: 630 });
+        await page.goto(`${origin}/card?${params}`, { waitUntil: "domcontentloaded" });
+        // Cards load the TTF: Chrome rejects WOFF2 files that decode past ~30 MB.
+        await page.evaluate(() => window.cardReady).catch((err) => {
+          throw new Error(`og-images: ${font.name}.ttf failed to load: ${err.message ?? err}`);
+        });
+        await writeFile(out, await page.screenshot({ type: "png" }));
+      } finally {
+        await browser.close();
+      }
     }
-    await page.close();
     if (missing.size) console.warn(`og-images: no OG_SAMPLES line for ${[...missing].join(", ")} — used /share.png`);
   } finally {
-    await browser.close();
     server.close();
   }
   console.log(`og-images: wrote ${fonts.length} card(s) to dist/og/`);
