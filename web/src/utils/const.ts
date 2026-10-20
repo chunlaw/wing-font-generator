@@ -1137,14 +1137,14 @@ export function getDialectLabel(
   // single function instead of repeating the `lang === "zh" ? ... :
   // ...` ternary across three files.
   if (dialectKey === USER_FONTS_GROUP_KEY) {
-    // Label switched from "自家生成字型 / Your generated fonts" to a
-    // broader "自家字型 / Your fonts" when /showcase + /specimen
+    // Label switched from "自家生成字體 / Your generated fonts" to a
+    // broader "自家字體 / Your fonts" when /showcase + /specimen
     // gained the ability to upload arbitrary .ttf/.woff files. The
     // group now covers both pipeline-generated and user-uploaded
     // entries; the chip's source-specific icon (RecentFontsChips)
     // tells them apart at a glance, while the group label stays
     // general enough to honestly describe the contents.
-    return locale === "zh" ? "自家字型" : "Your fonts";
+    return locale === "zh" ? "自家字體" : "Your fonts";
   }
   const group = AVAILABLE_FONTS[dialectKey];
   if (!group) return dialectKey;

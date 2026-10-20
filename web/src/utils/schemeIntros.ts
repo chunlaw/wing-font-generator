@@ -44,7 +44,7 @@ const SCHEME_INTROS: Record<string, { zh: string; en: string }> = {
   YuePunjabi: SOUND_SPELLING,
   YueBaybayin: SOUND_SPELLING,
   Cangjie: {
-    zh: "倉頡碼係倉頡輸入法嘅字根編碼，輸入法由朱邦復於 1976 年發明。呢隻字型將每個字嘅倉頡碼印喺字上面，方便學倉頡或者查碼。",
+    zh: "倉頡碼係倉頡輸入法嘅字根編碼，輸入法由朱邦復於 1976 年發明。呢隻字體將每個字嘅倉頡碼印喺字上面，方便學倉頡或者查碼。",
     en: "Cangjie codes are the radical sequences of the Cangjie input method, invented by Chu Bong-Foo in 1976. This font prints each character's Cangjie code above it, for learning the method or looking up a code.",
   },
   GuoyuPinyin: {
@@ -84,7 +84,7 @@ const SCHEME_INTROS: Record<string, { zh: string; en: string }> = {
     en: "Peh-uē-jī (PUJ) is the romanization 19th-century missionaries devised for Teochew.",
   },
   JapaneseFurigana: {
-    zh: "振假名係日文喺漢字旁邊標讀音嘅做法，呢隻字型標漢字嘅音讀同訓讀。",
+    zh: "振假名係日文喺漢字旁邊標讀音嘅做法，呢隻字體標漢字嘅音讀同訓讀。",
     en: "Furigana are the small kana Japanese prints beside kanji to show their reading; this font annotates both on'yomi and kun'yomi readings.",
   },
   HindiRoman: {
@@ -108,3 +108,19 @@ export function schemeIntro(fontName: string, lang: "zh" | "en"): string | undef
     .sort((a, b) => b.length - a.length)[0];
   return match ? SCHEME_INTROS[match][lang] : undefined;
 }
+
+const LANGUAGE_PREFIX = /^(Yue|Taigi|Guoyu|Putonghua|Teochew|Japanese|Thai|Hindi|Arabic|Inuktitut)/;
+const SCHEME_EN: Record<string, string> = {
+  Jyutping: "Jyutping", Yale: "Yale", Lau: "Sidney Lau", Wong: "Wong Shik-ling",
+  Guangdong: "Guangzhou Romanization", Chishima: "Chishima", Cangjie: "Cangjie",
+  Pinyin: "Pinyin", Zhuyin: "Zhuyin", Tailo: "Tâi-lô", POJ: "POJ", TPS: "TPS",
+  Kana: "Taiwanese Kana", Pengim: "Peng'im", PUJ: "PUJ", Furigana: "Furigana",
+};
+
+/** English scheme name for search titles ("WingHandTaigiTailoTaipak" -> "Tâi-lô"), if it is a named scheme. */
+export function schemeNameEn(fontName: string): string | undefined {
+  const rest = schemeKey(fontName).replace(LANGUAGE_PREFIX, "");
+  const token = rest.match(/^([A-Z]{2,}(?![a-z])|[A-Z][a-z]+)/)?.[1];
+  return token ? SCHEME_EN[token] : undefined;
+}
+

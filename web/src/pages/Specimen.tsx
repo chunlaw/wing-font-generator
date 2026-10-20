@@ -20,6 +20,7 @@ import {
   isListedFont,
 } from "../utils/const";
 import SpecimenAbout from "../components/SpecimenAbout";
+import { schemeNameEn } from "../utils/schemeIntros";
 import { FontHeader } from "../components/components/FonttHeader";
 import Markdown from "../components/Markdown";
 import { useTranslation } from "../i18n/LanguageContext";
@@ -140,7 +141,12 @@ const Specimen = () => {
   useDocumentMeta(
     t("meta.specimen.title")
       .replace("{name}", fontOption.displayName)
-      .replace("{scheme}", fontOption.note?.split("・")[0] ?? dialectForMeta)
+      .replace(
+        "{scheme}",
+        lang === "zh"
+          ? (fontOption.note?.split("・")[0] ?? dialectForMeta)
+          : (schemeNameEn(fontOption.name) ?? "Annotated"),
+      )
       .replace("{dialect}", dialectForMeta),
     t("meta.specimen.description")
       .replace("{name}", fontOption.displayName)

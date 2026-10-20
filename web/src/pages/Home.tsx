@@ -596,6 +596,13 @@ const Home = () => {
         </Box>
       </Stack>
 
+      <Box maxWidth={1100} mx="auto" width="100%" px={2}>
+        <Typography variant="h4" gutterBottom>
+          {t("home.who.title")}
+        </Typography>
+        <Markdown>{t("home.who.body")}</Markdown>
+      </Box>
+
       {/* Feature cards */}
       <Box maxWidth={1100} mx="auto" width="100%" px={2}>
         <Typography variant="h4" gutterBottom sx={{ mb: 3 }}>

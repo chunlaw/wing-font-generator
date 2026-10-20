@@ -231,6 +231,8 @@ export type TranslationKey =
   | "about.opensource.body"
   | "about.dialects.title"
   | "about.dialects.body"
+  | "home.who.title"
+  | "home.who.body"
   | "about.contribute.title"
   | "about.contribute.intro"
   | "about.contribute.code.title"
@@ -405,7 +407,7 @@ export const TRANSLATIONS: Record<Language, Record<TranslationKey, string>> = {
     "footer.license": "MIT License（自由及開源軟件）",
     "footer.about.title": "關於 Wing Font",
     "footer.about.body":
-      "Wing Font 是一套開源工具，讓任何人都可以為粵語、倉頡等任何標註方式自製字型。所有計算都在你的瀏覽器內進行，毋須上傳檔案。",
+      "Wing Font 是一套開源工具，讓任何人都可以為粵語、倉頡等任何標註方式自製字體。所有計算都在你的瀏覽器內進行，毋須上傳檔案。",
     "footer.links.title": "連結",
     "footer.links.generate": "自製字體",
     "footer.links.showcase": "字體展示",
@@ -419,43 +421,43 @@ export const TRANSLATIONS: Record<Language, Record<TranslationKey, string>> = {
     "legal.terms.title": "使用條款",
     "legal.privacy.title": "私隱政策",
     "legal.effectiveDate": "生效日期：{date}",
-    "meta.home.title": "Wing Font — 免費粵拼、拼音、注音字型下載",
+    "meta.home.title": "Wing Font — 粵拼字體、拼音字體、注音字體免費下載",
     "meta.home.description":
-      "免費開源標注字型，讀音直接印喺每個字形度 —— 粵拼、拼音、注音、台羅等等，支援中文各方言、日文、泰文、阿拉伯文等。Word、Pages、Canva、瀏覽器直接打字就得，PowerPoint 用免費增益集。",
-    "meta.showcase.title": "全部標注字型：粵拼、耶魯、拼音、注音、台羅 | Wing Font",
+      "免費開源標注字體，讀音直接印喺每個字形度 —— 粵拼字體（粵語／廣東話拼音字體）、拼音、注音、台羅等等，支援中文各方言、日文、泰文、阿拉伯文等，幫少數族裔學生讀中文。Word、Pages、Canva、瀏覽器直接打字就得，PowerPoint 用免費增益集。",
+    "meta.showcase.title": "全部標注字體：粵拼、耶魯、拼音、注音、台羅 | Wing Font",
     "meta.showcase.description":
-      "瀏覽並下載全部預先生成嘅標注字型 —— 粵拼、耶魯、拼音、注音、台羅、潮拼、振假名、泰文、阿拉伯文等，免費使用（SIL OFL 1.1）。",
-    "meta.specimen.title": "{name}：{scheme}字型免費下載（{dialect}）| Wing Font",
+      "瀏覽並下載全部預先生成嘅標注字體 —— 粵拼、耶魯、拼音、注音、台羅、潮拼、振假名、泰文、阿拉伯文等，免費使用（SIL OFL 1.1）。",
+    "meta.specimen.title": "{name}：{scheme}字體免費下載（{dialect}）| Wing Font",
     "meta.specimen.description":
-      "{name}：免費{dialect}字型，將讀音標注直接印喺每個字之上。由 Wing Font 將開源底字同標注字型合成。可即時預覽並下載 TTF／WOFF2，開源並依 SIL OFL 1.1 授權。",
-    "meta.generate.title": "粵拼／拼音字型生成器：自製標注字型 | Wing Font",
+      "{name}：免費{dialect}字體，將讀音標注直接印喺每個字之上。由 Wing Font 將開源底字同標注字體合成。可即時預覽並下載 TTF／WOFF2，開源並依 SIL OFL 1.1 授權。",
+    "meta.generate.title": "粵拼／拼音字體生成器：自製標注字體 | Wing Font",
     "meta.generate.description":
-      "揀一隻底字、一份對應表、調好參數，即時喺瀏覽器內生成你專屬嘅標注字型。免註冊、免安裝、所有運算喺本機完成。",
+      "揀一隻底字、一份對應表、調好參數，即時喺瀏覽器內生成你專屬嘅標注字體。免註冊、免安裝、所有運算喺本機完成。",
     "meta.about.title": "關於 | Wing Font",
     "meta.about.description":
       "Wing Font 係一個免費開源項目，將粵拼、拼音、台羅等讀音直接合成入字形，支援中文各方言、日文、泰文、阿拉伯文等。",
     "meta.credits.title": "鳴謝 | Wing Font",
     "meta.credits.description":
-      "Wing Font 所依賴嘅開源資料同字型 —— 思源黑體、昭源宋體、小賴、開蕓、TypeDuck、mozillazg pinyin-data 等。",
+      "Wing Font 所依賴嘅開源資料同字體 —— 思源黑體、昭源宋體、小賴、開蕓、TypeDuck、mozillazg pinyin-data 等。",
     "meta.terms.title": "使用條款 | Wing Font",
     "meta.terms.description":
-      "Wing Font 使用條款 —— 免費開源標注字型生成工具嘅授權與責任範圍。",
+      "Wing Font 使用條款 —— 免費開源標注字體生成工具嘅授權與責任範圍。",
     "meta.privacy.title": "私隱政策 | Wing Font",
     "meta.privacy.description":
-      "Wing Font 私隱政策 —— 所有字型生成完全於你瀏覽器內進行；無賬戶、無追蹤、無第三方分析工具。",
+      "Wing Font 私隱政策 —— 所有字體生成完全於你瀏覽器內進行；無賬戶、無追蹤、無第三方分析工具。",
     // Acknowledgements page
     "ack.hero.title": "鳴謝",
-    "ack.hero.tagline": "Wing Font 站喺好多開源資料庫同字型嘅肩膊上。",
+    "ack.hero.tagline": "Wing Font 站喺好多開源資料庫同字體嘅肩膊上。",
     "ack.intro":
-      "以下係令到 Wing Font 各種方言標注得以實現嘅開源資料庫同字型。多謝佢哋嘅無私分享。",
+      "以下係令到 Wing Font 各種方言標注得以實現嘅開源資料庫同字體。多謝佢哋嘅無私分享。",
     "ack.dataQuality.title": "資料來源同準確性",
     "ack.dataQuality.body":
-      "Wing Font 係一個個人開源項目，作者並非語言學者。每一份預生成字型嘅拼音對應表，原始資料都嚟自下面列出嘅上游開源項目；但各個來源嘅格式、用詞、聲調符號慣例都唔同，所以資料係透過**人手編輯、正則轉換，加上 AI 輔助工具**（LLM 用嚟清理數據、程式化轉換用嚟統一聲調同詞語切分、有覆蓋唔到嘅地方亦會生成 fallback 讀音）正規化、去重、消歧。\n\n換言之，**錯誤難免** —— 多音字嘅預設讀音可能揀錯、某啲方言變體可能漏咗、多字詞嘅切分可能唔啱、聲調連讀（tone sandhi）嘅邊界個案有機會處理唔到。\n\n如果你係母語使用者、語言學者，或者單純眼利見到出錯，**歡迎你[喺 GitHub 提 issue](https://github.com/chunlaw/wing-font-generator/issues) 或者[加入 Telegram 群組](https://t.me/wingfont)** 指正——修正會喺下一次 CI 構建發佈。",
+      "Wing Font 係一個個人開源項目，作者並非語言學者。每一份預生成字體嘅拼音對應表，原始資料都嚟自下面列出嘅上游開源項目；但各個來源嘅格式、用詞、聲調符號慣例都唔同，所以資料係透過**人手編輯、正則轉換，加上 AI 輔助工具**（LLM 用嚟清理數據、程式化轉換用嚟統一聲調同詞語切分、有覆蓋唔到嘅地方亦會生成 fallback 讀音）正規化、去重、消歧。\n\n換言之，**錯誤難免** —— 多音字嘅預設讀音可能揀錯、某啲方言變體可能漏咗、多字詞嘅切分可能唔啱、聲調連讀（tone sandhi）嘅邊界個案有機會處理唔到。\n\n如果你係母語使用者、語言學者，或者單純眼利見到出錯，**歡迎你[喺 GitHub 提 issue](https://github.com/chunlaw/wing-font-generator/issues) 或者[加入 Telegram 群組](https://t.me/wingfont)** 指正——修正會喺下一次 CI 構建發佈。",
     "ack.prior.title": "前人作品",
     "ack.prior.body":
-      "喺漢字字型入面內建注音，再用 OpenType 按上下文揀多音字讀音，呢個做法唔係 Wing Font 首創。Wing Font 用嘅係同一個方法。",
+      "喺漢字字體入面內建注音，再用 OpenType 按上下文揀多音字讀音，呢個做法唔係 Wing Font 首創。Wing Font 用嘅係同一個方法。",
     "ack.prior.mengshen":
-      "內建漢語拼音嘅中文字型，2019 年 7 月首次發佈；2020 年 11 月 v1.0 起用 OpenType GSUB（rclt）按上下文自動揀多音字讀音。",
+      "內建漢語拼音嘅中文字體，2019 年 7 月首次發佈；2020 年 11 月 v1.0 起用 OpenType GSUB（rclt）按上下文自動揀多音字讀音。",
     "ack.taigi.title": "臺語／河洛話　字音資料",
     "ack.taigi.body":
       "臺語（河洛話）嘅標準（優勢腔）讀音同九種「腔」嘅語音差異，源自教育部《臺灣台語常用詞辭典》（CC BY-ND 3.0 TW），台羅／白話字直接取自辭典，TLPA／閩拼則由台羅推導。多字詞逐字標音，可用作多音字辨義。",
@@ -472,9 +474,9 @@ export const TRANSLATIONS: Record<Language, Record<TranslationKey, string>> = {
       "潮州話漢字／詞語讀音字庫（teochew_scrape.json，廣東拼音），亦係首頁「家己个歌，家己唱；家己个字，家己揀。」示範句嘅出處。",
     "ack.teochew.parsetc":
       "潮州話拼音解析及轉換工具，將廣東拼音讀音轉成潮羅、白話字、潮語、家己儂拼音、新文字等方案。",
-    "ack.fonts.title": "字型",
+    "ack.fonts.title": "字體",
     "ack.fonts.body":
-      "Wing Font 所用嘅字型，全部都係 SIL Open Font License 1.1（OFL-1.1）授權。OFL 嘅原文同每隻字型嘅版權聲明、保留字型名稱（Reserved Font Name），統一收錄喺 wing-font-hub 嘅 LICENSES/ 目錄。下面係字型一覽，按用途分組。",
+      "Wing Font 所用嘅字體，全部都係 SIL Open Font License 1.1（OFL-1.1）授權。OFL 嘅原文同每隻字體嘅版權聲明、保留字體名稱（Reserved Font Name），統一收錄喺 wing-font-hub 嘅 LICENSES/ 目錄。下面係字體一覽，按用途分組。",
     "ack.fonts.notosanstc":
       "繁體中文漢字底字（變數字重）。SIL Open Font License 1.1。",
     "ack.fonts.notosanssc":
@@ -482,9 +484,9 @@ export const TRANSLATIONS: Record<Language, Record<TranslationKey, string>> = {
     "ack.fonts.notosanshk":
       "繁體中文（香港字形）漢字底字（變數字重），為廣東話示範字體嘅預設底字。SIL Open Font License 1.1。",
     "ack.fonts.notosansjp":
-      "片仮名標注用字型（變數字重）。SIL Open Font License 1.1。",
+      "片仮名標注用字體（變數字重）。SIL Open Font License 1.1。",
     "ack.fonts.notosanskr":
-      "諺文（한글）標注用字型（變數字重）。SIL Open Font License 1.1。",
+      "諺文（한글）標注用字體（變數字重）。SIL Open Font License 1.1。",
     "ack.fonts.chironsung":
       "繁體中文宋體底字，內含 Regular 同 Italic。SIL Open Font License 1.1。",
     "ack.fonts.chironhei":
@@ -494,22 +496,22 @@ export const TRANSLATIONS: Record<Language, Record<TranslationKey, string>> = {
     "ack.fonts.xiaolai":
       "簡體中文手寫風格底字（小米同 lxgw 整理嘅 Xiaolai SC）。SIL Open Font License 1.1。",
     "ack.fonts.huninn":
-      "標注用字型，由 justfont 開源嘅 Huninn（粉圓）提供，完整支援台羅／白話字嘅聲調符號。SIL Open Font License 1.1。",
+      "標注用字體，由 justfont 開源嘅 Huninn（粉圓）提供，完整支援台羅／白話字嘅聲調符號。SIL Open Font License 1.1。",
     "ack.fonts.notoserif":
-      "拉丁字母標注（粵拼、Yale 等）所用嘅羅馬字字型。SIL Open Font License 1.1。",
+      "拉丁字母標注（粵拼、Yale 等）所用嘅羅馬字字體。SIL Open Font License 1.1。",
     "ack.fonts.mplus1m":
-      "日文 M+ 1m 等寬字型，配 Source Han Serif 用於普通話示範。SIL Open Font License 1.1。",
+      "日文 M+ 1m 等寬字體，配 Source Han Serif 用於普通話示範。SIL Open Font License 1.1。",
     "ack.fonts.mplusrounded":
       "日文 M+ Rounded 1c 圓體，配 Xiaolai SC 用於手寫風普通話示範。SIL Open Font License 1.1。",
     "ack.fonts.googlesansthai":
-      "粵語讀音轉成泰文嘅標注用字型，由 IT Foundry／Cadson Demak 設計。SIL Open Font License 1.1。「Google Sans」係 Google LLC 嘅商標。",
+      "粵語讀音轉成泰文嘅標注用字體，由 IT Foundry／Cadson Demak 設計。SIL Open Font License 1.1。「Google Sans」係 Google LLC 嘅商標。",
     "ack.canto.title": "廣東話　字音資料",
     "ack.canto.typeduck": "粵拼（LSHK）字音資料。CC BY 4.0。",
     "ack.canto.cuhk": "香港中文大學「粵語審音配詞字庫」。",
     "ack.canto.kodensha": "粵語羅馬拼音轉換工具。",
     "ack.mandarin.title": "普通話／國語　字音資料",
     "ack.mandarin.body":
-      "普通話（mandarin-cn）字音資料全部取自 mozillazg 採用 MIT 授權嘅開源資料，並非來自任何 OFL 字型項目；每字嘅預設讀音依照 Unicode Unihan 資料庫嘅 kMandarin 欄。新加坡同馬來西亞官方都採用普通話讀音標準，所以同 mandarin-cn 一致。台灣國語（mandarin-tw-toned／mandarin-tw-zhuyin）就完全取自台灣教育部《重編國語辭典修訂本》：每個字同詞嘅讀音、以至注音本身都跟辭典（例如 期 qí、垃圾 lè sè），資料取自 g0v moedict-data。將拼音直接造入字形、再按上下文自動切換多音字嘅做法，最早由 Mengshen 拼音字型（OFL-1.1）開創；Wing Font 並無使用佢嘅資料檔案，但謹此鳴謝佢嘅啟發。",
+      "普通話（mandarin-cn）字音資料全部取自 mozillazg 採用 MIT 授權嘅開源資料，並非來自任何 OFL 字體項目；每字嘅預設讀音依照 Unicode Unihan 資料庫嘅 kMandarin 欄。新加坡同馬來西亞官方都採用普通話讀音標準，所以同 mandarin-cn 一致。台灣國語（mandarin-tw-toned／mandarin-tw-zhuyin）就完全取自台灣教育部《重編國語辭典修訂本》：每個字同詞嘅讀音、以至注音本身都跟辭典（例如 期 qí、垃圾 lè sè），資料取自 g0v moedict-data。將拼音直接造入字形、再按上下文自動切換多音字嘅做法，最早由 Mengshen 拼音字體（OFL-1.1）開創；Wing Font 並無使用佢嘅資料檔案，但謹此鳴謝佢嘅啟發。",
     "ack.mandarin.pinyindata": "普通話逐字讀音資料（MIT；源自 Unihan）。",
     "ack.mandarin.phrasepinyindata": "詞語讀音資料，用嚟做多音字上下文判斷（MIT）。",
     "ack.mandarin.unihan": "Unicode 漢字資料庫（Unihan）— 上游讀音資料。",
@@ -523,7 +525,7 @@ export const TRANSLATIONS: Record<Language, Record<TranslationKey, string>> = {
     "ack.inuktitut.hansard": "Nunavut 議會議事錄（CC BY 4.0），由加拿大國家研究委員會（NRC）對齊，經 OPUS 發佈；用嚟計詞頻。",
     "ack.inuktitut.qaniujaaqpait": "音節文字轉羅馬字工具（MIT），用嚟產生所有讀音。",
     "ack.license":
-      "各項資料與字型均依其原有授權條款使用；如需轉載或再發佈，請先參閱各來源之授權。",
+      "各項資料與字體均依其原有授權條款使用；如需轉載或再發佈，請先參閱各來源之授權。",
     "ack.cta.showcase": "睇睇成品字體",
     // Home
     "home.hero.title": "Wing Font",
@@ -535,39 +537,42 @@ export const TRANSLATIONS: Record<Language, Record<TranslationKey, string>> = {
     "home.hero.cta.showcase": "瀏覽現成字體",
     "home.platforms.title": "你常用的軟件全部支援",
     "home.platforms.body":
-      "輸出標準 TTF / WOFF 字型檔，能在任何支援自訂字型的軟件中載入，無需特殊外掛或設定 — 連電子書閱讀器都用得上。",
+      "輸出標準 TTF / WOFF 字體檔，能在任何支援自訂字體的軟件中載入，無需特殊外掛或設定 — 連電子書閱讀器都用得上。",
     "home.platforms.free": "✓ 完全免費，無需註冊。",
     "home.platforms.learnMoreTitle": "在你的軟件上使用",
     "home.platforms.learnMoreSubtitle":
       "選擇你常用的軟件或作業系統，查看安裝與設定步驟。",
     "home.platforms.tabs.canva":
-      "1. 開啟設計，點擊文字元素。\n2. 在字型選單按「**上載字型**」，選擇下載的 `.ttf` 檔案。\n3. 字型即時可用，毋須額外設定。\n\n*免費帳戶可能需升級至 Canva Pro 方能上載字型。*",
+      "1. 開啟設計，點擊文字元素。\n2. 在字體選單按「**上載字體**」，選擇下載的 `.ttf` 檔案。\n3. 字體即時可用，毋須額外設定。\n\n*免費帳戶可能需升級至 Canva Pro 方能上載字體。*",
     "home.platforms.tabs.affinity":
-      "1. 先在作業系統安裝字型（見 **Windows / macOS / Linux** 分頁）。\n2. 關閉並重新開啟 Affinity Designer / Photo / Publisher。\n3. 字型隨即出現在所有字型選單，毋須額外設定。",
+      "1. 先在作業系統安裝字體（見 **Windows / macOS / Linux** 分頁）。\n2. 關閉並重新開啟 Affinity Designer / Photo / Publisher。\n3. 字體隨即出現在所有字體選單，毋須額外設定。",
     "home.platforms.tabs.adobe":
-      "1. 先在作業系統安裝字型。\n2. 關閉並重新開啟 Adobe Illustrator / Photoshop / InDesign。\n3. 字型會以家族名稱出現在字型選單，毋須額外設定即可使用。",
+      "1. 先在作業系統安裝字體。\n2. 關閉並重新開啟 Adobe Illustrator / Photoshop / InDesign。\n3. 字體會以家族名稱出現在字體選單，毋須額外設定即可使用。",
     "home.platforms.tabs.word":
-      "1. 先在作業系統安裝字型。\n2. 關閉並重啟 Word。\n3. 在「**常用 > 字型**」選單中找到字型，毋須額外設定。\n\n**手動切換多音字標注（Word 特別注意）**\n\n數字後綴採用 1-indexed：「字0」=純漢字無標注；「字1」=第 1 個（預設）讀音；「字N」=第 N 個讀音。\n\nWord 嘅文字渲染引擎（DirectWrite）會將半形數字同漢字切到唔同 shaping run，導致「字0」、「字1」、「字2」呢類 ASCII 數字標注規則喺 Word 入面唔會觸發。喺 Word 入面請改用以下任一方式：\n\n- **全形數字**「字０」、「字１」、「字２」、「字１０」等（推薦；同半形數字一樣係 1-indexed 十進位編碼，只係用全形字符）\n- **IME 友善寫法**「字丅零」（純漢字無標注）、「字丅一」（第 1 個讀音）、…、「字丅九」（第 9 個讀音）（用「丅」做切換鍵，啱中文輸入法用戶）\n\n兩種寫法都係用 OpenType `ccmp` 必定啟用功能，毋須喺 Word 設定任何字型選項，亦毋須開啟「字型連字」之類嘅 toggle。瀏覽器、macOS Pages／Keynote、Canva、Adobe 系列等其他工具三種寫法都用得，連半形「字1」「字2」都仲係照樣工作。",
+      "1. 先在作業系統安裝字體。\n2. 關閉並重啟 Word。\n3. 在「**常用 > 字體**」選單中找到字體，毋須額外設定。\n\n**手動切換多音字標注（Word 特別注意）**\n\n數字後綴採用 1-indexed：「字0」=純漢字無標注；「字1」=第 1 個（預設）讀音；「字N」=第 N 個讀音。\n\nWord 嘅文字渲染引擎（DirectWrite）會將半形數字同漢字切到唔同 shaping run，導致「字0」、「字1」、「字2」呢類 ASCII 數字標注規則喺 Word 入面唔會觸發。喺 Word 入面請改用以下任一方式：\n\n- **全形數字**「字０」、「字１」、「字２」、「字１０」等（推薦；同半形數字一樣係 1-indexed 十進位編碼，只係用全形字符）\n- **IME 友善寫法**「字丅零」（純漢字無標注）、「字丅一」（第 1 個讀音）、…、「字丅九」（第 9 個讀音）（用「丅」做切換鍵，啱中文輸入法用戶）\n\n兩種寫法都係用 OpenType `ccmp` 必定啟用功能，毋須喺 Word 設定任何字體選項，亦毋須開啟「字體連字」之類嘅 toggle。瀏覽器、macOS Pages／Keynote、Canva、Adobe 系列等其他工具三種寫法都用得，連半形「字1」「字2」都仲係照樣工作。",
     "home.platforms.tabs.powerpoint":
-      "PowerPoint 不會為中文套用 OpenType 替換（GSUB），所以「行２」這類寫法和詞語讀音在 PowerPoint 裡不會生效。請改用 **Wing Font PowerPoint 增益集**，它會把文字轉換成 PowerPoint 也能顯示的字元。\n\n**安裝增益集**\n\n先在作業系統安裝字型，然後下載 [manifest.xml](https://wing-font-ppt.chunlaw.io/manifest.xml \"download\")，再按你的平台安裝。\n\n**Mac**\n\n把 `manifest.xml` 複製到 `~/Library/Containers/com.microsoft.Powerpoint/Data/Documents/wef/`，然後重啟 PowerPoint。\n\n**Windows**\n\nOffice 只接受從「網路路徑」載入增益集，所以要先把存放 manifest 的資料夾設為共用。資料夾裡只有這一個設定檔，不會上載任何東西。\n\n1. 開一個新資料夾（例如 `C:\\WingFontAddin`），把 `manifest.xml` 放進去。\n2. 右鍵點擊資料夾 >「**內容**」>「**共用**」分頁 >「**共用…**」> 選自己的帳戶 >「**共用**」。\n3. 回到「共用」分頁，抄下「**網路路徑**」那一行（例如 `\\\\DESKTOP-AB12\\WingFontAddin`）。\n4. 開啟 PowerPoint：「**檔案 > 選項 > 信任中心 > 信任中心設定 > 受信任的增益集目錄**」。\n5. 在「**目錄 URL**」貼上剛抄下的網路路徑，按「**新增目錄**」。\n6. 在清單中勾選「**在功能表中顯示**」，按「**確定**」。\n7. 關閉所有 PowerPoint 視窗，再重新開啟。\n8. 「**常用 > 增益集 > 進階**」（舊版是「**插入 > 我的增益集**」）>「**共用資料夾**」分頁 > 選 **Wing Font** >「**新增**」。\n\n**Windows 安裝不到？**\n\n- **提示需要 `https://`**：貼上的是本機路徑（`C:\\…`），請改用第 3 步那個以 `\\\\` 開頭的網路路徑。\n- **看不到「共用資料夾」分頁**：未勾選「在功能表中顯示」，或 PowerPoint 未完全重啟。\n- **「信任中心」的選項是灰色**：電腦由機構管理，請找 IT 用下面「Microsoft 365 機構」的方法安裝。\n- **改過電腦名稱**：網路路徑已改變，請在信任中心刪除舊目錄再重新加入。\n\n**Microsoft 365 機構**\n\n由管理員在「**系統管理中心 > 設定 > 整合式應用程式 > 上傳自訂應用程式**」上傳 `manifest.xml`。\n\n安裝後「**常用**」分頁會出現 **Wing Font** 按鈕，按下打開工作窗格。\n\n**使用增益集**\n\n1. 選取文字（或整個文字方塊），按 **轉換選取範圍**。\n2. 選取幾個字或把游標放在字旁，窗格會逐字列出可選讀音，按一下即可切換。\n3. **還原** 會移除選取範圍內的讀音標記，回復純漢字。\n\n增益集用自己下載的字型副本轉換，而 PowerPoint 用你電腦上安裝的字型顯示，兩者必須是同一版本。窗格會顯示字型的版本字串，可與「字體簿」或 Windows 字型內容比對；不一致時可在窗格中直接選取已安裝的字型檔。",
+      "PowerPoint 不會為中文套用 OpenType 替換（GSUB），所以「行２」這類寫法和詞語讀音在 PowerPoint 裡不會生效。請改用 **Wing Font PowerPoint 增益集**，它會把文字轉換成 PowerPoint 也能顯示的字元。\n\n**安裝增益集**\n\n先在作業系統安裝字體，然後下載 [manifest.xml](https://wing-font-ppt.chunlaw.io/manifest.xml \"download\")，再按你的平台安裝。\n\n**Mac**\n\n把 `manifest.xml` 複製到 `~/Library/Containers/com.microsoft.Powerpoint/Data/Documents/wef/`，然後重啟 PowerPoint。\n\n**Windows**\n\nOffice 只接受從「網路路徑」載入增益集，所以要先把存放 manifest 的資料夾設為共用。資料夾裡只有這一個設定檔，不會上載任何東西。\n\n1. 開一個新資料夾（例如 `C:\\WingFontAddin`），把 `manifest.xml` 放進去。\n2. 右鍵點擊資料夾 >「**內容**」>「**共用**」分頁 >「**共用…**」> 選自己的帳戶 >「**共用**」。\n3. 回到「共用」分頁，抄下「**網路路徑**」那一行（例如 `\\\\DESKTOP-AB12\\WingFontAddin`）。\n4. 開啟 PowerPoint：「**檔案 > 選項 > 信任中心 > 信任中心設定 > 受信任的增益集目錄**」。\n5. 在「**目錄 URL**」貼上剛抄下的網路路徑，按「**新增目錄**」。\n6. 在清單中勾選「**在功能表中顯示**」，按「**確定**」。\n7. 關閉所有 PowerPoint 視窗，再重新開啟。\n8. 「**常用 > 增益集 > 進階**」（舊版是「**插入 > 我的增益集**」）>「**共用資料夾**」分頁 > 選 **Wing Font** >「**新增**」。\n\n**Windows 安裝不到？**\n\n- **提示需要 `https://`**：貼上的是本機路徑（`C:\\…`），請改用第 3 步那個以 `\\\\` 開頭的網路路徑。\n- **看不到「共用資料夾」分頁**：未勾選「在功能表中顯示」，或 PowerPoint 未完全重啟。\n- **「信任中心」的選項是灰色**：電腦由機構管理，請找 IT 用下面「Microsoft 365 機構」的方法安裝。\n- **改過電腦名稱**：網路路徑已改變，請在信任中心刪除舊目錄再重新加入。\n\n**Microsoft 365 機構**\n\n由管理員在「**系統管理中心 > 設定 > 整合式應用程式 > 上傳自訂應用程式**」上傳 `manifest.xml`。\n\n安裝後「**常用**」分頁會出現 **Wing Font** 按鈕，按下打開工作窗格。\n\n**使用增益集**\n\n1. 選取文字（或整個文字方塊），按 **轉換選取範圍**。\n2. 選取幾個字或把游標放在字旁，窗格會逐字列出可選讀音，按一下即可切換。\n3. **還原** 會移除選取範圍內的讀音標記，回復純漢字。\n\n增益集用自己下載的字體副本轉換，而 PowerPoint 用你電腦上安裝的字體顯示，兩者必須是同一版本。窗格會顯示字體的版本字串，可與「字體簿」或 Windows 字體內容比對；不一致時可在窗格中直接選取已安裝的字體檔。",
     "home.platforms.tabs.iwork":
-      "1. 先用 macOS **字體簿**安裝字型（見 **macOS** 分頁）。\n2. 開啟 Pages 或 Keynote，字型會以家族名稱出現在「**格式 > 字型**」選單，毋須額外設定即可使用。",
+      "1. 先用 macOS **字體簿**安裝字體（見 **macOS** 分頁）。\n2. 開啟 Pages 或 Keynote，字體會以家族名稱出現在「**格式 > 字體**」選單，毋須額外設定即可使用。",
     "home.platforms.tabs.web":
-      "1. 將下載的 `.woff` 與 `.ttf` 上傳至你的伺服器（或任何 CSS 能存取的位置）。\n2. 在 CSS 中加入 `@font-face` 宣告（生成器 Step 6 對話框提供可複製的範本）。\n3. 套用字型：`font-family: '你的字型家族名稱'`。\n\n*Chrome、Firefox、Safari 均自動支援，毋須額外設定。*",
+      "1. 將下載的 `.woff` 與 `.ttf` 上傳至你的伺服器（或任何 CSS 能存取的位置）。\n2. 在 CSS 中加入 `@font-face` 宣告（生成器 Step 6 對話框提供可複製的範本）。\n3. 套用字體：`font-family: '你的字體家族名稱'`。\n\n*Chrome、Firefox、Safari 均自動支援，毋須額外設定。*",
     "home.platforms.tabs.windows":
-      "1. 右鍵點擊 `.ttf` 檔案，選擇「**安裝**」（或「為所有使用者安裝」以全系統可用）。\n2. 或拖曳 `.ttf` 至「**設定 > 個人化 > 字型**」。\n3. **重啟已開啟的應用程式**，否則它們無法載入新字型。",
+      "1. 右鍵點擊 `.ttf` 檔案，選擇「**安裝**」（或「為所有使用者安裝」以全系統可用）。\n2. 或拖曳 `.ttf` 至「**設定 > 個人化 > 字體**」。\n3. **重啟已開啟的應用程式**，否則它們無法載入新字體。",
     "home.platforms.tabs.macos":
-      "1. 雙擊 `.ttf` 檔案——「**字體簿（Font Book）**」會自動開啟。\n2. 在字體簿預覽視窗中點擊「**安裝字型**」。\n3. 字型隨即可供所有應用程式使用，毋須重啟系統。",
+      "1. 雙擊 `.ttf` 檔案——「**字體簿（Font Book）**」會自動開啟。\n2. 在字體簿預覽視窗中點擊「**安裝字體**」。\n3. 字體隨即可供所有應用程式使用，毋須重啟系統。",
     "home.platforms.tabs.linux":
-      "1. 將 `.ttf` 複製至 `~/.fonts/`（單一使用者）或 `/usr/share/fonts/truetype/`（全系統）。\n2. 執行 `fc-cache -f` 更新字型快取。\n3. **重啟**需要使用此字型的 GUI 應用程式。",
+      "1. 將 `.ttf` 複製至 `~/.fonts/`（單一使用者）或 `/usr/share/fonts/truetype/`（全系統）。\n2. 執行 `fc-cache -f` 更新字體快取。\n3. **重啟**需要使用此字體的 GUI 應用程式。",
     "home.platforms.tabs.ereader":
-      "電子書閱讀器只要文字渲染管線支援 OpenType GSUB `ccmp` 都能用得上。以下三款已確認可行；其他款式建議自行試用。\n\n**Kindle**（Paperwhite 4 或以後、Oasis、Scribe；近兩年韌體）\n1. 用 Calibre 開啟 EPUB／AZW3，於「**字型**」設定中嵌入 Wing Font。\n2. 透過 USB 或「**Send to Kindle**」電郵服務傳送至裝置。\n3. 自訂字型自動套用，標注隨原文一同顯示。\n\n**Kobo**（Clara、Libra、Sage、Elipsa、Forma；近期韌體）\n1. 用 USB 接駁 Kobo，於根目錄建立 `.kobo/fonts/` 資料夾（若無）。\n2. 將 `.ttf` 拖入 `.kobo/fonts/`。\n3. 退出 USB 後到「**設定 → 閱讀設定 → 字型**」選 Wing Font。\n\n**Boox / 其他 Android 電子書**（Onyx Boox、Meebook、Likebook 等）\n1. 用任何支援自訂字型嘅閱讀器 App（**Moon+ Reader**、**KOReader** 等）。\n2. 將 `.ttf` 複製至閱讀器 App 嘅字型資料夾，或裝至 Android 系統字型。\n3. 於 App 設定中套用。\n\n*PocketBook、Tolino 等同樣使用 HarfBuzz 渲染嘅閱讀器理論上可行，惟未經實機驗證；reMarkable 主要為 PDF 閱讀器，字型支援有限。*",
+      "電子書閱讀器只要文字渲染管線支援 OpenType GSUB `ccmp` 都能用得上。以下三款已確認可行；其他款式建議自行試用。\n\n**Kindle**（Paperwhite 4 或以後、Oasis、Scribe；近兩年韌體）\n1. 用 Calibre 開啟 EPUB／AZW3，於「**字體**」設定中嵌入 Wing Font。\n2. 透過 USB 或「**Send to Kindle**」電郵服務傳送至裝置。\n3. 自訂字體自動套用，標注隨原文一同顯示。\n\n**Kobo**（Clara、Libra、Sage、Elipsa、Forma；近期韌體）\n1. 用 USB 接駁 Kobo，於根目錄建立 `.kobo/fonts/` 資料夾（若無）。\n2. 將 `.ttf` 拖入 `.kobo/fonts/`。\n3. 退出 USB 後到「**設定 → 閱讀設定 → 字體**」選 Wing Font。\n\n**Boox / 其他 Android 電子書**（Onyx Boox、Meebook、Likebook 等）\n1. 用任何支援自訂字體嘅閱讀器 App（**Moon+ Reader**、**KOReader** 等）。\n2. 將 `.ttf` 複製至閱讀器 App 嘅字體資料夾，或裝至 Android 系統字體。\n3. 於 App 設定中套用。\n\n*PocketBook、Tolino 等同樣使用 HarfBuzz 渲染嘅閱讀器理論上可行，惟未經實機驗證；reMarkable 主要為 PDF 閱讀器，字體支援有限。*",
     "home.what.title": "這是甚麼",
     "home.what.body":
-      "Wing Font 是一套字型生成工具。輸入兩個 TTF（一個底字、一個標注字）加上字符對應 CSV，便會輸出一個全新的 OpenType 字型 — 每個底字字形都直接刻上標注，可作粵拼、耶魯、倉頡等任何標注用途。輸出的字型可用於網頁、Word、Telegram、Email 等任何支援自訂字型的地方。",
+      "Wing Font 是一套字體生成工具。輸入兩個 TTF（一個底字、一個標注字）加上字符對應 CSV，便會輸出一個全新的 OpenType 字體 — 每個底字字形都直接刻上標注，可作粵拼、耶魯、倉頡等任何標注用途。輸出的字體可用於網頁、Word、Telegram、Email 等任何支援自訂字體的地方。",
+    "home.who.title": "適合誰使用",
+    "home.who.body":
+      "- **少數族裔學生**：會寫中文但不會讀？每個字都附有讀音，可以自己讀出來。\n- **老師**：直接在 Word、PowerPoint 製作附讀音的工作紙和簡報，毋須逐字加注音。\n- **自學者**：學廣東話、台語、國語、日文、泰文，看著讀音跟著讀。\n- **未學粵拼？** 可先用泰文、片假名等熟悉的文字標注讀音（空耳），第一天就開口說。",
     "home.how.title": "如何運作",
     "home.how.body":
-      "整套字型生成流程已通過 Pyodide 編譯為 WebAssembly，直接在你的瀏覽器執行。毋須安裝 Python，毋須上傳檔案到伺服器，毋須付費，所有資料留在本機。",
+      "整套字體生成流程已通過 Pyodide 編譯為 WebAssembly，直接在你的瀏覽器執行。毋須安裝 Python，毋須上傳檔案到伺服器，毋須付費，所有資料留在本機。",
     "home.features.title": "功能特色",
     "home.features.f1.title": "純文字就有標注",
     "home.features.f1.body":
@@ -577,39 +582,39 @@ export const TRANSLATIONS: Record<Language, Record<TranslationKey, string>> = {
       "「銀行 / 行人」中的「行」會自動切換不同讀音，源自 OpenType 的 ccmp 字體上下文替換規則。",
     "home.features.f3.title": "手動選擇變體",
     "home.features.f3.body":
-      "字型用 1-indexed 數字後綴，方便糾正自動判斷：\n\n- 「字0」→ 純漢字，唔顯示任何標注\n- 「字1」→ 第 1 個讀音（即預設讀音，等同直接打「字」）\n- 「字2」→ 第 2 個讀音\n- 「字10」→ 第 10 個讀音（讀音超過九個就用兩位數字）\n\n**喺 Microsoft Word**：半形 ASCII 數字會被 DirectWrite 文字引擎切到另一個 shaping run，跨唔到邊界；請改用全形數字「字０」、「字１」、「字２」（或 IME 友善嘅「字丅零」、「字丅一」、「字丅二」），全形屬東亞寬度，會留喺漢字嘅 shaping run 入面，效果一樣。",
+      "字體用 1-indexed 數字後綴，方便糾正自動判斷：\n\n- 「字0」→ 純漢字，唔顯示任何標注\n- 「字1」→ 第 1 個讀音（即預設讀音，等同直接打「字」）\n- 「字2」→ 第 2 個讀音\n- 「字10」→ 第 10 個讀音（讀音超過九個就用兩位數字）\n\n**喺 Microsoft Word**：半形 ASCII 數字會被 DirectWrite 文字引擎切到另一個 shaping run，跨唔到邊界；請改用全形數字「字０」、「字１」、「字２」（或 IME 友善嘅「字丅零」、「字丅一」、「字丅二」），全形屬東亞寬度，會留喺漢字嘅 shaping run 入面，效果一樣。",
     "home.features.f4.title": "完全本機運算",
     "home.features.f4.body":
       "你的字體與對應表全程不會離開瀏覽器，所有處理皆在本機進行。",
     "home.features.f5.title": "自訂標注",
     "home.features.f5.body":
-      "生成字型時喺步驟 3 加入「自訂標注」清單，用家就可以為任何字自行指定讀音：喺字後面打全形「０」清除原有標注，再打全形拼音，例如「行０ｚａａ１」會喺「行」上面顯示 zaa1。內置粵拼、漢語拼音、注音、台羅清單，亦可上載自己嘅 CSV。暫時只支援中文（漢字）底字。",
+      "生成字體時喺步驟 3 加入「自訂標注」清單，用家就可以為任何字自行指定讀音：喺字後面打全形「０」清除原有標注，再打全形拼音，例如「行０ｚａａ１」會喺「行」上面顯示 zaa1。內置粵拼、漢語拼音、注音、台羅清單，亦可上載自己嘅 CSV。暫時只支援中文（漢字）底字。",
     // Showcase
     "showcase.tryIt": "隨便試 (Try it!!)",
     "common.toFullWidth": "半形轉全形",
     "showcase.share": "分享連結",
     "showcase.shareCopied": "已複製連結到剪貼簿",
     "showcase.shareFailed": "未能複製，請手動複製網址列",
-    "showcase.refreshFonts": "重新載入字型",
-    "showcase.upload": "上載字型",
+    "showcase.refreshFonts": "重新載入字體",
+    "showcase.upload": "上載字體",
     "showcase.uploadAdded": "已加入 {name}",
     "showcase.uploadBadFormat":
       "唔識讀呢個檔案格式（要 .ttf / .otf / .woff / .woff2）",
     "showcase.uploadTooLarge": "檔案太大（上限 100 MB）",
     "showcase.uploadReadFailed": "讀取檔案失敗",
-    "showcase.emptyHint": "揀個字型開始對比吧。",
-    "showcase.allFonts": "全部字型",
+    "showcase.emptyHint": "揀個字體開始對比吧。",
+    "showcase.allFonts": "全部字體",
     "specimen.reportError":
       "發現標注有錯？歡迎[喺 GitHub 報告](https://github.com/chunlaw/wing-font-generator/issues/new?title=Annotation%20error%20in%20{name})",
-    "showcase.userFonts.zh": "自家字型",
+    "showcase.userFonts.zh": "自家字體",
     "showcase.userFonts.en": "Your fonts",
     "picker.dialect": "方言／類別",
-    "picker.font": "字型",
+    "picker.font": "字體",
     "picker.noOptions": "搵唔到",
-    "picker.addAriaLabel": "加入字型到比較",
-    "specimen.editorAriaLabel": "字型試寫區",
-    "specimen.about.title": "關於呢隻字型",
-    "specimen.about.summary": "{name} 係一隻免費嘅{dialect}標注字型：每個字都印住讀音，直接打字就睇到，唔使另外加 ruby。字身用 {base}，標注用 {annotation}。",
+    "picker.addAriaLabel": "加入字體到比較",
+    "specimen.editorAriaLabel": "字體試寫區",
+    "specimen.about.title": "關於呢隻字體",
+    "specimen.about.summary": "{name} 係一隻免費嘅{dialect}標注字體：每個字都印住讀音，直接打字就睇到，唔使另外加 ruby。字身用 {base}，標注用 {annotation}。",
     "specimen.about.language": "語言",
     "specimen.about.scheme": "標注",
     "specimen.about.base": "字身",
@@ -617,14 +622,14 @@ export const TRANSLATIONS: Record<Language, Record<TranslationKey, string>> = {
     "specimen.about.mapping": "讀音對照表",
     "specimen.about.license": "授權",
     "specimen.about.siblings": "同一標注嘅其他字款",
-    "step1.recentFonts.title": "近期字型",
+    "step1.recentFonts.title": "近期字體",
     "step1.recentFonts.pin": "釘住",
     "step1.recentFonts.unpin": "解除釘住",
     "step1.recentFonts.pinCap": "最多釘 4 個 — 先取消其中一個",
     "step1.recentFonts.remove": "移除",
     "step1.recentFonts.clearAll": "全部清除",
     "step1.recentFonts.clearConfirm":
-      "確定清除所有未釘住嘅近期字型？已釘住嘅會保留。",
+      "確定清除所有未釘住嘅近期字體？已釘住嘅會保留。",
     "step1.recentFonts.redownloadTtf": "下載 .ttf",
     "step1.recentFonts.redownloadWoff": "下載 .woff",
     "step1.recentFonts.justNow": "剛剛",
@@ -633,9 +638,9 @@ export const TRANSLATIONS: Record<Language, Record<TranslationKey, string>> = {
     "step1.recentFonts.daysAgo": "{n} 日前",
     "step1.recentFonts.viewSpecimen": "查看示範",
     "step4.family.collisionHint":
-      "你嘅近期生成裡面已經有同名嘅字型。如果你打算將兩個一齊安裝到電腦或者 Word，建議改個唔同名字避免衝突。",
+      "你嘅近期生成裡面已經有同名嘅字體。如果你打算將兩個一齊安裝到電腦或者 Word，建議改個唔同名字避免衝突。",
     "step4.family.tooLong":
-      "{n} / {max} 字 — 太長。Windows 字型登記簿會將超過 {max} 字嘅家族名靜默截斷，導致 Word 將粵語 HKSCS 字（啲、嘅、嗰、咗、噉、嚟、唔、攞）轉去用 Microsoft 正黑體渲染。請縮短到 {max} 字以內。",
+      "{n} / {max} 字 — 太長。Windows 字體登記簿會將超過 {max} 字嘅家族名靜默截斷，導致 Word 將粵語 HKSCS 字（啲、嘅、嗰、咗、噉、嚟、唔、攞）轉去用 Microsoft 正黑體渲染。請縮短到 {max} 字以內。",
     "displayOptions.toggle": "顯示選項",
     "displayOptions.fontSize": "字體大小",
     "displayOptions.letterSpacing": "字距",
@@ -652,7 +657,7 @@ export const TRANSLATIONS: Record<Language, Record<TranslationKey, string>> = {
       "若我能說萬國的方言，但時間有限 —— 一齊參與，一齊為語言為文字努力，社會一定會更好。開源亦讓設計師可以用自己鍾意的字體合成屬於自己的版本：很多字體本身有版權，我們無辦法拎來合成畀大家用，但你可以自己搞，開開心心。同一套生成流水線亦以 [Python 命令列工具](https://github.com/chunlaw/wing-font-generator/tree/main/python#readme) 形式發佈，方便批量生成、整合自己嘅工作流，或者喺完全離線環境下運行。",
     "about.dialects.title": "唔止廣東話",
     "about.dialects.body":
-      "Wing Font 由廣東話開始，但設計上一直想支援更多漢語方言。最新加入嘅係臺語（河洛話）：用思源黑體（Noto Sans TC）做底字，配搭 Huninn（粉圓）標注台羅（Tâi-lô）同白話字（POJ）嘅聲調符號，字音資料源自教育部《臺灣台語常用詞辭典》（經 ChhoeTaigi 轉換）。喺首頁可以睇到「家己的歌，家己唱；家己的字，家己選。」嘅台羅示範，亦可以喺製作頁揀台語拼音方案，自己整一套。歡迎更多方言加入。",
+      "Wing Font 由廣東話開始，而家已經支援臺語、潮州話、國語／普通話，仲有日文振假名、泰文、阿拉伯文、印地文同因紐特文。每種語言都可以揀唔同嘅標注方案，例如臺語有台羅、白話字同各地腔口。全部字體可以喺字體陳列館睇到，亦可以喺製作頁揀一個方案，自己整一套。歡迎更多語言加入。",
     "about.contribute.title": "一齊參與",
     "about.contribute.intro":
       "Wing Font 永遠不會完美，亦永遠歡迎更多人手。下面係幾條最缺人嘅路。",
@@ -674,8 +679,8 @@ export const TRANSLATIONS: Record<Language, Record<TranslationKey, string>> = {
     "about.cta.github": "去 GitHub",
     // Generate
     "generate.title": "自製標注字體",
-    "generate.runtime.ready": "字型引擎已就緒。首次生成需要 30 至 120 秒。",
-    "generate.runtime.loading": "字型引擎載入中：",
+    "generate.runtime.ready": "字體引擎已就緒。首次生成需要 30 至 120 秒。",
+    "generate.runtime.loading": "字體引擎載入中：",
     "generate.button.generate": "開始生成",
     "generate.button.generating": "生成中…",
     "generate.button.next": "下一步",
@@ -686,10 +691,10 @@ export const TRANSLATIONS: Record<Language, Record<TranslationKey, string>> = {
     "generate.step2.label": "字符對應",
     "generate.step3.label": "自訂標注",
     "generate.step4.label": "參數設定",
-    "generate.step5.label": "生成字型",
+    "generate.step5.label": "生成字體",
     "generate.step6.label": "預覽與下載",
     "step3.title": "步驟 3：自訂標注（選用）",
-    "step3.description": "加入一份「手動標注」清單（--diy-annotations），讓字型使用者可以為任何字自行指定讀音：在字後面先打全形 ０ 清除原有標注，再打全形拼音，例如「行０ｚａａ１」會在「行」上顯示 zaa1。暫時只支援中文（漢字）底字。不需要的話可以略過此步驟。",
+    "step3.description": "加入一份「手動標注」清單（--diy-annotations），讓字體使用者可以為任何字自行指定讀音：在字後面先打全形 ０ 清除原有標注，再打全形拼音，例如「行０ｚａａ１」會在「行」上顯示 zaa1。暫時只支援中文（漢字）底字。不需要的話可以略過此步驟。",
     "step3.preset": "預設清單",
     "step3.none": "不使用",
     "step3.custom": "自訂檔案",
@@ -697,7 +702,7 @@ export const TRANSLATIONS: Record<Language, Record<TranslationKey, string>> = {
     "step3.clear": "移除",
     "step3.loaded": "已載入 {name}：共 {count} 個標注",
     "step3.example": "例：輸入「{input}」→ 顯示 {anno}",
-    "step3.needsOptimize": "自訂標注需要開啟「最佳化」（-opt），否則字型可能超出 65,535 個字形的上限。請在參數設定中開啟。",
+    "step3.needsOptimize": "自訂標注需要開啟「最佳化」（-opt），否則字體可能超出 65,535 個字形的上限。請在參數設定中開啟。",
     "step3.format": "CSV 格式：每行「輸入,標注」，例如 ｚａａ１,zaa1。輸入須為全形英數字；只填一欄時會自動轉成全形作為輸入。只會套用在完整生成，即時預覽不包括自訂標注。",
     // Step 1
     "step1.title": "步驟 1：選擇字體",
@@ -741,35 +746,35 @@ export const TRANSLATIONS: Record<Language, Record<TranslationKey, string>> = {
     "step2.col.weight": "權重",
     "step2.col.actions": "",
     "step2.empty": "尚未加載任何對應。按上方按鈕載入 CSV 或新增。",
-    "step2.coverage.baseOk": "底字字型 ✓ 已涵蓋全部 {total} 個字元",
+    "step2.coverage.baseOk": "底字字體 ✓ 已涵蓋全部 {total} 個字元",
     "step2.coverage.baseMissing":
-      "底字字型 ⚠ 缺少 {missing}/{total} 個字元（不在字型 cmap 內）",
-    "step2.coverage.annoOk": "標注字型 ✓ 已涵蓋全部 {total} 個字元",
+      "底字字體 ⚠ 缺少 {missing}/{total} 個字元（不在字體 cmap 內）",
+    "step2.coverage.annoOk": "標注字體 ✓ 已涵蓋全部 {total} 個字元",
     "step2.coverage.annoMissing":
-      "標注字型 ⚠ 缺少 {missing}/{total} 個字元（不在字型 cmap 內）",
+      "標注字體 ⚠ 缺少 {missing}/{total} 個字元（不在字體 cmap 內）",
     "step2.coverage.show": "顯示缺失字元",
     "step2.coverage.hide": "隱藏",
-    "step2.coverage.baseLabel": "底字字型缺少的字元：",
-    "step2.coverage.annoLabel": "標注字型缺少的字元：",
+    "step2.coverage.baseLabel": "底字字體缺少的字元：",
+    "step2.coverage.annoLabel": "標注字體缺少的字元：",
     "step2.coverage.andMore": "還有 {n} 個未顯示",
     "step2.confirmDelete": "確定要刪除嗎？",
     // Step 4
     "step4.title": "步驟 4：參數設定",
     "step4.description": "微調字形位置、大小與輸出選項。",
     "step4.family": "字體名稱",
-    "step4.familyHint": "會寫入字型的 name 表",
+    "step4.familyHint": "會寫入字體的 name 表",
     "step4.advancedSectionLabel": "進階",
     "step4.triggerChar.label": "標注切換字元",
     "step4.triggerChar.hint":
-      "用「字 + 此字元 + 零/一/二/…」手動切換多音字標注（例：「行丅零」=純漢字無標注；「行丅一」=第 1 個讀音；「行丅二」=第 2 個讀音）。預設「丅」（U+4E05）較為罕用、不易與正文衝突；可改成你的輸入法容易打到的字（如「々」「〇」）。除咗呢個 IME 友善寫法之外，字型亦同時生成半形數字（「字0」、「字1」、「字2」） 同全形數字（「字０」、「字１」、「字２」）兩條 1-indexed 路徑，三種寫法都會生成。**Microsoft Word 特別注意**：DirectWrite 會將半形數字切到唔同 shaping run，「字1」、「字2」喺 Word 唔會觸發；請改用全形數字「字１」、「字２」或 IME 友善嘅「字丅一」、「字丅二」。",
+      "用「字 + 此字元 + 零/一/二/…」手動切換多音字標注（例：「行丅零」=純漢字無標注；「行丅一」=第 1 個讀音；「行丅二」=第 2 個讀音）。預設「丅」（U+4E05）較為罕用、不易與正文衝突；可改成你的輸入法容易打到的字（如「々」「〇」）。除咗呢個 IME 友善寫法之外，字體亦同時生成半形數字（「字0」、「字1」、「字2」） 同全形數字（「字０」、「字１」、「字２」）兩條 1-indexed 路徑，三種寫法都會生成。**Microsoft Word 特別注意**：DirectWrite 會將半形數字切到唔同 shaping run，「字1」、「字2」喺 Word 唔會觸發；請改用全形數字「字１」、「字２」或 IME 友善嘅「字丅一」、「字丅二」。",
     "step4.triggerChar.hintDisabled":
       "已停用「丅 + 中文數字」標注路徑。仲可以用半形數字（「字0」=純漢字、「字1」=第 1 個讀音、「字N」=第 N 個讀音）或全形數字（「字０」、「字１」、「字N」）兩條 1-indexed 後綴路徑切換多音字。Word 用戶請用全形數字（半形喺 Word 入面唔會觸發）。",
-    "step4.outAscent.label": "輸出字型上緣（字單位）",
+    "step4.outAscent.label": "輸出字體上緣（字單位）",
     "step4.outAscent.hint":
       "留空＝自動（auto）：依最高嘅組合字墨水自動撐高 hhea.ascent 同 OS/2.usWinAscent，確保標注頂唔會俾 Word / Pages / Canva 等程式裁切，唔使自己估數值。sTypoAscender 維持不變，行距照舊。淨係想指定固定上緣（停用自動，例如想行距鬆啲）先至填數字。",
     "step4.cli.sectionLabel": "對應 CLI 指令",
     "step4.cli.helperText":
-      "Clone wing-font-generator 後，可以喺 python/ 入面執行呢條指令本機重現同一個 build。檔案路徑用咗 repo 內嘅版面（input_fonts/、mappings/），自備字型嘅話請替換成你本機嘅實際路徑。",
+      "Clone wing-font-generator 後，可以喺 python/ 入面執行呢條指令本機重現同一個 build。檔案路徑用咗 repo 內嘅版面（input_fonts/、mappings/），自備字體嘅話請替換成你本機嘅實際路徑。",
     "step4.cli.copyTooltip": "複製指令",
     "step4.cli.copiedTooltip": "已複製！",
     "step4.cli.copyAriaLabel": "複製 CLI 指令",
@@ -781,7 +786,7 @@ export const TRANSLATIONS: Record<Language, Record<TranslationKey, string>> = {
     "step4.optimize": "壓縮輸出（移除未使用字形）",
     "step4.preview.title": "即時預覽",
     "step4.preview.description":
-      "改參數後會自動重新生成，無需手動觸發。每次約 10–20 秒，視乎字型大小與對應表規模而定。",
+      "改參數後會自動重新生成，無需手動觸發。每次約 10–20 秒，視乎字體大小與對應表規模而定。",
     "step4.preview.updating": "更新中…",
     "step4.preview.firstRun": "首次生成樣本中…",
     "step4.preview.idle": "等待生成…",
@@ -793,7 +798,7 @@ export const TRANSLATIONS: Record<Language, Record<TranslationKey, string>> = {
     "step4.previewText.placeholder": "留空 = 自動揀字詞",
     "step4.previewText.helper": "輸入想預覽嘅文字，會根據對應嘅字詞配對顯示。",
     // Step 5
-    "step5.title": "步驟 5：生成字型",
+    "step5.title": "步驟 5：生成字體",
     "step5.description": "按「開始生成」啟動。下方會即時顯示處理進度與每個步驟的詳細記錄。",
     "step5.empty": "尚未執行。請按下方按鈕開始生成。",
     "step5.run.idle": "開始生成",
@@ -803,7 +808,7 @@ export const TRANSLATIONS: Record<Language, Record<TranslationKey, string>> = {
     // Step 6
     "step6.title": "步驟 6：預覽與下載",
     "step6.description":
-      "生成完成的字型已自動載入到下方輸入框，可即場輸入字符試效果。",
+      "生成完成的字體已自動載入到下方輸入框，可即場輸入字符試效果。",
     "step6.noResult": "尚未有生成結果。請完成步驟 5。",
     "step6.sampleText":
       "你好世界 — 試試輸入「銀行」、「行家」、「行0」（純漢字無標注）、「行1」（第 1 個讀音，等同直接打「行」）、「行2」（第 2 個讀音）、「行１」「行２」（全形數字，Word 適用）、「行丅一」、「畫畫」",
@@ -818,7 +823,7 @@ export const TRANSLATIONS: Record<Language, Record<TranslationKey, string>> = {
     "step6.cssSnippet.close": "關閉",
     "step6.cssSnippet.designAppTitle": "於設計工具中使用",
     "step6.cssSnippet.designAppHint":
-      "字型的詞語對應、1-indexed 半形數字（「字0」=純漢字、「字1」=第 1 個讀音、「字N」=第 N 個讀音）、全形數字（「字０」、「字１」、「字N」）以及「字丅零/一/二/…」等多種變體切換寫法，全部基於 OpenType `ccmp` 必定啟用功能，**無需任何設定**即可運作。**Canva、InDesign、Pages、Keynote、Adobe 系列**全部三種寫法都用得。\n\n**Microsoft Word 特別注意**：半形數字寫法（「字1」、「字2」）會被 DirectWrite 切到唔同 shaping run，喺 Word 入面唔會觸發；請改用全形數字（「字１」、「字２」）或「字丅一」、「字丅二」呢類 IME 友善寫法。詞語自動切換（如「銀行 / 行人」）唔受影響，喺 Word 入面正常運作。",
+      "字體的詞語對應、1-indexed 半形數字（「字0」=純漢字、「字1」=第 1 個讀音、「字N」=第 N 個讀音）、全形數字（「字０」、「字１」、「字N」）以及「字丅零/一/二/…」等多種變體切換寫法，全部基於 OpenType `ccmp` 必定啟用功能，**無需任何設定**即可運作。**Canva、InDesign、Pages、Keynote、Adobe 系列**全部三種寫法都用得。\n\n**Microsoft Word 特別注意**：半形數字寫法（「字1」、「字2」）會被 DirectWrite 切到唔同 shaping run，喺 Word 入面唔會觸發；請改用全形數字（「字１」、「字２」）或「字丅一」、「字丅二」呢類 IME 友善寫法。詞語自動切換（如「銀行 / 行人」）唔受影響，喺 Word 入面正常運作。",
   },
   en: {
     // Header
@@ -858,13 +863,13 @@ export const TRANSLATIONS: Record<Language, Record<TranslationKey, string>> = {
     "legal.terms.title": "Terms & Conditions",
     "legal.privacy.title": "Privacy Policy",
     "legal.effectiveDate": "Effective date: {date}",
-    "meta.home.title": "Wing Font — Free Jyutping, Pinyin & Zhuyin Fonts",
+    "meta.home.title": "Wing Font — Free Jyutping Font, Pinyin & Zhuyin Fonts",
     "meta.home.description":
-      "Free, open-source fonts with the reading built into every glyph — Jyutping, Pinyin, Zhuyin, Tâi-lô and more, for Chinese languages, Japanese, Thai, Arabic and beyond. Just type in Word, Pages, Canva or a browser; PowerPoint via the free add-in.",
+      "Free, open-source fonts with the reading built into every glyph — a Jyutping and Cantonese pronunciation font to learn Cantonese, plus Pinyin, Zhuyin, Tâi-lô and more for Mandarin, Taiwanese, Japanese, Thai, Arabic and beyond. Just type in Word, Pages, Canva or a browser; PowerPoint via the free add-in.",
     "meta.showcase.title": "All Fonts: Jyutping, Yale, Pinyin, Zhuyin, Tâi-lô | Wing Font",
     "meta.showcase.description":
       "Browse and download every pre-built Wing Font — Jyutping, Yale, Pinyin, Zhuyin, Tâi-lô, Peng'im, furigana, Thai, Arabic and more. Free, SIL OFL 1.1.",
-    "meta.specimen.title": "{name} — Free {dialect} Font Download | Wing Font",
+    "meta.specimen.title": "{name} — Free {scheme} Font for {dialect} | Wing Font",
     "meta.specimen.description":
       "{name}: a free {dialect} font with the reading built into every character's glyph. Generated by Wing Font from open-source base + annotation fonts. Preview live and download TTF or WOFF2 — open-source, SIL OFL 1.1 licensed.",
     "meta.generate.title": "Make Your Own Jyutping or Pinyin Font | Wing Font",
@@ -1009,6 +1014,9 @@ export const TRANSLATIONS: Record<Language, Record<TranslationKey, string>> = {
     "home.what.title": "What it is",
     "home.what.body":
       "Wing Font is a font-generation tool. Give it two TTFs (one for the base characters, one for the annotation glyphs) plus a CSV mapping characters to annotations, and it produces a new OpenType font whose glyphs have those annotations baked in. The output works anywhere a custom font can be loaded — websites, Word, Telegram, email, you name it.",
+    "home.who.title": "Who it's for",
+    "home.who.body":
+      "- **Ethnic-minority students**: can write Chinese but not read it aloud? Every character carries its reading, so you can read on your own.\n- **Teachers**: make worksheets and slides with readings straight in Word or PowerPoint — no annotating character by character.\n- **Self-learners**: use it as a Cantonese pronunciation font to learn Cantonese — or Taiwanese, Mandarin, Japanese and Thai — reading along as you go.\n- **Not learned Jyutping yet?** Start with a script you already read, such as Thai or katakana (sound-spelling), and speak from day one.",
     "home.how.title": "How it works",
     "home.how.body":
       "The whole pipeline runs in your browser via Pyodide (WebAssembly). No Python install, no uploads to a server, no fees, no data leaves your machine.",
@@ -1045,7 +1053,7 @@ export const TRANSLATIONS: Record<Language, Record<TranslationKey, string>> = {
     "showcase.allFonts": "All fonts",
     "specimen.reportError":
       "Spot an annotation error? Please [report it on GitHub](https://github.com/chunlaw/wing-font-generator/issues/new?title=Annotation%20error%20in%20{name}).",
-    "showcase.userFonts.zh": "自家字型",
+    "showcase.userFonts.zh": "自家字體",
     "showcase.userFonts.en": "Your fonts",
     "picker.dialect": "Script / category",
     "picker.font": "Font",
@@ -1096,7 +1104,7 @@ export const TRANSLATIONS: Record<Language, Record<TranslationKey, string>> = {
       "If I were to speak in all the tongues of men, time would still be finite — but together we can push language and writing forward. Open source also lets designers compose annotated variants of their own typefaces. Many fonts are under restrictive licences and we can't redistribute the derived output ourselves; but a designer with their own font and the source code can build their version and ship it themselves. To that end, the same generation pipeline also ships as a [Python command-line tool](https://github.com/chunlaw/wing-font-generator/tree/main/python#readme) — handy for batch jobs, integrating into your own workflow, or running fully offline.",
     "about.dialects.title": "Beyond Cantonese",
     "about.dialects.body":
-      "Wing Font began with Cantonese, but it was always meant to carry more Sinitic topolects. The newest addition is Taiwanese / Southern Min (Hō-ló): Noto Sans TC as the base character font, with Huninn (jf-openhuninn) setting the Tâi-lô and Pe̍h-ōe-jī (POJ) tone marks. The reading data comes from the MOE 臺灣台語常用詞辭典 (sutian, via ChhoeTaigi). You can see the Tâi-lô sample 「家己的歌，家己唱；家己的字，家己選。」 on the home page, and pick a Taiwanese romanization scheme in the generator to build your own. More dialects are welcome.",
+      "Wing Font began with Cantonese. It now also covers Taiwanese, Teochew and Mandarin, plus Japanese furigana, Thai, Arabic, Hindi and Inuktitut, each with a choice of annotation schemes — Taiwanese, for example, has Tâi-lô, POJ and several regional accents. Browse them all in the showcase, or pick a scheme on the generator page and build your own. More languages are always welcome.",
     "about.contribute.title": "Get involved",
     "about.contribute.intro":
       "Wing Font is never finished. These are the gaps where new hands help the most.",
