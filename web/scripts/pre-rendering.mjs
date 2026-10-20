@@ -19,16 +19,21 @@
  *   1. Serve the freshly built ./dist over localhost with an SPA
  *      fallback (any unknown path returns index.html, exactly like the
  *      404 redirect would resolve to).
- *   2. Drive headless Chrome to every URL listed in public/sitemap.xml
- *      (single source of truth for what's publicly visitable).
+ *   2. Drive headless Chrome to every URL listed in dist/sitemap.xml
+ *      (written by sitemap-generator.mjs from AVAILABLE_FONTS — the
+ *      single source of truth for what's publicly visitable).
  *   3. Wait for window.__PRERENDER_READY__ (set in App.tsx once the
  *      route's useDocumentMeta effect has populated <title> + og/twitter
  *      + canonical), then capture the fully-rendered HTML.
- *   4. Write it to a static file at the route's path: /showcase ->
- *      dist/showcase.html, /specimen/X -> dist/specimen/X.html, / ->
- *      dist/index.html. GitHub Pages serves extensionless URLs from the
- *      matching .html, so the crawler now gets real markup. The 404
- *      redirect stays only as a fallback for any non-prerendered route.
+ *   4. Write it to a static file at the route's path: /en/showcase ->
+ *      dist/en/showcase.html, /zh/ -> dist/zh/index.html. GitHub Pages
+ *      serves extensionless URLs from the matching .html, so the crawler
+ *      now gets real markup. The 404 redirect stays only as a fallback
+ *      for any non-prerendered route.
+ *   5. For each pre-language URL (/showcase, /specimen/X, /), write the
+ *      SPA shell with its canonical pointed at the /en/ page. Old links
+ *      keep answering 200; the app then redirects to /zh/ or /en/ by the
+ *      visitor's language.
  *
  * Run AFTER `vite build`:  yarn build && yarn prerender
  */
@@ -42,7 +47,7 @@ import { fileURLToPath, pathToFileURL } from "node:url";
 const HERE = path.dirname(fileURLToPath(import.meta.url));
 const WEB_DIR = path.join(HERE, "..");
 const DIST = path.join(WEB_DIR, "dist");
-const SITEMAP = path.join(WEB_DIR, "public", "sitemap.xml");
+const SITEMAP = path.join(DIST, "sitemap.xml");
 
 // How long to wait for the app to mount + set the ready flag before we
 // snapshot anyway. The flag normally flips in well under a second; the
@@ -249,7 +254,27 @@ export function inlineRuntimeCss() {
 export function outFileFor(route, distDir = DIST) {
   if (route === "/" || route === "") return path.join(distDir, "index.html");
   const clean = route.replace(/^\/+/, "").replace(/\/+$/, "");
+  // GitHub Pages answers /zh with a redirect to /zh/ once dist/zh/ exists.
+  if (route.endsWith("/")) return path.join(distDir, clean, "index.html");
   return path.join(distDir, `${clean}.html`);
+}
+
+/**
+ * Pre-language URL for a /zh/… or /en/… route ("/en/" -> "/",
+ * "/en/about" -> "/about"), or null for anything else.
+ */
+export function unprefixedRoute(route) {
+  const m = route.match(/^\/(?:zh|en)(\/.*)$/);
+  return m ? m[1] : null;
+}
+
+/** The SPA shell with its canonical (and og:url) pointed at `href`. */
+export function stubHtml(indexHtml, href) {
+  const out = indexHtml
+    .replace(/(<link rel="canonical" href=")[^"]*/, `$1${href}`)
+    .replace(/(<meta property="og:url" content=")[^"]*/, `$1${href}`);
+  if (!out.includes(`href="${href}"`)) throw new Error("stubHtml: no canonical tag in index.html");
+  return out;
 }
 
 async function main() {
@@ -268,6 +293,9 @@ async function main() {
     console.error("pre-rendering: no routes found in sitemap.xml — aborting.");
     process.exit(1);
   }
+  const host = new URL(
+    (await readFile(SITEMAP, "utf8")).match(/<loc>([^<]+)<\/loc>/)[1],
+  ).origin;
 
   // Imported lazily (rather than at module top) so the helpers above
   // can be unit-tested without puppeteer/Chrome present.
@@ -416,6 +444,14 @@ async function main() {
     await browser.close().catch(() => {});
     server.close();
   }
+
+  const stubs = new Set(routes.map(unprefixedRoute).filter((r) => r !== null));
+  for (const route of stubs) {
+    const out = outFileFor(route);
+    await mkdir(path.dirname(out), { recursive: true });
+    await writeFile(out, stubHtml(indexHtml.toString(), `${host}/en${route}`), "utf8");
+  }
+  console.log(`pre-rendering: wrote ${stubs.size} pre-language redirect shell(s)`);
 
   console.log(
     `pre-rendering: wrote ${ok} file(s)` +

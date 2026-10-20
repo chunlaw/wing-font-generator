@@ -101,3 +101,10 @@ button:focus-visible {
     format("woff2");
   font-display: swap;
 }
+
+@font-face {
+  font-family: "WingSansHeroThai";
+  src: url("https://wing-font.chunlaw.io/fonts/WingSansHeroThai.woff2")
+    format("woff2");
+  font-display: swap;
+}

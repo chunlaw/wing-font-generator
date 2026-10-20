@@ -66,7 +66,7 @@ const Header = () => {
   const isMobile = useMediaQuery(muiTheme.breakpoints.down("md"));
 
   const { mode, toggleTheme } = useTheme();
-  const { t } = useTranslation();
+  const { t, lang } = useTranslation();
   const { pathname } = useLocation();
   // The mobile drawer's open/closed state. Previously this was an
   // anchorEl HTMLElement | null because we used a popover <Menu>;
@@ -126,7 +126,7 @@ const Header = () => {
       {
         value: "credits",
         label: t("footer.links.credits"),
-        href: "/credits",
+        href: `/${lang}/credits`,
       },
       {
         value: "reportError",
@@ -134,10 +134,10 @@ const Header = () => {
         href: "https://github.com/chunlaw/wing-font-generator/issues/new?title=Annotation%20error",
         external: true,
       },
-      { value: "terms", label: t("footer.links.terms"), href: "/terms" },
-      { value: "privacy", label: t("footer.links.privacy"), href: "/privacy" },
+      { value: "terms", label: t("footer.links.terms"), href: `/${lang}/terms` },
+      { value: "privacy", label: t("footer.links.privacy"), href: `/${lang}/privacy` },
     ],
-    [t],
+    [t, lang],
   );
 
   // Resolve which tab's `value` matches the current route. When on
@@ -193,7 +193,7 @@ const Header = () => {
         visitors and ate vertical room on mobile.
       */}
       <MuiLink
-        href="/"
+        href={`/${lang}/`}
         sx={{
           textDecoration: "none",
           color: "inherit",

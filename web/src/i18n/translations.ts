@@ -182,6 +182,7 @@ export type TranslationKey =
   | "showcase.uploadTooLarge"
   | "showcase.uploadReadFailed"
   | "showcase.emptyHint"
+  | "showcase.allFonts"
   | "specimen.reportError"
   | "showcase.userFonts.zh"
   | "showcase.userFonts.en"
@@ -190,6 +191,15 @@ export type TranslationKey =
   | "picker.noOptions"
   | "picker.addAriaLabel"
   | "specimen.editorAriaLabel"
+  | "specimen.about.title"
+  | "specimen.about.summary"
+  | "specimen.about.language"
+  | "specimen.about.scheme"
+  | "specimen.about.base"
+  | "specimen.about.annotation"
+  | "specimen.about.mapping"
+  | "specimen.about.license"
+  | "specimen.about.siblings"
   // Step 1 — recent (user-generated) fonts cache
   | "step1.recentFonts.title"
   | "step1.recentFonts.pin"
@@ -409,28 +419,27 @@ export const TRANSLATIONS: Record<Language, Record<TranslationKey, string>> = {
     "legal.terms.title": "使用條款",
     "legal.privacy.title": "私隱政策",
     "legal.effectiveDate": "生效日期：{date}",
-    "meta.home.title":
-      "Wing Font — 拼音、注音、語言學會羅馬拼音字型",
+    "meta.home.title": "Wing Font — 免費粵拼、拼音、注音字型下載",
     "meta.home.description":
-      "免費開源中文字型，將拼音、注音、各種羅馬拼音直接印喺字形之上。支援廣東話、普通話、台語、潮州話 —— Word、Pages、Canva、Adobe、瀏覽器全部都得。",
-    "meta.showcase.title": "字型陳列館 | Wing Font",
+      "免費開源標注字型，讀音直接印喺每個字形度 —— 粵拼、拼音、注音、台羅等等，支援中文各方言、日文、泰文、阿拉伯文等。Word、Pages、Canva、瀏覽器直接打字就得，PowerPoint 用免費增益集。",
+    "meta.showcase.title": "全部標注字型：粵拼、耶魯、拼音、注音、台羅 | Wing Font",
     "meta.showcase.description":
-      "瀏覽並下載已預先生成嘅中文標注字型 —— 廣東話、普通話、台語、潮州話，多種羅馬拼音方案隨意揀，即時下載免費使用。",
-    "meta.specimen.title": "{name} —— {dialect}標注字型 | Wing Font",
+      "瀏覽並下載全部預先生成嘅標注字型 —— 粵拼、耶魯、拼音、注音、台羅、潮拼、振假名、泰文、阿拉伯文等，免費使用（SIL OFL 1.1）。",
+    "meta.specimen.title": "{name}：{scheme}字型免費下載（{dialect}）| Wing Font",
     "meta.specimen.description":
-      "{name}：免費{dialect}字型，將讀音標注直接印喺每個漢字之上。由 Wing Font 將開源底字同標注字型合成。可即時預覽並下載 TTF／WOFF2，開源並依 SIL OFL 1.1 授權。",
-    "meta.generate.title": "字型生成器 | Wing Font",
+      "{name}：免費{dialect}字型，將讀音標注直接印喺每個字之上。由 Wing Font 將開源底字同標注字型合成。可即時預覽並下載 TTF／WOFF2，開源並依 SIL OFL 1.1 授權。",
+    "meta.generate.title": "粵拼／拼音字型生成器：自製標注字型 | Wing Font",
     "meta.generate.description":
       "揀一隻底字、一份對應表、調好參數，即時喺瀏覽器內生成你專屬嘅標注字型。免註冊、免安裝、所有運算喺本機完成。",
     "meta.about.title": "關於 | Wing Font",
     "meta.about.description":
-      "Wing Font 係一個免費開源項目，將粵語、台語、潮州話、普通話等羅馬拼音直接合成入中文字型嘅字形之中。",
+      "Wing Font 係一個免費開源項目，將粵拼、拼音、台羅等讀音直接合成入字形，支援中文各方言、日文、泰文、阿拉伯文等。",
     "meta.credits.title": "鳴謝 | Wing Font",
     "meta.credits.description":
       "Wing Font 所依賴嘅開源資料同字型 —— 思源黑體、昭源宋體、小賴、開蕓、TypeDuck、mozillazg pinyin-data 等。",
     "meta.terms.title": "使用條款 | Wing Font",
     "meta.terms.description":
-      "Wing Font 使用條款 —— 免費開源中文標注字型生成工具嘅授權與責任範圍。",
+      "Wing Font 使用條款 —— 免費開源標注字型生成工具嘅授權與責任範圍。",
     "meta.privacy.title": "私隱政策 | Wing Font",
     "meta.privacy.description":
       "Wing Font 私隱政策 —— 所有字型生成完全於你瀏覽器內進行；無賬戶、無追蹤、無第三方分析工具。",
@@ -519,7 +528,7 @@ export const TRANSLATIONS: Record<Language, Record<TranslationKey, string>> = {
     // Home
     "home.hero.title": "Wing Font",
     "home.hero.tagline":
-      "純文字就將拼音、注音等標注直接顯示喺漢字上方 —— Word、Pages、Canva、Adobe、瀏覽器全部都用得，跨平台、跨系統，毋須 HTML 標記或外掛。更可自選粵拼、拼音、台羅等方案，甚至自訂規則，生成專屬字體。",
+      "純文字就將拼音、注音等標注直接顯示喺文字（如漢字、泰文、音節文字）上方 —— Word、Pages、Canva、Adobe、瀏覽器全部都用得，PowerPoint 配合增益集都得，跨平台、跨系統，毋須 HTML 標記或外掛。更可自選粵拼、拼音、台羅等方案，甚至自訂規則，生成專屬字體。",
     "home.hero.sampleCaption":
       "上面是純 UTF-8 文字，標注由 Wing Font 即時渲染。",
     "home.hero.cta.generate": "自製你的字體",
@@ -589,6 +598,7 @@ export const TRANSLATIONS: Record<Language, Record<TranslationKey, string>> = {
     "showcase.uploadTooLarge": "檔案太大（上限 100 MB）",
     "showcase.uploadReadFailed": "讀取檔案失敗",
     "showcase.emptyHint": "揀個字型開始對比吧。",
+    "showcase.allFonts": "全部字型",
     "specimen.reportError":
       "發現標注有錯？歡迎[喺 GitHub 報告](https://github.com/chunlaw/wing-font-generator/issues/new?title=Annotation%20error%20in%20{name})",
     "showcase.userFonts.zh": "自家字型",
@@ -598,6 +608,15 @@ export const TRANSLATIONS: Record<Language, Record<TranslationKey, string>> = {
     "picker.noOptions": "搵唔到",
     "picker.addAriaLabel": "加入字型到比較",
     "specimen.editorAriaLabel": "字型試寫區",
+    "specimen.about.title": "關於呢隻字型",
+    "specimen.about.summary": "{name} 係一隻免費嘅{dialect}標注字型：每個字都印住讀音，直接打字就睇到，唔使另外加 ruby。字身用 {base}，標注用 {annotation}。",
+    "specimen.about.language": "語言",
+    "specimen.about.scheme": "標注",
+    "specimen.about.base": "字身",
+    "specimen.about.annotation": "標注字體",
+    "specimen.about.mapping": "讀音對照表",
+    "specimen.about.license": "授權",
+    "specimen.about.siblings": "同一標注嘅其他字款",
     "step1.recentFonts.title": "近期字型",
     "step1.recentFonts.pin": "釘住",
     "step1.recentFonts.unpin": "解除釘住",
@@ -839,28 +858,27 @@ export const TRANSLATIONS: Record<Language, Record<TranslationKey, string>> = {
     "legal.terms.title": "Terms & Conditions",
     "legal.privacy.title": "Privacy Policy",
     "legal.effectiveDate": "Effective date: {date}",
-    "meta.home.title":
-      "Wing Font — Chinese fonts with pronunciation annotations",
+    "meta.home.title": "Wing Font — Free Jyutping, Pinyin & Zhuyin Fonts",
     "meta.home.description":
-      "Free, open-source Chinese fonts with romanization baked into the glyphs. Cantonese, Mandarin, Taiwanese, Teochew. Works in Word, Pages, Canva, Adobe, browsers.",
-    "meta.showcase.title": "Font showcase | Wing Font",
+      "Free, open-source fonts with the reading built into every glyph — Jyutping, Pinyin, Zhuyin, Tâi-lô and more, for Chinese languages, Japanese, Thai, Arabic and beyond. Just type in Word, Pages, Canva or a browser; PowerPoint via the free add-in.",
+    "meta.showcase.title": "All Fonts: Jyutping, Yale, Pinyin, Zhuyin, Tâi-lô | Wing Font",
     "meta.showcase.description":
-      "Browse and download pre-built Chinese fonts with Jyutping, Pinyin, Tâi-lô, and Peng'im annotations baked into the glyphs. Free, instant download.",
-    "meta.specimen.title": "{name} — {dialect} annotated font | Wing Font",
+      "Browse and download every pre-built Wing Font — Jyutping, Yale, Pinyin, Zhuyin, Tâi-lô, Peng'im, furigana, Thai, Arabic and more. Free, SIL OFL 1.1.",
+    "meta.specimen.title": "{name} — Free {dialect} Font Download | Wing Font",
     "meta.specimen.description":
-      "{name}: a free {dialect} font with pronunciation annotations baked directly above each Chinese character. Generated by Wing Font from open-source base + annotation fonts. Preview live and download TTF or WOFF2 — open-source, SIL OFL 1.1 licensed.",
-    "meta.generate.title": "Generate a font | Wing Font",
+      "{name}: a free {dialect} font with the reading built into every character's glyph. Generated by Wing Font from open-source base + annotation fonts. Preview live and download TTF or WOFF2 — open-source, SIL OFL 1.1 licensed.",
+    "meta.generate.title": "Make Your Own Jyutping or Pinyin Font | Wing Font",
     "meta.generate.description":
-      "Pick a base font, a romanization mapping, and parameters — generate a custom annotated Chinese font in your browser. No install, no signup.",
+      "Pick a base font, a reading table and parameters — generate your own annotation font in your browser. No install, no signup.",
     "meta.about.title": "About | Wing Font",
     "meta.about.description":
-      "Wing Font is a free, open-source project that bakes Cantonese, Mandarin, Taiwanese, and Teochew romanization directly into Chinese fonts.",
+      "Wing Font is a free, open-source project that bakes readings — Jyutping, Pinyin, Tâi-lô and more — directly into fonts for Chinese languages, Japanese, Thai, Arabic and beyond.",
     "meta.credits.title": "Acknowledgements | Wing Font",
     "meta.credits.description":
       "Open-source data and fonts that Wing Font is built on — Noto Sans, ChironSung, Xiaolai, Huninn, TypeDuck, mozillazg pinyin-data, and more.",
     "meta.terms.title": "Terms & Conditions | Wing Font",
     "meta.terms.description":
-      "Terms of use for Wing Font — a free, open-source tool for generating annotated Chinese fonts.",
+      "Terms of use for Wing Font — a free, open-source tool for generating annotation fonts.",
     "meta.privacy.title": "Privacy Policy | Wing Font",
     "meta.privacy.description":
       "Wing Font's privacy policy — all font generation runs in your browser. No accounts, no tracking, no third-party analytics.",
@@ -954,7 +972,7 @@ export const TRANSLATIONS: Record<Language, Record<TranslationKey, string>> = {
     // Home
     "home.hero.title": "Wing Font",
     "home.hero.tagline":
-      "Show pronunciation annotations right above Chinese characters in plain text — works in Word, Pages, Canva, Adobe, and browsers, across every OS, with no HTML markup or plugins. Generate one for Jyutping, Pinyin, Tâi-lô, or your own custom scheme.",
+      "Show pronunciation annotations right above text (such as Chinese characters, Thai or syllabics) in plain text — works in Word, Pages, Canva, Adobe, and browsers (PowerPoint via our add-in), across every OS, with no HTML markup or plugins. Generate one for Jyutping, Pinyin, Tâi-lô, or your own custom scheme.",
     "home.hero.sampleCaption":
       "Plain UTF-8 text above, rendered by Wing Font itself.",
     "home.hero.cta.generate": "Generate your own font",
@@ -1024,6 +1042,7 @@ export const TRANSLATIONS: Record<Language, Record<TranslationKey, string>> = {
     "showcase.uploadTooLarge": "File too large (100 MB max)",
     "showcase.uploadReadFailed": "Couldn't read the file",
     "showcase.emptyHint": "Pick a font to start comparing.",
+    "showcase.allFonts": "All fonts",
     "specimen.reportError":
       "Spot an annotation error? Please [report it on GitHub](https://github.com/chunlaw/wing-font-generator/issues/new?title=Annotation%20error%20in%20{name}).",
     "showcase.userFonts.zh": "自家字型",
@@ -1033,6 +1052,15 @@ export const TRANSLATIONS: Record<Language, Record<TranslationKey, string>> = {
     "picker.noOptions": "No matches",
     "picker.addAriaLabel": "Add font to comparison",
     "specimen.editorAriaLabel": "Type or paste text in this font",
+    "specimen.about.title": "About this font",
+    "specimen.about.summary": "{name} is a free {dialect} font with the reading printed on every character, so plain typed text shows its pronunciation without ruby markup. Characters come from {base}; readings are set in {annotation}.",
+    "specimen.about.language": "Language",
+    "specimen.about.scheme": "Annotation",
+    "specimen.about.base": "Characters",
+    "specimen.about.annotation": "Annotation font",
+    "specimen.about.mapping": "Reading table",
+    "specimen.about.license": "License",
+    "specimen.about.siblings": "Other styles with this annotation",
     "step1.recentFonts.title": "Recent fonts",
     "step1.recentFonts.pin": "Pin",
     "step1.recentFonts.unpin": "Unpin",

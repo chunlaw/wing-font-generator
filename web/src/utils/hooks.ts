@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import { TEMPLATES, TEMPLATES_BY_DIALECT } from "./const";
+import { useTranslation } from "../i18n/LanguageContext";
 
 /**
  * Rotates through a pool of sample lyrics for the showcase preview,
@@ -172,6 +173,8 @@ interface DocumentMetaOptions {
    * don't see every ?fonts= permutation as a duplicate page.
    */
   canonicalPath?: string;
+  /** Site path of the share image; defaults to the generic /share.png. */
+  imagePath?: string;
 }
 
 /**
@@ -207,8 +210,11 @@ export const useDocumentMeta = (
   description: string,
   options: DocumentMetaOptions = {},
 ): void => {
-  const { canonicalPath } = options;
+  const { canonicalPath, imagePath = "/share.png" } = options;
+  const { lang } = useTranslation();
   useEffect(() => {
+    upsertMetaProperty("og:locale", lang === "zh" ? "zh_HK" : "en");
+    upsertMetaProperty("og:locale:alternate", lang === "zh" ? "en" : "zh_HK");
     if (title) {
       document.title = title;
       upsertMetaProperty("og:title", title);
@@ -220,9 +226,11 @@ export const useDocumentMeta = (
       upsertMetaName("twitter:description", description);
     }
     if (canonicalPath !== undefined) {
-      const fullUrl = `${SITE_URL}${canonicalPath}`;
+      const fullUrl = `${SITE_URL}/${lang}${canonicalPath}`;
       upsertCanonical(fullUrl);
       upsertMetaProperty("og:url", fullUrl);
     }
-  }, [title, description, canonicalPath]);
+    upsertMetaProperty("og:image", `${SITE_URL}${imagePath}`);
+    upsertMetaName("twitter:image", `${SITE_URL}${imagePath}`);
+  }, [title, description, canonicalPath, lang, imagePath]);
 };

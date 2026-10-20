@@ -96,6 +96,10 @@ const HERO_SAMPLES: { lines: [string, string]; fontFamily: string }[] = [
     fontFamily:
       '"WingHandHeroPengim", "Kaiti TC", "標楷體", "DFKai-SB", "STKaiti", serif',
   },
+  {
+    lines: ["น้ำนิ่ง", "ไหลลึก"],
+    fontFamily: '"WingSansHeroThai", sans-serif',
+  },
 ];
 
 const Home = () => {

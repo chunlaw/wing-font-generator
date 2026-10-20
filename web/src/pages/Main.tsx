@@ -30,6 +30,7 @@ import {
 import { FontHeader } from "../components/components/FonttHeader";
 import FontPicker from "../components/main/FontPicker";
 import LinguistHelpMemo from "../components/LinguistHelpMemo";
+import AllFontsIndex from "../components/AllFontsIndex";
 import { useTranslation } from "../i18n/LanguageContext";
 import {
   AVAILABLE_FONTS,
@@ -561,6 +562,8 @@ const Main = () => {
       <Box sx={{ width: "100%", maxWidth: 720, mt: 1 }}>
         <LinguistHelpMemo />
       </Box>
+
+      <AllFontsIndex />
 
       {/*
         Share-confirmation Snackbar. Anchored bottom-centre with

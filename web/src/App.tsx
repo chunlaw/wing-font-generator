@@ -10,6 +10,7 @@ import Privacy from "./pages/Privacy";
 import Specimen from "./pages/Specimen";
 import Terms from "./pages/Terms";
 import Generate from "./pages/Generate";
+import { useTranslation } from "./i18n/LanguageContext";
 
 /**
  * Route map:
@@ -27,6 +28,7 @@ import Generate from "./pages/Generate";
  * git churn.
  */
 function App() {
+  const { lang } = useTranslation();
   // ── Build-time prerender signal ────────────────────────────────────
   // scripts/pre-rendering.mjs loads each route in headless Chrome and
   // snapshots the DOM to a static .html file (so crawlers and social
@@ -46,7 +48,8 @@ function App() {
   }, []);
 
   return (
-    <BrowserRouter>
+    // key: BrowserRouter reads the location once, so a language switch remounts it.
+    <BrowserRouter basename={`/${lang}`} key={lang}>
       <Routes>
         <Route path="/" element={<Layout />}>
           <Route index element={<Home />} />

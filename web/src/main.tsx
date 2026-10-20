@@ -6,7 +6,14 @@ import { CssBaseline } from "@mui/material";
 import { AppContextProvider } from "./AppContext.tsx";
 import { RecentFontsProvider } from "./RecentFontsContext.tsx";
 import { ThemeProvider } from "./ThemeContext.tsx";
-import { LanguageProvider } from "./i18n/LanguageContext.tsx";
+import {
+  LanguageProvider,
+  loadInitialLanguage,
+  syncPathLang,
+} from "./i18n/LanguageContext.tsx";
+
+// Pre-language URLs (/showcase, old shared links) move under /zh or /en.
+syncPathLang(loadInitialLanguage());
 
 ReactDOM.createRoot(document.getElementById("root")!).render(
   <React.StrictMode>

@@ -34,7 +34,7 @@ name: Deploy to GitHub Pages
 #   probe-font-cache  -> is the fonts cache already populated?
 #   build-fonts       -> [matrix] rebuild 46 fonts        (only on cache miss)
 #   collect-fonts     -> flatten + save cache             (only on cache miss)
-#   build-web         -> vite build (parallel to fonts)
+#   build-web         -> vite build + prerender + share cards (after fonts)
 #   deploy            -> web dist + fonts/ -> Pages artifact -> deploy
 
 on:
@@ -222,6 +222,8 @@ jobs:
           # Teochew phrases. Previous versions used ChironSung HK and
           # Noto Sans TC bases respectively — see git history.
           - { name: WingHandHeroSample, family: "Wing Hand Hero Sample", args: "-opt -i input_fonts/XiaolaiSC-Regular.ttf -a 'input_fonts/NotoSans-VariableFont_wdth,wght.ttf' --anno-axis wdth=75 -m mappings/hero-sample.csv -as 0.38 -bs 0.70 -y 0.67" }
+          # Thai hero: no handwritten Thai base, so same pairing as WingSansThaiTCAHK.
+          - { name: WingSansHeroThai, family: "Wing Sans Hero Thai", args: "-opt --anno-below -i 'input_fonts/GoogleSans-VariableFont_GRAD,opsz,wght.ttf' -a 'input_fonts/NotoSans-VariableFont_wdth,wght.ttf' --anno-axis wdth=75 -m mappings/hero-thai.csv -as 0.42 -bs 0.70 --cell-width 1.0" }
           # === Taiwanese / Southern Min (河洛話) showcase ===========
           # tailo / poj are the MOE 優勢腔 standard (sutian via ChhoeTaigi);
           # sannkiap is the distinctive 三峽偏泉腔 accent (雞 = kere) — one
@@ -514,8 +516,15 @@ jobs:
           path: fonts
           key: ${{ needs.probe-font-cache.outputs.key }}
 
-  # ── Build the React app (parallel to the fonts) ────────────────────
+  # ── Build the React app ─────────────────────────────────────────────
+  # Waits for the fonts: og-images.mjs (in `yarn prerender`) draws each
+  # font's share card with the built .woff2. On a cache hit collect-fonts
+  # is skipped and this starts straight away.
   build-web:
+    needs: [probe-font-cache, collect-fonts]
+    if: >-
+      ${{ !cancelled()
+          && (needs.collect-fonts.result == 'success' || needs.collect-fonts.result == 'skipped') }}
     runs-on: ubuntu-latest
     defaults:
       run:
@@ -549,7 +558,7 @@ jobs:
       - name: Setup Node
         uses: actions/setup-node@v4
         with:
-          node-version: '20'
+          node-version: '24'
           cache: 'yarn'
           cache-dependency-path: web/yarn.lock
       - name: Cache Puppeteer browser
@@ -569,8 +578,16 @@ jobs:
         # mirrors Python sources into dist/wingfont for the Pyodide
         # worker — same as the old build-demo step.
         run: yarn build
+      - name: Restore fonts from cache
+        uses: actions/cache/restore@v4
+        with:
+          path: fonts
+          key: ${{ needs.probe-font-cache.outputs.key }}
+          fail-on-cache-miss: true
       - name: Prerender routes for SEO + social unfurling
-        # Drives headless Chrome over every URL in public/sitemap.xml and
+        # Generates dist/sitemap.xml from AVAILABLE_FONTS (/zh + /en),
+        # renders dist/og/<font>.png share cards from the restored fonts,
+        # and drives headless Chrome over every URL in the sitemap and
         # writes a static, fully-rendered .html per route into dist/ (so
         # crawlers and social unfurlers get real per-route markup + meta
         # instead of the empty SPA shell). Runs after the Vite build and

@@ -41,7 +41,28 @@ function detectDefaultLanguage(): Language {
   return browser.startsWith("zh") ? "zh" : "en";
 }
 
-function loadInitialLanguage(): Language {
+/** Language named by the URL's first segment (/zh/…, /en/…), if any. */
+export function pathLang(
+  pathname: string = window.location.pathname,
+): Language | null {
+  const seg = pathname.split("/")[1];
+  return seg === "zh" || seg === "en" ? seg : null;
+}
+
+/** Point the URL's language segment at `lang` (adding one if missing), without navigating. */
+export function syncPathLang(lang: Language): void {
+  const { pathname, search, hash } = window.location;
+  const next = pathLang(pathname)
+    ? pathname.replace(/^\/(zh|en)/, `/${lang}`)
+    : `/${lang}${pathname}`;
+  if (next !== pathname) {
+    window.history.replaceState(window.history.state, "", next + search + hash);
+  }
+}
+
+export function loadInitialLanguage(): Language {
+  const fromPath = pathLang();
+  if (fromPath) return fromPath;
   if (typeof localStorage === "undefined") return detectDefaultLanguage();
   const saved = localStorage.getItem(STORAGE_KEY);
   if (saved === "zh" || saved === "en") return saved;
@@ -65,10 +86,25 @@ export const LanguageProvider = ({ children }: { children: ReactNode }) => {
     }
   }, [lang]);
 
-  const setLang = useCallback((next: Language) => setLangState(next), []);
+  // Back/forward across a language switch lands on the other prefix.
+  useEffect(() => {
+    const onPop = () => {
+      const fromPath = pathLang();
+      if (fromPath) setLangState(fromPath);
+    };
+    window.addEventListener("popstate", onPop);
+    return () => window.removeEventListener("popstate", onPop);
+  }, []);
+
+  // URL first: App's router remounts on the new basename and reads the
+  // location once, so it must already carry the new prefix.
+  const setLang = useCallback((next: Language) => {
+    syncPathLang(next);
+    setLangState(next);
+  }, []);
   const toggleLang = useCallback(
-    () => setLangState((prev) => (prev === "zh" ? "en" : "zh")),
-    [],
+    () => setLang(lang === "zh" ? "en" : "zh"),
+    [lang, setLang],
   );
 
   const t = useCallback<LanguageContextValue["t"]>(

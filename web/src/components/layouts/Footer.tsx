@@ -39,7 +39,7 @@ import { useTranslation } from "../../i18n/LanguageContext";
  * present" awkward middle-state.
  */
 const Footer = () => {
-  const { t } = useTranslation();
+  const { t, lang } = useTranslation();
 
   return (
     <Box component="footer" width="100%" sx={{ mt: { xs: 6, md: 10 } }}>
@@ -108,7 +108,7 @@ const Footer = () => {
           </Typography>
           <Stack spacing={0.5} sx={{ mt: 0.5 }}>
             <Link
-              href="/generate"
+              href={`/${lang}/generate`}
               variant="body2"
               underline="hover"
               color="text.secondary"
@@ -117,7 +117,7 @@ const Footer = () => {
               {t("footer.links.generate")}
             </Link>
             <Link
-              href="/showcase"
+              href={`/${lang}/showcase`}
               variant="body2"
               underline="hover"
               color="text.secondary"
@@ -157,7 +157,7 @@ const Footer = () => {
               {t("footer.links.cli")}
             </Link>
             <Link
-              href="/credits"
+              href={`/${lang}/credits`}
               variant="body2"
               underline="hover"
               color="text.secondary"
@@ -194,7 +194,7 @@ const Footer = () => {
               extra entries don't justify the extra grid column.
             */}
             <Link
-              href="/terms"
+              href={`/${lang}/terms`}
               variant="body2"
               underline="hover"
               color="text.secondary"
@@ -203,7 +203,7 @@ const Footer = () => {
               {t("footer.links.terms")}
             </Link>
             <Link
-              href="/privacy"
+              href={`/${lang}/privacy`}
               variant="body2"
               underline="hover"
               color="text.secondary"

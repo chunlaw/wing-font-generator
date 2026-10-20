@@ -91,7 +91,7 @@ PAGE_TEMPLATE = """<!DOCTYPE html>
   <meta property="og:description" content="Direct .ttf / .woff downloads for every pre-built Wing Font variant.">
   <meta property="og:type" content="website">
   <meta property="og:url" content="https://wing-font.chunlaw.io/fonts/">
-  <meta property="og:image" content="https://wing-font.chunlaw.io/share.svg">
+  <meta property="og:image" content="https://wing-font.chunlaw.io/share.png">
   <style>
     :root {
       --bg: #ffffff;

@@ -17,7 +17,9 @@ import {
   findDialectKey,
   findTemplateKey,
   getDialectLabel,
+  isListedFont,
 } from "../utils/const";
+import SpecimenAbout from "../components/SpecimenAbout";
 import { FontHeader } from "../components/components/FonttHeader";
 import Markdown from "../components/Markdown";
 import { useTranslation } from "../i18n/LanguageContext";
@@ -138,11 +140,19 @@ const Specimen = () => {
   useDocumentMeta(
     t("meta.specimen.title")
       .replace("{name}", fontOption.displayName)
+      .replace("{scheme}", fontOption.note?.split("・")[0] ?? dialectForMeta)
       .replace("{dialect}", dialectForMeta),
     t("meta.specimen.description")
       .replace("{name}", fontOption.displayName)
       .replace("{dialect}", dialectForMeta),
-    { canonicalPath: `/specimen/${fontOption.name}` },
+    {
+      canonicalPath: `/specimen/${fontOption.name}`,
+      // og-images.mjs renders one card per listed built-in font at deploy.
+      imagePath:
+        findDialectKey(fontOption.name) && isListedFont(fontOption)
+          ? `/og/${fontOption.name}.png`
+          : undefined,
+    },
   );
 
   // Pick a rotating template from the dialect-matched pool. Specimen
@@ -404,6 +414,9 @@ const Specimen = () => {
         compact so the inline GitHub link is themed consistently
         with the rest of the site.
       */}
+      {dialectLabel && (
+        <SpecimenAbout font={fontOption} dialectLabel={dialectLabel} />
+      )}
       <Fab
         variant="extended"
         color="primary"

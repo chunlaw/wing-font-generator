@@ -4,10 +4,11 @@
   "version": "0.0.0",
   "type": "module",
   "scripts": {
-    "sync": "node scripts/sync-python.mjs",
+    "sync": "node scripts/sync-python.mjs && node scripts/gen-font-facts.mjs",
     "dev": "yarn sync && vite",
     "build": "yarn sync && tsc && vite build --mode production",
-    "prerender": "node scripts/pre-rendering.mjs",
+    "prerender": "node scripts/sitemap-generator.mjs && node scripts/pre-rendering.mjs && node scripts/og-images.mjs",
+    "test:scripts": "node --test scripts/*.test.mjs",
     "lint": "eslint . --ext ts,tsx --report-unused-disable-directives --max-warnings 0",
     "preview": "vite preview"
   },

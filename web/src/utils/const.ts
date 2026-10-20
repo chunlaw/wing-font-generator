@@ -1158,3 +1158,7 @@ export function getDialectLabel(
  * AppContext re-exports for backward-compat.
  */
 export const USER_FONTS_GROUP_KEY = "userFonts";
+
+/** Fonts with their own public /specimen page (sitemap, OG image). Hero fonts only hold the homepage demo characters. */
+export const isListedFont = (f: FontOption): boolean =>
+  !f.pending && !f.name.includes("Hero");
