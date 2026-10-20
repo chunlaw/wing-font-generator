@@ -5,7 +5,7 @@
  * unfurls with its own image. A new font in AVAILABLE_FONTS gets a card
  * on the next deploy with no extra work.
  *
- * Needs the built fonts at <repo>/fonts/<name>.ttf (CI restores them
+ * Needs the built fonts at <repo>/fonts/<name>.woff2 (CI restores them
  * from the fonts cache before this runs). Without that folder — a local
  * build — it skips. With it, a font that won't load fails the build, so
  * no page ships pointing at an image that doesn't exist.
@@ -42,7 +42,7 @@ html, body { margin: 0; width: 1200px; height: 630px; background: #f6f3ec; color
 </div><script>
 const q = new URLSearchParams(location.search);
 for (const id of ["host", "sample", "name", "sub"]) document.getElementById(id).textContent = q.get(id);
-const face = new FontFace("Specimen", "url(/fonts/" + q.get("font") + ".ttf)");
+const face = new FontFace("Specimen", "url(/fonts/" + q.get("font") + ".woff2)");
 window.cardReady = Promise.all([
   face.load().then((f) => document.fonts.add(f)),
   document.fonts.load("52px Label"),
@@ -109,9 +109,8 @@ async function main() {
         const page = await browser.newPage();
         await page.setViewport({ width: 1200, height: 630 });
         await page.goto(`${origin}/card?${params}`, { waitUntil: "domcontentloaded" });
-        // Cards load the TTF: Chrome rejects WOFF2 files that decode past ~30 MB.
         await page.evaluate(() => window.cardReady).catch((err) => {
-          throw new Error(`og-images: ${font.name}.ttf failed to load: ${err.message ?? err}`);
+          throw new Error(`og-images: ${font.name}.woff2 failed to load: ${err.message ?? err}`);
         });
         await writeFile(out, await page.screenshot({ type: "png" }));
       } finally {
