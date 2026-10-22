@@ -1162,3 +1162,8 @@ export const USER_FONTS_GROUP_KEY = "userFonts";
 /** Fonts with their own public /specimen page (sitemap, OG image). Hero fonts only hold the homepage demo characters. */
 export const isListedFont = (f: FontOption): boolean =>
   !f.pending && !f.name.includes("Hero");
+
+export const LISTED_FONT_COUNT = Object.values(AVAILABLE_FONTS)
+  .flatMap((dialect) => Object.values(dialect.fonts))
+  .filter(isListedFont).length;
+export const LANGUAGE_COUNT = Object.keys(AVAILABLE_FONTS).length;

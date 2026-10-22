@@ -40,6 +40,8 @@ import { useNavigate } from "react-router-dom";
 import { useTranslation } from "../i18n/LanguageContext";
 import { useDocumentMeta } from "../utils/hooks";
 import Markdown from "../components/Markdown";
+import HomeFaq from "../components/HomeFaq";
+import { LANGUAGE_COUNT, LISTED_FONT_COUNT } from "../utils/const";
 
 /*
  * Hero samples that rotate in the landing hero. Each entry is a
@@ -101,6 +103,51 @@ const HERO_SAMPLES: { lines: [string, string]; fontFamily: string }[] = [
     fontFamily: '"WingSansHeroThai", sans-serif',
   },
 ];
+
+/*
+ * Per-platform install / enable instructions, surfaced as a Tabs
+ * panel below the platforms-chip section.
+ *
+ * The label is hardcoded (brand names don't translate — see the
+ * chip array for the same rationale), but the body content goes
+ * through i18n so the install steps can be written natively in
+ * each language rather than literally translated from English.
+ *
+ * Order mirrors the platforms chip array above so the user's eye
+ * carries over from "Canva → Affinity → Adobe → ..." in the
+ * chips to "Canva → Affinity → Adobe → ..." in the tabs without
+ * a reordering mental step.
+ */
+const platformTabs = [
+  { label: "Canva", bodyKey: "home.platforms.tabs.canva" },
+  { label: "Affinity", bodyKey: "home.platforms.tabs.affinity" },
+  { label: "Adobe", bodyKey: "home.platforms.tabs.adobe" },
+  { label: "Microsoft Word", bodyKey: "home.platforms.tabs.word" },
+  { label: "Microsoft PowerPoint", bodyKey: "home.platforms.tabs.powerpoint" },
+  // Pages and Keynote share an install pattern (macOS Font Book →
+  // iWork's typography panel ligature toggle) and the same iWork
+  // typesetter quirk we worked around with the calt→ccmp move, so
+  // they're collapsed into one tab.
+  { label: "Pages / Keynote", bodyKey: "home.platforms.tabs.iwork" },
+  // Browsers share one combined tab — install steps are identical
+  // (drop .woff/.ttf on the server, add @font-face CSS). The chips
+  // above name them individually for visual clarity; the tabs
+  // section collapses them here because three near-identical tabs
+  // would be wasted vertical space.
+  { label: "Chrome / Firefox / Safari", bodyKey: "home.platforms.tabs.web" },
+  { label: "Windows", bodyKey: "home.platforms.tabs.windows" },
+  { label: "macOS", bodyKey: "home.platforms.tabs.macos" },
+  { label: "Linux", bodyKey: "home.platforms.tabs.linux" },
+  // E-readers — collapsed into one tab in the same spirit as
+  // "Chrome / Firefox / Safari" (same install pattern across the
+  // three) and "Pages / Keynote" (same iWork mechanism). The
+  // three covered here — Kindle, Kobo, Boox — exhaust the
+  // confidence range we can credibly claim today; the tab body
+  // also names PocketBook / Tolino as "likely but untested" so
+  // readers know to try without leading them on, and skips
+  // reMarkable / older Nook where ccmp support is unlikely.
+  { label: "Kindle / Kobo / Boox", bodyKey: "home.platforms.tabs.ereader" },
+] as const;
 
 const Home = () => {
   const { t } = useTranslation();
@@ -172,51 +219,22 @@ const Home = () => {
     { title: "home.features.f5.title", body: "home.features.f5.body" },
   ] as const;
 
-  /*
-   * Per-platform install / enable instructions, surfaced as a Tabs
-   * panel below the platforms-chip section.
-   *
-   * The label is hardcoded (brand names don't translate — see the
-   * chip array for the same rationale), but the body content goes
-   * through i18n so the install steps can be written natively in
-   * each language rather than literally translated from English.
-   *
-   * Order mirrors the platforms chip array above so the user's eye
-   * carries over from "Canva → Affinity → Adobe → ..." in the
-   * chips to "Canva → Affinity → Adobe → ..." in the tabs without
-   * a reordering mental step.
-   */
-  const platformTabs = [
-    { label: "Canva", bodyKey: "home.platforms.tabs.canva" },
-    { label: "Affinity", bodyKey: "home.platforms.tabs.affinity" },
-    { label: "Adobe", bodyKey: "home.platforms.tabs.adobe" },
-    { label: "Microsoft Word", bodyKey: "home.platforms.tabs.word" },
-    { label: "Microsoft PowerPoint", bodyKey: "home.platforms.tabs.powerpoint" },
-    // Pages and Keynote share an install pattern (macOS Font Book →
-    // iWork's typography panel ligature toggle) and the same iWork
-    // typesetter quirk we worked around with the calt→ccmp move, so
-    // they're collapsed into one tab.
-    { label: "Pages / Keynote", bodyKey: "home.platforms.tabs.iwork" },
-    // Browsers share one combined tab — install steps are identical
-    // (drop .woff/.ttf on the server, add @font-face CSS). The chips
-    // above name them individually for visual clarity; the tabs
-    // section collapses them here because three near-identical tabs
-    // would be wasted vertical space.
-    { label: "Chrome / Firefox / Safari", bodyKey: "home.platforms.tabs.web" },
-    { label: "Windows", bodyKey: "home.platforms.tabs.windows" },
-    { label: "macOS", bodyKey: "home.platforms.tabs.macos" },
-    { label: "Linux", bodyKey: "home.platforms.tabs.linux" },
-    // E-readers — collapsed into one tab in the same spirit as
-    // "Chrome / Firefox / Safari" (same install pattern across the
-    // three) and "Pages / Keynote" (same iWork mechanism). The
-    // three covered here — Kindle, Kobo, Boox — exhaust the
-    // confidence range we can credibly claim today; the tab body
-    // also names PocketBook / Tolino as "likely but untested" so
-    // readers know to try without leading them on, and skips
-    // reMarkable / older Nook where ccmp support is unlikely.
-    { label: "Kindle / Kobo / Boox", bodyKey: "home.platforms.tabs.ereader" },
-  ] as const;
   const [activeTab, setActiveTab] = useState(0);
+
+  // "#platform-powerpoint" (e.g. from the FAQ) opens that install tab and scrolls to it.
+  useEffect(() => {
+    const openFromHash = () => {
+      const i = platformTabs.findIndex(
+        (p) => `#platform-${p.bodyKey.split(".").pop()}` === window.location.hash,
+      );
+      if (i < 0) return;
+      setActiveTab(i);
+      document.getElementById("platforms")?.scrollIntoView({ behavior: "smooth" });
+    };
+    openFromHash();
+    window.addEventListener("hashchange", openFromHash);
+    return () => window.removeEventListener("hashchange", openFromHash);
+  }, []);
 
   return (
     <Box
@@ -249,7 +267,10 @@ const Home = () => {
           color="text.secondary"
           sx={{ fontWeight: 400, mb: { xs: 4, md: 6 }, lineHeight: 1.5 }}
         >
-          {t("home.hero.tagline")}
+          {t("home.hero.tagline", {
+            fonts: LISTED_FONT_COUNT,
+            languages: LANGUAGE_COUNT,
+          })}
         </Typography>
 
         {/*
@@ -513,7 +534,7 @@ const Home = () => {
         i18n string without us extending a hand-rolled renderer
         every time the copy needs more nuance.
       */}
-      <Box maxWidth={900} mx="auto" width="100%" px={2}>
+      <Box id="platforms" maxWidth={900} mx="auto" width="100%" px={2} sx={{ scrollMarginTop: 80 }}>
         <Typography variant="h4" gutterBottom textAlign="center">
           {t("home.platforms.learnMoreTitle")}
         </Typography>
@@ -651,6 +672,8 @@ const Home = () => {
           ))}
         </Box>
       </Box>
+
+      <HomeFaq />
     </Box>
   );
 };

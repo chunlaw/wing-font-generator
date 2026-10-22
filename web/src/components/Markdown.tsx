@@ -38,6 +38,7 @@
 import type { ReactNode } from "react";
 import ReactMarkdown, { type Components } from "react-markdown";
 import { Box, Link as MuiLink, Typography } from "@mui/material";
+import FileDownloadOutlinedIcon from "@mui/icons-material/FileDownloadOutlined";
 import type { SxProps, Theme } from "@mui/material/styles";
 
 interface MarkdownProps {
@@ -228,12 +229,13 @@ const Markdown = ({
     // does) and fall back to plain navigation if that fails.
     a: ({ href, title, children }) => {
       const isDownload = title === "download" && href;
+      const isInPage = href?.startsWith("#");
       return (
         <MuiLink
           href={href}
           underline="hover"
-          target={openLinksInNewTab && !isDownload ? "_blank" : undefined}
-          rel={openLinksInNewTab ? "noopener noreferrer" : undefined}
+          target={openLinksInNewTab && !isDownload && !isInPage ? "_blank" : undefined}
+          rel={openLinksInNewTab && !isInPage ? "noopener noreferrer" : undefined}
           download={isDownload ? href.split("/").pop() : undefined}
           onClick={
             isDownload
@@ -255,6 +257,13 @@ const Markdown = ({
           sx={{ fontWeight: 500 }}
         >
           {children}
+          {isDownload && (
+            <FileDownloadOutlinedIcon
+              fontSize="inherit"
+              aria-hidden
+              sx={{ verticalAlign: "-0.125em", ml: 0.25 }}
+            />
+          )}
         </MuiLink>
       );
     },

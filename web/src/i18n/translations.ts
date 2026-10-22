@@ -135,6 +135,19 @@ export type TranslationKey =
   // Home
   | "home.hero.title"
   | "home.hero.tagline"
+  | "home.faq.title"
+  | "home.faq.q1"
+  | "home.faq.a1"
+  | "home.faq.q2"
+  | "home.faq.a2"
+  | "home.faq.q3"
+  | "home.faq.a3"
+  | "home.faq.q4"
+  | "home.faq.a4"
+  | "home.faq.q5"
+  | "home.faq.a5"
+  | "home.faq.q6"
+  | "home.faq.a6"
   | "home.hero.sampleCaption"
   | "home.hero.cta.generate"
   | "home.hero.cta.showcase"
@@ -530,7 +543,20 @@ export const TRANSLATIONS: Record<Language, Record<TranslationKey, string>> = {
     // Home
     "home.hero.title": "Wing Font",
     "home.hero.tagline":
-      "純文字就將拼音、注音等標注直接顯示喺文字（如漢字、泰文、音節文字）上方 —— Word、Pages、Canva、Adobe、瀏覽器全部都用得，PowerPoint 配合增益集都得，跨平台、跨系統，毋須 HTML 標記或外掛。更可自選粵拼、拼音、台羅等方案，甚至自訂規則，生成專屬字體。",
+      "Wing Font 是 {fonts} 款免費開源的標注字體，支援 {languages} 種語言：輸入純文字，每個字便自動顯示讀音，例如粵拼、拼音、注音、台羅，毋須 HTML 標記或外掛。Word、Pages、Canva、Adobe、瀏覽器直接可用，PowerPoint 配合增益集亦可。",
+    "home.faq.title": "常見問題",
+    "home.faq.q1": "Wing Font 是否免費？可以作商業用途嗎？",
+    "home.faq.a1": "完全免費。字體以 SIL Open Font License 1.1 授權，可用於個人、教學及商業用途，包括印刷品、簡報和影片。唯一限制是不可單獨出售字體檔本身。",
+    "home.faq.q2": "如何在 Word 使用 Wing Font？",
+    "home.faq.a2": "先下載 TTF 檔並在電腦安裝字體，再在 Word 的字體選單選取，例如「Wing Sans Yue Jyutping」。之後直接輸入文字，讀音會自動顯示。",
+    "home.faq.q3": "PowerPoint 可以用嗎？",
+    "home.faq.a3": "可以，但要安裝免費的 [Wing Font PowerPoint 增益集](#platform-powerpoint)。PowerPoint 不會為中文套用字體內的讀音規則，增益集會把文字轉成 PowerPoint 能顯示的字元。",
+    "home.faq.q4": "可以自製自己的標注字體嗎？",
+    "home.faq.a4": "可以，有兩種方法。網上版：在「自製你的字體」頁面揀選底字、標注字體和讀音對照表，全部在瀏覽器內運算，毋須安裝或上傳檔案。命令列版：執行 pip install wing-font，再用 wing-font 指令批量生成，適合離線使用或整合到自己的工作流程。",
+    "home.faq.q5": "想自行指定某個字的讀音，怎樣做？",
+    "home.faq.a5": "有兩種方法。\n\n1. **揀選其他讀音**：在字後加數字，例如「行２」顯示第二個讀音，「行０」不顯示讀音。在 Word 要用全形數字。\n2. **自訂讀音**：在字後打全形「０」，再打全形拼音，例如「行０ｚａａ１」會在「行」顯示 zaa1。此功能適用於支援自訂標注的中文字體，例如粵拼、拼音、注音和台羅。\n\n發現讀音錯誤，亦歡迎在 GitHub 回報。",
+    "home.faq.q6": "支援哪些語言和拼音方案？",
+    "home.faq.a6": "目前有 {fonts} 款字體，涵蓋 {languages} 種語言：廣東話（粵拼、耶魯、劉錫祥、黃錫凌、廣州話拼音、千島、倉頡及空耳）、臺語（台羅、白話字、方音符號、台灣語假名）、潮州話、國語／普通話（拼音、注音）、日文、泰文、阿拉伯文、印地文和因紐特文。亦可用生成器自製其他方案。",
     "home.hero.sampleCaption":
       "上面是純 UTF-8 文字，標注由 Wing Font 即時渲染。",
     "home.hero.cta.generate": "自製你的字體",
@@ -977,7 +1003,20 @@ export const TRANSLATIONS: Record<Language, Record<TranslationKey, string>> = {
     // Home
     "home.hero.title": "Wing Font",
     "home.hero.tagline":
-      "Show pronunciation annotations right above text (such as Chinese characters, Thai or syllabics) in plain text — works in Word, Pages, Canva, Adobe, and browsers (PowerPoint via our add-in), across every OS, with no HTML markup or plugins. Generate one for Jyutping, Pinyin, Tâi-lô, or your own custom scheme.",
+      "Wing Font is {fonts} free, open-source fonts for {languages} languages that show each character's reading — Jyutping, Pinyin, Zhuyin, Tâi-lô and more — in plain text, with no HTML markup or plugins. Use them in Word, Pages, Canva, Adobe and browsers, and in PowerPoint with our add-in.",
+    "home.faq.title": "Frequently asked questions",
+    "home.faq.q1": "Is Wing Font free? Can I use it commercially?",
+    "home.faq.a1": "Yes, it is completely free. The fonts are licensed under the SIL Open Font License 1.1, so you can use them for personal, teaching and commercial work, including print, slides and video. The only restriction is that you can't sell the font files on their own.",
+    "home.faq.q2": "How do I use Wing Font in Word?",
+    "home.faq.a2": "Download the TTF file and install it on your computer. Then pick it from Word's font menu, for example “Wing Sans Yue Jyutping”. Type as usual and the readings appear automatically.",
+    "home.faq.q3": "Does it work in PowerPoint?",
+    "home.faq.a3": "Yes, with the free [Wing Font PowerPoint add-in](#platform-powerpoint). PowerPoint doesn't apply a font's reading rules to Chinese text, so the add-in converts the text into characters PowerPoint can display.",
+    "home.faq.q4": "Can I make my own annotation font?",
+    "home.faq.a4": "Yes, in two ways. Online: on the Generate page, pick a base font, an annotation font and a reading table; everything runs in your browser, with no install or upload. Command line: run pip install wing-font, then use the wing-font command to build fonts in batches, offline or inside your own workflow.",
+    "home.faq.q5": "How do I override the reading of a character?",
+    "home.faq.a5": "There are two ways.\n\n1. **Pick another reading**: add a number after the character. For example, 行２ shows its second reading and 行０ shows no reading. In Word, use full-width digits.\n2. **Write your own reading**: after the character, type a full-width ０ and then the full-width romanization. For example, 行０ｚａａ１ shows zaa1 over 行. This works in Chinese fonts with custom-annotation support, such as Jyutping, Pinyin, Zhuyin and Tâi-lô.\n\nIf you find a wrong reading, please report it on GitHub.",
+    "home.faq.q6": "Which languages and romanization schemes are supported?",
+    "home.faq.a6": "There are currently {fonts} fonts covering {languages} languages: Cantonese (Jyutping, Yale, Sidney Lau, Wong Shik-ling, Guangzhou romanization, Chishima, Cangjie and sound-spelling in other scripts), Taiwanese (Tâi-lô, POJ, Taiwanese Phonetic Symbols, Taiwanese kana), Teochew, Mandarin (Pinyin, Zhuyin), Japanese, Thai, Arabic, Hindi and Inuktitut. You can also make your own scheme with the generator.",
     "home.hero.sampleCaption":
       "Plain UTF-8 text above, rendered by Wing Font itself.",
     "home.hero.cta.generate": "Generate your own font",
