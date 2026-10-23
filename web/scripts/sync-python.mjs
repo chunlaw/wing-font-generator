@@ -108,8 +108,6 @@ const MANIFEST = [
   ["diy-mappings/cantonese/wong.diy-annotation.csv", "diy/canto-wong.diy-annotation.csv"],
   ["diy-mappings/cantonese/guangdong.diy-annotation.csv", "diy/canto-guangdong.diy-annotation.csv"],
   ["diy-mappings/cantonese/chishima.diy-annotation.csv", "diy/canto-chishima.diy-annotation.csv"],
-  ["diy-mappings/cantonese/hkied.diy-annotation.csv", "diy/canto-hkied.diy-annotation.csv"],
-  ["diy-mappings/cantonese/hkied-notone.diy-annotation.csv", "diy/canto-hkied-notone.diy-annotation.csv"],
   ["diy-mappings/cantonese/thai.diy-annotation.csv", "diy/canto-thai.diy-annotation.csv"],
   ["diy-mappings/cantonese/thai-notone.diy-annotation.csv", "diy/canto-thai-notone.diy-annotation.csv"],
   ["diy-mappings/cantonese/korean.diy-annotation.csv", "diy/canto-korean.diy-annotation.csv"],
