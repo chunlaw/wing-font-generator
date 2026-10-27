@@ -213,8 +213,10 @@ export const useDocumentMeta = (
   const { canonicalPath, imagePath = "/share.png" } = options;
   const { lang } = useTranslation();
   useEffect(() => {
-    upsertMetaProperty("og:locale", lang === "zh" ? "zh_HK" : "en");
-    upsertMetaProperty("og:locale:alternate", lang === "zh" ? "en" : "zh_HK");
+    const OG_LOCALE = { zh: "zh_HK", en: "en", ja: "ja_JP" } as const;
+    upsertMetaProperty("og:locale", OG_LOCALE[lang]);
+    // upsertMetaProperty keeps one tag per property, so only one alternate fits.
+    upsertMetaProperty("og:locale:alternate", lang === "en" ? "zh_HK" : "en");
     if (title) {
       document.title = title;
       upsertMetaProperty("og:title", title);

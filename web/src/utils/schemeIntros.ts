@@ -101,12 +101,54 @@ const SCHEME_INTROS: Record<string, { zh: string; en: string }> = {
 export const schemeKey = (fontName: string): string =>
   fontName.replace(/^Wing(Sans|Serif|Hand)/, "");
 
-export function schemeIntro(fontName: string, lang: "zh" | "en"): string | undefined {
+const SOUND_SPELLING_JA =
+  "空耳表記は、学習者がすでに読める文字で広東語の発音をおおまかに書き表したものです。まだ粵拼（ジュッピン）を覚えていない人でも、初日から声に出して読めます。粵拼の代わりではなく、粵拼への橋渡しです。";
+
+/** Japanese intros, keyed like SCHEME_INTROS; a missing key falls back to English. */
+const SCHEME_INTROS_JA: Record<string, string> = {
+  YueJyutping: "粵拼（ジュッピン、香港語言学会粵語拼音方案）は香港語言学会が 1993 年に発表した広東語のローマ字表記で、現在ネット上、辞書、言語学でもっとも広く使われています。広東語を学ぶなら、まず覚えたい表記法です。",
+  YueYale: "イェール式は、20 世紀中ごろのイェール大学の広東語教材に由来するローマ字表記です。英語圏の広東語教科書や辞書の多くで使われています。",
+  YueLau: "劉錫祥式は、劉錫祥（Sidney Lau）が香港政府の広東語講座のために考案した表記で、彼の教科書や『A Practical Cantonese-English Dictionary』で使われています。",
+  YueWong: "黄錫凌式は、黄錫凌の 1941 年の韻書《粵音韻彙》に由来します。国際音声記号風の記号と黄氏独自の声調記号を使い、伝統的な広東語辞典でよく見られます。",
+  YueGuangdong: "広州話拼音方案は 1960 年に広東省の教育当局が発表した表記法で、中国大陸で出版される広東語辞典の多くが採用しています。",
+  YueChishima: "千島式は、日本の広東語研究者・千島英一氏が考案した表記法で、『東方広東語辞典』や日本の広東語教材で使われています。",
+  YueThai: SOUND_SPELLING_JA,
+  YueKatakana: SOUND_SPELLING_JA,
+  YueHangul: SOUND_SPELLING_JA,
+  YueUrdu: SOUND_SPELLING_JA,
+  YueHindi: SOUND_SPELLING_JA,
+  YuePunjabi: SOUND_SPELLING_JA,
+  YueBaybayin: SOUND_SPELLING_JA,
+  Cangjie: "倉頡コードは、1976 年に朱邦復が考案した倉頡入力法の字根コードです。このフォントは各文字の上に倉頡コードを表示するので、倉頡の練習やコードの確認に使えます。",
+  GuoyuPinyin: "声調記号付きの漢語拼音。読みは台湾教育部《重編國語辭典修訂本》に従います。",
+  GuoyuZhuyin: "注音符号は台湾の学校で國語を教えるのに使われる表音記号です。読みは台湾教育部《重編國語辭典修訂本》に従います。",
+  PutonghuaPinyin: "声調記号付きの漢語拼音。標準の普通話の読みに従い、簡体字の文章向けです。",
+  TaigiTailo: "台羅（臺灣閩南語羅馬字拼音方案）は台湾教育部が 2006 年に発表した台湾語のローマ字表記で、教育部の辞典や学校教材で使われています。",
+  TaigiPOJ: "白話字（POJ）は 19 世紀にキリスト教の宣教師が広めた、もっとも歴史の長い台湾語のローマ字表記です。教会や多くの古い文献で使われています。",
+  TaigiTPS: "臺灣方音符號は注音符号をもとに、台湾語特有の音を表す記号を加えたものです。",
+  TaigiKana: "台湾語仮名は、日本統治時代に台湾語の読みをカタカナで表した表記法です。",
+  TeochewPengim: "潮州話拼音方案（潮拼）は 1960 年に広東省の教育当局が発表した表記法です。",
+  TeochewPUJ: "潮州白話字（PUJ）は、19 世紀の宣教師が潮州語のために考案したローマ字表記です。",
+  JapaneseFurigana: "ふりがなは漢字の読みを示す小さな仮名です。このフォントは漢字の音読みと訓読みの両方を表示します。",
+  HindiRoman: "デーヴァナーガリー文字のヒンディー語に、南アジアの文字の翻字の国際標準 ISO 15919 によるローマ字を付けています。",
+  ArabicDIN31635: "アラビア文字に、ドイツ規格協会が定めたアラビア文字の翻字規格 DIN 31635 によるローマ字を付けています。",
+};
+
+const SCHEME_JA: Record<string, string> = {
+  Jyutping: "粵拼", Yale: "イェール式", Lau: "劉錫祥式", Wong: "黄錫凌式",
+  Guangdong: "広州式", Chishima: "千島式", Cangjie: "倉頡",
+  Pinyin: "ピンイン", Zhuyin: "注音符号", Tailo: "台羅", POJ: "白話字", TPS: "方音符号",
+  Kana: "台湾語仮名", Pengim: "潮拼", PUJ: "潮州白話字", Furigana: "ふりがな",
+};
+
+export function schemeIntro(fontName: string, lang: "zh" | "en" | "ja"): string | undefined {
   const key = schemeKey(fontName);
   const match = Object.keys(SCHEME_INTROS)
     .filter((k) => key.startsWith(k))
     .sort((a, b) => b.length - a.length)[0];
-  return match ? SCHEME_INTROS[match][lang] : undefined;
+  if (!match) return undefined;
+  if (lang === "ja") return SCHEME_INTROS_JA[match] ?? SCHEME_INTROS[match].en;
+  return SCHEME_INTROS[match][lang];
 }
 
 const LANGUAGE_PREFIX = /^(Yue|Taigi|Guoyu|Putonghua|Teochew|Japanese|Thai|Hindi|Arabic|Inuktitut)/;
@@ -124,3 +166,10 @@ export function schemeNameEn(fontName: string): string | undefined {
   return token ? SCHEME_EN[token] : undefined;
 }
 
+
+/** Japanese scheme name for search titles, if it is a named scheme. */
+export function schemeNameJa(fontName: string): string | undefined {
+  const rest = schemeKey(fontName).replace(LANGUAGE_PREFIX, "");
+  const token = rest.match(/^([A-Z]{2,}(?![a-z])|[A-Z][a-z]+)/)?.[1];
+  return token ? SCHEME_JA[token] : undefined;
+}

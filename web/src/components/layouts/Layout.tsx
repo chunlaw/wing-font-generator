@@ -2,6 +2,7 @@ import { Box, Container, SxProps } from "@mui/material";
 import { Outlet } from "react-router-dom";
 import Header from "./Header";
 import Footer from "./Footer";
+import LanguageSuggestBanner from "./LanguageSuggestBanner";
 import { Theme } from "@emotion/react";
 
 /**
@@ -17,6 +18,7 @@ import { Theme } from "@emotion/react";
 const Layout = () => {
   return (
     <Container fixed maxWidth="xl" sx={rootSx}>
+      <LanguageSuggestBanner />
       <Header />
       <Box sx={outletSx}>
         <Outlet />

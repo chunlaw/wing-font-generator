@@ -4,12 +4,13 @@ import { buildLlmsTxt, buildSitemap } from "./sitemap-generator.mjs";
 
 test("every language version lists all alternates", () => {
   const xml = buildSitemap("https://x.io", ["/", "/specimen/A"], "2026-01-01");
-  assert.equal((xml.match(/<loc>/g) || []).length, 4);
+  assert.equal((xml.match(/<loc>/g) || []).length, 6);
   assert.ok(xml.includes("<loc>https://x.io/zh/</loc>"));
   assert.ok(xml.includes("<loc>https://x.io/en/specimen/A</loc>"));
   assert.ok(xml.includes('hreflang="zh-Hant" href="https://x.io/zh/specimen/A"'));
   assert.ok(xml.includes('hreflang="x-default" href="https://x.io/en/specimen/A"'));
-  assert.equal((xml.match(/hreflang=/g) || []).length, 12);
+  assert.ok(xml.includes('hreflang="ja" href="https://x.io/ja/specimen/A"'));
+  assert.equal((xml.match(/hreflang=/g) || []).length, 24);
 });
 
 test("llms.txt lists fonts under their language", () => {

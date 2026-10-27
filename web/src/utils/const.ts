@@ -188,7 +188,7 @@ export const TEMPLATES_BY_DIALECT: Record<string, string[]> = {
     "山の上から海と空を眺める",
   ],
   // Thai — Thai words annotated with the TCAHK romanization (thai-ink),
-  // rendered with the WingSansThaiTCAHK font where the
+  // rendered with the WingSansThaiInk font where the
   // Latin annotation sits BELOW the baseline (`--anno-below`) so it
   // doesn't collide with Thai's above-line vowels (สระอิ / สระอี /
   // สระอืน) and tone marks (ไม้เอก / ไม้โท / ไม้ตรี / ไม้จัตวา).
@@ -326,6 +326,7 @@ export const AVAILABLE_FONTS: FontSet = {
     lang: {
       zh: "廣東話",
       en: "Cantonese",
+      ja: "広東語",
     },
     // The Cantonese showcase default is the FIRST entry below
     // (loadPickedFontsWithFreshUrls picks the first non-pending
@@ -709,6 +710,7 @@ export const AVAILABLE_FONTS: FontSet = {
     lang: {
       zh: "臺語",
       en: "Taiwanese / Southern Min",
+      ja: "台湾語",
     },
     fonts: {
       // 優勢腔 standard reading (KipUnicode), Noto Sans TC + condensed Noto Sans —
@@ -885,6 +887,7 @@ export const AVAILABLE_FONTS: FontSet = {
     lang: {
       zh: "潮州話",
       en: "Teochew / Min Nan",
+      ja: "潮州語",
     },
     fonts: {
       "WingSansTeochewPengim": {
@@ -938,6 +941,7 @@ export const AVAILABLE_FONTS: FontSet = {
     lang: {
       zh: "國語 / 普通話",
       en: "Mandarin",
+      ja: "中国語（普通話 / 國語）",
     },
     fonts: {
       "WingSansGuoyuPinyin": {
@@ -989,13 +993,14 @@ export const AVAILABLE_FONTS: FontSet = {
     lang: {
       zh: "泰文",
       en: "Thai",
+      ja: "タイ語",
     },
     fonts: {
-      "WingSansThaiTCAHK": {
-        displayName: "Wing Sans Thai TCAHK",
+      "WingSansThaiInk": {
+        displayName: "Wing Sans Thai Ink",
         note: "香港泰國文化協會拼音",
-        name: "WingSansThaiTCAHK",
-        source: `url(${import.meta.env.VITE_FONT_URL}/WingSansThaiTCAHK.woff2) format('woff2')`,
+        name: "WingSansThaiInk",
+        source: `url(${import.meta.env.VITE_FONT_URL}/WingSansThaiInk.woff2) format('woff2')`,
       },
     },
   },
@@ -1007,6 +1012,7 @@ export const AVAILABLE_FONTS: FontSet = {
     lang: {
       zh: "因紐特文",
       en: "Inuktitut",
+      ja: "イヌクティトゥット語",
     },
     fonts: {
       "WingSansInuktitutRoman": {
@@ -1035,6 +1041,7 @@ export const AVAILABLE_FONTS: FontSet = {
     lang: {
       zh: "阿拉伯文",
       en: "Arabic",
+      ja: "アラビア語",
     },
     fonts: {
       "WingSansArabicDIN31635": {
@@ -1060,6 +1067,7 @@ export const AVAILABLE_FONTS: FontSet = {
     lang: {
       zh: "日本語",
       en: "Japanese",
+      ja: "日本語",
     },
     fonts: {
       "WingSansJapaneseFurigana": {
@@ -1080,6 +1088,7 @@ export const AVAILABLE_FONTS: FontSet = {
     lang: {
       zh: "印地文",
       en: "Hindi",
+      ja: "ヒンディー語",
     },
     fonts: {
       "WingSansHindiRoman": {
@@ -1126,7 +1135,7 @@ export function findTemplateKey(fontName: string): string | undefined {
  */
 export function getDialectLabel(
   dialectKey: string,
-  locale: "zh" | "en",
+  locale: "zh" | "en" | "ja",
 ): string {
   // Synthetic "user fonts" group — the IndexedDB-cached recent fonts
   // surfaced in the FontPicker / Showcase / Specimen, sitting next to
@@ -1144,7 +1153,7 @@ export function getDialectLabel(
     // entries; the chip's source-specific icon (RecentFontsChips)
     // tells them apart at a glance, while the group label stays
     // general enough to honestly describe the contents.
-    return locale === "zh" ? "自家字體" : "Your fonts";
+    return { zh: "自家字體", en: "Your fonts", ja: "マイフォント" }[locale];
   }
   const group = AVAILABLE_FONTS[dialectKey];
   if (!group) return dialectKey;

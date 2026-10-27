@@ -264,7 +264,7 @@ export function outFileFor(route, distDir = DIST) {
  * "/en/about" -> "/about"), or null for anything else.
  */
 export function unprefixedRoute(route) {
-  const m = route.match(/^\/(?:zh|en)(\/.*)$/);
+  const m = route.match(/^\/(?:zh|en|ja)(\/.*)$/);
   return m ? m[1] : null;
 }
 

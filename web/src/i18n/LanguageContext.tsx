@@ -15,7 +15,17 @@ import {
   useMemo,
   useState,
 } from "react";
-import { Language, TRANSLATIONS, TranslationKey } from "./translations";
+import { LANGUAGES, Language, TRANSLATIONS, TranslationKey } from "./translations";
+
+const isLanguage = (v: unknown): v is Language =>
+  LANGUAGES.includes(v as Language);
+
+/** BCP 47 tag for <html lang> and hreflang. */
+export const HTML_LANG: Record<Language, string> = {
+  zh: "zh-Hant",
+  en: "en",
+  ja: "ja",
+};
 
 interface LanguageContextValue {
   /** Currently active language. */
@@ -35,25 +45,28 @@ const STORAGE_KEY = "wingfont.lang";
 function detectDefaultLanguage(): Language {
   // First-time visitors: derive from navigator.language. Anything that
   // starts with "zh" (zh, zh-TW, zh-HK, zh-CN, zh-Hant, …) becomes
-  // Traditional Chinese; everything else falls through to English.
+  // Traditional Chinese, "ja…" becomes Japanese; everything else falls
+  // through to English.
   if (typeof navigator === "undefined") return "en";
   const browser = (navigator.language || "en").toLowerCase();
-  return browser.startsWith("zh") ? "zh" : "en";
+  if (browser.startsWith("zh")) return "zh";
+  if (browser.startsWith("ja")) return "ja";
+  return "en";
 }
 
-/** Language named by the URL's first segment (/zh/…, /en/…), if any. */
+/** Language named by the URL's first segment (/zh/…, /en/…, /ja/…), if any. */
 export function pathLang(
   pathname: string = window.location.pathname,
 ): Language | null {
   const seg = pathname.split("/")[1];
-  return seg === "zh" || seg === "en" ? seg : null;
+  return isLanguage(seg) ? seg : null;
 }
 
 /** Point the URL's language segment at `lang` (adding one if missing), without navigating. */
 export function syncPathLang(lang: Language): void {
   const { pathname, search, hash } = window.location;
   const next = pathLang(pathname)
-    ? pathname.replace(/^\/(zh|en)/, `/${lang}`)
+    ? pathname.replace(/^\/(zh|en|ja)(?=\/|$)/, `/${lang}`)
     : `/${lang}${pathname}`;
   if (next !== pathname) {
     window.history.replaceState(window.history.state, "", next + search + hash);
@@ -65,7 +78,7 @@ export function loadInitialLanguage(): Language {
   if (fromPath) return fromPath;
   if (typeof localStorage === "undefined") return detectDefaultLanguage();
   const saved = localStorage.getItem(STORAGE_KEY);
-  if (saved === "zh" || saved === "en") return saved;
+  if (isLanguage(saved)) return saved;
   return detectDefaultLanguage();
 }
 
@@ -82,7 +95,7 @@ export const LanguageProvider = ({ children }: { children: ReactNode }) => {
     // Also update the <html lang> attribute so screen readers and search
     // engines pick the right pronunciation/segmentation rules.
     if (typeof document !== "undefined") {
-      document.documentElement.lang = lang === "zh" ? "zh-Hant" : "en";
+      document.documentElement.lang = HTML_LANG[lang];
     }
   }, [lang]);
 
@@ -103,7 +116,7 @@ export const LanguageProvider = ({ children }: { children: ReactNode }) => {
     setLangState(next);
   }, []);
   const toggleLang = useCallback(
-    () => setLang(lang === "zh" ? "en" : "zh"),
+    () => setLang(LANGUAGES[(LANGUAGES.indexOf(lang) + 1) % LANGUAGES.length]),
     [lang, setLang],
   );
 

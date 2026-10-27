@@ -4,7 +4,7 @@
  * catalogue (AVAILABLE_FONTS in src/utils/const.ts), so a new font gets
  * a specimen page in the sitemap — and therefore a prerendered page —
  * without anyone hand-editing XML. Mirrors hkbus's sitemap-generator.js:
- * every page exists as /zh/… and /en/…, paired with hreflang alternates.
+ * every page exists as /zh/…, /en/… and /ja/…, paired with hreflang alternates.
  *
  * Also writes dist/llms.txt (https://llmstxt.org) from the same catalogue.
  *
@@ -17,9 +17,9 @@ import { fileURLToPath, pathToFileURL } from "node:url";
 
 const WEB_DIR = path.join(path.dirname(fileURLToPath(import.meta.url)), "..");
 
-export const LANGS = ["zh", "en"];
-const HREFLANG = { zh: "zh-Hant", en: "en" };
-// x-default (visitors who are neither zh nor en) gets the English page.
+export const LANGS = ["zh", "en", "ja"];
+const HREFLANG = { zh: "zh-Hant", en: "en", ja: "ja" };
+// x-default (visitors whose language has no version) gets the English page.
 export const DEFAULT_LANG = "en";
 const PAGES = ["/", "/showcase", "/generate", "/about", "/credits", "/terms", "/privacy"];
 

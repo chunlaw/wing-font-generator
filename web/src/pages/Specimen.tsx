@@ -20,7 +20,7 @@ import {
   isListedFont,
 } from "../utils/const";
 import SpecimenAbout from "../components/SpecimenAbout";
-import { schemeNameEn } from "../utils/schemeIntros";
+import { schemeNameEn, schemeNameJa } from "../utils/schemeIntros";
 import { FontHeader } from "../components/components/FonttHeader";
 import Markdown from "../components/Markdown";
 import { useTranslation } from "../i18n/LanguageContext";
@@ -137,7 +137,8 @@ const Specimen = () => {
   // `dialectLabel` is undefined only for off-catalog / user-generated
   // fonts (not prerendered); fall back to a generic "Chinese" / "中文"
   // so the placeholder never leaks into the rendered tag.
-  const dialectForMeta = dialectLabel ?? (lang === "zh" ? "中文" : "Chinese");
+  const dialectForMeta =
+    dialectLabel ?? { zh: "中文", en: "Chinese", ja: "中国語" }[lang];
   useDocumentMeta(
     t("meta.specimen.title")
       .replace("{name}", fontOption.displayName)
@@ -145,7 +146,9 @@ const Specimen = () => {
         "{scheme}",
         lang === "zh"
           ? (fontOption.note?.split("・")[0] ?? dialectForMeta)
-          : (schemeNameEn(fontOption.name) ?? "Annotated"),
+          : lang === "ja"
+            ? (schemeNameJa(fontOption.name) ?? "注音")
+            : (schemeNameEn(fontOption.name) ?? "Annotated"),
       )
       .replace("{dialect}", dialectForMeta),
     t("meta.specimen.description")

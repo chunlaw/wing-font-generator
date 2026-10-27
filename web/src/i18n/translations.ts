@@ -12,8 +12,10 @@
  *     set as `zh` and `en`. Missing keys fall back to `en` then to the
  *     key string itself.
  */
+import { JA } from "./ja";
 
-export type Language = "zh" | "en";
+export type Language = "zh" | "en" | "ja";
+export const LANGUAGES: Language[] = ["zh", "en", "ja"];
 
 // Every key that appears in any locale. Build-time type check ensures we
 // don't reference a key from a component that doesn't exist anywhere.
@@ -1317,4 +1319,5 @@ export const TRANSLATIONS: Record<Language, Record<TranslationKey, string>> = {
     "step6.cssSnippet.designAppHint":
       "Override paths all ride on OpenType `ccmp`, which is mandatory and applied without any text-setting toggles. **Canva, InDesign, Pages, Keynote, the Adobe suite** and modern browsers accept every form: **word-context** (`銀行/行人`), **1-indexed half-width digit** (`字0` = bare, `字1` = 1st reading, `字N` = N-th), **fullwidth digit** (`字０`, `字１`, `字N`), and **trigger+numeral** (`字丅零`, `字丅一`, …).\n\n**Microsoft Word note**: DirectWrite splits the half-width digit (`字1`, `字2`) into a separate shaping run from the adjacent CJK character, so that one path doesn't fire in Word. Use fullwidth digits (`字１`, `字２`) or the IME-friendly `字丅一`, `字丅二` notation instead — both work in Word. Word-context auto-switching (`銀行 / 行人`) is unaffected and works normally.",
   },
+  ja: JA,
 };

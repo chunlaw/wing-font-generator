@@ -5,6 +5,7 @@ import {
 } from "@mui/icons-material";
 import { Box, Divider, IconButton, Link, Stack, Typography } from "@mui/material";
 import { useTranslation } from "../../i18n/LanguageContext";
+import FooterLanguageLinks from "./FooterLanguageLinks";
 
 /**
  * Footer — three-section layout on desktop; slim one-liner on mobile.
@@ -67,6 +68,9 @@ const Footer = () => {
           <Box>{t("footer.license")}</Box>
           <Box>{t("footer.credit")}</Box>
         </Stack>
+        <Box sx={{ pb: 3, mt: -1.5, color: "text.secondary", fontSize: 12 }}>
+          <FooterLanguageLinks justify="center" />
+        </Box>
       </Box>
 
       {/* ── Desktop (md+): three-column layout + bottom row ───── */}
@@ -272,6 +276,7 @@ const Footer = () => {
         }}
       >
         <Box>{t("footer.license")}</Box>
+        <FooterLanguageLinks />
         <Box>{t("footer.credit")}</Box>
       </Stack>
       </Box>
