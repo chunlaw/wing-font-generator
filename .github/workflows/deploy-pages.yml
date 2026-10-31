@@ -222,7 +222,7 @@ jobs:
           # Teochew phrases. Previous versions used ChironSung HK and
           # Noto Sans TC bases respectively — see git history.
           - { name: WingHandHeroSample, family: "Wing Hand Hero Sample", args: "-opt -i input_fonts/XiaolaiSC-Regular.ttf -a 'input_fonts/NotoSans-VariableFont_wdth,wght.ttf' --anno-axis wdth=75 -m mappings/hero-sample.csv -as 0.38 -bs 0.70 -y 0.67" }
-          # Thai hero: no handwritten Thai base, so same pairing as WingSansThaiInk.
+          # Thai hero: no handwritten Thai base, so same pairing as WingSansThaiPaiboon.
           - { name: WingSansHeroThai, family: "Wing Sans Hero Thai", args: "-opt --anno-below -i 'input_fonts/GoogleSans-VariableFont_GRAD,opsz,wght.ttf' -a 'input_fonts/NotoSans-VariableFont_wdth,wght.ttf' --anno-axis wdth=75 -m mappings/hero-thai.csv -as 0.42 -bs 0.70 --cell-width 1.0" }
           # === Taiwanese / Southern Min (河洛話) showcase ===========
           # tailo / poj are the MOE 優勢腔 standard (sutian via ChhoeTaigi);
@@ -411,7 +411,7 @@ jobs:
           # `--anno-below` help in wing-font.py for full design notes).
           #
           # `-as 0.42 -bs 0.70` matches the Arabic/Hindi entries above.
-          - { name: WingSansThaiInk, family: "Wing Sans Thai Ink", args: "-opt --anno-below -i 'input_fonts/GoogleSans-VariableFont_GRAD,opsz,wght.ttf' -a 'input_fonts/NotoSans-VariableFont_wdth,wght.ttf' --anno-axis wdth=75 -m mappings/thai/thai-tcahk.csv -as 0.42 -bs 0.70 --cell-width 1.0" }
+          - { name: WingSansThaiPaiboon, family: "Wing Sans Thai Paiboon", args: "-opt --anno-below -i 'input_fonts/GoogleSans-VariableFont_GRAD,opsz,wght.ttf' -a 'input_fonts/NotoSans-VariableFont_wdth,wght.ttf' --anno-axis wdth=75 -m mappings/thai/thai-tcahk.csv -as 0.42 -bs 0.70 --cell-width 1.0" }
           # Inuktitut — syllabics with qaniujaaqpait romanization below.
           # Word-unit rows from the Nunavut Hansard 3.0 corpus (CC BY 4.0,
           # see mappings/inuktitut/NOTES.md); ~20k entries keeps the WOFF2

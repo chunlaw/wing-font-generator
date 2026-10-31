@@ -188,7 +188,7 @@ export const TEMPLATES_BY_DIALECT: Record<string, string[]> = {
     "山の上から海と空を眺める",
   ],
   // Thai — Thai words annotated with the TCAHK romanization (thai-ink),
-  // rendered with the WingSansThaiInk font where the
+  // rendered with the WingSansThaiPaiboon font where the
   // Latin annotation sits BELOW the baseline (`--anno-below`) so it
   // doesn't collide with Thai's above-line vowels (สระอิ / สระอี /
   // สระอืน) and tone marks (ไม้เอก / ไม้โท / ไม้ตรี / ไม้จัตวา).
@@ -996,11 +996,11 @@ export const AVAILABLE_FONTS: FontSet = {
       ja: "タイ語",
     },
     fonts: {
-      "WingSansThaiInk": {
-        displayName: "Wing Sans Thai Ink",
-        note: "香港泰國文化協會拼音",
-        name: "WingSansThaiInk",
-        source: `url(${import.meta.env.VITE_FONT_URL}/WingSansThaiInk.woff2) format('woff2')`,
+      "WingSansThaiPaiboon": {
+        displayName: "Wing Sans Thai Paiboon",
+        note: "Paiboon 拼音",
+        name: "WingSansThaiPaiboon",
+        source: `url(${import.meta.env.VITE_FONT_URL}/WingSansThaiPaiboon.woff2) format('woff2')`,
       },
     },
   },

@@ -1,8 +1,8 @@
 # Thai (ภาษาไทย)
 
-**Romanization.** The romanization taught by the **Thai Culture Association of
-Hong Kong (TCAHK)** in its Cantonese-medium Thai classes, as implemented by the
-thai-ink project: a phonemic transcription with IPA-ish vowels (`ɔ ʉ ə ɛ`), a tone diacritic over the vowel nucleus,
+**Romanization.** The **Paiboon** romanization, as taught by the **Thai
+Culture Association of Hong Kong (TCAHK)** in its Cantonese-medium Thai classes
+and implemented by the thai-ink project: a phonemic transcription with IPA-ish vowels (`ɔ ʉ ə ɛ`), a tone diacritic over the vowel nucleus,
 and `g / dt / bp` for ก / ต / ป. It is a pronunciation transcription, not a
 letter-for-letter transliteration, so it reflects Thai's complex
 spelling-to-sound rules (consonant classes, leading ห/อ, อักษรนำ tone

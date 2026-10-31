@@ -532,7 +532,7 @@ export const TRANSLATIONS: Record<Language, Record<TranslationKey, string>> = {
     "ack.mandarin.unihan": "Unicode 漢字資料庫（Unihan）— 上游讀音資料。",
     "ack.mandarin.moedict": "台灣教育部《國語辭典》字音資料，用嚟做國語（mandarin-tw-toned／mandarin-tw-zhuyin）全部讀音同注音（g0v moedict-data；CC BY-ND 3.0 TW）。",
     "ack.thai.title": "泰文　字音資料",
-    "ack.thai.body": "泰文詞語嘅羅馬拼音方案取自香港泰國文化協會（TCAHK）以廣東話教授泰文嘅課程教材，經 thai-ink 項目整理成拼讀規則同人手校對嘅詞彙表（約 900 個詞，一律優先）；其餘約 8.4 萬個常用詞取自 PyThaiNLP 嘅詞表，按同一套規則自動轉換，屬近似結果。",
+    "ack.thai.body": "泰文詞語嘅羅馬拼音屬 Paiboon 系統，跟香港泰國文化協會（TCAHK）以廣東話教授泰文嘅課程教材，經 thai-ink 項目整理成拼讀規則同人手校對嘅詞彙表（約 900 個詞，一律優先）；其餘約 8.4 萬個常用詞取自 PyThaiNLP 嘅詞表，按同一套規則自動轉換，屬近似結果。",
     "ack.thai.tcahk": "泰文拼音方案同詞彙嘅來源：協會以廣東話教授泰文嘅課程教材。",
     "ack.thai.pythainlp": "泰文詞表同詞頻（Apache-2.0），用嚟擴充自動轉換嘅詞彙。",
     "ack.inuktitut.title": "因紐特文　字音資料",
@@ -992,7 +992,7 @@ export const TRANSLATIONS: Record<Language, Record<TranslationKey, string>> = {
     "ack.mandarin.moedict":
       "Taiwan MOE 《國語辭典》 readings and 注音 used for the whole 國語 variant (mandarin-tw-toned / mandarin-tw-zhuyin), via g0v's moedict-data (CC BY-ND 3.0 TW).",
     "ack.thai.title": "Thai — reading data",
-    "ack.thai.body": "The Thai romanization follows the teaching materials of the Thai Culture Association of Hong Kong (TCAHK), whose Thai classes are taught in Cantonese. The thai-ink project turned those materials into spelling-to-sound rules and a hand-checked vocabulary (~900 words, always preferred); the remaining ~84k common words come from PyThaiNLP's word lists, romanized automatically by the same rules, so they are approximations.",
+    "ack.thai.body": "The Thai romanization is the Paiboon system, as used in the teaching materials of the Thai Culture Association of Hong Kong (TCAHK), whose Thai classes are taught in Cantonese. The thai-ink project turned those materials into spelling-to-sound rules and a hand-checked vocabulary (~900 words, always preferred); the remaining ~84k common words come from PyThaiNLP's word lists, romanized automatically by the same rules, so they are approximations.",
     "ack.thai.tcahk": "Source of the romanization scheme and vocabulary: the association's Cantonese-medium Thai course materials.",
     "ack.thai.pythainlp": "Thai word lists and frequencies (Apache-2.0), used to extend the automatically romanized vocabulary.",
     "ack.inuktitut.title": "Inuktitut — reading data",
