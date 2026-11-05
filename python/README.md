@@ -4,8 +4,8 @@ Generate OpenType fonts that show **pronunciation annotations stacked above
 Chinese characters** in plain text — no HTML `<ruby>` markup, no separate
 text layers, no special apps. Type the character, the romanization shows up.
 
-Live examples (Cantonese in LSHK / Yale / Chishima / 劉錫祥 schemes, plus
-Cangjie input codes) at <https://wing-fonts.chunlaw.io/>.
+Live examples (Cantonese, Taiwanese, Teochew, Mandarin, Japanese, plus
+word-unit Thai / Arabic / Hindi / Inuktitut) at <https://wing-font.chunlaw.io/>.
 
 This directory is the **Python pipeline** that produces those fonts. The
 sibling [`../web/`](../web/) directory hosts the React + Vite site that
@@ -27,9 +27,11 @@ under the `ccmp` (Glyph Composition / Decomposition) feature: chain-context
 substitution picks the right reading when the character appears in a known
 word (e.g. `銀行` → `行/hong4`, `行人` → `行/hang4`), and ligature
 substitution lets the user manually pick a variant by typing the variant
-number after the character — `字1`, `字2`, … and, for characters with
-more than nine readings, the full multi-digit number `字11` / `字111`
-(`字0` resets to the default) — or the IME-friendly `字丅一` / `字丅二`
+number after the character — 1-indexed: `字1` is the default reading,
+`字2` the 2nd, the full multi-digit number `字11` / `字111` for
+characters with many readings, and `字0` drops the annotation (bare
+character). Full-width digits (`字２`, `字０`) work the same and are
+what Word needs. There is also an IME-friendly `字丅一` / `字丅二`
 fallback. The lookup _types_
 differ (Type 6 ChainContextSubst vs Type 4 LigatureSubst), but the feature
 _tag_ is the same — `ccmp`, not `calt` or `liga`. We pick `ccmp` because
@@ -40,11 +42,20 @@ Apple's iWork typesetter — Pages, Keynote, Numbers — silently suppresses
 
 A third path lives outside GSUB entirely: `ivs_handler.py` writes a cmap
 format-14 (Unicode Variation Sequences) subtable, so users on VS-capable
-IMEs can pick a variant by typing `<base> + <VS17+N>` (e.g.
-`行 + U+E0100` → variant 1). IVS is zero-width and universally supported
+IMEs can pick a reading by typing `<base> + <VS17+N>` (each reading,
+default included, gets a selector in the sorted order of its annotation
+string; `+ VS255` is the muted variant and `+ VS256` the bare glyph). IVS is zero-width and universally supported
 across shapers, but the chosen variant becomes invisible without the font
 installed; we ship it as a supplement to the human-readable ligature
 paths, not a replacement. See the `ivs_handler.py` deep-dive below.
+
+A fourth, optional path — **DIY annotations** (`--diy-annotations`) —
+lets the reader put *any* annotation from a user-supplied inventory over
+*any* character, including readings the mapping doesn't list:
+`行０ｚａａ１` → bare `行` with `zaa1` above. Each inventory entry is one
+shared zero-advance mark glyph, so cost grows with the inventory, not
+with inventory × characters. Design and caveats:
+[`HYBRID_ANNOTATION_DESIGN.md`](HYBRID_ANNOTATION_DESIGN.md).
 
 ---
 
@@ -63,11 +74,16 @@ python/
 │   │                           #     per-script guards + variant override,
 │   │                           #     GDEF lig carets)
 │   ├── ivs_handler.py          #   Builds the cmap format-14 IVS supplement
+│   ├── diy_handler.py          #   Parses --diy-annotations CSV into the mark inventory
+│   ├── mark_input_handler.py   #   Typed full-width input → DIY mark ligatures
+│   ├── mark_strip_handler.py   #   GDEF mark tagging (+ legacy strip builders)
+│   ├── check_cmap_reachability.py # Sanity check: every glyph reachable
 │   ├── csv_parser.py           #   Mapping CSV parser + WORD_SCRIPTS registry
 │   └── utils.py                #   cmap lookup + GSUB feature registration helper
 ├── wing-font.py                # Shim: `python wing-font.py …` == `wing-font …`
 ├── pyproject.toml              # Package metadata (PyPI name: wing-font)
 ├── mappings/                   # CSVs that map char → romanization (data only; not in the wheel)
+├── diy-mappings/               # `*.diy-annotation.csv` inventories for --diy-annotations
 ├── examples/hero/              # 8-character end-to-end example with tiny fonts
 ├── input_fonts/                # Source TTFs (Chiron, NotoSerif, NotoSansTC, …)
 │                               #   — populated by `python init_fonts.py`
@@ -104,10 +120,12 @@ pip install uharfbuzz
 
 ## Quick start
 
-First, fetch the input TTFs into `input_fonts/`. They live in a
-separate gh-pages-served repo (default
-`https://chunlaw.github.io/wing-font-inputs`) so this repo's clone
-stays small:
+First, fetch the input TTFs into `input_fonts/`. They live in the
+separate [wing-font-hub](https://github.com/chunlaw/wing-font-hub) repo
+(served from `https://wing-font-hub.chunlaw.io`, override with
+`WING_FONT_INPUTS_URL`) so this repo's clone stays small. Either fetch
+everything the CI build needs, or just the files you want with
+`wing-font fetch <name> --dest input_fonts`:
 
 ```sh
 python init_fonts.py
@@ -188,7 +206,7 @@ matrix for the canonical `-as` pairings shipped to
 and can be dropped to let auto-fit pick the value.
 
 The same lever is exposed in the in-browser pipeline at `/generate` →
-Step 3 → Advanced → "Output ascent (font units)", so you can iterate
+Step 4 → Advanced → "Output ascent (font units)", so you can iterate
 on a value visually before committing to a CLI invocation.
 
 ### Full CLI
@@ -203,7 +221,13 @@ on a value visually before committing to a CLI invocation.
 | `-bs` | `--base-scale` | `0.75` | How much to shrink the base character (vertical room for anno) |
 | `-as` | `--anno-scale` | `0.25` | How much to shrink the annotation glyphs, as a fraction of the output em. UPM-independent: the same value renders at the same visual size regardless of the annotation font's unitsPerEm (so e.g. NotoSerif at 2048 UPM and Huninn at 1024 no longer need different numbers). |
 | `-y` | `--upper_y_offset_ratio` | `0.8` | Where to put the annotation (fraction of em) |
-| `-v` | `--invert` | off | Swap positions: annotation below, base above |
+| `-v` | `--invert` | off | Legacy invert: lift the base, park the annotation at y=0. Prefer `--anno-below` for new CJK builds. For word-unit scripts it flips the annotation *above* the word |
+| | `--anno-below` | off | Annotation below the baseline (descent auto-extended); base stays on the baseline. Wins over `-v` |
+| | `--cell-width` | auto | Full-width advance as a multiple of the base advance. Auto widens just enough that the longest single-syllable reading keeps a 0.05 em gap; `1.0` keeps the base width |
+| | `--anno-spacing` | `0.0` | Extra gap between glyphs inside an annotation, in em |
+| | `--base-axis` / `--anno-axis` | — | Pin a variable-font axis, `TAG=VALUE` (e.g. `--anno-axis wdth=75`); repeatable |
+| | `--diy-annotations` | off | DIY inventory CSV (`input,annotation` per line). Requires `-opt`. See [`HYBRID_ANNOTATION_DESIGN.md`](HYBRID_ANNOTATION_DESIGN.md) |
+| | `--mark-x-offset` | `0.0` | DIY mark nudge in em. `0` centres in Word/print; negative (e.g. `-0.0625`) shifts toward browser centring |
 | `-opt` | `--optimize` | off | Subset the output to just glyphs we actually use (drops it from ~30 MB to ~200–500 KB per font). The base font's Latin, punctuation and U+25CC are always kept |
 | | `--no-woff2` | off | Write only the `.ttf`; skips the WOFF2 compression (about a minute for a CJK font) |
 | | `--trigger-char` | `丅` (U+4E05) | Override-trigger character for the IME-friendly variant selection path (`<base><trigger><numeral>`). Pass an empty string to disable the trigger+numeral path while keeping the digit-suffix path (`<base><number>`, e.g. `行1` … `行11`) intact. |
@@ -255,6 +279,9 @@ each comparing the system font (left) against the generated font
 
 See [`tests/README.md`](tests/README.md) for the per-panel pass/fail
 guide and the JSON report schema written to `tests/output/report.json`.
+
+The automated suite (shaping checks with HarfBuzz, so `uharfbuzz` must
+be installed) runs with `pytest tests/`.
 
 ---
 
@@ -316,7 +343,7 @@ trick) — vertical headroom is handled automatically:
 python wing-font.py \
   -i input_fonts/NotoNastaliqUrdu-VariableFont_wght.ttf \
   -a input_fonts/NotoSerif-Regular.ttf \
-  -m mappings/arabic-demo.csv \
+  -m mappings/arabic/arabic-romanization.csv \
   -o WingArabicDemo \
   -opt -bs 1.0 -as 0.18
 ```
@@ -324,20 +351,22 @@ python wing-font.py \
 (Add `-v -y 1.15` for above-the-word placement.)
 
 Thai works identically — Thai-script rows are auto-detected the same
-way (`mappings/thai-demo.csv` is the demo set, Google Sans Thai a
-suitable base):
+way (`mappings/thai/thai-tcahk.csv`, or the tiny
+`mappings/hero-thai.csv`; Google Sans is a suitable base):
 
 ```sh
 python wing-font.py \
   -i "input_fonts/GoogleSans-VariableFont_GRAD,opsz,wght.ttf" \
   -a input_fonts/NotoSerif-Regular.ttf \
-  -m mappings/thai-demo.csv \
+  -m mappings/hero-thai.csv \
   -o WingThaiDemo \
   -opt -bs 1.0 -as 0.18
 ```
 
 Devanagari (Hindi) is supported as an **experimental** third script
-(`mappings/hindi-demo.csv`, Hind-Regular as base) — same flags. It is
+(`mappings/hindi/hindi-romanization.csv`, Hind-Regular as base) — same
+flags. Inuktitut syllabics (`mappings/inuktitut/inuktitut-hansard.csv`,
+Noto Sans Canadian Aboriginal) is a spaced script like Arabic. It is
 verified against HarfBuzz-based renderers (browsers, Android, Linux,
 LibreOffice); CoreText / DirectWrite use their own Indic engines and
 are unverified, see the Indic notes in
@@ -417,27 +446,30 @@ font: ligation, both boundary guards, tatweel cycling, GDEF carets):
 
 ```sh
 python wing-font.py -i NotoNastaliqUrdu.ttf -a NotoSerif-Regular.ttf \
-  -m mappings/arabic-demo.csv -o /tmp/demo -opt -bs 1.0
-python tests/test_arabic_word.py /tmp/demo.ttf
-python tests/test_thai_word.py /tmp/demo-thai.ttf   # Thai counterpart
-python tests/render_sample.py /tmp/demo.ttf sample.png "كتاب مدرسة"
+  -m mappings/arabic/arabic-romanization.csv -o /tmp/demo -opt -bs 1.0
+pytest tests/test_thai_false_clusters.py tests/test_thai_repeat_mark.py
 ```
 
 To wire a new mapping into the production batch build, add a line to
-[`.github/workflows/build-fonts.yml`](../.github/workflows/build-fonts.yml)
+the `build-fonts` matrix in
+[`.github/workflows/deploy-pages.yml`](../.github/workflows/deploy-pages.yml),
 modelled on the existing entries, then push.
 
 ---
 
 ## CI / batch build
 
-[`.github/workflows/build-fonts.yml`](../.github/workflows/build-fonts.yml)
-runs on every push: it sets up Python 3.12, installs
-`requirements.txt`, then invokes `wing-font.py` once per output font
-(Hei + Sung × LSHK / Yale / Chishima / Guangdong / 劉錫祥 + Cangjie,
-regular and italic, with and without inversion). The resulting `.ttf`
-and `.woff` files are pushed to the `gh-pages` branch, which is what
-<https://wing-fonts.chunlaw.io/> serves.
+[`.github/workflows/deploy-pages.yml`](../.github/workflows/deploy-pages.yml)
+runs on every push to `main`. Its `build-fonts` matrix invokes
+`wing-font.py` once per output font (82 entries) — but only on a cache
+miss: the fonts are cached on a hash of `python/**` (minus `*.md`) and
+the workflow file, so web-only pushes reuse them. The five Wing Sans
+families (Jyutping, Yale, Guoyu, Putonghua, Tâi-lô) are not built here;
+they're downloaded from the
+[Wing-Font/wing-sans-chinese](https://github.com/Wing-Font/wing-sans-chinese)
+release. WOFF2 files are deployed with the site at
+<https://wing-font.chunlaw.io/fonts/>; TTFs go to a rolling
+`build-<sha>` GitHub Release (the 3 most recent are kept).
 
 ---
 
@@ -451,7 +483,11 @@ a `TransformPen` (scale + Y offset), then draws each annotation character
 through another `TransformPen` (smaller scale + X offset to center +
 upper Y offset). The first variant reuses the original glyph name; later
 variants get freshly minted `wingfontNNNNNN` names that go straight into
-the output font's `glyf` table.
+the output font's `glyf` table. Unless the glyph budget forbids it, each
+mapped character also gets a **bare** scaled glyph (`wingfontbare…`, no
+annotation) — the target of `字0`, IVS `VS256` and the DIY path.
+`generate_mark_glyphs` draws the DIY marks (`wingfontmark…`): annotation
+only, zero advance, ink shifted back one em over the preceding base.
 
 Un-annotated glyphs (most of the font) are scaled down with the same
 `base_scale` so the whole font is visually consistent.
@@ -497,10 +533,11 @@ sidesteps.
 Uses `LigatureSubstBuilder` to emit two kinds of rules per polyphonic
 character, both starting from the character's default glyph:
 
-* `(default, '0')` → default reading, and `(default, <decimal digits
-  of N>)` → variant N. Variants 1–9 are a single component (`(行,'1')`);
-  variants ≥ 10 spell the number out (`(行,'1','1')` → variant 11,
-  `(行,'1','1','1')` → variant 111). fontTools orders ligatures in a set
+* `(default, '0')` → bare glyph (no annotation), and `(default,
+  <decimal digits of N>)` → the N-th reading, 1-indexed (`字1` = default).
+  Readings 1–9 are a single component (`(行,'2')`); 10 and up spell the
+  number out (`(行,'1','1')` → 11th reading). Full-width digits `０`–`９`
+  get identical rules. fontTools orders ligatures in a set
   longest-first, so the longest valid number wins and a number with no
   matching variant falls back to its longest prefix, leaving the extra
   digits as literal text. (An earlier design made every variant glyph a
@@ -532,11 +569,11 @@ breaks after the first.
 
 ### `ivs_handler.py` — cmap format-14 (IVS) supplement
 
-For each polyphonic character with N annotations, emits N-1 entries in
-the cmap format-14 subtable: `(base, U+E0100)` → variant 1,
-`(base, U+E0101)` → variant 2, etc. Variant 0 needs no entry because
-the bare base codepoint already maps to the default-reading glyph
-through cmap format-4/12.
+For each polyphonic character, emits one cmap format-14 entry per
+reading, default included, numbered from VS17 (`U+E0100`) in the sorted
+order of the annotation strings (not the weight order, so the numbers
+stay stable when weights change). Two fixed slots follow: `VS255` →
+muted variant and `VS256` → bare glyph.
 
 IVS lives entirely outside GSUB, so it can't interfere with the ccmp
 chain-context and ligature lookups above. Every modern shaper
@@ -567,8 +604,10 @@ picks for the text run.
 ### Subsetting
 
 `wing-font.py` calls `fontTools.subset.Subsetter` with an explicit keep
-list: the variant glyphs (`wingfontNNNNNN`), digits 0–9, ASCII
-letters/punctuation, common CJK punctuation, **plus 丅 and 零一二三四五六七八九**
+list: the variant glyphs (`wingfontNNNNNN`), bare glyphs, DIY marks and
+the full-width characters DIY inputs use, the IVS selectors, the base
+font's Latin / punctuation / U+25CC, common CJK punctuation, **plus 丅
+and 零一二三四五六七八九**
 (those last 11 are easy to forget — without them the 丅+numeral
 fallback silently breaks even though the rules exist in GSUB).
 Subsetter trims the source font from ~30 MB down to ~200–500 KB per
@@ -601,8 +640,8 @@ is having to wire `lookup_index` ourselves and call
   generate a font in their browser with no Python install. Same Python
   sources (the `web/scripts/sync-python.mjs` step copies the files in
   this directory into `web/public/wingfont/` at build time).
-* **[wing-fonts.chunlaw.io](https://wing-fonts.chunlaw.io/)** — the
-  output of the CI workflow, served as a font CDN.
+* **[wing-font.chunlaw.io](https://wing-font.chunlaw.io/)** — the site;
+  CI output is served under `/fonts/`.
 
 ---
 
@@ -635,15 +674,13 @@ inlined in `gen_moe_standard.py`. Multi-character words are emitted **one syllab
 character** (`一刀兩斷,it to lióng tuān`) so `csv_parser` can use them
 for 多音字 disambiguation. Regenerate everything (standard schemes **and**
 the nine 腔, all in the pipeline-ready per-character format) with
-[`taigi-mappings/gen_moe_standard.py`](../taigi-mappings/gen_moe_standard.py).
-(`dialects/gen_dialects.py` is the original raw 語音差異 extractor —
-hyphen-joined, kept for reference; superseded by `gen_moe_standard.py`.)
+[`mappings/taiwanese/gen_moe_standard.py`](mappings/taiwanese/gen_moe_standard.py).
 
 1. [教育部《臺灣台語常用詞辭典》](https://sutian.moe.edu.tw/) — authoritative readings + 語音差異 各腔 table. **Licence: CC BY-ND 3.0 TW** — verify terms before redistributing derived fonts/CSVs.
 2. [ChhoeTaigi/ChhoeTaigiDatabase](https://github.com/ChhoeTaigi/ChhoeTaigiDatabase) — the dataset conversion actually consumed.
 
-The romanization is set in [Huninn (jf-openhuninn)](https://github.com/justfont/open-huninn-font),
-which carries the full Tâi-lô / POJ combining tone marks.
+The pre-built Taiwanese fonts set the romanization in Noto Sans, which
+carries the Tâi-lô / POJ combining tone marks.
 
 TLPA and 閩拼 are derived from Tâi-lô by the standard initial/final
 correspondences inlined in `gen_moe_standard.py` (`INI_TBL` / `FIN_TBL`)
@@ -669,14 +706,17 @@ font glyphs rather than encoded characters; pair it with Noto Sans JP.
 
 ### Mandarin (普通話 / 國語)
 
-The `mandarin.csv` mapping is built entirely from mozillazg's
+The `mandarin-*.csv` mappings are built from mozillazg's
 MIT-licensed data, taken from its permissive upstream rather than from
 any OFL-licensed font project. Per-character readings come from
 `pinyin-data` (derived from the Unicode **Unihan** database —
 `kTGHZ2013` / `kHanyuPinyin` / `kXHC1983` / `kMandarin` — under the
 Unicode license); each character's default reading follows Unihan's
 `kMandarin` field. The word/phrase readings that drive contextual
-homograph (多音字) disambiguation come from `phrase-pinyin-data`.
+homograph (多音字) disambiguation come from `phrase-pinyin-data`. The
+Taiwan (`mandarin-tw*`) variants re-derive single-character defaults
+from the MOE 《國語辭典》, and the `-tc` files add traditional-character
+word keys via OpenCC — see [`mappings/mandarin/NOTES.md`](mappings/mandarin/NOTES.md).
 
 1. [mozillazg/pinyin-data](https://github.com/mozillazg/pinyin-data) — per-character readings (MIT; from Unihan)
 2. [mozillazg/phrase-pinyin-data](https://github.com/mozillazg/phrase-pinyin-data) — word/phrase readings (MIT)
@@ -687,6 +727,11 @@ disambiguation was pioneered by
 [MaruTama/Mengshen-pinyin-font](https://github.com/MaruTama/Mengshen-pinyin-font)
 (OFL-1.1); Wing Font does not reuse its data files, but gratefully
 acknowledges it as inspiration.
+
+### Other languages
+
+Teochew, Japanese, Thai, Arabic, Hindi and Inuktitut each document their
+sources and licences in `mappings/<lang>/NOTES.md`.
 
 ---
 

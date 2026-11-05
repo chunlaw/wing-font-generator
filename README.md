@@ -14,7 +14,7 @@
 
 </div>
 
-[Wing Font](https://wing-font.chunlaw.io) generates OpenType fonts whose glyphs **carry their own romanization above them**. Type 行 and `hang4` appears above it; type 銀行 and the same character renders with `hong4` because the word-context disambiguation rides on OpenType `ccmp`. No HTML `<ruby>` markup, no separate text layers, no special apps — Word, Pages, Canva, Adobe Creative Cloud, Chrome / Firefox / Safari all just work.
+[Wing Font](https://wing-font.chunlaw.io) generates OpenType fonts whose glyphs **carry their own romanization above them**. Type 行 and `hang4` appears above it; type 銀行 and the same character renders with `hong4` because the word-context disambiguation rides on OpenType `ccmp`. Readers can also override by hand: `行2` picks the 2nd reading, `行0` drops the annotation, and in builds with a DIY inventory `行０ｚａａ１` puts any listed annotation over any character. No HTML `<ruby>` markup, no separate text layers, no special apps — Word, Pages, Canva, Adobe Creative Cloud, Chrome / Firefox / Safari all just work.
 
 The pipeline is a small Python program that adds GSUB rules to a base CJK font. The same code runs in the browser via Pyodide, so non-developers can compose their own variants without installing anything.
 
@@ -25,35 +25,39 @@ The [live site](https://wing-font.chunlaw.io) hosts the showcase, the in-browser
 For development docs:
 
 - **[`python/README.md`](python/README.md)** — CLI reference, GSUB pipeline architecture, mapping data sources, local test rig.
+- **[`python/HYBRID_ANNOTATION_DESIGN.md`](python/HYBRID_ANNOTATION_DESIGN.md)** — how DIY annotations (`--diy-annotations`) work: shared marks, the `０` strip, the PowerPoint cmap route.
 - **[`web/README.md`](web/README.md)** — React + Vite app, Pyodide worker, sync-python script, deployment notes.
 
 ## Pre-built fonts
 
-CI builds the font set on every push and publishes it across two surfaces — WOFF2 lives on the Pages site (used by the in-page previews), TTF lives in rolling GitHub Releases (heavier file, off-loaded so the Pages bandwidth budget covers visitor traffic). Browse and download from the [showcase page](https://wing-font.chunlaw.io/showcase), or use a direct URL like:
+CI builds the font set (cached on a hash of `python/**` and the workflow, so it only rebuilds when those change) and publishes it across two surfaces — WOFF2 lives on the Pages site (used by the in-page previews), TTF lives in rolling GitHub Releases (heavier file, off-loaded so the Pages bandwidth budget covers visitor traffic). Browse and download from the [showcase page](https://wing-font.chunlaw.io/showcase), or use a direct URL like:
 
 ```
 https://wing-font.chunlaw.io/fonts/WingSansYueJyutping.woff2
 https://github.com/chunlaw/wing-font-generator/releases/latest/download/WingSansTaigiTailo.ttf
 ```
 
+The five Google Fonts families — Wing Sans Jyutping, Yale, Guoyu, Putonghua and Tâi-lô — are not built here: CI copies them from the [Wing Sans release](https://github.com/Wing-Font/wing-sans-chinese), so one family name never ships two different builds.
+
 The `releases/latest/download/` redirect always tracks the most recent `build-<sha>` release; CI keeps the 3 most recent releases for rollback headroom and prunes older ones, so the TTF URL is stable but the bytes are not guaranteed to be byte-identical across deploys (this is a generator, not a versioned font archive).
 
 Coverage spans:
 
-- **Cantonese (廣東話)** — LSHK Jyutping, Yale, Cangjie, Lau, Guangdong, Chishima; cross-script transliteration into Katakana, Hangul, Thai, Devanagari, and Urdu Nastaliq (Arabic script).
-- **Taiwanese / Southern Min (台語 / 河洛話)** — Tâi-lô, POJ, Bopomofo (TPS), Taiwanese Kana.
+- **Cantonese (廣東話)** — LSHK Jyutping (letters or tone marks), Yale, Lau, Wong, Guangdong, Chishima; cross-script transliteration into Thai, Katakana, Hangul, Urdu Nastaliq, Devanagari, Gurmukhi (Punjabi) and Baybayin, most with a toneless variant.
+- **Cangjie (倉頡)** — input codes as the annotation.
+- **Taiwanese / Southern Min (台語 / 河洛話)** — Tâi-lô (standard plus nine regional accents: Taipak, Sannkiap, Sintik, Taitiong, Lokkang, Tailam, Kohiong, Gilan, Manking), POJ, Bopomofo (TPS), Taiwanese Kana.
 - **Teochew / Min Nan (潮州話)** — Peng'im (GDPI), Pe̍h-ūe-jī.
-- **Mandarin (普通話 / 國語)** — Hanyu Pinyin with phrase-level disambiguation across the full CJK Unified Ideograph range.
+- **Mandarin (普通話 / 國語)** — Hanyu Pinyin (Mainland and Taiwan readings) and Zhuyin, with phrase-level disambiguation across the full CJK Unified Ideograph range.
 - **Japanese (日本語)** — hiragana furigana from KanjiDic2 (on'yomi folded to hiragana so the whole annotation layer is one kana set), plus 熟語 word-context rules aligned from JMdict so contextual readings win (行 reads こう in 行 alone, ぎょう in 行政; 日本人 → に ほん じん). Kana and Japanese symbols carry a blank scale-only annotation so mixed kanji+kana text renders at one body size. Note that a font cannot disambiguate a kanji's reading from the *following kana* (kanji and kana are shaped as separate script runs in every text engine), so okurigana-context readings on polysemous kanji fall back to their most frequent reading — see [`python/mappings/japanese/NOTES.md`](python/mappings/japanese/NOTES.md) for the limitation and its rationale.
-- **Word-unit base scripts — experimental pipeline** — beyond CJK, the pipeline can use a non-Han script (Arabic, Thai, Devanagari, …) as the *base*: each mapped word is composed into a single annotated glyph with cursive shaping / mark stacking / conjunct formation intact, reached via GSUB ligation (boundary-guarded for spaced scripts, longest-match for unspaced Thai) with GDEF ligature carets for in-word cursor movement and per-script variant override (trailing tatweel for Arabic, digit suffix for Thai/Hindi). Per-script behaviour is a data registry (`csv_parser.WORD_SCRIPTS`) so adding a script is a small code change. **No pre-built font using this path ships yet** — the Thai / Devanagari / Urdu builds above are CJK base fonts with those scripts as *annotations*, not the other way round. Power users who want a true non-CJK-base build can author a mapping (see [`python/mappings/thai/thai-tcahk.csv`](python/mappings/thai/thai-tcahk.csv) for the format) and invoke `wing-font.py` directly. See [`python/README.md`](python/README.md#word-unit-base-fonts-arabic-thai) for the walkthrough.
+- **Word-unit base scripts** — beyond CJK, the pipeline can use a non-Han script (Arabic, Thai, Devanagari, …) as the *base*: each mapped word is composed into a single annotated glyph with cursive shaping / mark stacking / conjunct formation intact, reached via GSUB ligation (boundary-guarded for spaced scripts, longest-match for unspaced Thai) with GDEF ligature carets for in-word cursor movement and per-script variant override (trailing tatweel for Arabic, digit suffix for Thai/Hindi). Per-script behaviour is a data registry (`csv_parser.WORD_SCRIPTS`) so adding a script is a small code change. Pre-built fonts on this path: **Thai** (Paiboon romanization, `WingSansThaiPaiboon`), **Arabic** (DIN 31635), **Hindi** (ISO 15919) and **Inuktitut** syllabics (qaniujaaqpait romanization). Don't confuse these with the Cantonese → Thai / Devanagari / Urdu builds above, which are CJK base fonts with those scripts as *annotations*. Each language's `python/mappings/<lang>/NOTES.md` explains its data. See [`python/README.md`](python/README.md#word-unit-base-fonts-arabic-thai) for the walkthrough.
 
-Pairings include ChironSung HK, ChironHei HK, Noto Sans HK / TC / SC, Source Han Serif, Xiaolai, and others. See [Acknowledgements](#acknowledgements) for upstream data + font sources.
+CJK bases include ChironSung HK, Noto Sans HK / TC / JP, Source Han Serif and Xiaolai SC; word-unit bases are Google Sans, Noto Sans Arabic, Hind and Noto Sans Canadian Aboriginal. See [Acknowledgements](#acknowledgements) for upstream data + font sources.
 
 ## Quick start
 
 ### Web (no install needed)
 
-Visit [wing-font.chunlaw.io/generate](https://wing-font.chunlaw.io/generate), pick a base font + annotation font + mapping CSV (or upload your own), click Generate, and download the resulting `.woff` / `.ttf`. First generation takes ~10-15 s for Pyodide to boot; subsequent runs are warm.
+Visit [wing-font.chunlaw.io/generate](https://wing-font.chunlaw.io/generate), pick a base font + annotation font + mapping CSV (or upload your own), optionally a DIY annotation list, click Generate, and download the resulting `.woff` / `.ttf`. First generation takes ~10-15 s for Pyodide to boot; subsequent runs are warm.
 
 ### CLI / Python package
 
@@ -107,8 +111,9 @@ wing-font-generator/
 ├── python/        # Source of truth — font-generation pipeline (CLI + library)
 ├── web/           # React + Vite app that runs the pipeline in-browser via Pyodide
 └── .github/workflows/
-    ├── deploy-pages.yml   # Matrix builds 59 fonts + web app, publishes to gh-pages
-    └── build-demo.yml     # Validation-only web build on pushes
+    ├── deploy-pages.yml   # Matrix builds 82 fonts (+5 copied from the Wing Sans release) + web app → Pages + rolling TTF release
+    ├── build-demo.yml     # Validation-only web build on pushes
+    └── publish-pypi.yml   # Publishes the `wing-font` package
 ```
 
 `python/` is the single source of truth. The Python files under `web/public/wingfont/` are **generated** by `web/scripts/sync-python.mjs` on every web build — don't edit them directly.
@@ -119,7 +124,7 @@ A sibling repo, [`chunlaw/wing-font-hub`](https://github.com/chunlaw/wing-font-h
 
 - **[Showcase](https://wing-font.chunlaw.io/showcase)** — every pre-built font with a rotating sample of dialect-appropriate lyrics, plus direct `.ttf` / `.woff2` download buttons. Shareable URLs via `?fonts=` query string.
 - **[Specimen pages](https://wing-font.chunlaw.io/specimen/WingSansYueJyutping)** — single-font large-size preview with a custom-text field.
-- **[Generate](https://wing-font.chunlaw.io/generate)** — the 5-step in-browser pipeline (fonts → mappings → parameters → generate → download + CSS snippet).
+- **[Generate](https://wing-font.chunlaw.io/generate)** — the 6-step in-browser pipeline (fonts → mappings → DIY annotations → parameters → generate → preview, download + CSS snippet).
 
 ## Contributing
 
@@ -151,7 +156,8 @@ Wing Font stands on the shoulders of excellent open-source data and fonts. Full 
 
 ### Fonts
 
-- [Noto Sans HK / TC / SC / JP / KR](https://fonts.google.com/noto) — Google
+- [Noto Sans, Noto Sans HK / TC / SC / JP / KR / Arabic / Gurmukhi / Tagalog / Canadian Aboriginal, Noto Nastaliq Urdu](https://fonts.google.com/noto) — Google
+- [Hind](https://github.com/itfoundry/hind) — Indian Type Foundry
 - [ChironSung HK / ChironHei HK](https://github.com/chiron-fonts) — chiron-fonts
 - [Huninn (jf-openhuninn)](https://github.com/justfont/open-huninn-font) — justfont
 - [Source Han Serif](https://github.com/adobe-fonts/source-han-serif) — Adobe
@@ -165,7 +171,11 @@ Wing Font stands on the shoulders of excellent open-source data and fonts. Full 
 - **Cantonese** — [TypeDuck](https://github.com/TypeDuck-HK/schema) (CC BY 4.0), [rime-cantonese](https://github.com/rime/rime-cantonese) (CC BY 4.0), [HKCanCor](https://pycantonese.org/data.html) (CC BY), [粵語審音配詞字庫 (CUHK)](https://humanum.arts.cuhk.edu.hk/Lexis/lexi-can/), [Cantonese Romanization Converter (Kodensha)](https://www.kodensha.jp/webapp/cantonese/can_converter_e.html)
 - **Taiwanese / Southern Min** — MOE [《臺灣台語常用詞辭典》](https://sutian.moe.edu.tw/) via [ChhoeTaigi](https://github.com/ChhoeTaigi/ChhoeTaigiDatabase); ButTaiwan's [taigivs](https://github.com/ButTaiwan/taigivs)
 - **Teochew** — [learn-teochew](https://github.com/learn-teochew/learn-teochew.github.io), [parsetc](https://github.com/learn-teochew/parsetc)
-- **Mandarin** — mozillazg's [pinyin-data](https://github.com/mozillazg/pinyin-data) + [phrase-pinyin-data](https://github.com/mozillazg/phrase-pinyin-data); [Unicode Han Database (Unihan)](https://www.unicode.org/charts/unihan.html)
+- **Mandarin** — mozillazg's [pinyin-data](https://github.com/mozillazg/pinyin-data) + [phrase-pinyin-data](https://github.com/mozillazg/phrase-pinyin-data); [Unicode Han Database (Unihan)](https://www.unicode.org/charts/unihan.html); MOE 《國語辭典》 for Taiwan defaults; [OpenCC](https://github.com/BYVoid/OpenCC)
+- **Japanese** — [KANJIDIC2 and JMdict](https://www.edrdg.org/) (EDRDG, CC BY-SA 4.0)
+- **Thai** — [thai-ink](python/mappings/thai/NOTES.md) hand-curated vocabulary + [PyThaiNLP](https://github.com/PyThaiNLP/pythainlp) word list
+- **Inuktitut** — Nunavut Hansard Inuktitut–English corpus (NRC, CC BY 4.0); [qaniujaaqpait](https://github.com/ColemanHaley/qaniujaaqpait) (MIT)
+- **Arabic / Hindi** — see [`arabic/NOTES.md`](python/mappings/arabic/NOTES.md) and [`hindi/NOTES.md`](python/mappings/hindi/NOTES.md)
 
 ## Contact
 
